@@ -97,7 +97,7 @@ const Index = () => {
               <span className="text-sm font-medium text-foreground">Add Note</span>
             </button>
             <button 
-              onClick={() => toast.success("Add Photo clicked")}
+              onClick={() => navigate("/capture-screen")}
               className="flex flex-col items-center gap-3 rounded-lg bg-card p-6 transition-colors hover:bg-secondary"
             >
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
