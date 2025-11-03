@@ -19,7 +19,8 @@ const NewReport = () => {
       return;
     }
     toast.success("Report details saved");
-    navigate("/field-update");
+    // In production, you would save this data and navigate to the next step
+    // For now, we'll just show success
   };
 
   return (
