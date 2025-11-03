@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NewReport from "./pages/NewReport";
+import FieldUpdate from "./pages/FieldUpdate";
 import ReviewSummary from "./pages/ReviewSummary";
 import FinalReport from "./pages/FinalReport";
 import Settings from "./pages/Settings";
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/new-report" element={<NewReport />} />
+          <Route path="/field-update" element={<FieldUpdate />} />
           <Route path="/review-summary" element={<ReviewSummary />} />
           <Route path="/final-report" element={<FinalReport />} />
           <Route path="/confirmation" element={<Confirmation />} />
