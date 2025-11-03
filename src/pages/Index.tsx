@@ -67,7 +67,7 @@ const Index = () => {
         </button>
         <Button 
           className="bg-primary text-primary-foreground hover:bg-primary/90"
-          onClick={() => toast.success("New Report clicked")}
+          onClick={() => navigate("/new-report")}
         >
           + New Report
         </Button>
