@@ -39,8 +39,11 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // Validate input
-      const validatedData = authSchema.parse({ email, password });
+      // For login, only validate email format (password was created before, might not meet current rules)
+      // For signup, validate both email and password
+      const validatedData = isLogin 
+        ? { email: z.string().trim().email().max(255).parse(email), password }
+        : authSchema.parse({ email, password });
 
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
