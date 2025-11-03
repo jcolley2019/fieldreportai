@@ -4,13 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Camera, Mic, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { CameraDialog } from "@/components/CameraDialog";
 
 const NewReport = () => {
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<{ id: string; url: string; file: File }[]>([]);
   const [isRecording, setIsRecording] = useState(false);
+  const [showCameraDialog, setShowCameraDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const maxChars = 1000;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,6 +52,16 @@ const NewReport = () => {
     } else {
       toast.success("Recording stopped");
     }
+  };
+
+  const handleCameraClick = () => {
+    setShowCameraDialog(false);
+    cameraInputRef.current?.click();
+  };
+
+  const handleGalleryClick = () => {
+    setShowCameraDialog(false);
+    fileInputRef.current?.click();
   };
 
   const handleGenerateSummary = () => {
@@ -91,6 +104,7 @@ const NewReport = () => {
 
         {/* Photo/Video Upload */}
         <div className="mb-6">
+          {/* Gallery input */}
           <input
             ref={fileInputRef}
             type="file"
@@ -99,8 +113,18 @@ const NewReport = () => {
             className="hidden"
             onChange={handleFileSelect}
           />
+          {/* Camera input */}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*,video/*"
+            capture="environment"
+            multiple
+            className="hidden"
+            onChange={handleFileSelect}
+          />
           <button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => setShowCameraDialog(true)}
             className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl bg-card p-8 transition-colors hover:bg-secondary"
           >
             <Camera className="h-12 w-12 text-primary" />
@@ -109,6 +133,13 @@ const NewReport = () => {
             </p>
           </button>
         </div>
+
+        <CameraDialog
+          open={showCameraDialog}
+          onOpenChange={setShowCameraDialog}
+          onCameraSelect={handleCameraClick}
+          onGallerySelect={handleGalleryClick}
+        />
 
         {/* Voice Recording Button */}
         <div className="mb-6 flex justify-center">
