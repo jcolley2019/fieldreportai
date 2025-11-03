@@ -8,10 +8,12 @@ const FinalReport = () => {
 
   const handleDownloadPDF = () => {
     toast.success("Downloading PDF...");
+    navigate("/confirmation");
   };
 
   const handleShare = () => {
-    toast.success("Opening share options...");
+    toast.success("Sharing report...");
+    navigate("/confirmation");
   };
 
   const handleForward = () => {

@@ -9,6 +9,7 @@ import NewReport from "./pages/NewReport";
 import ReviewSummary from "./pages/ReviewSummary";
 import FinalReport from "./pages/FinalReport";
 import Settings from "./pages/Settings";
+import Confirmation from "./pages/Confirmation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/review-summary" element={<ReviewSummary />} />
           <Route path="/final-report" element={<FinalReport />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/confirmation" element={<Confirmation />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
