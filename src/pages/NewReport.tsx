@@ -23,7 +23,7 @@ const NewReport = () => {
       file,
     }));
 
-    setImages((prev) => [...prev, ...newImages]);
+    setImages((prev) => [...prev, ...newImages].slice(0, 8)); // Limit to 8 images
     toast.success(`${files.length} photo(s) added`);
   };
 
@@ -62,7 +62,7 @@ const NewReport = () => {
 
   return (
     <div className="dark min-h-screen bg-background">
-      <main className="flex min-h-screen flex-col px-4 pb-36 pt-4">
+      <main className="flex min-h-screen flex-col px-4 pb-8 pt-4">
         {/* Tags */}
         <div className="mb-4 flex flex-wrap gap-2">
           <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-card px-3">
@@ -74,7 +74,7 @@ const NewReport = () => {
         </div>
 
         {/* Description Textarea */}
-        <div className="mb-6 flex flex-col gap-y-6">
+        <div className="mb-6">
           <div className="relative">
             <Textarea
               value={description}
@@ -87,73 +87,75 @@ const NewReport = () => {
               {description.length} / {maxChars}
             </div>
           </div>
+        </div>
 
-          {/* Photo/Video Upload */}
-          <div className="relative">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,video/*"
-              multiple
-              className="hidden"
-              onChange={handleFileSelect}
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl bg-card p-8 transition-colors hover:bg-secondary"
-            >
-              <Camera className="h-12 w-12 text-primary" />
-              <p className="text-center text-sm font-medium text-primary">
-                Tap to Take Photos/Video or to upload from gallery
-              </p>
-            </button>
-          </div>
+        {/* Photo/Video Upload */}
+        <div className="mb-6">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl bg-card p-8 transition-colors hover:bg-secondary"
+          >
+            <Camera className="h-12 w-12 text-primary" />
+            <p className="text-center text-sm font-medium text-primary">
+              Tap to Take Photos/Video or to upload from gallery
+            </p>
+          </button>
+        </div>
 
-          {/* Voice Recording Button */}
-          <div className="flex justify-center">
-            <button
-              onClick={handleVoiceRecord}
-              className={`flex h-24 w-24 items-center justify-center rounded-full transition-all ${
-                isRecording
-                  ? "bg-destructive animate-pulse"
-                  : "bg-primary hover:bg-primary/90"
-              }`}
-            >
-              <Mic className="h-10 w-10 text-primary-foreground" />
-            </button>
-          </div>
+        {/* Voice Recording Button */}
+        <div className="mb-6 flex justify-center">
+          <button
+            onClick={handleVoiceRecord}
+            className={`flex h-24 w-24 items-center justify-center rounded-full transition-all ${
+              isRecording
+                ? "bg-destructive animate-pulse"
+                : "bg-primary hover:bg-primary/90"
+            }`}
+          >
+            <Mic className="h-10 w-10 text-primary-foreground" />
+          </button>
+        </div>
 
-          {/* Image Gallery */}
-          {images.length > 0 && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-4 gap-3">
-                {images.map((image) => (
-                  <div key={image.id} className="relative aspect-square">
-                    <img
-                      src={image.url}
-                      alt="Upload preview"
-                      className="h-full w-full rounded-lg object-cover"
-                    />
-                    <button
-                      onClick={() => handleRemoveImage(image.id)}
-                      className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
+        {/* Image Gallery - 8 thumbnails max */}
+        <div className="mb-6">
+          <div className="grid grid-cols-4 gap-3">
+            {images.map((image) => (
+              <div key={image.id} className="relative aspect-square">
+                <img
+                  src={image.url}
+                  alt="Upload preview"
+                  className="h-full w-full rounded-lg object-cover"
+                />
+                <button
+                  onClick={() => handleRemoveImage(image.id)}
+                  className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-background text-foreground"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
-              <button
-                onClick={handleDiscardAll}
-                className="mx-auto block text-sm font-medium text-destructive hover:underline"
-              >
-                Discard All
-              </button>
-            </div>
+            ))}
+          </div>
+          
+          {/* Discard All Button */}
+          {images.length > 0 && (
+            <button
+              onClick={handleDiscardAll}
+              className="mx-auto mt-4 block text-sm font-medium text-destructive hover:underline"
+            >
+              Discard All
+            </button>
           )}
         </div>
 
-        {/* Generate Summary Button */}
+        {/* Generate Summary Button - At bottom */}
         <div className="mt-auto">
           <Button
             onClick={handleGenerateSummary}
@@ -168,3 +170,4 @@ const NewReport = () => {
 };
 
 export default NewReport;
+
