@@ -50,7 +50,7 @@ const ReviewSummary = () => {
 
   const handleContinueToReport = () => {
     toast.success("Report submitted successfully!");
-    navigate("/");
+    navigate("/final-report");
   };
 
   return (
