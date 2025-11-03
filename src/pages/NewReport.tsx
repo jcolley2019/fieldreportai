@@ -57,6 +57,7 @@ const NewReport = () => {
       return;
     }
     toast.success("Generating summary...");
+    navigate("/review-summary");
   };
 
   return (
