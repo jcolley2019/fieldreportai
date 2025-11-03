@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, Mic, Trash2, Undo2, X } from "lucide-react";
+import { Camera, Mic, Trash2, Undo2, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 
@@ -101,7 +101,7 @@ const CaptureScreen = () => {
             size="icon"
             onClick={() => navigate(-1)}
           >
-            <X className="h-5 w-5 text-foreground" />
+            <ChevronLeft className="h-5 w-5 text-foreground" />
           </Button>
           <h1 className="text-lg font-semibold text-foreground">New Field Update</h1>
           <div className="w-10" /> {/* Spacer for alignment */}
