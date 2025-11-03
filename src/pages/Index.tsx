@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { User } from "@supabase/supabase-js";
-import { FileText, Camera, Mic, Share2, Eye, ChevronDown } from "lucide-react";
+import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon } from "lucide-react";
 import { toast } from "sonner";
 
 const Index = () => {
@@ -65,12 +65,21 @@ const Index = () => {
           <h1 className="text-lg font-bold text-foreground">Project Alpha</h1>
           <ChevronDown className="h-5 w-5 text-muted-foreground" />
         </button>
-        <Button 
-          className="bg-primary text-primary-foreground hover:bg-primary/90"
-          onClick={() => navigate("/new-report")}
-        >
-          + New Report
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={() => navigate("/new-report")}
+          >
+            + New Report
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/settings")}
+          >
+            <SettingsIcon className="h-5 w-5 text-foreground" />
+          </Button>
+        </div>
       </header>
 
       <main className="p-4">
