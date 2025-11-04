@@ -103,7 +103,7 @@ const CaptureScreen = () => {
           >
             <ChevronLeft className="h-5 w-5 text-foreground" />
           </Button>
-          <h1 className="text-lg font-semibold text-foreground">New Field Update</h1>
+          <h1 className="text-lg font-semibold text-foreground">Capture Photos and Video</h1>
           <div className="w-10" /> {/* Spacer for alignment */}
         </div>
       </header>
