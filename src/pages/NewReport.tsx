@@ -140,12 +140,29 @@ const NewReport = () => {
 
   const onSubmit = async (data: ReportFormData) => {
     try {
-      console.log("Validated report data:", data);
-      toast.success("Report details validated and saved");
-      // TODO: Save to database when reports table is connected
-      // navigate("/capture-screen");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in to create a report");
+        navigate("/auth");
+        return;
+      }
+
+      const { error } = await supabase
+        .from('reports')
+        .insert([{
+          user_id: user.id,
+          project_name: data.projectName,
+          customer_name: data.customerName,
+          job_number: data.jobNumber,
+          job_description: data.jobDescription
+        }]);
+
+      if (error) throw error;
+      
+      toast.success("Report saved successfully");
+      navigate("/capture-screen");
     } catch (error) {
-      console.error("Error submitting report:", error);
+      console.error("Error saving report:", error);
       toast.error("Failed to save report");
     }
   };
