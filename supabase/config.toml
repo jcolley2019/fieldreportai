@@ -1,7 +1,7 @@
 project_id = "kzlmfsvdakgvotuxxcgl"
 
 [functions.extract-report-fields]
-verify_jwt = false
+verify_jwt = true
 
 [functions.test-openai]
-verify_jwt = false
+verify_jwt = true
