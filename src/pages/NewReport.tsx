@@ -1,22 +1,65 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Mic, MicOff } from "lucide-react";
 import { toast } from "sonner";
-import { VoiceInputField } from "@/components/VoiceInputField";
-import { VoiceTextareaField } from "@/components/VoiceTextareaField";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+
+// Comprehensive validation schema
+const reportSchema = z.object({
+  projectName: z.string()
+    .trim()
+    .min(1, "Project name is required")
+    .max(100, "Project name must be less than 100 characters"),
+  customerName: z.string()
+    .trim()
+    .min(1, "Customer name is required")
+    .max(100, "Customer name must be less than 100 characters"),
+  jobNumber: z.string()
+    .trim()
+    .min(1, "Job number is required")
+    .max(50, "Job number must be less than 50 characters")
+    .regex(/^[A-Za-z0-9-_]+$/, "Job number can only contain letters, numbers, hyphens, and underscores"),
+  jobDescription: z.string()
+    .trim()
+    .min(1, "Job description is required")
+    .max(500, "Job description must be less than 500 characters"),
+});
+
+type ReportFormData = z.infer<typeof reportSchema>;
 
 const NewReport = () => {
   const navigate = useNavigate();
-  const [projectName, setProjectName] = useState("");
-  const [customerName, setCustomerName] = useState("");
-  const [jobNumber, setJobNumber] = useState("");
-  const [jobDescription, setJobDescription] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  
+  const form = useForm<ReportFormData>({
+    resolver: zodResolver(reportSchema),
+    defaultValues: {
+      projectName: "",
+      customerName: "",
+      jobNumber: "",
+      jobDescription: "",
+    },
+  });
+
+  const { setValue } = form;
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleGlobalVoiceInput = async () => {
     if (!isRecording) {
@@ -60,11 +103,11 @@ const NewReport = () => {
 
                 if (extractError) throw extractError;
 
-                // Fill in the form fields
-                if (extractedData.projectName) setProjectName(extractedData.projectName);
-                if (extractedData.customerName) setCustomerName(extractedData.customerName);
-                if (extractedData.jobNumber) setJobNumber(extractedData.jobNumber);
-                if (extractedData.jobDescription) setJobDescription(extractedData.jobDescription);
+                // Fill in the form fields with validation
+                if (extractedData.projectName) setValue("projectName", extractedData.projectName);
+                if (extractedData.customerName) setValue("customerName", extractedData.customerName);
+                if (extractedData.jobNumber) setValue("jobNumber", extractedData.jobNumber);
+                if (extractedData.jobDescription) setValue("jobDescription", extractedData.jobDescription);
 
                 toast.success("Form fields filled successfully!");
               } catch (error) {
@@ -95,14 +138,16 @@ const NewReport = () => {
     }
   };
 
-  const handleContinue = () => {
-    if (!projectName.trim() || !customerName.trim() || !jobNumber.trim() || !jobDescription.trim()) {
-      toast.error("Please fill in all required fields");
-      return;
+  const onSubmit = async (data: ReportFormData) => {
+    try {
+      console.log("Validated report data:", data);
+      toast.success("Report details validated and saved");
+      // TODO: Save to database when reports table is connected
+      // navigate("/capture-screen");
+    } catch (error) {
+      console.error("Error submitting report:", error);
+      toast.error("Failed to save report");
     }
-    toast.success("Report details saved");
-    // In production, you would save this data and navigate to the next step
-    // For now, we'll just show success
   };
 
   return (
@@ -147,50 +192,104 @@ const NewReport = () => {
           </Button>
         </div>
 
-        <div className="space-y-6">
-          <VoiceInputField
-            label="Project Name"
-            value={projectName}
-            onChange={setProjectName}
-            placeholder="Enter project name"
-            required
-          />
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="projectName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">Project Name *</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter project name"
+                      className="bg-background text-foreground"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription className="text-muted-foreground">
+                    Maximum 100 characters
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <VoiceInputField
-            label="Customer Name"
-            value={customerName}
-            onChange={setCustomerName}
-            placeholder="Enter customer name"
-            required
-          />
+            <FormField
+              control={form.control}
+              name="customerName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">Customer Name *</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter customer name"
+                      className="bg-background text-foreground"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription className="text-muted-foreground">
+                    Maximum 100 characters
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <VoiceInputField
-            label="Job Number"
-            value={jobNumber}
-            onChange={setJobNumber}
-            placeholder="Enter job number"
-            required
-          />
+            <FormField
+              control={form.control}
+              name="jobNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">Job Number *</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter job number (e.g., JOB-2025-001)"
+                      className="bg-background text-foreground"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription className="text-muted-foreground">
+                    Letters, numbers, hyphens, and underscores only (max 50 chars)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <VoiceTextareaField
-            label="Job Description"
-            value={jobDescription}
-            onChange={setJobDescription}
-            placeholder="Enter job description"
-            required
-            maxLength={500}
-          />
-        </div>
+            <FormField
+              control={form.control}
+              name="jobDescription"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">Job Description *</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter job description"
+                      className="min-h-[120px] bg-background text-foreground resize-none"
+                      maxLength={500}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription className="text-muted-foreground">
+                    {field.value.length}/500 characters
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        {/* Continue Button */}
-        <div className="mt-8">
-          <Button
-            onClick={handleContinue}
-            className="w-full bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90"
-          >
-            Continue
-          </Button>
-        </div>
+            {/* Continue Button */}
+            <div className="mt-8">
+              <Button
+                type="submit"
+                className="w-full bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90"
+              >
+                Continue
+              </Button>
+            </div>
+          </form>
+        </Form>
       </main>
     </div>
   );
