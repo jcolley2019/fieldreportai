@@ -1,7 +1,15 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+
+const transcriptionSchema = z.object({
+  transcription: z.string()
+    .trim()
+    .min(1, 'Transcription cannot be empty')
+    .max(10000, 'Transcription too long (max 10000 characters)')
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,11 +22,25 @@ serve(async (req) => {
   }
 
   try {
-    const { transcription } = await req.json();
-
-    if (!transcription) {
-      throw new Error('Transcription is required');
+    const body = await req.json();
+    
+    // Validate input with Zod
+    const validationResult = transcriptionSchema.safeParse(body);
+    
+    if (!validationResult.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input', 
+          details: validationResult.error.errors 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
+    
+    const { transcription } = validationResult.data;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
