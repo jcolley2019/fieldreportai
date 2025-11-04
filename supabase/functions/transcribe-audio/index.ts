@@ -50,16 +50,19 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Transcribe-audio function called');
+    console.log('Transcribe-audio function called', { timestamp: new Date().toISOString() });
     
     // Parse and validate input
     const body = await req.json();
-    console.log('Request body received, validating...');
+    console.log('Request received, validating input', { timestamp: new Date().toISOString() });
     
     const validatedData = audioSchema.parse(body);
     const { audio } = validatedData;
     
-    console.log(`Audio data size: ${audio.length} characters (base64)`);
+    console.log('Audio data validated', { 
+      size: `${audio.length} characters (base64)`,
+      timestamp: new Date().toISOString() 
+    });
     
     if (!audio) {
       throw new Error('No audio data provided');
@@ -68,14 +71,17 @@ serve(async (req) => {
     // Get OpenAI API key
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
-      console.error('OPENAI_API_KEY not configured');
+      console.error('OPENAI_API_KEY not configured', { timestamp: new Date().toISOString() });
       throw new Error('OpenAI API key not configured');
     }
 
     // Process audio in chunks
-    console.log('Processing base64 audio data...');
+    console.log('Processing base64 audio data', { timestamp: new Date().toISOString() });
     const binaryAudio = processBase64Chunks(audio);
-    console.log(`Binary audio size: ${binaryAudio.length} bytes`);
+    console.log('Binary audio processed', { 
+      size: `${binaryAudio.length} bytes`,
+      timestamp: new Date().toISOString() 
+    });
     
     // Prepare form data
     const formData = new FormData();
@@ -83,7 +89,7 @@ serve(async (req) => {
     formData.append('file', blob, 'audio.webm');
     formData.append('model', 'whisper-1');
 
-    console.log('Sending to OpenAI Whisper API...');
+    console.log('Sending to OpenAI Whisper API', { timestamp: new Date().toISOString() });
     
     // Send to OpenAI
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -95,13 +101,16 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`OpenAI API error (${response.status}):`, errorText);
+      // Sanitized logging - only status code and timestamp, no error details
+      console.error('OpenAI API error occurred', { 
+        status: response.status,
+        timestamp: new Date().toISOString() 
+      });
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const result = await response.json();
-    console.log('Transcription successful');
+    console.log('Transcription successful', { timestamp: new Date().toISOString() });
 
     return new Response(
       JSON.stringify({ text: result.text }),
@@ -110,7 +119,11 @@ serve(async (req) => {
 
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error('Validation error:', error.errors);
+      // Sanitized logging for validation errors
+      console.error('Input validation failed', { 
+        errorCount: error.errors.length,
+        timestamp: new Date().toISOString() 
+      });
       return new Response(
         JSON.stringify({ 
           error: 'Invalid input', 
@@ -123,7 +136,11 @@ serve(async (req) => {
       );
     }
 
-    console.error('Transcription error:', error);
+    // Sanitized logging for general errors
+    console.error('Transcription error occurred', { 
+      errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+      timestamp: new Date().toISOString() 
+    });
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       {

@@ -63,8 +63,11 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('OpenAI API error:', error);
+      // Sanitized logging - only status code and timestamp
+      console.error('OpenAI API error occurred', { 
+        status: response.status,
+        timestamp: new Date().toISOString() 
+      });
       throw new Error('Failed to extract fields from transcription');
     }
 
@@ -75,7 +78,11 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in extract-report-fields function:', error);
+    // Sanitized logging - only error type and timestamp, no user data
+    console.error('Error in extract-report-fields function', { 
+      errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+      timestamp: new Date().toISOString() 
+    });
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

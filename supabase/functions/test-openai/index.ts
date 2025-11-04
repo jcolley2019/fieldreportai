@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Testing OpenAI API connection...');
+    console.log('Testing OpenAI API connection', { timestamp: new Date().toISOString() });
 
     if (!openAIApiKey) {
       throw new Error('OPENAI_API_KEY is not configured');
@@ -37,12 +37,14 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('OpenAI API error:', response.status, error);
+      // Sanitized logging - only status code and timestamp, no error details
+      console.error('OpenAI API error occurred', { 
+        status: response.status,
+        timestamp: new Date().toISOString() 
+      });
       return new Response(JSON.stringify({ 
         success: false, 
-        error: `OpenAI API error: ${response.status}`,
-        details: error 
+        error: `OpenAI API error: ${response.status}`
       }), {
         status: response.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -50,21 +52,28 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const message = data.choices[0].message.content;
 
-    console.log('OpenAI response:', message);
+    // Success logging - no sensitive response content
+    console.log('OpenAI API test successful', { 
+      timestamp: new Date().toISOString(),
+      model: data.model 
+    });
 
     return new Response(JSON.stringify({ 
       success: true, 
-      message,
+      message: data.choices[0].message.content,
       model: data.model,
       usage: data.usage 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in test-openai function:', error);
-    return new Response(JSON.stringify({ 
+    // Sanitized logging - only error type and timestamp
+    console.error('Error in test-openai function', { 
+      errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+      timestamp: new Date().toISOString() 
+    });
+    return new Response(JSON.stringify({
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 
     }), {
