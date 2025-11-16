@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronLeft, Mic, MicOff, Loader2 } from "lucide-react";
+import { ChevronLeft, Mic, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -45,7 +45,6 @@ const Checklist = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         await processAudio(audioBlob);
         
-        // Stop all tracks
         stream.getTracks().forEach(track => track.stop());
       };
 
@@ -66,11 +65,18 @@ const Checklist = () => {
     }
   };
 
+  const handleVoiceRecord = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
   const processAudio = async (audioBlob: Blob) => {
     setIsProcessing(true);
     
     try {
-      // Convert blob to base64
       const reader = new FileReader();
       reader.readAsDataURL(audioBlob);
       
@@ -117,6 +123,11 @@ const Checklist = () => {
     });
   };
 
+  const clearChecklist = () => {
+    setChecklist(null);
+    setTranscription("");
+  };
+
   const saveChecklist = () => {
     toast.success("Checklist saved!");
     navigate("/");
@@ -125,7 +136,7 @@ const Checklist = () => {
   return (
     <div className="dark min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 px-4 py-3 backdrop-blur-sm border-b border-border">
+      <header className="sticky top-0 z-10 bg-background/80 px-4 py-3 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
@@ -139,92 +150,89 @@ const Checklist = () => {
         </div>
       </header>
 
-      <main className="p-4 pb-24">
-        {/* Recording Section */}
-        {!checklist && (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold text-foreground">Voice Recording</h2>
-              <p className="text-muted-foreground">
-                Describe the items you need in your checklist
-              </p>
-            </div>
-
-            <div className="relative">
-              <Button
-                onClick={isRecording ? stopRecording : startRecording}
-                disabled={isProcessing}
-                size="lg"
-                className={`w-24 h-24 rounded-full ${
-                  isRecording 
-                    ? 'bg-destructive hover:bg-destructive/90 animate-pulse' 
-                    : 'bg-primary hover:bg-primary/90'
-                }`}
-              >
-                {isProcessing ? (
-                  <Loader2 className="h-10 w-10 animate-spin" />
-                ) : isRecording ? (
-                  <MicOff className="h-10 w-10" />
-                ) : (
-                  <Mic className="h-10 w-10" />
-                )}
-              </Button>
-            </div>
-
-            {isRecording && (
-              <p className="text-sm text-muted-foreground animate-pulse">
-                Listening...
-              </p>
-            )}
-
-            {isProcessing && (
-              <p className="text-sm text-muted-foreground">
-                Processing your recording...
-              </p>
-            )}
+      <main className="flex-1 px-4 pt-4 pb-36">
+        {/* Project Info Pills */}
+        <div className="flex flex-wrap gap-2 pb-4">
+          <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
+            <p className="text-xs font-medium text-muted-foreground">Project: Alpha Site</p>
           </div>
-        )}
+          <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
+            <p className="text-xs font-medium text-muted-foreground">Job #12345</p>
+          </div>
+        </div>
 
-        {/* Transcription */}
-        {transcription && !isProcessing && (
+        {/* Instructions */}
+        <div className="mb-6">
+          <p className="text-sm text-muted-foreground">
+            Record your voice to create a checklist using AI
+          </p>
+        </div>
+
+        {/* Voice Recording Button */}
+        <div className="mb-6">
+          <Button
+            onClick={handleVoiceRecord}
+            disabled={isProcessing}
+            variant={isRecording ? "destructive" : "outline"}
+            size="lg"
+            className={`h-14 w-full rounded-lg text-base font-medium ${
+              isRecording ? 'animate-pulse' : ''
+            }`}
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Mic className="mr-2 h-5 w-5" />
+                {isRecording ? 'Stop Recording' : 'Start Recording'}
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Transcription Preview */}
+        {transcription && (
           <div className="mb-6 p-4 bg-card rounded-lg border border-border">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Transcription:</h3>
-            <p className="text-foreground">{transcription}</p>
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="text-sm font-medium text-muted-foreground">Transcription</h3>
+            </div>
+            <p className="text-sm text-foreground">{transcription}</p>
           </div>
         )}
 
-        {/* Checklist */}
-        {checklist && !isProcessing && (
-          <div className="space-y-6">
+        {/* Checklist Preview */}
+        {checklist && (
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">{checklist.title}</h2>
+              <h2 className="text-xl font-bold text-foreground">{checklist.title}</h2>
               <Button
-                onClick={() => {
-                  setChecklist(null);
-                  setTranscription("");
-                }}
-                variant="outline"
-                size="sm"
+                onClick={clearChecklist}
+                variant="ghost"
+                size="icon"
               >
-                New Recording
+                <X className="h-5 w-5 text-muted-foreground" />
               </Button>
             </div>
 
-            <div className="space-y-3">
+            {/* Checklist Items */}
+            <div className="space-y-2">
               {checklist.items.map((item, index) => (
                 <div
                   key={index}
-                  className="flex items-start gap-3 p-4 bg-card rounded-lg border border-border hover:bg-secondary/50 transition-colors"
+                  className="flex items-start gap-3 p-3 bg-card rounded-lg border border-border"
                 >
                   <Checkbox
                     id={`item-${index}`}
                     checked={item.completed}
                     onCheckedChange={() => toggleItem(index)}
-                    className="mt-1"
+                    className="mt-0.5"
                   />
                   <label
                     htmlFor={`item-${index}`}
-                    className={`flex-1 cursor-pointer ${
+                    className={`flex-1 text-sm cursor-pointer ${
                       item.completed 
                         ? 'line-through text-muted-foreground' 
                         : 'text-foreground'
@@ -235,18 +243,21 @@ const Checklist = () => {
                 </div>
               ))}
             </div>
-
-            <div className="flex gap-3">
-              <Button
-                onClick={saveChecklist}
-                className="flex-1 bg-primary hover:bg-primary/90"
-              >
-                Save Checklist
-              </Button>
-            </div>
           </div>
         )}
       </main>
+
+      {/* Fixed Bottom Actions */}
+      {checklist && (
+        <div className="fixed bottom-0 left-0 right-0 bg-background/80 px-4 py-4 backdrop-blur-sm border-t border-border">
+          <Button
+            onClick={saveChecklist}
+            className="h-12 w-full rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            Save Checklist
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
