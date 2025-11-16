@@ -169,29 +169,34 @@ const Checklist = () => {
         </div>
 
         {/* Voice Recording Button */}
-        <div className="mb-6">
+        <div className="mb-6 flex justify-center">
           <Button
             onClick={handleVoiceRecord}
             disabled={isProcessing}
-            variant={isRecording ? "destructive" : "outline"}
-            size="lg"
-            className={`h-14 w-full rounded-lg text-base font-medium ${
-              isRecording ? 'animate-pulse' : ''
+            size="icon"
+            className={`h-32 w-32 rounded-full bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white shadow-lg ${
+              isRecording ? 'animate-pulse ring-4 ring-[#1DA1F2]/30' : ''
             }`}
           >
             {isProcessing ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Processing...
-              </>
+              <Loader2 className="h-12 w-12 animate-spin" />
             ) : (
-              <>
-                <Mic className="mr-2 h-5 w-5" />
-                {isRecording ? 'Stop Recording' : 'Start Recording'}
-              </>
+              <Mic className="h-12 w-12" />
             )}
           </Button>
         </div>
+
+        {isRecording && (
+          <p className="text-center text-sm text-muted-foreground mb-6 animate-pulse">
+            Recording...
+          </p>
+        )}
+
+        {isProcessing && (
+          <p className="text-center text-sm text-muted-foreground mb-6">
+            Processing your recording...
+          </p>
+        )}
 
         {/* Transcription Preview */}
         {transcription && (
