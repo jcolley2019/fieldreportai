@@ -86,7 +86,7 @@ const Index = () => {
         {/* Quick Add Section */}
         <section className="mb-8">
           <h2 className="mb-4 text-2xl font-semibold text-foreground">Quick Add</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <button 
               onClick={() => toast.success("Add Note clicked")}
               className="flex flex-col items-center gap-3 rounded-lg bg-card p-6 transition-colors hover:bg-secondary"
@@ -104,15 +104,6 @@ const Index = () => {
                 <Camera className="h-8 w-8 text-primary" />
               </div>
               <span className="text-sm font-medium text-foreground">Add Photo</span>
-            </button>
-            <button 
-              onClick={() => toast.success("Add Voice clicked")}
-              className="flex flex-col items-center gap-3 rounded-lg bg-card p-6 transition-colors hover:bg-secondary"
-            >
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                <Mic className="h-8 w-8 text-primary" />
-              </div>
-              <span className="text-sm font-medium text-foreground">Add Voice</span>
             </button>
             <button 
               onClick={() => toast.success("Add Checklist clicked")}
