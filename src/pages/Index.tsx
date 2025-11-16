@@ -106,7 +106,7 @@ const Index = () => {
               <span className="text-sm font-medium text-foreground">Add Photo</span>
             </button>
             <button 
-              onClick={() => toast.success("Add Checklist clicked")}
+              onClick={() => navigate("/checklist")}
               className="flex flex-col items-center gap-3 rounded-lg bg-card p-6 transition-colors hover:bg-secondary"
             >
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
