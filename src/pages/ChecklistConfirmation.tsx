@@ -7,9 +7,9 @@ const ChecklistConfirmation = () => {
   const navigate = useNavigate();
 
   const cloudServices = [
-    { id: "gdrive", name: "Google Drive", icon: "📄" },
-    { id: "onedrive", name: "OneDrive", icon: "📁" },
-    { id: "dropbox", name: "Dropbox", icon: "📦" },
+    { id: "pdf", name: "PDF", icon: "📄" },
+    { id: "word", name: "Word Doc", icon: "📝" },
+    { id: "copylink", name: "Copy Link", icon: "🔗" },
   ];
 
   const checklistHistory = [
