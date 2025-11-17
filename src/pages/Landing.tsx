@@ -66,19 +66,20 @@ const Landing = () => {
 
   const pricingPlans = [
     {
-      name: "Free",
+      name: "Free 14-day Trial",
       monthlyPrice: "$0",
       annualPrice: "$0",
-      period: "/month",
-      description: "Perfect for trying out Field Report AI",
+      period: "",
+      description: "Try all Pro features free for 14 days",
       features: [
-        "5 reports per month",
-        "Basic media capture",
-        "Voice transcription",
-        "PDF export",
-        "Email support",
+        "Unlimited reports & checklists",
+        "Advanced media capture",
+        "AI-powered insights",
+        "Team collaboration",
+        "Priority support",
+        "Custom templates",
       ],
-      cta: "Get Started Free",
+      cta: "Start Free Trial",
       popular: false,
     },
     {
