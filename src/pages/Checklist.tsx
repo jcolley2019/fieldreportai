@@ -144,6 +144,22 @@ const Checklist = () => {
               </button>
             </div>
 
+            {/* Previous Checklists Section */}
+            <div className="w-full mt-8">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Previous Checklists</h3>
+              <div className="space-y-3">
+                {/* Placeholder for previous checklists - will be populated with actual data */}
+                <div className="rounded-lg border border-border bg-secondary p-4 hover:bg-secondary/80 transition-colors cursor-pointer">
+                  <h4 className="font-medium text-foreground mb-2">Sample Checklist 1</h4>
+                  <p className="text-sm text-muted-foreground">Created 2 hours ago • 5 items</p>
+                </div>
+                <div className="rounded-lg border border-border bg-secondary p-4 hover:bg-secondary/80 transition-colors cursor-pointer">
+                  <h4 className="font-medium text-foreground mb-2">Sample Checklist 2</h4>
+                  <p className="text-sm text-muted-foreground">Created yesterday • 8 items</p>
+                </div>
+              </div>
+            </div>
+
             {/* Image Gallery */}
             {images.length > 0 && (
               <div className="w-full">
