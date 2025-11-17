@@ -431,6 +431,16 @@ const Landing = () => {
                           Billed annually
                         </div>
                       )}
+                      {plan.period && (
+                        <>
+                          <div className="text-sm text-foreground mt-2">
+                            Includes 3 Users
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            $19/each additional user per month
+                          </div>
+                        </>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent>
