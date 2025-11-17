@@ -217,7 +217,7 @@ const Landing = () => {
                   Get Started Free <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="gap-2">
+              <Button size="lg" variant="secondary" className="gap-2">
                 <Play className="h-4 w-4" /> Watch Demo
               </Button>
             </div>
