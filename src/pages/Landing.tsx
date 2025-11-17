@@ -113,7 +113,7 @@ const Landing = () => {
         "Priority support",
         "Custom templates",
       ],
-      cta: "Start Pro Trial",
+      cta: "Start Pro Plan Today",
       popular: true,
       savings: "20",
     },
