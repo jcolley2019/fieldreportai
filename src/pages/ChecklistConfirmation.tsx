@@ -89,7 +89,7 @@ const ChecklistConfirmation = () => {
       {/* Cloud Storage Options */}
       <div className="px-4 pt-8">
         <h3 className="mb-4 text-base font-medium text-muted-foreground">
-          Also send to
+          Save as:
         </h3>
         <div className="grid grid-cols-3 gap-4">
           {cloudServices.map((service) => (
