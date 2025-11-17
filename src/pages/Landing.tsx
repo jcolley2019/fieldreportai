@@ -471,10 +471,10 @@ const Landing = () => {
           <div className="max-w-4xl mx-auto overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-4 px-4">Feature</th>
-                  <th className="text-center py-4 px-4">Field Report AI</th>
-                  <th className="text-center py-4 px-4">Traditional Methods</th>
+                <tr className="border-b-2 border-primary/50">
+                  <th className="text-left py-4 px-4 text-foreground font-bold text-base">Feature</th>
+                  <th className="text-center py-4 px-4 text-foreground font-bold text-base">Field Report AI</th>
+                  <th className="text-center py-4 px-4 text-foreground font-bold text-base">Traditional Methods</th>
                 </tr>
               </thead>
               <tbody>
@@ -486,10 +486,10 @@ const Landing = () => {
                   { feature: "Team Collaboration", us: "Real-time", them: "Email chains" },
                   { feature: "Mobile-First", us: "✓", them: "Limited" },
                 ].map((row, index) => (
-                  <tr key={index} className="border-b border-border">
-                    <td className="py-4 px-4 font-medium">{row.feature}</td>
-                    <td className="py-4 px-4 text-center text-primary font-semibold">{row.us}</td>
-                    <td className="py-4 px-4 text-center text-muted-foreground">{row.them}</td>
+                  <tr key={index} className="border-b border-border/50">
+                    <td className="py-4 px-4 font-semibold text-foreground">{row.feature}</td>
+                    <td className="py-4 px-4 text-center text-primary font-bold text-lg">{row.us}</td>
+                    <td className="py-4 px-4 text-center text-foreground/70 font-medium">{row.them}</td>
                   </tr>
                 ))}
               </tbody>
