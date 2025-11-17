@@ -123,8 +123,8 @@ const Checklist = () => {
           {/* Upload/Camera Section */}
           <div className="flex flex-col items-center gap-4">
             {/* Instructions */}
-            <div className="w-full text-center">
-              <p className="text-sm text-muted-foreground">
+            <div className="w-full rounded-xl border-2 border-primary/30 bg-primary/10 p-6">
+              <p className="text-base text-foreground font-medium leading-relaxed">
                 To generate a Checklist press the Record Button and tell me what is on the checklist. Press the Record Button again to stop recording. Press it again to add more items to the Checklist.
               </p>
             </div>
