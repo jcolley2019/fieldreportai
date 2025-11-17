@@ -122,34 +122,6 @@ const Checklist = () => {
         <div className="flex flex-col gap-y-6">
           {/* Upload/Camera Section */}
           <div className="flex flex-col items-center gap-4">
-            <button
-              onClick={() => setShowCameraDialog(true)}
-              className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-colors hover:bg-primary/30"
-            >
-              <Camera className="h-10 w-10" />
-              <p className="text-sm font-medium">
-                Tap to Take Photos/Video or to upload from gallery
-              </p>
-            </button>
-            
-            {/* Hidden file inputs */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(e) => handleImageUpload(e.target.files)}
-            />
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => handleImageUpload(e.target.files)}
-            />
-
             {/* Voice Recording Button */}
             <div className="flex flex-col items-center justify-center gap-4 w-full">
               <button
