@@ -66,6 +66,23 @@ const Landing = () => {
 
   const pricingPlans = [
     {
+      name: "Basic",
+      monthlyPrice: "$0",
+      annualPrice: "$0",
+      period: "/month",
+      description: "Perfect for getting started",
+      features: [
+        "6 projects",
+        "Limited reports & checklists",
+        "Basic media capture",
+        "Voice transcription",
+        "PDF export",
+        "Email support",
+      ],
+      cta: "Get Started Free",
+      popular: false,
+    },
+    {
       name: "Free 14-day Trial",
       monthlyPrice: "$0",
       annualPrice: "$0",
@@ -367,7 +384,7 @@ const Landing = () => {
               </Button>
             </div>
           </div>
-          <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {pricingPlans.map((plan, index) => {
               const displayPrice = billingPeriod === "monthly" ? plan.monthlyPrice : plan.annualPrice;
               return (
