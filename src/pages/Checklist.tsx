@@ -200,7 +200,7 @@ const Checklist = () => {
           onClick={generateSummary}
           className="w-full rounded-xl bg-primary px-4 py-6 text-base font-semibold text-white hover:bg-primary/90"
         >
-          Generate Summary
+          Generate Checklist
         </Button>
       </div>
 
