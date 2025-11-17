@@ -96,7 +96,7 @@ const Landing = () => {
         "Priority support",
         "Custom templates",
       ],
-      cta: "Start Free Trial",
+      cta: "Start Pro Plan 14-day Trial",
       popular: false,
     },
     {
