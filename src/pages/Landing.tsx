@@ -274,7 +274,7 @@ const Landing = () => {
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {steps.map((step, index) => (
               <div key={index} className="text-center">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 text-primary mb-4">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary text-primary-foreground mb-4">
                   {step.icon}
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-white">{step.title}</h3>
