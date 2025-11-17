@@ -413,6 +413,7 @@ const Landing = () => {
                     </div>
                   </CardHeader>
                   <CardContent>
+                    <h3 className="font-semibold text-sm mb-3">Key Features</h3>
                     <ul className="space-y-3 mb-6">
                       {plan.features.map((feature, i) => (
                         <li key={i} className="flex items-center gap-2">
