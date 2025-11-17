@@ -55,6 +55,15 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 6% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 199 91% 50%;
+
+    /* Gradient colors */
+    --gradient-start: 199 91% 50%;
+    --gradient-mid: 220 80% 60%;
+    --gradient-end: 240 70% 65%;
+    
+    /* Success color */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
   }
 
   .dark {
@@ -94,6 +103,15 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 200 20% 25%;
     --sidebar-ring: 199 91% 50%;
+
+    /* Gradient colors */
+    --gradient-start: 199 91% 50%;
+    --gradient-mid: 220 80% 60%;
+    --gradient-end: 240 70% 65%;
+    
+    /* Success color */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
   }
 }
 
