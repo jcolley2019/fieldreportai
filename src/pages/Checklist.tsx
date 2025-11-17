@@ -78,7 +78,7 @@ const Checklist = () => {
   };
 
   const generateSummary = () => {
-    if (!description && images.filter(img => !img.deleted).length === 0) {
+    if (images.filter(img => !img.deleted).length === 0) {
       toast.error("Please add some content first");
       return;
     }
@@ -120,20 +120,6 @@ const Checklist = () => {
         </div>
 
         <div className="flex flex-col gap-y-6">
-          {/* Description Textarea */}
-          <div className="relative">
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the progress, issues, or observations..."
-              className="min-h-[200px] resize-none rounded-xl border-none bg-secondary text-base focus-visible:ring-2 focus-visible:ring-primary"
-              maxLength={1000}
-            />
-            <div className="absolute bottom-2 right-3 text-xs text-muted-foreground">
-              {description.length} / 1000
-            </div>
-          </div>
-
           {/* Upload/Camera Section */}
           <div className="flex flex-col items-center gap-4">
             <button
@@ -222,7 +208,7 @@ const Checklist = () => {
             )}
 
             {/* Discard All Button */}
-            {(images.length > 0 || description) && (
+            {images.length > 0 && (
               <div className="w-full text-center mt-2">
                 <button
                   onClick={discardAll}
