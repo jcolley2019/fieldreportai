@@ -22,6 +22,10 @@ const ChecklistConfirmation = () => {
     navigate("/checklist");
   };
 
+  const handlePrintChecklist = () => {
+    window.print();
+  };
+
   const handleCreateNew = () => {
     navigate("/checklist");
   };
@@ -66,6 +70,12 @@ const ChecklistConfirmation = () => {
           className="h-14 w-full bg-primary text-base font-bold text-primary-foreground hover:bg-primary/90"
         >
           View Checklist
+        </Button>
+        <Button
+          onClick={handlePrintChecklist}
+          className="h-14 w-full bg-primary text-base font-bold text-primary-foreground hover:bg-primary/90"
+        >
+          Print Checklist
         </Button>
         <Button
           onClick={handleCreateNew}
