@@ -237,7 +237,7 @@ const Landing = () => {
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Field Reporting Is Broken</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Field Reporting Is Broken</h2>
             <p className="text-muted-foreground">Traditional methods waste time and create inefficiencies</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
@@ -261,7 +261,7 @@ const Landing = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Field Reporting Made Simple</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Field Reporting Made Simple</h2>
             <p className="text-muted-foreground">Three steps to professional documentation</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -270,7 +270,7 @@ const Landing = () => {
                 <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 text-primary mb-4">
                   {step.icon}
                 </div>
-                <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
+                <h3 className="text-xl font-semibold mb-2 text-white">{step.title}</h3>
                 <p className="text-muted-foreground">{step.description}</p>
               </div>
             ))}
@@ -282,7 +282,7 @@ const Landing = () => {
       <section id="features" className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything You Need to Document Your Job Site</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Everything You Need to Document Your Job Site</h2>
             <p className="text-muted-foreground">Powerful features designed for field professionals</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
@@ -307,7 +307,7 @@ const Landing = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Trusted by Construction Teams</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Trusted by Construction Teams</h2>
             <p className="text-muted-foreground">See what professionals are saying</p>
           </div>
           <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
@@ -336,7 +336,7 @@ const Landing = () => {
       <section id="pricing" className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Simple, Transparent Pricing</h2>
             <p className="text-muted-foreground">Choose the plan that fits your needs</p>
           </div>
           <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
@@ -380,7 +380,7 @@ const Landing = () => {
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose Field Report AI?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Why Choose Field Report AI?</h2>
           </div>
           <div className="max-w-4xl mx-auto overflow-x-auto">
             <table className="w-full">
@@ -416,7 +416,7 @@ const Landing = () => {
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Integrates With Your Tools</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Integrates With Your Tools</h2>
             <p className="text-muted-foreground">Connect with the platforms you already use</p>
           </div>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-8 max-w-4xl mx-auto">
@@ -437,7 +437,7 @@ const Landing = () => {
             <Card>
               <CardHeader className="text-center">
                 <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
-                <CardTitle className="text-2xl">Enterprise-Grade Security & Privacy</CardTitle>
+                <CardTitle className="text-2xl text-white">Enterprise-Grade Security & Privacy</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-3 gap-6 text-center">
@@ -464,7 +464,7 @@ const Landing = () => {
       <section id="faq" className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Frequently Asked Questions</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Frequently Asked Questions</h2>
           </div>
           <div className="max-w-3xl mx-auto">
             <Accordion type="single" collapsible>
@@ -483,7 +483,7 @@ const Landing = () => {
       <section className="py-20 bg-gradient-to-b from-background to-muted/20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">Ready to Build Smarter?</h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white">Ready to Build Smarter?</h2>
             <p className="text-xl text-muted-foreground mb-8">
               Join thousands of construction professionals using Field Report AI
             </p>
@@ -513,7 +513,7 @@ const Landing = () => {
               </p>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Product</h3>
+              <h3 className="font-semibold mb-4 text-white">Product</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="#features" className="hover:text-foreground">Features</a></li>
                 <li><a href="#pricing" className="hover:text-foreground">Pricing</a></li>
@@ -521,7 +521,7 @@ const Landing = () => {
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Company</h3>
+              <h3 className="font-semibold mb-4 text-white">Company</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="#" className="hover:text-foreground">About</a></li>
                 <li><a href="#" className="hover:text-foreground">Contact</a></li>
@@ -529,7 +529,7 @@ const Landing = () => {
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Legal</h3>
+              <h3 className="font-semibold mb-4 text-white">Legal</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="#" className="hover:text-foreground">Privacy Policy</a></li>
                 <li><a href="#" className="hover:text-foreground">Terms of Service</a></li>
