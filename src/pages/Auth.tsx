@@ -124,10 +124,11 @@ const Auth = () => {
 
   const handleGoogleLogin = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/dashboard`,
+          skipBrowserRedirect: true,
         },
       });
 
@@ -137,6 +138,29 @@ const Auth = () => {
           description: error.message,
           variant: "destructive",
         });
+        return;
+      }
+
+      const url = data?.url;
+      if (!url) {
+        toast({
+          title: "Error",
+          description: "Unable to start Google sign-in. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Break out of the editor iframe to avoid accounts.google.com iframe refusal
+      try {
+        if (window.top) {
+          (window.top as Window).location.href = url;
+        } else {
+          window.location.href = url;
+        }
+      } catch {
+        // Fallback if cross-origin prevents accessing window.top
+        window.location.href = url;
       }
     } catch (error) {
       toast({
