@@ -28,7 +28,7 @@ const Auth = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/");
+        navigate("/dashboard");
       }
     };
     checkUser();
@@ -70,7 +70,7 @@ const Auth = () => {
             title: "Success",
             description: "Logged in successfully!",
           });
-          navigate("/");
+          navigate("/dashboard");
         }
       } else {
         const { error } = await supabase.auth.signUp({
@@ -127,7 +127,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/dashboard`,
         },
       });
 
