@@ -83,7 +83,7 @@ const Landing = () => {
       popular: false,
     },
     {
-      name: "Free 14-day Trial",
+      name: "Pro Plan 14-day Trial",
       monthlyPrice: "$0",
       annualPrice: "$0",
       period: "",
