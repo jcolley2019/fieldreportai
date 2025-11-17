@@ -181,7 +181,7 @@ const Landing = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileText className="h-6 w-6 text-primary" />
-            <span className="font-bold text-xl">Field Report AI</span>
+            <span className="font-bold text-xl text-white">Field Report AI</span>
           </div>
           <nav className="hidden md:flex items-center gap-6">
             <a href="#features" className="text-sm text-foreground/80 hover:text-foreground">Features</a>
