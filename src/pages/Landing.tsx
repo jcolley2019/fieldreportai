@@ -553,11 +553,11 @@ const Landing = () => {
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Frequently Asked Questions</h2>
           </div>
           <div className="max-w-3xl mx-auto">
-            <Accordion type="single" collapsible>
+            <Accordion type="single" collapsible className="space-y-4">
               {faqs.map((faq, index) => (
-                <AccordionItem key={index} value={`item-${index}`}>
-                  <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
-                  <AccordionContent>{faq.answer}</AccordionContent>
+                <AccordionItem key={index} value={`item-${index}`} className="border-2 border-border/80 rounded-lg px-6 bg-card">
+                  <AccordionTrigger className="text-left font-bold text-base text-foreground hover:text-primary">{faq.question}</AccordionTrigger>
+                  <AccordionContent className="text-foreground/90 font-medium text-base leading-relaxed">{faq.answer}</AccordionContent>
                 </AccordionItem>
               ))}
             </Accordion>
