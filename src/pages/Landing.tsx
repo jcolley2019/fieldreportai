@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -67,7 +67,8 @@ const Landing = () => {
   const pricingPlans = [
     {
       name: "Free",
-      price: "$0",
+      monthlyPrice: "$0",
+      annualPrice: "$0",
       period: "/month",
       description: "Perfect for trying out Field Report AI",
       features: [
@@ -82,7 +83,8 @@ const Landing = () => {
     },
     {
       name: "Pro",
-      price: "$49",
+      monthlyPrice: "$49",
+      annualPrice: "$39",
       period: "/month",
       description: "For active field professionals",
       features: [
@@ -95,10 +97,12 @@ const Landing = () => {
       ],
       cta: "Start Pro Trial",
       popular: true,
+      savings: "20",
     },
     {
       name: "Enterprise",
-      price: "Custom",
+      monthlyPrice: "Custom",
+      annualPrice: "Custom",
       period: "",
       description: "For large teams and organizations",
       features: [
@@ -113,6 +117,8 @@ const Landing = () => {
       popular: false,
     },
   ];
+
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
 
   const testimonials = [
     {
@@ -335,43 +341,72 @@ const Landing = () => {
       {/* Pricing */}
       <section id="pricing" className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center mb-16">
+          <div className="max-w-4xl mx-auto text-center mb-8">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Simple, Transparent Pricing</h2>
-            <p className="text-muted-foreground">Choose the plan that fits your needs</p>
+            <p className="text-muted-foreground mb-8">Choose the plan that fits your needs</p>
+            
+            {/* Billing Period Toggle */}
+            <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-lg">
+              <Button
+                variant={billingPeriod === "monthly" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setBillingPeriod("monthly")}
+                className="relative"
+              >
+                Monthly
+              </Button>
+              <Button
+                variant={billingPeriod === "annual" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setBillingPeriod("annual")}
+                className="relative"
+              >
+                Annual
+                <Badge className="ml-2 bg-primary text-primary-foreground">Save 20%</Badge>
+              </Button>
+            </div>
           </div>
           <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {pricingPlans.map((plan, index) => (
-              <Card key={index} className={plan.popular ? "border-primary shadow-lg" : ""}>
-                {plan.popular && (
-                  <div className="bg-primary text-primary-foreground text-center py-2 text-sm font-semibold">
-                    Most Popular
-                  </div>
-                )}
-                <CardHeader>
-                  <CardTitle>{plan.name}</CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    <span className="text-muted-foreground">{plan.period}</span>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3 mb-6">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center gap-2">
-                        <Check className="h-4 w-4 text-primary" />
-                        <span className="text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link to="/auth">
-                    <Button className="w-full" variant={plan.popular ? "default" : "outline"}>
-                      {plan.cta}
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
+            {pricingPlans.map((plan, index) => {
+              const displayPrice = billingPeriod === "monthly" ? plan.monthlyPrice : plan.annualPrice;
+              return (
+                <Card key={index} className={plan.popular ? "border-primary shadow-lg" : ""}>
+                  {plan.popular && (
+                    <div className="bg-primary text-primary-foreground text-center py-2 text-sm font-semibold">
+                      Most Popular
+                    </div>
+                  )}
+                  <CardHeader>
+                    <CardTitle>{plan.name}</CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                    <div className="mt-4">
+                      <span className="text-4xl font-bold">{displayPrice}</span>
+                      <span className="text-muted-foreground">{plan.period}</span>
+                      {billingPeriod === "annual" && plan.period && (
+                        <div className="text-sm text-muted-foreground mt-1">
+                          Billed annually
+                        </div>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3 mb-6">
+                      {plan.features.map((feature, i) => (
+                        <li key={i} className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-primary" />
+                          <span className="text-sm">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link to="/auth">
+                      <Button className="w-full" variant={plan.popular ? "default" : "outline"}>
+                        {plan.cta}
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </section>
