@@ -190,7 +190,7 @@ const Auth = () => {
           </div>
 
           {/* Headline */}
-          <h1 className="pb-2 text-center text-[32px] font-bold leading-tight tracking-tight text-primary">
+          <h1 className="pb-2 text-center text-[32px] font-bold leading-tight tracking-tight text-foreground">
             {isLogin ? "Welcome Back" : "Create Account"}
           </h1>
           <p className="pb-8 text-center text-sm text-muted-foreground">
