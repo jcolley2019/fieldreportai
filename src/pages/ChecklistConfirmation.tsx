@@ -1,10 +1,26 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Check, Share2, Download } from "lucide-react";
+import { Check, Share2, Download, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+
+interface ChecklistItem {
+  text: string;
+  priority: "high" | "medium" | "low";
+  category: string;
+  completed: boolean;
+}
+
+interface ChecklistData {
+  title: string;
+  items: ChecklistItem[];
+}
+
 
 const ChecklistConfirmation = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const checklist = location.state?.checklist as ChecklistData | undefined;
 
   const cloudServices = [
     { id: "pdf", name: "PDF", icon: "📄" },
@@ -12,11 +28,18 @@ const ChecklistConfirmation = () => {
     { id: "copylink", name: "Copy Link", icon: "🔗" },
   ];
 
-  const checklistHistory = [
-    { id: "1", title: "Safety Inspection Checklist", date: "Oct 26, 2023" },
-    { id: "2", title: "Equipment Maintenance", date: "Oct 22, 2023" },
-    { id: "3", title: "Site Walkthrough Items", date: "Oct 19, 2023" },
-  ];
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "high":
+        return "destructive";
+      case "medium":
+        return "default";
+      case "low":
+        return "secondary";
+      default:
+        return "default";
+    }
+  };
 
   const handleViewChecklist = () => {
     navigate("/checklist");
@@ -32,14 +55,6 @@ const ChecklistConfirmation = () => {
 
   const handleCloudShare = (service: string) => {
     toast.success(`Sending to ${service}...`);
-  };
-
-  const handleShare = (title: string) => {
-    toast.success(`Sharing ${title}...`);
-  };
-
-  const handleDownload = (title: string) => {
-    toast.success(`Downloading ${title}...`);
   };
 
   return (
@@ -58,10 +73,43 @@ const ChecklistConfirmation = () => {
         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/20">
           <Check className="h-12 w-12 text-primary" strokeWidth={3} />
         </div>
-        <h2 className="text-center text-[28px] font-bold leading-tight tracking-tight text-foreground">
+        <h2 className="text-center text-[28px] font-bold leading-tight tracking-tight text-foreground mb-2">
           Checklist created successfully!
         </h2>
+        {checklist && (
+          <p className="text-center text-muted-foreground">
+            {checklist.items.length} tasks generated with AI
+          </p>
+        )}
       </div>
+
+      {/* AI Generated Checklist Display */}
+      {checklist && (
+        <div className="px-4 py-6 max-h-96 overflow-y-auto">
+          <h3 className="text-xl font-bold text-white mb-4">{checklist.title}</h3>
+          <div className="space-y-3">
+            {checklist.items.map((item, index) => (
+              <div 
+                key={index}
+                className="flex items-start gap-3 p-4 rounded-lg bg-card border border-border hover:bg-secondary/50 transition-colors"
+              >
+                <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-foreground font-medium mb-2">{item.text}</p>
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge variant={getPriorityColor(item.priority)} className="text-xs">
+                      {item.priority}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {item.category}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="space-y-3 px-4 pb-2 pt-10">
@@ -109,43 +157,6 @@ const ChecklistConfirmation = () => {
         </div>
       </div>
 
-      {/* History Section */}
-      <div className="px-4 pt-8">
-        <h3 className="mb-4 text-lg font-bold text-muted-foreground">
-          History
-        </h3>
-        <div className="space-y-3">
-          {checklistHistory.map((checklist) => (
-            <div
-              key={checklist.id}
-              className="flex items-center justify-between rounded-xl bg-card p-4"
-            >
-              <div className="flex-1">
-                <h4 className="text-base font-semibold text-foreground">
-                  {checklist.title}
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  Created: {checklist.date}
-                </p>
-              </div>
-              <div className="flex gap-4">
-                <button
-                  onClick={() => handleShare(checklist.title)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <Share2 className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => handleDownload(checklist.title)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <Download className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };

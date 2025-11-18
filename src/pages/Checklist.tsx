@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Camera, Mic, Trash2, Undo2, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ImageItem {
   id: string;
@@ -77,16 +78,70 @@ const Checklist = () => {
     }
   };
 
-  const generateSummary = () => {
-    if (images.filter(img => !img.deleted).length === 0) {
+  const generateSummary = async () => {
+    if (images.filter(img => !img.deleted).length === 0 && !description.trim()) {
       toast.error("Please add some content first");
       return;
     }
-    toast.success("Generating checklist...");
-    // Navigate to checklist confirmation with the captured data
-    setTimeout(() => {
-      navigate("/checklist-confirmation");
-    }, 1000);
+
+    setIsRecording(true); // Use as loading state
+    toast.success("Generating checklist with AI...");
+
+    try {
+      // Convert images to base64
+      const imagePromises = images
+        .filter(img => !img.deleted)
+        .map(async (img) => {
+          if (img.file) {
+            return new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(img.file!);
+            });
+          }
+          return img.url;
+        });
+
+      const imageData = await Promise.all(imagePromises);
+
+      // Call the edge function
+      const { data, error } = await supabase.functions.invoke('generate-checklist', {
+        body: {
+          images: imageData,
+          description: description
+        }
+      });
+
+      if (error) {
+        console.error("Error generating checklist:", error);
+        if (error.message.includes("Rate limit")) {
+          toast.error("Rate limit exceeded. Please try again later.");
+        } else if (error.message.includes("Payment required")) {
+          toast.error("AI credits depleted. Please add credits to continue.");
+        } else {
+          toast.error("Failed to generate checklist. Please try again.");
+        }
+        setIsRecording(false);
+        return;
+      }
+
+      console.log("Checklist generated:", data);
+      toast.success("Checklist generated successfully!");
+      
+      // Navigate to confirmation with the checklist data
+      navigate("/checklist-confirmation", { 
+        state: { 
+          checklist: data.checklist,
+          images: images.filter(img => !img.deleted).map(img => img.url)
+        } 
+      });
+    } catch (err) {
+      console.error("Error:", err);
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setIsRecording(false);
+    }
   };
 
   const activeImages = images.filter(img => !img.deleted);
@@ -222,9 +277,10 @@ const Checklist = () => {
       <div className="fixed bottom-0 left-0 right-0 z-10 w-full bg-background/80 p-4 backdrop-blur-lg">
         <Button
           onClick={generateSummary}
-          className="w-full rounded-xl bg-primary px-4 py-6 text-base font-semibold text-white hover:bg-primary/90"
+          disabled={isRecording}
+          className="w-full rounded-xl bg-primary px-4 py-6 text-base font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
         >
-          Generate Checklist
+          {isRecording ? "Generating with AI..." : "Generate Checklist"}
         </Button>
       </div>
 
