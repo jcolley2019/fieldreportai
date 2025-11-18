@@ -306,6 +306,11 @@ const Checklist = () => {
             {/* Image Gallery */}
             {images.length > 0 && (
               <div className="w-full">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {images.filter(img => !img.deleted).length} photo{images.filter(img => !img.deleted).length !== 1 ? 's' : ''} captured
+                  </h3>
+                </div>
                 <div className="flex w-full snap-x snap-mandatory scroll-p-4 gap-3 overflow-x-auto pb-2 no-scrollbar">
                   {images.map((image) => (
                     <div
