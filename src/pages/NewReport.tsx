@@ -270,9 +270,9 @@ const NewReport = () => {
             />
 
             {/* Voice Input Instructions and Button */}
-            <div className="rounded-xl border-2 border-primary/30 bg-primary/10 p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-3 text-center">Quick Voice Input</h3>
-              <p className="text-sm text-muted-foreground mb-4 text-center leading-relaxed">
+            <div className="rounded-xl border-2 border-primary bg-primary/20 p-8 shadow-lg">
+              <h3 className="text-2xl font-bold text-foreground mb-4 text-center">Quick Voice Input</h3>
+              <p className="text-lg text-foreground font-medium mb-6 text-center leading-relaxed">
                 Tap the microphone to dictate your Project Name, Customer Name, Job Number, and Job Description. 
                 This information will be included in your Field Reports and Checklists.
               </p>
@@ -297,13 +297,13 @@ const NewReport = () => {
                   )}
                 </button>
                 {isRecording && (
-                  <p className="text-base text-destructive font-semibold animate-pulse">Recording... tap to stop</p>
+                  <p className="text-lg text-destructive font-bold animate-pulse">Recording... tap to stop</p>
                 )}
                 {isProcessing && (
-                  <p className="text-base text-primary font-semibold">Processing audio...</p>
+                  <p className="text-lg text-primary font-bold">Processing audio...</p>
                 )}
                 {!isRecording && !isProcessing && (
-                  <p className="text-base text-foreground font-semibold">Tap to fill form with voice</p>
+                  <p className="text-lg text-foreground font-bold">Tap to fill form with voice</p>
                 )}
               </div>
             </div>
