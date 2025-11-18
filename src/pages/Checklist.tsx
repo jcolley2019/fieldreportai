@@ -299,8 +299,13 @@ const Checklist = () => {
               >
                 <Mic className="h-8 w-8" />
               </button>
-              {isRecording && (
+              {isRecording ? (
                 <p className="text-sm text-muted-foreground animate-pulse">Recording... tap to stop</p>
+              ) : (
+                <div className="text-center">
+                  <p className="text-sm font-medium text-foreground mb-1">Press Record to describe checklist items</p>
+                  <p className="text-xs text-muted-foreground">Tap again to stop. You can record multiple times to add more details.</p>
+                </div>
               )}
             </div>
 
