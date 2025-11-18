@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Mic, MicOff } from "lucide-react";
+import { ArrowLeft, Mic, MicOff, Building2, Hash, User, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -189,7 +189,10 @@ const NewReport = () => {
               name="projectName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-foreground">Project Name *</FormLabel>
+                  <FormLabel className="text-foreground flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-primary" />
+                    Project Name *
+                  </FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Enter project name"
@@ -210,7 +213,10 @@ const NewReport = () => {
               name="jobNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-foreground">Job Number *</FormLabel>
+                  <FormLabel className="text-foreground flex items-center gap-2">
+                    <Hash className="h-4 w-4 text-primary" />
+                    Job Number *
+                  </FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Enter job number (e.g., JOB-2025-001)"
@@ -231,7 +237,10 @@ const NewReport = () => {
               name="customerName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-foreground">Customer Name *</FormLabel>
+                  <FormLabel className="text-foreground flex items-center gap-2">
+                    <User className="h-4 w-4 text-primary" />
+                    Customer Name *
+                  </FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Enter customer name"
@@ -252,7 +261,10 @@ const NewReport = () => {
               name="jobDescription"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-foreground">Job Description *</FormLabel>
+                  <FormLabel className="text-foreground flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-primary" />
+                    Job Description *
+                  </FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Enter job description"
