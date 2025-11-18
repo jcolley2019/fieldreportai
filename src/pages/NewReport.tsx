@@ -330,12 +330,12 @@ const NewReport = () => {
               </Button>
               <Button
                 type="button"
-                variant="outline"
+                variant="secondary"
                 onClick={() => {
                   form.reset();
                   toast.success("Form cleared");
                 }}
-                className="w-full py-6 text-base font-semibold"
+                className="w-full py-6 text-base border-2 border-primary font-bold hover:bg-primary/10"
               >
                 Clear Form
               </Button>
