@@ -20,6 +20,8 @@ const CaptureScreen = () => {
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<ImageItem[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [imageScale, setImageScale] = useState(1);
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [isRecording, setIsRecording] = useState(false);
   const [showCameraDialog, setShowCameraDialog] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -182,26 +184,79 @@ const CaptureScreen = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedImageIndex, activeImages.length]);
 
-  // Touch swipe handling
+  // Reset zoom when image changes
+  useEffect(() => {
+    setImageScale(1);
+    setImagePosition({ x: 0, y: 0 });
+  }, [selectedImageIndex]);
+
+  // Touch swipe and pinch-to-zoom handling
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+  const initialDistance = useRef(0);
+  const lastScale = useRef(1);
+  const isPinching = useRef(false);
+  const lastTouchTime = useRef(0);
+
+  const getDistance = (touch1: React.Touch, touch2: React.Touch) => {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
+    if (e.touches.length === 2) {
+      // Pinch zoom
+      isPinching.current = true;
+      initialDistance.current = getDistance(e.touches[0], e.touches[1]);
+      lastScale.current = imageScale;
+    } else if (e.touches.length === 1) {
+      // Single touch - check for double tap or swipe
+      const currentTime = Date.now();
+      const timeDiff = currentTime - lastTouchTime.current;
+      
+      if (timeDiff < 300 && timeDiff > 0) {
+        // Double tap detected - reset zoom
+        setImageScale(1);
+        setImagePosition({ x: 0, y: 0 });
+      }
+      
+      lastTouchTime.current = currentTime;
+      touchStartX.current = e.touches[0].clientX;
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX;
+    if (e.touches.length === 2 && isPinching.current) {
+      // Pinch zoom
+      e.preventDefault();
+      const currentDistance = getDistance(e.touches[0], e.touches[1]);
+      const scale = (currentDistance / initialDistance.current) * lastScale.current;
+      
+      // Limit zoom between 1x and 4x
+      const newScale = Math.min(Math.max(scale, 1), 4);
+      setImageScale(newScale);
+    } else if (e.touches.length === 1 && !isPinching.current) {
+      touchEndX.current = e.touches[0].clientX;
+    }
   };
 
-  const handleTouchEnd = () => {
-    if (touchStartX.current - touchEndX.current > 50) {
-      // Swiped left - next image
-      handleNextImage();
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (isPinching.current) {
+      isPinching.current = false;
+      return;
     }
-    if (touchEndX.current - touchStartX.current > 50) {
-      // Swiped right - previous image
-      handlePrevImage();
+
+    // Only allow swipe if not zoomed in
+    if (imageScale === 1 && e.touches.length === 0) {
+      if (touchStartX.current - touchEndX.current > 50) {
+        // Swiped left - next image
+        handleNextImage();
+      }
+      if (touchEndX.current - touchStartX.current > 50) {
+        // Swiped right - previous image
+        handlePrevImage();
+      }
     }
   };
 
@@ -399,7 +454,11 @@ const CaptureScreen = () => {
                 <img
                   src={activeImages[selectedImageIndex].url}
                   alt="Full size view"
-                  className="max-w-full max-h-[95vh] object-contain"
+                  className="max-w-full max-h-[95vh] object-contain transition-transform duration-200"
+                  style={{
+                    transform: `scale(${imageScale}) translate(${imagePosition.x}px, ${imagePosition.y}px)`,
+                    touchAction: 'none'
+                  }}
                 />
                 
                 {/* Navigation Arrows */}
@@ -421,6 +480,7 @@ const CaptureScreen = () => {
                     {/* Image Counter */}
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
                       {selectedImageIndex + 1} / {activeImages.length}
+                      {imageScale > 1 && ` • ${imageScale.toFixed(1)}x`}
                     </div>
                   </>
                 )}
