@@ -227,7 +227,7 @@ const Landing = () => {
       <header className="border-b border-border sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <img src={logo} alt="Field Report AI" className="h-16 w-16" />
+            <img src={logo} alt="Field Report AI" className="h-20 w-20" />
             <span className="font-bold text-2xl text-white">Field Report AI</span>
           </div>
           <nav className="hidden md:flex items-center gap-6">
