@@ -207,27 +207,6 @@ const NewReport = () => {
 
             <FormField
               control={form.control}
-              name="customerName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-foreground">Customer Name *</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter customer name"
-                      className="bg-background text-foreground"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription className="text-muted-foreground">
-                    Maximum 100 characters
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="jobNumber"
               render={({ field }) => (
                 <FormItem>
@@ -241,6 +220,27 @@ const NewReport = () => {
                   </FormControl>
                   <FormDescription className="text-muted-foreground">
                     Letters, numbers, hyphens, and underscores only (max 50 chars)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="customerName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-foreground">Customer Name *</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter customer name"
+                      className="bg-background text-foreground"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription className="text-muted-foreground">
+                    Maximum 100 characters
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
