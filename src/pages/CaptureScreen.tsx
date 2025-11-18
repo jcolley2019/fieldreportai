@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, Mic, Trash2, Undo2, ChevronLeft } from "lucide-react";
+import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -189,6 +189,10 @@ const CaptureScreen = () => {
         <div className="flex flex-col gap-y-6">
           {/* Description Textarea */}
           <div className="relative">
+            <label className="text-foreground font-medium flex items-center gap-2 mb-2">
+              <FileText className="h-4 w-4 text-primary" />
+              Field Notes
+            </label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
