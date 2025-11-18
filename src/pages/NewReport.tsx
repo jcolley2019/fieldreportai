@@ -320,13 +320,24 @@ const NewReport = () => {
               </div>
             </div>
 
-            {/* Continue Button */}
-            <div className="mt-8">
+            {/* Action Buttons */}
+            <div className="mt-8 flex flex-col gap-3">
               <Button
                 type="submit"
                 className="w-full bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90"
               >
                 Continue
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  form.reset();
+                  toast.success("Form cleared");
+                }}
+                className="w-full py-6 text-base font-semibold"
+              >
+                Clear Form
               </Button>
             </div>
           </form>
