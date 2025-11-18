@@ -182,36 +182,6 @@ const NewReport = () => {
       </header>
 
       <main className="flex min-h-screen flex-col px-4 pb-8 pt-4">
-        {/* Global Voice Input Button */}
-        <div className="mb-6 flex flex-col items-center justify-center gap-4">
-          <button
-            onClick={handleGlobalVoiceInput}
-            disabled={isProcessing}
-            className={`flex h-20 w-20 items-center justify-center rounded-full transition-all ${
-              isRecording 
-                ? 'bg-destructive text-white animate-pulse shadow-lg shadow-destructive/50' 
-                : isProcessing
-                ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/30'
-            }`}
-          >
-            {isRecording ? (
-              <MicOff className="h-8 w-8" />
-            ) : (
-              <Mic className="h-8 w-8" />
-            )}
-          </button>
-          {isRecording && (
-            <p className="text-sm text-muted-foreground animate-pulse">Recording... tap to stop</p>
-          )}
-          {isProcessing && (
-            <p className="text-sm text-muted-foreground">Processing audio...</p>
-          )}
-          {!isRecording && !isProcessing && (
-            <p className="text-sm text-muted-foreground">Tap to fill form with voice</p>
-          )}
-        </div>
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -298,6 +268,37 @@ const NewReport = () => {
                 </FormItem>
               )}
             />
+
+            {/* Voice Input Button - Moved below Job Description */}
+            <div className="flex flex-col items-center justify-center gap-4 py-6">
+              <button
+                type="button"
+                onClick={handleGlobalVoiceInput}
+                disabled={isProcessing}
+                className={`flex h-20 w-20 items-center justify-center rounded-full transition-all ${
+                  isRecording 
+                    ? 'bg-destructive text-white animate-pulse shadow-lg shadow-destructive/50' 
+                    : isProcessing
+                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                    : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/30'
+                }`}
+              >
+                {isRecording ? (
+                  <MicOff className="h-8 w-8" />
+                ) : (
+                  <Mic className="h-8 w-8" />
+                )}
+              </button>
+              {isRecording && (
+                <p className="text-sm text-muted-foreground animate-pulse">Recording... tap to stop</p>
+              )}
+              {isProcessing && (
+                <p className="text-sm text-muted-foreground">Processing audio...</p>
+              )}
+              {!isRecording && !isProcessing && (
+                <p className="text-sm text-muted-foreground">Tap to fill form with voice</p>
+              )}
+            </div>
 
             {/* Continue Button */}
             <div className="mt-8">
