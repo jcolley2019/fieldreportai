@@ -290,13 +290,13 @@ const NewReport = () => {
                 )}
               </button>
               {isRecording && (
-                <p className="text-sm text-muted-foreground animate-pulse">Recording... tap to stop</p>
+                <p className="text-base text-destructive font-semibold animate-pulse">Recording... tap to stop</p>
               )}
               {isProcessing && (
-                <p className="text-sm text-muted-foreground">Processing audio...</p>
+                <p className="text-base text-primary font-semibold">Processing audio...</p>
               )}
               {!isRecording && !isProcessing && (
-                <p className="text-sm text-muted-foreground">Tap to fill form with voice</p>
+                <p className="text-base text-foreground font-semibold">Tap to fill form with voice</p>
               )}
             </div>
 
