@@ -234,7 +234,7 @@ const Landing = () => {
             <a href="#pricing" className="text-sm text-foreground/80 hover:text-foreground">Pricing</a>
             <a href="#faq" className="text-sm text-foreground/80 hover:text-foreground">FAQ</a>
             <Link to="/auth">
-              <Button variant="ghost" size="sm">Sign In</Button>
+              <Button variant="secondary" size="sm" className="border-2 border-primary font-bold">Sign In</Button>
             </Link>
             <Link to="/auth">
               <Button size="sm">Get Started Free</Button>
