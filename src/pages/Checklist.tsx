@@ -246,6 +246,8 @@ const Checklist = () => {
   const initialDistance = useRef(0);
   const lastScale = useRef(1);
   const isPinching = useRef(false);
+  const isPanning = useRef(false);
+  const panStart = useRef({ x: 0, y: 0 });
   const lastTouchTime = useRef(0);
 
   const getDistance = (touch1: React.Touch, touch2: React.Touch) => {
@@ -261,7 +263,7 @@ const Checklist = () => {
       initialDistance.current = getDistance(e.touches[0], e.touches[1]);
       lastScale.current = imageScale;
     } else if (e.touches.length === 1) {
-      // Single touch - check for double tap or swipe
+      // Single touch - check for double tap or pan
       const currentTime = Date.now();
       const timeDiff = currentTime - lastTouchTime.current;
       
@@ -269,6 +271,13 @@ const Checklist = () => {
         // Double tap detected - reset zoom
         setImageScale(1);
         setImagePosition({ x: 0, y: 0 });
+      } else if (imageScale > 1) {
+        // Start panning when zoomed in
+        isPanning.current = true;
+        panStart.current = {
+          x: e.touches[0].clientX - imagePosition.x,
+          y: e.touches[0].clientY - imagePosition.y
+        };
       }
       
       lastTouchTime.current = currentTime;
@@ -286,14 +295,28 @@ const Checklist = () => {
       // Limit zoom between 1x and 4x
       const newScale = Math.min(Math.max(scale, 1), 4);
       setImageScale(newScale);
-    } else if (e.touches.length === 1 && !isPinching.current) {
-      touchEndX.current = e.touches[0].clientX;
+    } else if (e.touches.length === 1) {
+      if (isPanning.current && imageScale > 1) {
+        // Pan the image when zoomed in
+        e.preventDefault();
+        const newX = e.touches[0].clientX - panStart.current.x;
+        const newY = e.touches[0].clientY - panStart.current.y;
+        setImagePosition({ x: newX, y: newY });
+      } else if (!isPinching.current) {
+        // Track for swipe
+        touchEndX.current = e.touches[0].clientX;
+      }
     }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (isPinching.current) {
       isPinching.current = false;
+      return;
+    }
+
+    if (isPanning.current) {
+      isPanning.current = false;
       return;
     }
 
