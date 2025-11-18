@@ -245,32 +245,53 @@ const Landing = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 md:py-32 bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto px-4">
+      <section className="py-20 md:py-32 bg-gradient-to-b from-background via-background to-primary/5 relative overflow-hidden">
+        {/* Decorative Background Elements */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-20 left-10 w-64 h-64 bg-primary rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <Badge variant="secondary">Built for Construction Teams</Badge>
-              <Badge variant="secondary">AI-Powered Documentation</Badge>
+            {/* Logo Display */}
+            <div className="mb-8 flex justify-center">
+              <img src={logo} alt="Field Report AI" className="h-32 w-auto" />
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Create Field Reports 10× Faster With AI
+            
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                <Camera className="h-3 w-3 mr-1" />
+                Built for Construction Teams
+              </Badge>
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                <Zap className="h-3 w-3 mr-1" />
+                AI-Powered Documentation
+              </Badge>
+            </div>
+            
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-white">
+              Create Field Reports <span className="text-primary">10× Faster</span> With AI
             </h1>
+            
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
               Capture photos, videos, and voice notes—Field Report AI instantly turns them into professional reports and structured checklists.
             </p>
+            
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
               <Link to="/auth">
-                <Button size="lg" className="gap-2">
+                <Button size="lg" className="gap-2 shadow-lg shadow-primary/20">
                   Get Started Free <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Button size="lg" variant="secondary" className="gap-2 border-2 border-primary font-bold">
+              <Button size="lg" variant="secondary" className="gap-2 border-2 border-primary font-bold hover:bg-primary/10">
                 <Play className="h-4 w-4" /> Watch Demo
               </Button>
             </div>
+            
             <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto">
               {stats.map((stat, index) => (
-                <div key={index} className="text-center">
+                <div key={index} className="text-center p-4 rounded-lg bg-primary/5 border border-primary/10">
                   <div className="text-3xl font-bold text-primary mb-1">{stat.value}</div>
                   <div className="text-sm text-muted-foreground">{stat.label}</div>
                 </div>
@@ -313,12 +334,15 @@ const Landing = () => {
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {steps.map((step, index) => (
-              <div key={index} className="text-center">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary text-primary-foreground mb-4">
+              <div key={index} className="text-center group">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/20 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 group-hover:scale-110">
                   {step.icon}
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-white">{step.title}</h3>
                 <p className="text-muted-foreground">{step.description}</p>
+                {index < steps.length - 1 && (
+                  <ArrowRight className="h-6 w-6 text-primary/40 mx-auto mt-6 hidden md:block" />
+                )}
               </div>
             ))}
           </div>
