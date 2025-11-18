@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   ArrowLeft,
   User,
@@ -14,14 +17,163 @@ import {
   MessageSquare,
   Info,
   Shield,
+  Camera,
+  Building2,
+  Save,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+
+const profileSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  companyName: z.string().optional(),
+  email: z.string().email(),
+});
+
+type ProfileFormValues = z.infer<typeof profileSchema>;
 
 const Settings = () => {
   const navigate = useNavigate();
   const [offlineMode, setOfflineMode] = useState(true);
   const [autoRecord, setAutoRecord] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      companyName: "",
+      email: "",
+    },
+  });
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+
+      setUserId(user.id);
+      form.setValue("email", user.email || "");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (profile) {
+        form.setValue("firstName", profile.first_name || "");
+        form.setValue("lastName", profile.last_name || "");
+        form.setValue("companyName", profile.company_name || "");
+        setAvatarUrl(profile.avatar_url);
+        setCompanyLogoUrl(profile.company_logo_url);
+      }
+    } catch (error) {
+      console.error("Error loading profile:", error);
+      toast.error("Failed to load profile");
+    }
+  };
+
+  const uploadImage = async (
+    file: File,
+    bucket: string,
+    onSuccess: (url: string) => void
+  ) => {
+    if (!userId) return;
+
+    try {
+      setUploading(true);
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${userId}/${Math.random()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+      
+      onSuccess(data.publicUrl);
+      toast.success("Image uploaded successfully");
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload image");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    await uploadImage(file, "avatars", async (url) => {
+      setAvatarUrl(url);
+      await supabase
+        .from("profiles")
+        .update({ avatar_url: url })
+        .eq("id", userId);
+    });
+  };
+
+  const handleCompanyLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    await uploadImage(file, "company-logos", async (url) => {
+      setCompanyLogoUrl(url);
+      await supabase
+        .from("profiles")
+        .update({ company_logo_url: url })
+        .eq("id", userId);
+    });
+  };
+
+  const onSubmit = async (values: ProfileFormValues) => {
+    if (!userId) return;
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          first_name: values.firstName,
+          last_name: values.lastName,
+          company_name: values.companyName,
+        })
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Failed to update profile");
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -50,24 +202,164 @@ const Settings = () => {
       </header>
 
       <main className="flex-grow pb-8">
-        {/* User Profile Section */}
-        <div className="flex min-h-[72px] items-center justify-between gap-4 bg-background px-4 py-4">
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/20">
-              <User className="h-8 w-8 text-primary" />
-            </div>
-            <div className="flex flex-col justify-center">
-              <p className="text-base font-bold leading-tight text-foreground">
-                David Miller
-              </p>
-              <p className="text-sm font-normal leading-normal text-muted-foreground">
-                david.miller@fieldwork.com
-              </p>
-            </div>
-          </div>
-          <button className="text-muted-foreground">
-            <ChevronRight className="h-5 w-5" />
-          </button>
+        {/* Profile Form Section */}
+        <div className="bg-background px-4 py-6">
+          <h2 className="mb-6 text-xl font-bold text-foreground">Profile Settings</h2>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Profile Picture */}
+              <div className="space-y-2">
+                <Label className="text-foreground">Profile Picture</Label>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={avatarUrl || undefined} />
+                    <AvatarFallback className="bg-primary/20">
+                      <User className="h-10 w-10 text-primary" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <Input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      disabled={uploading}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById("avatar-upload")?.click()}
+                      disabled={uploading}
+                      className="border-primary text-foreground hover:bg-primary/10"
+                    >
+                      <Camera className="mr-2 h-4 w-4" />
+                      {uploading ? "Uploading..." : "Upload Photo"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* First Name */}
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground">First Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Enter your first name"
+                        className="bg-background text-foreground"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Last Name */}
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground">Last Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Enter your last name"
+                        className="bg-background text-foreground"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Email (Read-only) */}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground">Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        disabled
+                        className="bg-muted text-muted-foreground"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Company Name */}
+              <FormField
+                control={form.control}
+                name="companyName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-foreground">Company Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Enter your company name"
+                        className="bg-background text-foreground"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Company Logo */}
+              <div className="space-y-2">
+                <Label className="text-foreground">Company Logo</Label>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-20 w-20 rounded-lg">
+                    <AvatarImage src={companyLogoUrl || undefined} className="object-contain" />
+                    <AvatarFallback className="rounded-lg bg-primary/20">
+                      <Building2 className="h-10 w-10 text-primary" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <Input
+                      id="logo-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCompanyLogoUpload}
+                      disabled={uploading}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById("logo-upload")?.click()}
+                      disabled={uploading}
+                      className="border-primary text-foreground hover:bg-primary/10"
+                    >
+                      <Camera className="mr-2 h-4 w-4" />
+                      {uploading ? "Uploading..." : "Upload Logo"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <Button
+                type="submit"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Save Profile
+              </Button>
+            </form>
+          </Form>
         </div>
 
         {/* Cloud Connections Section */}
