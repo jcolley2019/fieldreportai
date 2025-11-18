@@ -183,30 +183,33 @@ const NewReport = () => {
 
       <main className="flex min-h-screen flex-col px-4 pb-8 pt-4">
         {/* Global Voice Input Button */}
-        <div className="mb-6 flex justify-center">
-          <Button
+        <div className="mb-6 flex flex-col items-center justify-center gap-4">
+          <button
             onClick={handleGlobalVoiceInput}
             disabled={isProcessing}
-            variant={isRecording ? "destructive" : "default"}
-            size="lg"
-            className={`gap-2 ${isRecording ? "animate-pulse" : ""}`}
+            className={`flex h-20 w-20 items-center justify-center rounded-full transition-all ${
+              isRecording 
+                ? 'bg-destructive text-white animate-pulse shadow-lg shadow-destructive/50' 
+                : isProcessing
+                ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/30'
+            }`}
           >
             {isRecording ? (
-              <>
-                <MicOff className="h-5 w-5" />
-                Stop Recording
-              </>
-            ) : isProcessing ? (
-              <>
-                Processing...
-              </>
+              <MicOff className="h-8 w-8" />
             ) : (
-              <>
-                <Mic className="h-5 w-5" />
-                Fill Form with Voice
-              </>
+              <Mic className="h-8 w-8" />
             )}
-          </Button>
+          </button>
+          {isRecording && (
+            <p className="text-sm text-muted-foreground animate-pulse">Recording... tap to stop</p>
+          )}
+          {isProcessing && (
+            <p className="text-sm text-muted-foreground">Processing audio...</p>
+          )}
+          {!isRecording && !isProcessing && (
+            <p className="text-sm text-muted-foreground">Tap to fill form with voice</p>
+          )}
         </div>
 
         <Form {...form}>
