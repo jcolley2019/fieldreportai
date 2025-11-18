@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText } from "lucide-react";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ const CaptureScreen = () => {
   const navigate = useNavigate();
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<ImageItem[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [showCameraDialog, setShowCameraDialog] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -284,7 +286,8 @@ const CaptureScreen = () => {
                           <img
                             src={image.url}
                             alt="Captured content"
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-cover cursor-pointer"
+                            onClick={() => setSelectedImage(image.url)}
                           />
                           <button
                             onClick={() => deleteImage(image.id)}
@@ -332,6 +335,21 @@ const CaptureScreen = () => {
         onCameraSelect={handleCameraSelect}
         onGallerySelect={handleGallerySelect}
       />
+
+      {/* Full-size Image Viewer */}
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden bg-black/95 border-none">
+          <div className="relative w-full h-full flex items-center justify-center">
+            {selectedImage && (
+              <img
+                src={selectedImage}
+                alt="Full size view"
+                className="max-w-full max-h-[95vh] object-contain"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
