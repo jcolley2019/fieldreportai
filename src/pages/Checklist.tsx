@@ -16,7 +16,6 @@ interface ImageItem {
 
 const Checklist = () => {
   const navigate = useNavigate();
-  const [description, setDescription] = useState("");
   const [images, setImages] = useState<ImageItem[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [showCameraDialog, setShowCameraDialog] = useState(false);
@@ -65,7 +64,6 @@ const Checklist = () => {
 
   const discardAll = () => {
     setImages([]);
-    setDescription("");
     toast.success("All content discarded");
   };
 
@@ -132,7 +130,6 @@ const Checklist = () => {
 
         if (data?.text) {
           // Append transcribed text to description
-          setDescription(prev => prev ? `${prev}\n${data.text}` : data.text);
           toast.success("Audio transcribed successfully!");
         }
       };
@@ -143,7 +140,7 @@ const Checklist = () => {
   };
 
   const generateSummary = async () => {
-    if (images.filter(img => !img.deleted).length === 0 && !description.trim()) {
+    if (images.filter(img => !img.deleted).length === 0) {
       toast.error("Please add some content first");
       return;
     }
@@ -172,8 +169,7 @@ const Checklist = () => {
       // Call the edge function
       const { data, error } = await supabase.functions.invoke('generate-checklist', {
         body: {
-          images: imageData,
-          description: description
+          images: imageData
         }
       });
 
@@ -239,24 +235,6 @@ const Checklist = () => {
         </div>
 
         <div className="flex flex-col gap-y-6">
-          {/* Description Textarea */}
-          <div className="relative">
-            <label className="text-foreground font-medium flex items-center gap-2 mb-2">
-              <FileText className="h-4 w-4 text-primary" />
-              Checklist Description
-            </label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the checklist items or provide additional context..."
-              className="min-h-[150px] resize-none rounded-xl border-none bg-secondary text-base focus-visible:ring-2 focus-visible:ring-primary"
-              maxLength={1000}
-            />
-            <div className="absolute bottom-2 right-3 text-xs text-muted-foreground">
-              {description.length} / 1000
-            </div>
-          </div>
-
           {/* Upload/Camera Section */}
           <div className="flex flex-col items-center gap-4">
             <button
