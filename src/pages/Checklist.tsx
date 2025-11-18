@@ -1,9 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText } from "lucide-react";
+import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +18,7 @@ interface ImageItem {
 const Checklist = () => {
   const navigate = useNavigate();
   const [images, setImages] = useState<ImageItem[]>([]);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [showCameraDialog, setShowCameraDialog] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -208,6 +208,30 @@ const Checklist = () => {
 
   const activeImages = images.filter(img => !img.deleted);
 
+  const handleNextImage = () => {
+    if (selectedImageIndex === null) return;
+    const nextIndex = (selectedImageIndex + 1) % activeImages.length;
+    setSelectedImageIndex(nextIndex);
+  };
+
+  const handlePrevImage = () => {
+    if (selectedImageIndex === null) return;
+    const prevIndex = (selectedImageIndex - 1 + activeImages.length) % activeImages.length;
+    setSelectedImageIndex(prevIndex);
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (selectedImageIndex === null) return;
+      if (e.key === 'ArrowRight') handleNextImage();
+      if (e.key === 'ArrowLeft') handlePrevImage();
+      if (e.key === 'Escape') setSelectedImageIndex(null);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedImageIndex, activeImages.length]);
+
   return (
     <div className="dark min-h-screen bg-background">
       {/* Header */}
@@ -314,7 +338,9 @@ const Checklist = () => {
                   </h3>
                 </div>
                 <div className="flex w-full snap-x snap-mandatory scroll-p-4 gap-3 overflow-x-auto pb-2 no-scrollbar">
-                  {images.map((image) => (
+                  {images.map((image, index) => {
+                    const activeIndex = activeImages.findIndex(img => img.id === image.id);
+                    return (
                     <div
                       key={image.id}
                       className="relative aspect-square w-20 flex-shrink-0 snap-start overflow-hidden rounded-lg bg-secondary"
@@ -338,7 +364,7 @@ const Checklist = () => {
                             src={image.url}
                             alt="Captured content"
                             className="h-full w-full object-cover cursor-pointer"
-                            onClick={() => setSelectedImage(image.url)}
+                            onClick={() => setSelectedImageIndex(activeIndex)}
                           />
                           <button
                             onClick={() => deleteImage(image.id)}
@@ -349,7 +375,7 @@ const Checklist = () => {
                         </>
                       )}
                     </div>
-                  ))}
+                  )})}
                 </div>
               </div>
             )}
@@ -389,15 +415,40 @@ const Checklist = () => {
       />
 
       {/* Full-size Image Viewer */}
-      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+      <Dialog open={selectedImageIndex !== null} onOpenChange={() => setSelectedImageIndex(null)}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden bg-black/95 border-none">
           <div className="relative w-full h-full flex items-center justify-center">
-            {selectedImage && (
-              <img
-                src={selectedImage}
-                alt="Full size view"
-                className="max-w-full max-h-[95vh] object-contain"
-              />
+            {selectedImageIndex !== null && activeImages[selectedImageIndex] && (
+              <>
+                <img
+                  src={activeImages[selectedImageIndex].url}
+                  alt="Full size view"
+                  className="max-w-full max-h-[95vh] object-contain"
+                />
+                
+                {/* Navigation Arrows */}
+                {activeImages.length > 1 && (
+                  <>
+                    <button
+                      onClick={handlePrevImage}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70 transition-all"
+                    >
+                      <ChevronLeft className="h-8 w-8" />
+                    </button>
+                    <button
+                      onClick={handleNextImage}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70 transition-all"
+                    >
+                      <ChevronRight className="h-8 w-8" />
+                    </button>
+                    
+                    {/* Image Counter */}
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
+                      {selectedImageIndex + 1} / {activeImages.length}
+                    </div>
+                  </>
+                )}
+              </>
             )}
           </div>
         </DialogContent>
