@@ -82,10 +82,10 @@ const Checklist = () => {
       toast.error("Please add some content first");
       return;
     }
-    toast.success("Generating summary...");
-    // Navigate to review summary with the captured data
+    toast.success("Generating checklist...");
+    // Navigate to checklist confirmation with the captured data
     setTimeout(() => {
-      navigate("/review-summary");
+      navigate("/checklist-confirmation");
     }, 1000);
   };
 
