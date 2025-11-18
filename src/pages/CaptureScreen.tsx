@@ -182,6 +182,29 @@ const CaptureScreen = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedImageIndex, activeImages.length]);
 
+  // Touch swipe handling
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current - touchEndX.current > 50) {
+      // Swiped left - next image
+      handleNextImage();
+    }
+    if (touchEndX.current - touchStartX.current > 50) {
+      // Swiped right - previous image
+      handlePrevImage();
+    }
+  };
+
   return (
     <div className="dark min-h-screen bg-background">
       {/* Header */}
@@ -364,7 +387,12 @@ const CaptureScreen = () => {
 
       {/* Full-size Image Viewer */}
       <Dialog open={selectedImageIndex !== null} onOpenChange={() => setSelectedImageIndex(null)}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden bg-black/95 border-none">
+        <DialogContent 
+          className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden bg-black/95 border-none"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           <div className="relative w-full h-full flex items-center justify-center">
             {selectedImageIndex !== null && activeImages[selectedImageIndex] && (
               <>
