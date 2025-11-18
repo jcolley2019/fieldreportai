@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Camera, Mic, Trash2, Undo2, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ImageItem {
   id: string;
@@ -19,6 +20,8 @@ const CaptureScreen = () => {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [showCameraDialog, setShowCameraDialog] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -66,14 +69,76 @@ const CaptureScreen = () => {
     toast.success("All content discarded");
   };
 
-  const handleVoiceRecord = () => {
-    setIsRecording(!isRecording);
+  const handleVoiceRecord = async () => {
     if (!isRecording) {
-      toast.success("Recording started");
-      // Implement actual voice recording logic
+      // Start recording
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        const chunks: Blob[] = [];
+
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            chunks.push(e.data);
+          }
+        };
+
+        recorder.onstop = async () => {
+          const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+          await transcribeAudio(audioBlob);
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        recorder.start();
+        setMediaRecorder(recorder);
+        setAudioChunks(chunks);
+        setIsRecording(true);
+        toast.success("Recording started - tap again to stop");
+      } catch (error) {
+        console.error("Error accessing microphone:", error);
+        toast.error("Could not access microphone");
+      }
     } else {
-      toast.success("Recording stopped");
-      // Process the recording
+      // Stop recording
+      if (mediaRecorder) {
+        mediaRecorder.stop();
+        setMediaRecorder(null);
+        setIsRecording(false);
+        toast.success("Processing audio...");
+      }
+    }
+  };
+
+  const transcribeAudio = async (audioBlob: Blob) => {
+    try {
+      // Convert blob to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(audioBlob);
+      
+      reader.onloadend = async () => {
+        const base64Audio = reader.result as string;
+        const base64Data = base64Audio.split(',')[1];
+
+        // Call transcribe-audio edge function
+        const { data, error } = await supabase.functions.invoke('transcribe-audio', {
+          body: { audio: base64Data }
+        });
+
+        if (error) {
+          console.error("Transcription error:", error);
+          toast.error("Failed to transcribe audio");
+          return;
+        }
+
+        if (data?.text) {
+          // Append transcribed text to description
+          setDescription(prev => prev ? `${prev}\n${data.text}` : data.text);
+          toast.success("Audio transcribed successfully!");
+        }
+      };
+    } catch (error) {
+      console.error("Error transcribing audio:", error);
+      toast.error("Failed to process audio");
     }
   };
 
@@ -170,14 +235,17 @@ const CaptureScreen = () => {
             <div className="flex flex-col items-center justify-center gap-4 w-full">
               <button
                 onClick={handleVoiceRecord}
-                className={`flex h-20 w-20 items-center justify-center rounded-full transition-colors ${
+                className={`flex h-20 w-20 items-center justify-center rounded-full transition-all ${
                   isRecording 
-                    ? 'bg-destructive text-white' 
-                    : 'bg-primary text-white hover:bg-primary/90'
+                    ? 'bg-destructive text-white animate-pulse shadow-lg shadow-destructive/50' 
+                    : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/30'
                 }`}
               >
                 <Mic className="h-8 w-8" />
               </button>
+              {isRecording && (
+                <p className="text-sm text-muted-foreground animate-pulse">Recording... tap to stop</p>
+              )}
             </div>
 
             {/* Image Gallery */}
