@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, Mic, Trash2, Undo2, ChevronLeft } from "lucide-react";
+import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import { supabase } from "@/integrations/supabase/client";
