@@ -259,13 +259,33 @@ const Checklist = () => {
 
           {/* Upload/Camera Section */}
           <div className="flex flex-col items-center gap-4">
-            {/* Instructions */}
-            <div className="w-full rounded-xl border-2 border-primary/30 bg-primary/10 p-6">
-              <h2 className="text-2xl font-semibold text-foreground text-center mb-4">Instructions</h2>
-              <p className="text-xl text-foreground font-medium leading-relaxed">
-                To generate a Checklist press the Record Button and tell me what is on the checklist. Press the Record Button again to stop recording. Press it again to add more items to the Checklist.
+            <button
+              onClick={() => setShowCameraDialog(true)}
+              className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-colors hover:bg-primary/30"
+            >
+              <Camera className="h-10 w-10" />
+              <p className="text-sm font-medium">
+                Tap to Take Photos/Video or to upload from gallery
               </p>
-            </div>
+            </button>
+            
+            {/* Hidden file inputs */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => handleImageUpload(e.target.files)}
+            />
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => handleImageUpload(e.target.files)}
+            />
 
             {/* Voice Recording Button */}
             <div className="flex flex-col items-center justify-center gap-4 w-full">
