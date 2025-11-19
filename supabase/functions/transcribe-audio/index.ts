@@ -44,6 +44,35 @@ function processBase64Chunks(base64String: string, chunkSize = 32768) {
   return result;
 }
 
+// Retry helper with exponential backoff
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  baseDelay = 1000
+): Promise<T> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      const isRateLimit = error.message?.includes('429') || error.status === 429;
+      const isLastAttempt = attempt === maxRetries - 1;
+      
+      if (!isRateLimit || isLastAttempt) {
+        throw error;
+      }
+      
+      const delay = baseDelay * Math.pow(2, attempt);
+      console.log(`Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`, {
+        timestamp: new Date().toISOString()
+      });
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw new Error('Max retries reached');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -91,25 +120,35 @@ serve(async (req) => {
 
     console.log('Sending to OpenAI Whisper API', { timestamp: new Date().toISOString() });
     
-    // Send to OpenAI
-    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-      },
-      body: formData,
+    // Send to OpenAI with retry logic
+    const result = await retryWithBackoff(async () => {
+      const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        console.error('OpenAI API error occurred', { 
+          status: response.status,
+          timestamp: new Date().toISOString() 
+        });
+        
+        // Handle specific error cases
+        if (response.status === 429) {
+          const error: any = new Error('Rate limit exceeded');
+          error.status = 429;
+          throw error;
+        }
+        
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      return await response.json();
     });
 
-    if (!response.ok) {
-      // Sanitized logging - only status code and timestamp, no error details
-      console.error('OpenAI API error occurred', { 
-        status: response.status,
-        timestamp: new Date().toISOString() 
-      });
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const result = await response.json();
     console.log('Transcription successful', { timestamp: new Date().toISOString() });
 
     return new Response(
