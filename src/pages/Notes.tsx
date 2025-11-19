@@ -136,17 +136,23 @@ const Notes = () => {
 
       {/* Fixed Bottom Actions */}
       <div className="fixed bottom-0 left-0 right-0 bg-background/95 p-4 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-lg flex-col gap-3">
-          {/* Voice Record Button */}
-          <Button
-            onClick={handleVoiceRecord}
-            variant={isRecording ? "destructive" : "outline"}
-            className={`w-full ${isRecording ? "animate-pulse" : ""}`}
-            size="lg"
-          >
-            <Mic className="mr-2 h-5 w-5" />
-            {isRecording ? "Stop Recording" : "Record with Voice"}
-          </Button>
+        <div className="mx-auto flex max-w-lg flex-col items-center gap-6">
+          {/* Voice Recording Button */}
+          <div className="flex flex-col items-center justify-center gap-4 w-full">
+            <button
+              onClick={handleVoiceRecord}
+              className={`flex h-20 w-20 items-center justify-center rounded-full transition-all ${
+                isRecording 
+                  ? 'bg-destructive text-white animate-pulse shadow-lg shadow-destructive/50' 
+                  : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/30'
+              }`}
+            >
+              <Mic className="h-8 w-8" />
+            </button>
+            {isRecording && (
+              <p className="text-sm text-muted-foreground animate-pulse">Recording... tap to stop</p>
+            )}
+          </div>
 
           {/* Save Note Button */}
           <Button
