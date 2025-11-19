@@ -88,7 +88,7 @@ const Index = () => {
           <h2 className="mb-4 text-2xl font-semibold text-foreground">Quick Add</h2>
           <div className="grid grid-cols-3 gap-4">
             <button 
-              onClick={() => toast.success("Add Note clicked")}
+              onClick={() => navigate("/notes")}
               className="flex flex-col items-center gap-3 rounded-lg bg-card p-6 transition-colors hover:bg-secondary"
             >
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">

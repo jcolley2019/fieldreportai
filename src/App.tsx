@@ -14,6 +14,7 @@ import Settings from "./pages/Settings";
 import Confirmation from "./pages/Confirmation";
 import ChecklistConfirmation from "./pages/ChecklistConfirmation";
 import Checklist from "./pages/Checklist";
+import Notes from "./pages/Notes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/confirmation" element={<Confirmation />} />
           <Route path="/checklist-confirmation" element={<ChecklistConfirmation />} />
           <Route path="/checklist" element={<Checklist />} />
+          <Route path="/notes" element={<Notes />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
