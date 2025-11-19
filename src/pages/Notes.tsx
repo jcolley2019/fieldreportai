@@ -70,7 +70,15 @@ const Notes = () => {
 
         if (error) {
           console.error("Transcription error:", error);
-          toast.error("Failed to transcribe audio");
+          
+          // Handle specific error cases
+          if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+            toast.error("Rate limit exceeded. Please try again in a moment.");
+          } else if (error.message?.includes('402') || error.message?.includes('credits')) {
+            toast.error("AI credits depleted. Please add credits to continue.");
+          } else {
+            toast.error("Failed to transcribe audio");
+          }
           return;
         }
 
