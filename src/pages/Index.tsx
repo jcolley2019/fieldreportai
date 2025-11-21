@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { User } from "@supabase/supabase-js";
-import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2 } from "lucide-react";
+import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 
 interface Project {
@@ -140,37 +140,33 @@ const Index = () => {
       </header>
 
       <main className="p-4">
-        {/* Simple Mode Section */}
+        {/* Mode Selection Section */}
         <section className="mb-8">
-          <h2 className="mb-2 text-2xl font-semibold text-foreground">Simple Mode</h2>
-          <p className="mb-4 text-sm text-muted-foreground">Create quick standalone reports without linking to a project</p>
-          <div className="grid grid-cols-3 gap-4">
+          <h2 className="mb-4 text-2xl font-semibold text-foreground">Choose Your Workflow</h2>
+          <div className="grid grid-cols-2 gap-4">
             <button 
-              onClick={() => navigate("/notes", { state: { simpleMode: true } })}
-              className="flex flex-col items-center gap-3 rounded-lg bg-card p-6 transition-colors hover:bg-secondary"
+              onClick={() => navigate("/simple-mode")}
+              className="flex flex-col items-center gap-4 rounded-lg bg-card p-8 transition-colors hover:bg-secondary"
             >
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                <FileText className="h-8 w-8 text-primary" />
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+                <Zap className="h-10 w-10 text-primary" />
               </div>
-              <span className="text-sm font-medium text-foreground">Add Note</span>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-foreground mb-1">Simple Mode</h3>
+                <p className="text-sm text-muted-foreground">Create quick standalone reports</p>
+              </div>
             </button>
             <button 
-              onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })}
-              className="flex flex-col items-center gap-3 rounded-lg bg-card p-6 transition-colors hover:bg-secondary"
+              onClick={() => {/* Projects list is shown below */}}
+              className="flex flex-col items-center gap-4 rounded-lg bg-card p-8 transition-colors hover:bg-secondary"
             >
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                <Camera className="h-8 w-8 text-primary" />
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+                <FolderOpen className="h-10 w-10 text-primary" />
               </div>
-              <span className="text-sm font-medium text-foreground">Add Photo</span>
-            </button>
-            <button 
-              onClick={() => navigate("/checklist", { state: { simpleMode: true } })}
-              className="flex flex-col items-center gap-3 rounded-lg bg-card p-6 transition-colors hover:bg-secondary"
-            >
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                <ListChecks className="h-8 w-8 text-primary" />
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-foreground mb-1">Project Mode</h3>
+                <p className="text-sm text-muted-foreground">Manage projects and customers</p>
               </div>
-              <span className="text-sm font-medium text-foreground">Checklist</span>
             </button>
           </div>
         </section>
