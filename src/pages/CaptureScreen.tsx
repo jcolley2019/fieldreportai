@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,6 +17,8 @@ interface ImageItem {
 
 const CaptureScreen = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isSimpleMode = location.state?.simpleMode || false;
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<ImageItem[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
@@ -154,7 +156,7 @@ const CaptureScreen = () => {
     toast.success("Generating summary...");
     // Navigate to review summary with the captured data
     setTimeout(() => {
-      navigate("/review-summary");
+      navigate("/review-summary", { state: { simpleMode: isSimpleMode } });
     }, 1000);
   };
 

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,6 +17,8 @@ interface ImageItem {
 
 const Checklist = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isSimpleMode = location.state?.simpleMode || false;
   const [images, setImages] = useState<ImageItem[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [imageScale, setImageScale] = useState(1);
@@ -193,13 +195,23 @@ const Checklist = () => {
       console.log("Checklist generated:", data);
       toast.success("Checklist generated successfully!");
       
-      // Navigate to confirmation with the checklist data
-      navigate("/checklist-confirmation", { 
-        state: { 
-          checklist: data.checklist,
-          images: images.filter(img => !img.deleted).map(img => img.url)
-        } 
-      });
+      // Navigate based on mode
+      if (isSimpleMode) {
+        navigate("/review-summary", { 
+          state: { 
+            simpleMode: true,
+            checklist: data.checklist,
+            images: images.filter(img => !img.deleted).map(img => img.url)
+          } 
+        });
+      } else {
+        navigate("/checklist-confirmation", { 
+          state: { 
+            checklist: data.checklist,
+            images: images.filter(img => !img.deleted).map(img => img.url)
+          } 
+        });
+      }
     } catch (err) {
       console.error("Error:", err);
       toast.error("An error occurred. Please try again.");
