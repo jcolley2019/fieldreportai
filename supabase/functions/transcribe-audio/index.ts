@@ -116,7 +116,7 @@ serve(async (req) => {
     const formData = new FormData();
     const blob = new Blob([binaryAudio], { type: 'audio/webm' });
     formData.append('file', blob, 'audio.webm');
-    formData.append('model', 'gpt-4o-mini-transcribe');
+    formData.append('model', 'whisper-1');
 
     console.log('Sending to OpenAI Whisper API', { timestamp: new Date().toISOString() });
     
