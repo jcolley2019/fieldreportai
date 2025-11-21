@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight } from "lucide-react";
+import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -333,6 +333,29 @@ const CaptureScreen = () => {
               {description.length} / 1000
             </div>
           </div>
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-2 gap-4">
+            <button 
+              onClick={() => navigate("/notes", { state: { simpleMode: isSimpleMode } })}
+              className="flex flex-col items-center gap-3 rounded-lg bg-card p-6 transition-colors hover:bg-secondary"
+            >
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                <FileText className="h-8 w-8 text-primary" />
+              </div>
+              <span className="text-sm font-medium text-foreground">Add Note</span>
+            </button>
+            <button 
+              onClick={() => navigate("/checklist", { state: { simpleMode: isSimpleMode } })}
+              className="flex flex-col items-center gap-3 rounded-lg bg-card p-6 transition-colors hover:bg-secondary"
+            >
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                <ListChecks className="h-8 w-8 text-primary" />
+              </div>
+              <span className="text-sm font-medium text-foreground">Checklist</span>
+            </button>
+          </div>
+
 
           {/* Upload/Camera Section */}
           <div className="flex flex-col items-center gap-4">
