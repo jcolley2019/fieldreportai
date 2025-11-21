@@ -25,6 +25,7 @@ const CaptureScreen = () => {
   const [imageScale, setImageScale] = useState(1);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [isRecording, setIsRecording] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [showCameraDialog, setShowCameraDialog] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
@@ -199,16 +200,53 @@ const CaptureScreen = () => {
     }
   };
 
-  const generateSummary = () => {
-    if (!description && images.filter(img => !img.deleted).length === 0) {
+  const generateSummary = async () => {
+    const activeImgs = images.filter(img => !img.deleted);
+    
+    if (!description && activeImgs.length === 0) {
       toast.error("Please add some content first");
       return;
     }
+
     toast.success("Generating summary...");
-    // Navigate to review summary with the captured data
-    setTimeout(() => {
-      navigate("/review-summary", { state: { simpleMode: isSimpleMode } });
-    }, 1000);
+    setIsGenerating(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-report-summary', {
+        body: { 
+          description: description || "",
+          imageUrls: activeImgs.map(img => img.url)
+        }
+      });
+
+      if (error) {
+        console.error("Summary generation error:", error);
+        toast.error(error.message || "Failed to generate summary");
+        setIsGenerating(false);
+        return;
+      }
+
+      if (!data?.summary) {
+        toast.error("No summary generated");
+        setIsGenerating(false);
+        return;
+      }
+
+      // Navigate with the generated summary and media
+      navigate("/review-summary", { 
+        state: { 
+          simpleMode: isSimpleMode,
+          summary: data.summary,
+          description,
+          images: activeImgs.map(img => ({ url: img.url, id: img.id }))
+        } 
+      });
+    } catch (err) {
+      console.error("Error generating summary:", err);
+      toast.error("Failed to generate summary. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const activeImages = images.filter(img => !img.deleted);
@@ -525,9 +563,10 @@ const CaptureScreen = () => {
       <div className="fixed bottom-0 left-0 right-0 z-20 w-full bg-background/80 p-4 backdrop-blur-lg">
         <Button
           onClick={generateSummary}
-          className="w-full rounded-xl bg-primary px-4 py-6 text-base font-semibold text-white hover:bg-primary/90"
+          disabled={isGenerating}
+          className="w-full rounded-xl bg-primary px-4 py-6 text-base font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
         >
-          Generate Summary
+          {isGenerating ? "Generating..." : "Generate Summary"}
         </Button>
       </div>
 
