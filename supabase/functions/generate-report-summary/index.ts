@@ -12,10 +12,10 @@ serve(async (req) => {
   }
 
   try {
-    const { description, imageUrls } = await req.json();
+    const { description, imageDataUrls } = await req.json();
     console.log("Generating report summary", { 
       descriptionLength: description?.length,
-      imageCount: imageUrls?.length,
+      imageCount: imageDataUrls?.length,
       timestamp: new Date().toISOString() 
     });
 
@@ -34,11 +34,11 @@ serve(async (req) => {
       });
     }
 
-    if (imageUrls && imageUrls.length > 0) {
-      for (const url of imageUrls) {
+    if (imageDataUrls && imageDataUrls.length > 0) {
+      for (const dataUrl of imageDataUrls) {
         content.push({
           type: "image_url",
-          image_url: { url }
+          image_url: { url: dataUrl }
         });
       }
     }

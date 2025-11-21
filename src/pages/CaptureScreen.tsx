@@ -212,10 +212,25 @@ const CaptureScreen = () => {
     setIsGenerating(true);
 
     try {
+      // Convert blob URLs to base64
+      const imageDataPromises = activeImgs.map(async (img) => {
+        if (!img.file) return null;
+        
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(img.file);
+        });
+      });
+
+      const imageDataUrls = await Promise.all(imageDataPromises);
+      const validImageDataUrls = imageDataUrls.filter(url => url !== null) as string[];
+
       const { data, error } = await supabase.functions.invoke('generate-report-summary', {
         body: { 
           description: description || "",
-          imageUrls: activeImgs.map(img => img.url)
+          imageDataUrls: validImageDataUrls
         }
       });
 
