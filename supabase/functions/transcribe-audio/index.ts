@@ -59,9 +59,9 @@ serve(async (req) => {
       timestamp: new Date().toISOString() 
     });
     
-    // Create a File object from the binary data
-    const blob = new Blob([binaryAudio], { type: 'audio/webm' });
-    const audioFile = new File([blob], 'audio.webm', { type: 'audio/webm' });
+    // Create a File object from the binary data; avoid forcing a specific MIME type
+    const blob = new Blob([binaryAudio]);
+    const audioFile = new File([blob], 'audio.m4a');
 
     console.log('Sending to OpenAI API', { timestamp: new Date().toISOString() });
     
