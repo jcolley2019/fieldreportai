@@ -20,24 +20,55 @@ const ReviewSummary = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isSimpleMode = location.state?.simpleMode || false;
+  const summaryText = location.state?.summary || "";
+  const capturedImages = location.state?.images || [];
   
-  const [sections, setSections] = useState<SummarySection[]>([
-    { id: "1", title: "Site Prep", isOpen: false },
-    {
-      id: "2",
-      title: "Foundation",
-      content:
-        "Forms for the foundation walls have been set. Pre-pour inspection scheduled for tomorrow morning. All materials are on-site and ready for the next phase.",
-      isOpen: true,
-    },
-    { id: "3", title: "Framing", isOpen: false },
-  ]);
+  // Parse the AI-generated summary into sections
+  const parseSummary = (text: string) => {
+    const sections: SummarySection[] = [];
+    
+    // Extract SUMMARY section
+    const summaryMatch = text.match(/SUMMARY:\s*([\s\S]*?)(?=KEY POINTS:|ACTION ITEMS:|$)/i);
+    if (summaryMatch) {
+      sections.push({
+        id: "summary",
+        title: "Summary",
+        content: summaryMatch[1].trim(),
+        isOpen: true
+      });
+    }
+    
+    // Extract KEY POINTS section
+    const keyPointsMatch = text.match(/KEY POINTS:\s*([\s\S]*?)(?=ACTION ITEMS:|$)/i);
+    if (keyPointsMatch) {
+      sections.push({
+        id: "keypoints",
+        title: "Key Points",
+        content: keyPointsMatch[1].trim(),
+        isOpen: true
+      });
+    }
+    
+    // Extract ACTION ITEMS section
+    const actionItemsMatch = text.match(/ACTION ITEMS:\s*([\s\S]*?)$/i);
+    if (actionItemsMatch) {
+      sections.push({
+        id: "actions",
+        title: "Action Items",
+        content: actionItemsMatch[1].trim(),
+        isOpen: true
+      });
+    }
+    
+    return sections.length > 0 ? sections : [{
+      id: "general",
+      title: "Report Summary",
+      content: text,
+      isOpen: true
+    }];
+  };
 
-  const mockMedia = [
-    { id: "1", type: "photo", title: "Concrete Pour", url: "placeholder" },
-    { id: "2", type: "video", title: "Plumbing", url: "placeholder" },
-    { id: "3", type: "photo", title: "Rebar", url: "placeholder" },
-  ];
+  const [sections, setSections] = useState<SummarySection[]>(() => parseSummary(summaryText));
 
   const toggleSection = (id: string) => {
     setSections((prev) =>
@@ -124,39 +155,37 @@ const ReviewSummary = () => {
         </div>
 
         {/* Included Media */}
-        <div className="px-4 py-6">
-          <h2 className="mb-4 text-xl font-bold text-foreground">
-            Included Media
-          </h2>
-          <div className="grid grid-cols-2 gap-4">
-            {mockMedia.map((media) => (
-              <div
-                key={media.id}
-                className="flex flex-col gap-2 rounded-lg bg-card p-3"
-              >
-                <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
-                  {media.type === "video" ? (
-                    <div className="flex h-full items-center justify-center">
-                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/20">
-                        <Play className="h-8 w-8 text-primary" fill="currentColor" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="h-full w-full bg-gradient-to-br from-muted to-secondary" />
-                  )}
+        {capturedImages.length > 0 && (
+          <div className="px-4 py-6">
+            <h2 className="mb-4 text-xl font-bold text-foreground">
+              Included Media ({capturedImages.length} {capturedImages.length === 1 ? 'photo' : 'photos'})
+            </h2>
+            <div className="grid grid-cols-2 gap-4">
+              {capturedImages.map((image: any, index: number) => (
+                <div
+                  key={image.id || index}
+                  className="flex flex-col gap-2 rounded-lg bg-card p-3"
+                >
+                  <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
+                    <img 
+                      src={image.url} 
+                      alt={`Captured photo ${index + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">
+                      Photo {index + 1}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Field photo
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">
-                    {media.title}
-                  </h3>
-                  <p className="text-xs text-muted-foreground capitalize">
-                    {media.type}
-                  </p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       {/* Bottom Actions */}
