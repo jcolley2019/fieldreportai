@@ -388,7 +388,7 @@ const CaptureScreen = () => {
             />
 
             {/* Voice Recording Button */}
-            <div className="flex flex-col items-center justify-center gap-4 w-full">
+            <div className="flex flex-col items-center justify-center gap-4 w-full relative z-10">
               <button
                 onClick={handleVoiceRecord}
                 className={`flex h-20 w-20 items-center justify-center rounded-full transition-all ${
@@ -471,7 +471,7 @@ const CaptureScreen = () => {
       </main>
 
       {/* Fixed Bottom Button */}
-      <div className="fixed bottom-0 left-0 right-0 z-10 w-full bg-background/80 p-4 backdrop-blur-lg">
+      <div className="fixed bottom-0 left-0 right-0 z-20 w-full bg-background/80 p-4 backdrop-blur-lg">
         <Button
           onClick={generateSummary}
           className="w-full rounded-xl bg-primary px-4 py-6 text-base font-semibold text-white hover:bg-primary/90"
