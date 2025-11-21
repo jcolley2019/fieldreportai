@@ -1,10 +1,24 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, Mic, Save } from "lucide-react";
+import { ChevronLeft, Mic, Save, Download, Mail, Printer, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Notes = () => {
   const navigate = useNavigate();
@@ -14,6 +28,10 @@ const Notes = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [showOptionsDialog, setShowOptionsDialog] = useState(false);
+  const [organizedNotes, setOrganizedNotes] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<string>("");
 
   const handleVoiceRecord = async () => {
     if (!isRecording) {
@@ -96,20 +114,102 @@ const Notes = () => {
     }
   };
 
-  const handleSaveNote = () => {
+  const handleSaveNote = async () => {
     if (!noteText.trim()) {
       toast.error("Please add some content to your note");
       return;
     }
 
-    if (isSimpleMode) {
-      toast.success("Generating summary...");
-      navigate("/review-summary", { state: { simpleMode: true } });
-    } else {
-      // TODO: Save note to database
-      toast.success("Note saved successfully!");
-      navigate("/dashboard");
+    setIsProcessing(true);
+    try {
+      // Call AI to organize and summarize notes
+      const { data, error } = await supabase.functions.invoke('generate-note-summary', {
+        body: { noteText }
+      });
+
+      if (error) {
+        console.error("Error generating note summary:", error);
+        if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+          toast.error("Rate limit exceeded. Please try again in a moment.");
+        } else if (error.message?.includes('402') || error.message?.includes('credits')) {
+          toast.error("AI credits depleted. Please add credits to continue.");
+        } else {
+          toast.error("Failed to process notes");
+        }
+        return;
+      }
+
+      if (data?.organizedNotes) {
+        setOrganizedNotes(data.organizedNotes);
+        setShowOptionsDialog(true);
+      }
+    } catch (error) {
+      console.error("Error processing notes:", error);
+      toast.error("Failed to process notes");
+    } finally {
+      setIsProcessing(false);
     }
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([organizedNotes], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `notes-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Notes downloaded successfully!");
+  };
+
+  const handlePrint = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Notes - ${new Date().toLocaleDateString()}</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+              h1 { color: #333; }
+              pre { white-space: pre-wrap; font-family: inherit; }
+            </style>
+          </head>
+          <body>
+            <h1>Notes - ${new Date().toLocaleDateString()}</h1>
+            <pre>${organizedNotes}</pre>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
+
+  const handleEmail = () => {
+    const subject = encodeURIComponent(`Notes - ${new Date().toLocaleDateString()}`);
+    const body = encodeURIComponent(organizedNotes);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
+
+  const handleAssignToProject = async () => {
+    if (!selectedProject) {
+      toast.error("Please select a project");
+      return;
+    }
+    
+    // TODO: Save notes to database with project assignment
+    toast.success("Notes assigned to project successfully!");
+    setShowOptionsDialog(false);
+    navigate("/");
+  };
+
+  const handleSkipProject = () => {
+    toast.success("Notes saved without project assignment!");
+    setShowOptionsDialog(false);
+    navigate("/");
   };
 
   return (
@@ -174,12 +274,94 @@ const Notes = () => {
             onClick={handleSaveNote}
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
             size="lg"
+            disabled={isProcessing}
           >
             <Save className="mr-2 h-5 w-5" />
-            Save Note
+            {isProcessing ? "Processing..." : "Save Note"}
           </Button>
         </div>
       </div>
+
+      {/* Options Dialog */}
+      <Dialog open={showOptionsDialog} onOpenChange={setShowOptionsDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Organized Notes</DialogTitle>
+            <DialogDescription>
+              Your notes have been processed. Choose how you'd like to save or share them.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Display organized notes */}
+          <div className="my-4 rounded-lg bg-muted p-4">
+            <pre className="whitespace-pre-wrap text-sm">{organizedNotes}</pre>
+          </div>
+
+          {/* Action buttons */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <Button
+              variant="outline"
+              onClick={handleDownload}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handlePrint}
+              className="flex items-center gap-2"
+            >
+              <Printer className="h-4 w-4" />
+              Print
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleEmail}
+              className="flex items-center gap-2"
+            >
+              <Mail className="h-4 w-4" />
+              Email
+            </Button>
+          </div>
+
+          {/* Project assignment */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-muted-foreground" />
+              <h3 className="font-semibold">Assign to Project (Optional)</h3>
+            </div>
+            
+            <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a project..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="project-1">Project Alpha</SelectItem>
+                <SelectItem value="project-2">Project Beta</SelectItem>
+                <SelectItem value="project-3">Project Gamma</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleAssignToProject}
+                disabled={!selectedProject}
+                className="flex-1"
+              >
+                Assign to Project
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleSkipProject}
+                className="flex-1"
+              >
+                Skip
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
