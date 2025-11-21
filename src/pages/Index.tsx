@@ -68,7 +68,7 @@ const Index = () => {
         <div className="flex gap-2">
           <Button 
             className="bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={() => navigate("/new-report")}
+            onClick={() => navigate("/new-project")}
           >
             + New Report
           </Button>

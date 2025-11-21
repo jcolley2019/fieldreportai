@@ -23,7 +23,7 @@ const Confirmation = () => {
   };
 
   const handleCreateNew = () => {
-    navigate("/new-report");
+    navigate("/new-project");
   };
 
   const handleCloudShare = (service: string) => {
