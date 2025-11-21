@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, ListChecks } from "lucide-react";
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ const CaptureScreen = () => {
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [isRecording, setIsRecording] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
   const [showCameraDialog, setShowCameraDialog] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
@@ -208,8 +210,16 @@ const CaptureScreen = () => {
       return;
     }
 
-    toast.success("Generating summary...");
     setIsGenerating(true);
+    setGenerationProgress(0);
+
+    // Simulate progress animation
+    const progressInterval = setInterval(() => {
+      setGenerationProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + Math.random() * 15;
+      });
+    }, 500);
 
     try {
       // Convert blob URLs to base64
@@ -237,30 +247,43 @@ const CaptureScreen = () => {
       if (error) {
         console.error("Summary generation error:", error);
         toast.error(error.message || "Failed to generate summary");
+        clearInterval(progressInterval);
         setIsGenerating(false);
+        setGenerationProgress(0);
         return;
       }
 
       if (!data?.summary) {
         toast.error("No summary generated");
+        clearInterval(progressInterval);
         setIsGenerating(false);
+        setGenerationProgress(0);
         return;
       }
 
-      // Navigate with the generated summary and media
-      navigate("/review-summary", { 
-        state: { 
-          simpleMode: isSimpleMode,
-          summary: data.summary,
-          description,
-          images: activeImgs.map(img => ({ url: img.url, id: img.id }))
-        } 
-      });
+      // Complete the progress
+      clearInterval(progressInterval);
+      setGenerationProgress(100);
+      
+      // Small delay to show completion
+      setTimeout(() => {
+        // Navigate with the generated summary and media
+        navigate("/review-summary", { 
+          state: { 
+            simpleMode: isSimpleMode,
+            summary: data.summary,
+            description,
+            images: activeImgs.map(img => ({ url: img.url, id: img.id }))
+          } 
+        });
+      }, 300);
     } catch (err) {
       console.error("Error generating summary:", err);
       toast.error("Failed to generate summary. Please try again.");
+      clearInterval(progressInterval);
     } finally {
       setIsGenerating(false);
+      setGenerationProgress(0);
     }
   };
 
@@ -639,6 +662,27 @@ const CaptureScreen = () => {
                 )}
               </>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Progress Dialog */}
+      <Dialog open={isGenerating} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md [&>button]:hidden">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl">Generating Summary</DialogTitle>
+            <DialogDescription className="text-center pt-2">
+              Analyzing your photos and notes with AI...
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Progress value={generationProgress} className="h-2" />
+            <p className="text-center text-sm text-muted-foreground">
+              This usually takes 10-20 seconds
+            </p>
+            <div className="flex items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
