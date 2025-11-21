@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronDown, ChevronUp, Pencil, Play } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Pencil, Play, Printer, Download, FolderPlus } from "lucide-react";
 import { toast } from "sonner";
 import {
   Collapsible,
@@ -18,6 +18,9 @@ interface SummarySection {
 
 const ReviewSummary = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isSimpleMode = location.state?.simpleMode || false;
+  
   const [sections, setSections] = useState<SummarySection[]>([
     { id: "1", title: "Site Prep", isOpen: false },
     {
@@ -50,7 +53,20 @@ const ReviewSummary = () => {
 
   const handleContinueToReport = () => {
     toast.success("Report submitted successfully!");
-    navigate("/final-report");
+    navigate("/confirmation");
+  };
+
+  const handlePrint = () => {
+    toast.success("Preparing to print...");
+  };
+
+  const handleSaveAsPDF = () => {
+    toast.success("Saving as PDF...");
+  };
+
+  const handleLinkToProject = () => {
+    toast.success("Link to project/customer");
+    // Navigate to project selection or creation
   };
 
   return (
@@ -152,12 +168,50 @@ const ReviewSummary = () => {
         >
           Regenerate Summary
         </Button>
-        <Button
-          onClick={handleContinueToReport}
-          className="w-full bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90"
-        >
-          Continue to Report
-        </Button>
+        
+        {isSimpleMode ? (
+          <>
+            <div className="grid grid-cols-3 gap-3">
+              <Button
+                onClick={handlePrint}
+                variant="outline"
+                className="flex flex-col gap-2 py-6"
+              >
+                <Printer className="h-5 w-5" />
+                <span className="text-xs">Print</span>
+              </Button>
+              <Button
+                onClick={handleSaveAsPDF}
+                variant="outline"
+                className="flex flex-col gap-2 py-6"
+              >
+                <Download className="h-5 w-5" />
+                <span className="text-xs">Save PDF</span>
+              </Button>
+              <Button
+                onClick={handleLinkToProject}
+                variant="outline"
+                className="flex flex-col gap-2 py-6"
+              >
+                <FolderPlus className="h-5 w-5" />
+                <span className="text-xs">Link</span>
+              </Button>
+            </div>
+            <Button
+              onClick={handleContinueToReport}
+              className="w-full bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              Finalize Report
+            </Button>
+          </>
+        ) : (
+          <Button
+            onClick={handleContinueToReport}
+            className="w-full bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90"
+          >
+            Continue to Report
+          </Button>
+        )}
       </div>
     </div>
   );
