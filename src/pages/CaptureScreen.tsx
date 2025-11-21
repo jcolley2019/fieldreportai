@@ -132,7 +132,8 @@ const CaptureScreen = () => {
 
         if (error) {
           console.error("Transcription error:", error);
-          toast.error("Failed to transcribe audio");
+          const message = (error as any)?.message || 'Unknown transcription error';
+          toast.error(`Transcription failed: ${message}`);
           return;
         }
 
@@ -142,9 +143,10 @@ const CaptureScreen = () => {
           toast.success("Audio transcribed successfully!");
         }
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error transcribing audio:", error);
-      toast.error("Failed to process audio");
+      const message = error?.message || 'Unknown error while processing audio';
+      toast.error(`Transcription failed: ${message}`);
     }
   };
 
