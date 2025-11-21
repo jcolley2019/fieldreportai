@@ -77,7 +77,7 @@ serve(async (req) => {
     
     const transcription = await client.audio.transcriptions.create({
       file: audioFile,
-      model: 'whisper-1',
+      model: 'gpt-4o-mini-transcribe',
     });
 
     console.log('Transcription successful', { timestamp: new Date().toISOString() });
