@@ -127,7 +127,7 @@ const Index = () => {
             className="bg-primary text-primary-foreground hover:bg-primary/90"
             onClick={() => navigate("/new-project")}
           >
-            + New Report
+            + New Project/Customer
           </Button>
           <Button
             variant="ghost"
