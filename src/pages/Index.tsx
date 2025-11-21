@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User } from "@supabase/supabase-js";
-import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter } from "lucide-react";
+import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -13,6 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Project {
   id: string;
@@ -30,6 +37,7 @@ const Index = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"recent" | "name" | "customer">("recent");
+  const [showProjectDialog, setShowProjectDialog] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -190,7 +198,7 @@ const Index = () => {
               </div>
             </button>
             <button 
-              onClick={() => navigate("/new-project")}
+              onClick={() => setShowProjectDialog(true)}
               className="flex flex-col items-center gap-4 rounded-lg bg-card p-8 transition-colors hover:bg-secondary"
             >
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
@@ -302,6 +310,83 @@ const Index = () => {
           )}
         </section>
       </main>
+
+      {/* Project Selection Dialog */}
+      <Dialog open={showProjectDialog} onOpenChange={setShowProjectDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Select a Project</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Choose an existing project or create a new one to continue
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Create New Project Button */}
+            <Button
+              onClick={() => {
+                setShowProjectDialog(false);
+                navigate("/new-project");
+              }}
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              Create New Project
+            </Button>
+
+            {/* Existing Projects */}
+            {filteredProjects.length > 0 && (
+              <>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or select existing
+                    </span>
+                  </div>
+                </div>
+
+                <div className="max-h-[300px] overflow-y-auto space-y-2">
+                  {filteredProjects.map((project) => (
+                    <button
+                      key={project.id}
+                      onClick={() => {
+                        setShowProjectDialog(false);
+                        toast.info(`Selected: ${project.project_name}`);
+                        // TODO: Navigate to project detail page
+                      }}
+                      className="w-full text-left p-4 rounded-lg bg-card hover:bg-secondary transition-colors"
+                    >
+                      <h4 className="font-semibold text-foreground mb-1">
+                        {project.project_name}
+                      </h4>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <UserIcon className="h-3 w-3" />
+                        <span className="truncate">{project.customer_name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                        <Hash className="h-3 w-3" />
+                        <span>{project.job_number}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {projects.length === 0 && (
+              <div className="text-center py-8">
+                <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  No projects yet. Create your first project to get started!
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
