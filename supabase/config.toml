@@ -3,6 +3,9 @@ project_id = "kzlmfsvdakgvotuxxcgl"
 [functions.extract-report-fields]
 verify_jwt = true
 
+[functions.generate-note-summary]
+verify_jwt = true
+
 [functions.test-openai]
 verify_jwt = true
 
