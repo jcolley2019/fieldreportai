@@ -2,9 +2,17 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { User } from "@supabase/supabase-js";
-import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen } from "lucide-react";
+import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Project {
   id: string;
@@ -20,6 +28,8 @@ const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"recent" | "name" | "customer">("recent");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -82,6 +92,29 @@ const Index = () => {
       toast.error('Failed to load projects');
     }
   };
+
+  // Filter and sort projects
+  const filteredProjects = projects
+    .filter((project) => {
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        project.project_name.toLowerCase().includes(searchLower) ||
+        project.customer_name.toLowerCase().includes(searchLower) ||
+        project.job_number.toLowerCase().includes(searchLower) ||
+        project.job_description.toLowerCase().includes(searchLower)
+      );
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.project_name.localeCompare(b.project_name);
+        case "customer":
+          return a.customer_name.localeCompare(b.customer_name);
+        case "recent":
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
 
   const handleDeleteProject = async (projectId: string) => {
     try {
@@ -173,15 +206,50 @@ const Index = () => {
 
         {/* Projects/Customers Section */}
         <section>
-          <h2 className="mb-4 text-2xl font-semibold text-foreground">Projects & Customers</h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-2xl font-semibold text-foreground">Projects & Customers</h2>
+          </div>
+          
+          {/* Search and Filter */}
+          {projects.length > 0 && (
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search projects, customers, or job numbers..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 bg-card border-border text-foreground placeholder:text-muted-foreground"
+                />
+              </div>
+              <Select value={sortBy} onValueChange={(value: "recent" | "name" | "customer") => setSortBy(value)}>
+                <SelectTrigger className="w-full sm:w-[180px] bg-card border-border text-foreground">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recent">Most Recent</SelectItem>
+                  <SelectItem value="name">Project Name</SelectItem>
+                  <SelectItem value="customer">Customer Name</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           {projects.length === 0 ? (
             <div className="rounded-lg bg-card p-8 text-center">
               <FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
               <p className="text-muted-foreground">No projects yet. Create your first project to get started!</p>
             </div>
+          ) : filteredProjects.length === 0 ? (
+            <div className="rounded-lg bg-card p-8 text-center">
+              <Search className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <p className="text-muted-foreground">No projects found matching "{searchQuery}"</p>
+            </div>
           ) : (
             <div className="space-y-3">
-              {projects.map((project) => (
+              {filteredProjects.map((project) => (
                 <div
                   key={project.id}
                   className="flex items-start gap-4 rounded-lg bg-card p-4 hover:bg-secondary/50 transition-colors"
