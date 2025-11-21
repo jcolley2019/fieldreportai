@@ -80,7 +80,31 @@ const CaptureScreen = () => {
       // Start recording
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recorder = new MediaRecorder(stream);
+        
+        // Check supported MIME types and select the best one
+        const mimeTypes = [
+          'audio/webm',
+          'audio/webm;codecs=opus',
+          'audio/mp4',
+          'audio/mpeg',
+          'audio/wav'
+        ];
+        
+        let selectedMimeType = '';
+        for (const mimeType of mimeTypes) {
+          if (MediaRecorder.isTypeSupported(mimeType)) {
+            selectedMimeType = mimeType;
+            console.log('Selected MIME type:', mimeType);
+            break;
+          }
+        }
+        
+        if (!selectedMimeType) {
+          console.warn('No preferred MIME type supported, using browser default');
+        }
+        
+        const recorderOptions = selectedMimeType ? { mimeType: selectedMimeType } : {};
+        const recorder = new MediaRecorder(stream, recorderOptions);
         const chunks: Blob[] = [];
 
         recorder.ondataavailable = (e) => {
@@ -90,7 +114,18 @@ const CaptureScreen = () => {
         };
 
         recorder.onstop = async () => {
-          const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+          const audioBlob = new Blob(chunks, { type: recorder.mimeType });
+          
+          // Log detailed audio information
+          console.log('Recorded audio details:', {
+            mimeType: audioBlob.type,
+            size: audioBlob.size,
+            sizeKB: (audioBlob.size / 1024).toFixed(2),
+            recorderMimeType: recorder.mimeType
+          });
+          
+          toast.info(`Recorded: ${audioBlob.type} (${(audioBlob.size / 1024).toFixed(1)}KB)`);
+          
           await transcribeAudio(audioBlob);
           stream.getTracks().forEach(track => track.stop());
         };
@@ -123,11 +158,25 @@ const CaptureScreen = () => {
       
       reader.onloadend = async () => {
         const base64Audio = reader.result as string;
+        
+        // Log the data URL prefix to verify MIME type
+        const dataUrlPrefix = base64Audio.substring(0, base64Audio.indexOf(','));
+        console.log('Audio data URL prefix:', dataUrlPrefix);
+        
+        // Strip the data URL prefix to get pure base64
         const base64Data = base64Audio.split(',')[1];
+        
+        console.log('Sending to transcribe-audio function:', {
+          base64Length: base64Data.length,
+          estimatedSizeKB: (base64Data.length * 0.75 / 1024).toFixed(2)
+        });
 
         // Call transcribe-audio edge function
         const { data, error } = await supabase.functions.invoke('transcribe-audio', {
-          body: { audio: base64Data }
+          body: { 
+            audio: base64Data,
+            mimeType: audioBlob.type // Send MIME type for backend logging
+          }
         });
 
         if (error) {
