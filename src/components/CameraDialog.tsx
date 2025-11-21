@@ -22,8 +22,8 @@ export const CameraDialog = ({
   onGallerySelect,
 }: CameraDialogProps) => {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={onOpenChange} modal={true}>
+      <DialogContent className="sm:max-w-md z-50">
         <DialogHeader>
           <DialogTitle>Add Photos or Videos</DialogTitle>
           <DialogDescription>
