@@ -178,7 +178,7 @@ const Index = () => {
           <h2 className="mb-4 text-2xl font-semibold text-foreground">Choose Your Workflow</h2>
           <div className="grid grid-cols-2 gap-4">
             <button 
-              onClick={() => navigate("/simple-mode")}
+              onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })}
               className="flex flex-col items-center gap-4 rounded-lg bg-card p-8 transition-colors hover:bg-secondary"
             >
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
