@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronLeft, Mic, Save } from "lucide-react";
@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Notes = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isSimpleMode = location.state?.simpleMode || false;
   const [noteText, setNoteText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -100,9 +102,14 @@ const Notes = () => {
       return;
     }
 
-    // TODO: Save note to database
-    toast.success("Note saved successfully!");
-    navigate("/dashboard");
+    if (isSimpleMode) {
+      toast.success("Generating summary...");
+      navigate("/review-summary", { state: { simpleMode: true } });
+    } else {
+      // TODO: Save note to database
+      toast.success("Note saved successfully!");
+      navigate("/dashboard");
+    }
   };
 
   return (

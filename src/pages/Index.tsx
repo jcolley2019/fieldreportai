@@ -146,7 +146,7 @@ const Index = () => {
           <p className="mb-4 text-sm text-muted-foreground">Create quick standalone reports without linking to a project</p>
           <div className="grid grid-cols-3 gap-4">
             <button 
-              onClick={() => navigate("/notes")}
+              onClick={() => navigate("/notes", { state: { simpleMode: true } })}
               className="flex flex-col items-center gap-3 rounded-lg bg-card p-6 transition-colors hover:bg-secondary"
             >
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
@@ -155,7 +155,7 @@ const Index = () => {
               <span className="text-sm font-medium text-foreground">Add Note</span>
             </button>
             <button 
-              onClick={() => navigate("/capture-screen")}
+              onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })}
               className="flex flex-col items-center gap-3 rounded-lg bg-card p-6 transition-colors hover:bg-secondary"
             >
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
@@ -164,7 +164,7 @@ const Index = () => {
               <span className="text-sm font-medium text-foreground">Add Photo</span>
             </button>
             <button 
-              onClick={() => navigate("/checklist")}
+              onClick={() => navigate("/checklist", { state: { simpleMode: true } })}
               className="flex flex-col items-center gap-3 rounded-lg bg-card p-6 transition-colors hover:bg-secondary"
             >
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
