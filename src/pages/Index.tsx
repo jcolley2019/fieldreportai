@@ -157,7 +157,7 @@ const Index = () => {
               </div>
             </button>
             <button 
-              onClick={() => {/* Projects list is shown below */}}
+              onClick={() => navigate("/new-project")}
               className="flex flex-col items-center gap-4 rounded-lg bg-card p-8 transition-colors hover:bg-secondary"
             >
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
