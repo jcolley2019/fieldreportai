@@ -42,7 +42,7 @@ const reportSchema = z.object({
 
 type ReportFormData = z.infer<typeof reportSchema>;
 
-const NewReport = () => {
+const NewProject = () => {
   const navigate = useNavigate();
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -347,5 +347,4 @@ const NewReport = () => {
   );
 };
 
-export default NewReport;
-
+export default NewProject;
