@@ -3,12 +3,23 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { User } from "@supabase/supabase-js";
-import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon, ListChecks } from "lucide-react";
+import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+
+interface Project {
+  id: string;
+  project_name: string;
+  customer_name: string;
+  job_number: string;
+  job_description: string;
+  created_at: string;
+  checklist_count: number;
+}
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<Project[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,13 +46,59 @@ const Index = () => {
     }
   }, [user, loading, navigate]);
 
-  const mockReports = [
-    { id: 1, title: "Site Walkthrough #102", date: "Oct 26, 2023", status: "Submitted" },
-    { id: 2, title: "Safety Inspection Q4", date: "Oct 25, 2023", status: "In Progress", statusColor: "text-yellow-500" },
-    { id: 3, title: "Foundation Pour Observation", date: "Oct 24, 2023", status: "Submitted" },
-    { id: 4, title: "HVAC Unit Installation", date: "Oct 23, 2023", status: "Submitted" },
-    { id: 5, title: "Electrical Wiring Check", date: "Oct 22, 2023", status: "Submitted" },
-  ];
+  useEffect(() => {
+    if (user) {
+      fetchProjects();
+    }
+  }, [user]);
+
+  const fetchProjects = async () => {
+    try {
+      const { data: reportsData, error: reportsError } = await supabase
+        .from('reports')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (reportsError) throw reportsError;
+
+      // Fetch checklist counts for each report
+      const projectsWithCounts = await Promise.all(
+        (reportsData || []).map(async (report) => {
+          const { count, error: countError } = await supabase
+            .from('checklists')
+            .select('*', { count: 'exact', head: true })
+            .eq('report_id', report.id);
+
+          return {
+            ...report,
+            checklist_count: countError ? 0 : (count || 0)
+          };
+        })
+      );
+
+      setProjects(projectsWithCounts);
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      toast.error('Failed to load projects');
+    }
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    try {
+      const { error } = await supabase
+        .from('reports')
+        .delete()
+        .eq('id', projectId);
+
+      if (error) throw error;
+
+      toast.success('Project deleted successfully');
+      fetchProjects();
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast.error('Failed to delete project');
+    }
+  };
 
   if (loading) {
     return (
@@ -117,45 +174,67 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Recent Reports Section */}
+        {/* Projects/Customers Section */}
         <section>
-          <h2 className="mb-4 text-2xl font-semibold text-foreground">Recent Reports</h2>
-          <div className="space-y-3">
-            {mockReports.map((report) => (
-              <div
-                key={report.id}
-                className="flex items-center gap-4 rounded-lg bg-card p-4"
-              >
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg bg-muted">
-                  <FileText className="h-7 w-7 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-foreground">{report.title}</h3>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-muted-foreground">{report.date}</span>
-                    <span className="text-muted-foreground">•</span>
-                    <span className={report.statusColor || "text-muted-foreground"}>
-                      {report.status}
-                    </span>
+          <h2 className="mb-4 text-2xl font-semibold text-foreground">Projects & Customers</h2>
+          {projects.length === 0 ? (
+            <div className="rounded-lg bg-card p-8 text-center">
+              <FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <p className="text-muted-foreground">No projects yet. Create your first project to get started!</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {projects.map((project) => (
+                <div
+                  key={project.id}
+                  className="flex items-start gap-4 rounded-lg bg-card p-4 hover:bg-secondary/50 transition-colors"
+                >
+                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <Building2 className="h-7 w-7 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground text-lg mb-1">{project.project_name}</h3>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <UserIcon className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{project.customer_name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Hash className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{project.job_number}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <ListChecks className="h-4 w-4 flex-shrink-0" />
+                        <span>{project.checklist_count} checklist{project.checklist_count !== 1 ? 's' : ''}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toast.info(`View project: ${project.project_name}`)}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <Eye className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to delete "${project.project_name}"?`)) {
+                          handleDeleteProject(project.id);
+                        }
+                      }}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-3">
-                  <button 
-                    onClick={() => toast.success("Share clicked")}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <Share2 className="h-5 w-5" />
-                  </button>
-                  <button 
-                    onClick={() => toast.success("View clicked")}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <Eye className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       </main>
     </div>
