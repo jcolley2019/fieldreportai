@@ -140,9 +140,10 @@ const Index = () => {
       </header>
 
       <main className="p-4">
-        {/* Quick Add Section */}
+        {/* Simple Mode Section */}
         <section className="mb-8">
-          <h2 className="mb-4 text-2xl font-semibold text-foreground">Quick Add</h2>
+          <h2 className="mb-2 text-2xl font-semibold text-foreground">Simple Mode</h2>
+          <p className="mb-4 text-sm text-muted-foreground">Create quick standalone reports without linking to a project</p>
           <div className="grid grid-cols-3 gap-4">
             <button 
               onClick={() => navigate("/notes")}
