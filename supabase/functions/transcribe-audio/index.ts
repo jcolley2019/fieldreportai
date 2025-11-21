@@ -79,15 +79,20 @@ serve(async (req) => {
 
   } catch (error: any) {
     // Log detailed error information
+    const openAiMessage = error?.response?.data?.error?.message;
+    const fallbackMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = openAiMessage || fallbackMessage;
+
     console.error('Transcription error occurred', { 
       errorType: error instanceof Error ? error.constructor.name : 'Unknown',
-      message: error?.message,
+      message: fallbackMessage,
+      openAiMessage,
       response: error?.response?.data,
       timestamp: new Date().toISOString() 
     });
     
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
