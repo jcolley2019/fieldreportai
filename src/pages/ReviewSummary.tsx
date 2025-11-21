@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronDown, ChevronUp, Pencil, Play, Printer, Download, FolderPlus } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Collapsible,
   CollapsibleContent,
@@ -69,6 +70,7 @@ const ReviewSummary = () => {
   };
 
   const [sections, setSections] = useState<SummarySection[]>(() => parseSummary(summaryText));
+  const [isSaving, setIsSaving] = useState(false);
 
   const toggleSection = (id: string) => {
     setSections((prev) =>
@@ -82,9 +84,50 @@ const ReviewSummary = () => {
     toast.success("Regenerating summary...");
   };
 
-  const handleContinueToReport = () => {
-    toast.success("Report submitted successfully!");
-    navigate("/confirmation");
+  const handleContinueToReport = async () => {
+    setIsSaving(true);
+    
+    try {
+      // Get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        toast.error("You must be logged in to save reports");
+        setIsSaving(false);
+        return;
+      }
+
+      // For Simple Mode, we'll create a temporary report entry
+      // In Project Mode, this would be linked to an actual project
+      const reportData = {
+        user_id: user.id,
+        project_name: "Simple Mode Report",
+        customer_name: "N/A",
+        job_number: `SM-${Date.now()}`,
+        job_description: summaryText.substring(0, 500) // Store a portion of the summary
+      };
+
+      const { data: report, error: reportError } = await supabase
+        .from('reports')
+        .insert(reportData)
+        .select()
+        .single();
+
+      if (reportError) {
+        console.error("Error saving report:", reportError);
+        toast.error("Failed to save report");
+        setIsSaving(false);
+        return;
+      }
+
+      toast.success("Report saved successfully!");
+      navigate("/confirmation", { state: { reportId: report.id, reportData: report } });
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("An error occurred while saving");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePrint = () => {
@@ -228,17 +271,19 @@ const ReviewSummary = () => {
             </div>
             <Button
               onClick={handleContinueToReport}
-              className="w-full bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90"
+              disabled={isSaving}
+              className="w-full bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
-              Finalize Report
+              {isSaving ? "Saving..." : "Finalize Report"}
             </Button>
           </>
         ) : (
           <Button
             onClick={handleContinueToReport}
-            className="w-full bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90"
+            disabled={isSaving}
+            className="w-full bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
-            Continue to Report
+            {isSaving ? "Saving..." : "Continue to Report"}
           </Button>
         )}
       </div>
