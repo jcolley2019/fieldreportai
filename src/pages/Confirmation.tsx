@@ -87,7 +87,7 @@ const Confirmation = () => {
           <Check className="h-12 w-12 text-primary" strokeWidth={3} />
         </div>
         <h2 className="text-center text-[28px] font-bold leading-tight tracking-tight text-foreground">
-          Report sent successfully!
+          Report Created!
         </h2>
       </div>
 
