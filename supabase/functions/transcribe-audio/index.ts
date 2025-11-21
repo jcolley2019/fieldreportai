@@ -7,34 +7,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Process base64 in chunks to prevent memory issues
-function processBase64Chunks(base64String: string, chunkSize = 32768) {
-  const chunks: Uint8Array[] = [];
-  let position = 0;
-  
-  while (position < base64String.length) {
-    const chunk = base64String.slice(position, position + chunkSize);
-    const binaryChunk = atob(chunk);
-    const bytes = new Uint8Array(binaryChunk.length);
-    
-    for (let i = 0; i < binaryChunk.length; i++) {
-      bytes[i] = binaryChunk.charCodeAt(i);
-    }
-    
-    chunks.push(bytes);
-    position += chunkSize;
+// Convert base64 string to Uint8Array safely
+function base64ToUint8Array(base64String: string) {
+  const binaryString = atob(base64String);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
   }
 
-  const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-  const result = new Uint8Array(totalLength);
-  let offset = 0;
-
-  for (const chunk of chunks) {
-    result.set(chunk, offset);
-    offset += chunk.length;
-  }
-
-  return result;
+  return bytes;
 }
 
 serve(async (req) => {
@@ -68,9 +51,9 @@ serve(async (req) => {
       timestamp: new Date().toISOString() 
     });
 
-    // Process audio in chunks
+    // Convert base64 audio into binary
     console.log('Processing base64 audio data', { timestamp: new Date().toISOString() });
-    const binaryAudio = processBase64Chunks(audio);
+    const binaryAudio = base64ToUint8Array(audio);
     console.log('Binary audio processed', { 
       size: `${binaryAudio.length} bytes`,
       timestamp: new Date().toISOString() 
