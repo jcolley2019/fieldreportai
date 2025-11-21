@@ -178,7 +178,7 @@ const NewReport = () => {
         >
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </Button>
-        <h1 className="text-lg font-bold text-foreground">New Report</h1>
+        <h1 className="text-lg font-bold text-foreground">New Project/Customer</h1>
       </header>
 
       <main className="flex min-h-screen flex-col px-4 pb-8 pt-4">
