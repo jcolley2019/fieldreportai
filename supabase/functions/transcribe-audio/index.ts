@@ -1,24 +1,12 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import OpenAI from "https://esm.sh/openai@4.73.1";
+import { toFile } from "https://esm.sh/openai@4.73.1/uploads";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// Convert base64 string to Uint8Array safely
-function base64ToUint8Array(base64String: string) {
-  const binaryString = atob(base64String);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-
-  return bytes;
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -40,34 +28,56 @@ serve(async (req) => {
 
     // Parse and validate input
     const body = await req.json();
-    const { audio } = body;
+    const { audio, mimeType } = body;
     
     if (!audio) {
       throw new Error('No audio data provided');
     }
 
     console.log('Audio data received', { 
-      size: `${audio.length} characters (base64)`,
+      base64Length: audio.length,
+      estimatedSizeKB: (audio.length * 0.75 / 1024).toFixed(2),
+      mimeType: mimeType || 'not provided',
       timestamp: new Date().toISOString() 
     });
 
-    // Convert base64 audio into binary
-    console.log('Processing base64 audio data', { timestamp: new Date().toISOString() });
-    const binaryAudio = base64ToUint8Array(audio);
+    // Decode base64 to binary using Deno's built-in atob
+    console.log('Decoding base64 to binary', { timestamp: new Date().toISOString() });
+    
+    // Use TextEncoder/Decoder for proper binary handling
+    const binaryString = atob(audio);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
     console.log('Binary audio processed', { 
-      size: `${binaryAudio.length} bytes`,
+      byteLength: bytes.length,
+      sizeKB: (bytes.length / 1024).toFixed(2),
       timestamp: new Date().toISOString() 
     });
     
-    // Create a File object from the binary data; avoid forcing a specific MIME type
-    const blob = new Blob([binaryAudio]);
-    const audioFile = new File([blob], 'audio.m4a');
+    // Determine file extension based on MIME type
+    let extension = 'webm';
+    if (mimeType?.includes('mp4')) extension = 'mp4';
+    else if (mimeType?.includes('mpeg')) extension = 'mp3';
+    else if (mimeType?.includes('wav')) extension = 'wav';
+    
+    // Use OpenAI's toFile helper to create a proper file from binary data
+    const audioFile = await toFile(bytes, `recording.${extension}`);
+    
+    console.log('Audio file created', { 
+      name: audioFile.name,
+      size: audioFile.size,
+      type: audioFile.type,
+      timestamp: new Date().toISOString() 
+    });
 
-    console.log('Sending to OpenAI API', { timestamp: new Date().toISOString() });
+    console.log('Sending to OpenAI Whisper API', { timestamp: new Date().toISOString() });
     
     const transcription = await client.audio.transcriptions.create({
       file: audioFile,
-      model: 'gpt-4o-mini-transcribe',
+      model: 'whisper-1',
     });
 
     console.log('Transcription successful', { timestamp: new Date().toISOString() });
