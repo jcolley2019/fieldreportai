@@ -12,6 +12,8 @@ const Onboarding = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -19,6 +21,13 @@ const Onboarding = () => {
   const [avatarPreview, setAvatarPreview] = useState<string>("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
+  const [errors, setErrors] = useState({
+    firstName: "",
+    lastName: "",
+    companyName: "",
+    avatar: "",
+    logo: "",
+  });
 
   useEffect(() => {
     checkAuth();
@@ -34,6 +43,29 @@ const Onboarding = () => {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, avatar: "File size must be less than 5MB" }));
+        toast({
+          title: "File too large",
+          description: "Avatar image must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setErrors(prev => ({ ...prev, avatar: "File must be an image" }));
+        toast({
+          title: "Invalid file type",
+          description: "Please upload an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setErrors(prev => ({ ...prev, avatar: "" }));
       setAvatarFile(file);
       setAvatarPreview(URL.createObjectURL(file));
     }
@@ -42,31 +74,83 @@ const Onboarding = () => {
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, logo: "File size must be less than 5MB" }));
+        toast({
+          title: "File too large",
+          description: "Company logo must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setErrors(prev => ({ ...prev, logo: "File must be an image" }));
+        toast({
+          title: "Invalid file type",
+          description: "Please upload an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setErrors(prev => ({ ...prev, logo: "" }));
       setLogoFile(file);
       setLogoPreview(URL.createObjectURL(file));
     }
   };
 
-  const uploadFile = async (file: File, bucket: string, userId: string) => {
+  const uploadFile = async (file: File, bucket: string, userId: string, setUploadingState: (val: boolean) => void) => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}-${Math.random()}.${fileExt}`;
     const filePath = `${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(filePath, file);
+    try {
+      setUploadingState(true);
 
-    if (uploadError) throw uploadError;
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file);
 
-    const { data: { publicUrl } } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(filePath);
+      if (uploadError) throw uploadError;
 
-    return publicUrl;
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error: any) {
+      throw new Error(error.message || `Failed to upload ${bucket === 'avatars' ? 'avatar' : 'logo'}`);
+    } finally {
+      setUploadingState(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate required fields
+    const newErrors = {
+      firstName: firstName.trim() ? "" : "First name is required",
+      lastName: lastName.trim() ? "" : "Last name is required",
+      companyName: companyName.trim() ? "" : "Company name is required",
+      avatar: "",
+      logo: "",
+    };
+
+    setErrors(newErrors);
+
+    if (Object.values(newErrors).some(error => error)) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -76,21 +160,40 @@ const Onboarding = () => {
       let avatarUrl = "";
       let logoUrl = "";
 
+      // Upload avatar if selected
       if (avatarFile) {
-        avatarUrl = await uploadFile(avatarFile, "avatars", user.id);
+        try {
+          avatarUrl = await uploadFile(avatarFile, "avatars", user.id, setUploadingAvatar);
+          toast({
+            title: "Avatar uploaded",
+            description: "Profile picture uploaded successfully",
+          });
+        } catch (error: any) {
+          throw new Error(`Avatar upload failed: ${error.message}`);
+        }
       }
 
+      // Upload logo if selected
       if (logoFile) {
-        logoUrl = await uploadFile(logoFile, "company-logos", user.id);
+        try {
+          logoUrl = await uploadFile(logoFile, "company-logos", user.id, setUploadingLogo);
+          toast({
+            title: "Logo uploaded",
+            description: "Company logo uploaded successfully",
+          });
+        } catch (error: any) {
+          throw new Error(`Logo upload failed: ${error.message}`);
+        }
       }
 
+      // Update profile
       const { error } = await supabase
         .from("profiles")
         .upsert({
           id: user.id,
-          first_name: firstName,
-          last_name: lastName,
-          company_name: companyName,
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          company_name: companyName.trim(),
           avatar_url: avatarUrl || null,
           company_logo_url: logoUrl || null,
         })
@@ -105,9 +208,23 @@ const Onboarding = () => {
 
       navigate("/dashboard");
     } catch (error: any) {
+      console.error("Onboarding error:", error);
+      
+      let errorMessage = "Failed to complete setup";
+      
+      if (error.message.includes("Avatar upload")) {
+        errorMessage = error.message;
+      } else if (error.message.includes("Logo upload")) {
+        errorMessage = error.message;
+      } else if (error.message.includes("policy")) {
+        errorMessage = "Permission error. Please try logging out and back in.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       toast({
         title: "Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -132,20 +249,34 @@ const Onboarding = () => {
                 <Input
                   id="firstName"
                   value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  onChange={(e) => {
+                    setFirstName(e.target.value);
+                    if (errors.firstName) setErrors(prev => ({ ...prev, firstName: "" }));
+                  }}
                   required
                   placeholder="John"
+                  className={errors.firstName ? "border-destructive" : ""}
                 />
+                {errors.firstName && (
+                  <p className="text-sm text-destructive mt-1">{errors.firstName}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last Name *</Label>
                 <Input
                   id="lastName"
                   value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  onChange={(e) => {
+                    setLastName(e.target.value);
+                    if (errors.lastName) setErrors(prev => ({ ...prev, lastName: "" }));
+                  }}
                   required
                   placeholder="Doe"
+                  className={errors.lastName ? "border-destructive" : ""}
                 />
+                {errors.lastName && (
+                  <p className="text-sm text-destructive mt-1">{errors.lastName}</p>
+                )}
               </div>
             </div>
 
@@ -154,10 +285,17 @@ const Onboarding = () => {
               <Input
                 id="companyName"
                 value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
+                onChange={(e) => {
+                  setCompanyName(e.target.value);
+                  if (errors.companyName) setErrors(prev => ({ ...prev, companyName: "" }));
+                }}
                 required
                 placeholder="Your Company Inc."
+                className={errors.companyName ? "border-destructive" : ""}
               />
+              {errors.companyName && (
+                <p className="text-sm text-destructive mt-1">{errors.companyName}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -180,13 +318,17 @@ const Onboarding = () => {
                     className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
                   >
                     <Upload className="w-4 h-4" />
-                    Upload Photo
+                    {uploadingAvatar ? "Uploading..." : "Upload Photo"}
                   </Label>
+                  {errors.avatar && (
+                    <p className="text-sm text-destructive">{errors.avatar}</p>
+                  )}
                   <Input
                     id="avatar"
                     type="file"
                     accept="image/*"
                     onChange={handleAvatarChange}
+                    disabled={uploadingAvatar || loading}
                     className="hidden"
                   />
                 </div>
@@ -211,21 +353,25 @@ const Onboarding = () => {
                     className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
                   >
                     <Upload className="w-4 h-4" />
-                    Upload Logo
+                    {uploadingLogo ? "Uploading..." : "Upload Logo"}
                   </Label>
+                  {errors.logo && (
+                    <p className="text-sm text-destructive">{errors.logo}</p>
+                  )}
                   <Input
                     id="logo"
                     type="file"
                     accept="image/*"
                     onChange={handleLogoChange}
+                    disabled={uploadingLogo || loading}
                     className="hidden"
                   />
                 </div>
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Setting up..." : "Complete Setup"}
+            <Button type="submit" className="w-full" disabled={loading || uploadingAvatar || uploadingLogo}>
+              {loading ? "Setting up..." : uploadingAvatar ? "Uploading avatar..." : uploadingLogo ? "Uploading logo..." : "Complete Setup"}
             </Button>
           </form>
         </CardContent>
