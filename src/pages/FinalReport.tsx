@@ -1,10 +1,56 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Building2, Download, Share2, ChevronRight } from "lucide-react";
+import { Building2, Download, Share2, ChevronRight, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const FinalReport = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const reportId = location.state?.reportId;
+  const [reportData, setReportData] = useState<any>(location.state?.reportData || null);
+  const [isLoading, setIsLoading] = useState(!reportData);
+
+  useEffect(() => {
+    const loadReport = async () => {
+      if (reportData) {
+        setIsLoading(false);
+        return;
+      }
+
+      if (!reportId) {
+        toast.error("No report found");
+        navigate("/dashboard");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .eq('id', reportId)
+        .single();
+
+      if (error || !data) {
+        toast.error("Failed to load report");
+        navigate("/dashboard");
+        return;
+      }
+
+      setReportData(data);
+      setIsLoading(false);
+    };
+
+    loadReport();
+  }, [reportId, reportData, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="dark min-h-screen bg-background flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
 
   const handleDownloadPDF = () => {
     toast.success("Downloading PDF...");
@@ -20,23 +66,34 @@ const FinalReport = () => {
     toast.success("Forwarding report...");
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
   return (
     <div className="dark min-h-screen bg-background">
       {/* Sticky Header */}
       <header className="sticky top-0 z-10 w-full border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="flex flex-col gap-2 p-4 pb-3">
           <div className="flex h-12 items-center justify-between">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center text-primary">
-              <Building2 className="h-8 w-8" />
-            </div>
+            <button
+              onClick={() => navigate(-1)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-secondary"
+            >
+              <ArrowLeft className="h-5 w-5 text-foreground" />
+            </button>
             <div className="flex w-auto items-center justify-end">
               <p className="shrink-0 text-sm font-medium text-muted-foreground">
-                Oct 21-27, 2023
+                {reportData?.created_at ? formatDate(reportData.created_at) : 'N/A'}
               </p>
             </div>
           </div>
           <p className="text-2xl font-bold leading-tight tracking-tight text-foreground">
-            Project Alpha - Site Inspection
+            {reportData?.project_name || 'Report'}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {reportData?.customer_name} • Job #{reportData?.job_number}
           </p>
         </div>
       </header>
@@ -45,13 +102,10 @@ const FinalReport = () => {
       <main className="flex-grow pb-40">
         <div className="pt-6">
           <h1 className="px-4 pb-3 text-left text-[32px] font-bold leading-tight tracking-tight text-foreground">
-            AI-Generated Weekly Summary
+            Report Summary
           </h1>
           <p className="px-4 pb-3 pt-1 text-base font-normal leading-relaxed text-muted-foreground">
-            AI-generated text describing key findings, progress, and issues
-            identified during the week's site inspection. This summary highlights
-            critical updates and provides a concise overview for project
-            stakeholders.
+            {reportData?.job_description || 'No description available'}
           </p>
 
           {/* Photo Grid */}
@@ -139,7 +193,7 @@ const FinalReport = () => {
           </Button>
         </div>
         <p className="text-center text-xs text-muted-foreground">
-          Report generated on Oct 27, 2023 at 4:15 PM
+          Report generated on {reportData?.created_at ? new Date(reportData.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'N/A'}
         </p>
       </div>
     </div>
