@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
+import { LiveCameraCapture } from "@/components/LiveCameraCapture";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ImageItem {
@@ -29,6 +30,7 @@ const CaptureScreen = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [showCameraDialog, setShowCameraDialog] = useState(false);
+  const [showLiveCamera, setShowLiveCamera] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,6 +58,22 @@ const CaptureScreen = () => {
   const handleGallerySelect = () => {
     setShowCameraDialog(false);
     fileInputRef.current?.click();
+  };
+
+  const handleLiveCameraSelect = () => {
+    setShowCameraDialog(false);
+    setShowLiveCamera(true);
+  };
+
+  const handleLiveCameraCapture = (files: File[]) => {
+    const newImages: ImageItem[] = files.map(file => ({
+      id: Math.random().toString(36).substr(2, 9),
+      url: URL.createObjectURL(file),
+      file,
+      deleted: false
+    }));
+
+    setImages(prev => [...prev, ...newImages]);
   };
 
   const deleteImage = (id: string) => {
@@ -614,6 +632,14 @@ const CaptureScreen = () => {
         onOpenChange={setShowCameraDialog}
         onCameraSelect={handleCameraSelect}
         onGallerySelect={handleGallerySelect}
+        onLiveCameraSelect={handleLiveCameraSelect}
+      />
+
+      {/* Live Camera Capture */}
+      <LiveCameraCapture
+        open={showLiveCamera}
+        onOpenChange={setShowLiveCamera}
+        onCapture={handleLiveCameraCapture}
       />
 
       {/* Full-size Image Viewer */}

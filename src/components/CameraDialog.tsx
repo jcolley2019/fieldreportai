@@ -13,6 +13,7 @@ interface CameraDialogProps {
   onOpenChange: (open: boolean) => void;
   onCameraSelect: () => void;
   onGallerySelect: () => void;
+  onLiveCameraSelect: () => void;
 }
 
 export const CameraDialog = ({
@@ -20,6 +21,7 @@ export const CameraDialog = ({
   onOpenChange,
   onCameraSelect,
   onGallerySelect,
+  onLiveCameraSelect,
 }: CameraDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal={true}>
@@ -32,11 +34,19 @@ export const CameraDialog = ({
         </DialogHeader>
         <div className="flex flex-col gap-3">
           <Button
-            onClick={onCameraSelect}
+            onClick={onLiveCameraSelect}
             className="flex h-20 w-full items-center justify-center gap-3 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Camera className="h-6 w-6" />
-            <span className="text-base font-medium">Take Photo/Video</span>
+            <span className="text-base font-medium">Open Camera (Multiple Photos)</span>
+          </Button>
+          <Button
+            onClick={onCameraSelect}
+            variant="outline"
+            className="flex h-20 w-full items-center justify-center gap-3"
+          >
+            <Camera className="h-6 w-6" />
+            <span className="text-base font-medium">Take Single Photo</span>
           </Button>
           <Button
             onClick={onGallerySelect}
