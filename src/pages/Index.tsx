@@ -61,8 +61,26 @@ const Index = () => {
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
+    } else if (!loading && user) {
+      checkProfileComplete();
     }
   }, [user, loading, navigate]);
+
+  const checkProfileComplete = async () => {
+    if (!user) return;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('first_name, last_name, company_name')
+      .eq('id', user.id)
+      .single();
+
+    const isProfileComplete = profile?.first_name && profile?.last_name && profile?.company_name;
+    
+    if (!isProfileComplete) {
+      navigate("/onboarding");
+    }
+  };
 
   useEffect(() => {
     if (user) {

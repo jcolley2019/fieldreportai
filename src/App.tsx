@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import Onboarding from "./pages/Onboarding";
 import NewProject from "./pages/NewProject";
 import Notes from "./pages/Notes";
 import CaptureScreen from "./pages/CaptureScreen";
@@ -28,6 +29,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/dashboard" element={<Index />} />
           <Route path="/new-project" element={<NewProject />} />
           <Route path="/notes" element={<Notes />} />

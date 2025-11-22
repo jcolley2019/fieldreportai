@@ -46,7 +46,7 @@ const Auth = () => {
         : authSchema.parse({ email, password });
 
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error, data } = await supabase.auth.signInWithPassword({
           email: validatedData.email,
           password: validatedData.password,
         });
@@ -66,11 +66,21 @@ const Auth = () => {
             });
           }
         } else {
+          // Check if profile is complete
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('first_name, last_name, company_name')
+            .eq('id', data.user.id)
+            .single();
+
+          const isProfileComplete = profile?.first_name && profile?.last_name && profile?.company_name;
+
           toast({
             title: "Success",
             description: "Logged in successfully!",
           });
-          navigate("/dashboard");
+          
+          navigate(isProfileComplete ? "/dashboard" : "/onboarding");
         }
       } else {
         const { error } = await supabase.auth.signUp({
