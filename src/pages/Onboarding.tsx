@@ -86,7 +86,8 @@ const Onboarding = () => {
 
       const { error } = await supabase
         .from("profiles")
-        .update({
+        .upsert({
+          id: user.id,
           first_name: firstName,
           last_name: lastName,
           company_name: companyName,
