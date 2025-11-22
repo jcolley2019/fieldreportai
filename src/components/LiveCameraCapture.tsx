@@ -1,19 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, X, Check } from "lucide-react";
+import { Camera, X, Check, Pause, Play, MicOff } from "lucide-react";
 import { toast } from "sonner";
 
 interface LiveCameraCaptureProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCapture: (files: File[]) => void;
+  isRecording?: boolean;
+  isPaused?: boolean;
+  onPauseRecording?: () => void;
+  onStopRecording?: () => void;
 }
 
 export const LiveCameraCapture = ({
   open,
   onOpenChange,
   onCapture,
+  isRecording = false,
+  isPaused = false,
+  onPauseRecording,
+  onStopRecording,
 }: LiveCameraCaptureProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -97,7 +105,13 @@ export const LiveCameraCapture = ({
       onCapture(capturedImages);
       toast.success(`${capturedImages.length} photo${capturedImages.length > 1 ? 's' : ''} added`);
     }
-    onOpenChange(false);
+    
+    // If recording is active, stop it
+    if (isRecording && onStopRecording) {
+      onStopRecording();
+    } else {
+      onOpenChange(false);
+    }
   };
 
   return (
@@ -117,14 +131,28 @@ export const LiveCameraCapture = ({
             
             {/* Close button */}
             <button
-              onClick={() => onOpenChange(false)}
+              onClick={() => {
+                if (isRecording && onStopRecording) {
+                  onStopRecording();
+                } else {
+                  onOpenChange(false);
+                }
+              }}
               className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
             >
               <X className="h-6 w-6" />
             </button>
 
+            {/* Recording indicator */}
+            {isRecording && (
+              <div className="absolute top-4 left-4 flex items-center gap-2 bg-destructive/90 text-white px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm">
+                <div className={`h-3 w-3 rounded-full bg-white ${isPaused ? '' : 'animate-pulse'}`}></div>
+                {isPaused ? 'Paused' : 'Recording'}
+              </div>
+            )}
+
             {/* Photo counter */}
-            {capturedImages.length > 0 && (
+            {capturedImages.length > 0 && !isRecording && (
               <div className="absolute top-4 left-4 bg-primary/90 text-white px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm">
                 {capturedImages.length} photo{capturedImages.length > 1 ? 's' : ''}
               </div>
@@ -133,6 +161,28 @@ export const LiveCameraCapture = ({
 
           {/* Camera controls */}
           <div className="bg-black/90 backdrop-blur-sm p-6 flex items-center justify-center gap-6">
+            {/* Audio pause/resume button (if recording) */}
+            {isRecording && onPauseRecording && (
+              <Button
+                onClick={onPauseRecording}
+                size="lg"
+                variant="outline"
+                className="rounded-full h-14 px-6 gap-2 bg-white/10 hover:bg-white/20 text-white border-white/20"
+              >
+                {isPaused ? (
+                  <>
+                    <Play className="h-5 w-5" />
+                    Resume Audio
+                  </>
+                ) : (
+                  <>
+                    <Pause className="h-5 w-5" />
+                    Pause Audio
+                  </>
+                )}
+              </Button>
+            )}
+
             {capturedImages.length > 0 && (
               <Button
                 onClick={handleDone}
@@ -154,7 +204,7 @@ export const LiveCameraCapture = ({
               </div>
             </button>
 
-            {capturedImages.length === 0 && (
+            {capturedImages.length === 0 && !isRecording && (
               <div className="w-14"></div>
             )}
           </div>

@@ -551,6 +551,7 @@ const Checklist = () => {
         open={showLiveCamera}
         onOpenChange={setShowLiveCamera}
         onCapture={handleLiveCameraCapture}
+        isRecording={false}
       />
 
       {/* Full-size Image Viewer */}

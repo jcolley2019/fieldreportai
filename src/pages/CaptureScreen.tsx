@@ -98,11 +98,10 @@ const CaptureScreen = () => {
 
   const handleVoiceRecord = async () => {
     if (!isRecording) {
-      // Start recording
+      // Start recording and open camera
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         
-        // Check supported MIME types and select the best one
         const mimeTypes = [
           'audio/webm',
           'audio/webm;codecs=opus',
@@ -137,7 +136,6 @@ const CaptureScreen = () => {
         recorder.onstop = async () => {
           const audioBlob = new Blob(chunks, { type: recorder.mimeType });
           
-          // Log detailed audio information
           console.log('Recorded audio details:', {
             mimeType: audioBlob.type,
             size: audioBlob.size,
@@ -155,7 +153,8 @@ const CaptureScreen = () => {
         setMediaRecorder(recorder);
         setAudioChunks(chunks);
         setIsRecording(true);
-        toast.success("Recording started - tap again to stop");
+        setShowLiveCamera(true);
+        toast.success("Recording started - camera opened");
       } catch (error) {
         console.error("Error accessing microphone:", error);
         toast.error("Could not access microphone");
@@ -168,6 +167,28 @@ const CaptureScreen = () => {
         setIsRecording(false);
         toast.success("Processing audio...");
       }
+    }
+  };
+
+  const handlePauseRecording = () => {
+    if (mediaRecorder && isRecording) {
+      if (mediaRecorder.state === 'recording') {
+        mediaRecorder.pause();
+        toast.info("Recording paused");
+      } else if (mediaRecorder.state === 'paused') {
+        mediaRecorder.resume();
+        toast.info("Recording resumed");
+      }
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setMediaRecorder(null);
+      setIsRecording(false);
+      setShowLiveCamera(false);
+      toast.success("Processing audio...");
     }
   };
 
@@ -640,6 +661,10 @@ const CaptureScreen = () => {
         open={showLiveCamera}
         onOpenChange={setShowLiveCamera}
         onCapture={handleLiveCameraCapture}
+        isRecording={isRecording}
+        isPaused={mediaRecorder?.state === 'paused'}
+        onPauseRecording={handlePauseRecording}
+        onStopRecording={handleStopRecording}
       />
 
       {/* Full-size Image Viewer */}
