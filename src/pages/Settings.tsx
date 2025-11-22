@@ -20,6 +20,9 @@ import {
   Camera,
   Building2,
   Save,
+  Smartphone,
+  Copy,
+  Check,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -34,6 +37,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -62,6 +72,12 @@ const Settings = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [showMfaDialog, setShowMfaDialog] = useState(false);
+  const [qrCode, setQrCode] = useState<string>("");
+  const [mfaSecret, setMfaSecret] = useState<string>("");
+  const [verifyCode, setVerifyCode] = useState<string>("");
+  const [copiedSecret, setCopiedSecret] = useState(false);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -96,6 +112,10 @@ const Settings = () => {
 
       setUserId(user.id);
       form.setValue("email", user.email || "");
+
+      // Check MFA status
+      const factors = user.factors || [];
+      setMfaEnabled(factors.some(factor => factor.status === 'verified'));
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -192,6 +212,86 @@ const Settings = () => {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile");
     }
+  };
+
+  const handleEnable2FA = async () => {
+    try {
+      const { data, error } = await supabase.auth.mfa.enroll({
+        factorType: 'totp',
+      });
+
+      if (error) throw error;
+
+      if (data) {
+        setQrCode(data.totp.qr_code);
+        setMfaSecret(data.totp.secret);
+        setShowMfaDialog(true);
+      }
+    } catch (error: any) {
+      console.error("Error enabling 2FA:", error);
+      toast.error(error.message || "Failed to enable 2FA");
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    if (!verifyCode || verifyCode.length !== 6) {
+      toast.error("Please enter a valid 6-digit code");
+      return;
+    }
+
+    try {
+      const factors = await supabase.auth.mfa.listFactors();
+      if (factors.error) throw factors.error;
+
+      const totpFactor = factors.data?.totp?.[0];
+      if (!totpFactor) throw new Error("No TOTP factor found");
+
+      const { data, error } = await supabase.auth.mfa.challengeAndVerify({
+        factorId: totpFactor.id,
+        code: verifyCode,
+      });
+
+      if (error) throw error;
+
+      setMfaEnabled(true);
+      setShowMfaDialog(false);
+      setVerifyCode("");
+      toast.success("2FA enabled successfully");
+      await loadProfile();
+    } catch (error: any) {
+      console.error("Error verifying 2FA:", error);
+      toast.error(error.message || "Invalid code. Please try again.");
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    try {
+      const factors = await supabase.auth.mfa.listFactors();
+      if (factors.error) throw factors.error;
+
+      const totpFactor = factors.data?.totp?.[0];
+      if (!totpFactor) throw new Error("No TOTP factor found");
+
+      const { error } = await supabase.auth.mfa.unenroll({
+        factorId: totpFactor.id,
+      });
+
+      if (error) throw error;
+
+      setMfaEnabled(false);
+      toast.success("2FA disabled successfully");
+      await loadProfile();
+    } catch (error: any) {
+      console.error("Error disabling 2FA:", error);
+      toast.error(error.message || "Failed to disable 2FA");
+    }
+  };
+
+  const handleCopySecret = () => {
+    navigator.clipboard.writeText(mfaSecret);
+    setCopiedSecret(true);
+    toast.success("Secret copied to clipboard");
+    setTimeout(() => setCopiedSecret(false), 2000);
   };
 
   const onPasswordSubmit = async (values: PasswordFormValues) => {
@@ -474,6 +574,110 @@ const Settings = () => {
             </form>
           </Form>
         </div>
+
+        {/* Two-Factor Authentication Section */}
+        <div className="bg-background px-4 py-6 border-t border-border">
+          <h2 className="mb-4 text-xl font-bold text-foreground">Two-Factor Authentication</h2>
+          <p className="mb-6 text-sm text-muted-foreground">
+            Add an extra layer of security to your account by requiring a verification code from your authenticator app.
+          </p>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Smartphone className="h-5 w-5 text-foreground" />
+              <div>
+                <p className="text-base font-medium text-foreground">
+                  {mfaEnabled ? "2FA Enabled" : "2FA Disabled"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {mfaEnabled ? "Your account is protected" : "Enhance your account security"}
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={mfaEnabled ? handleDisable2FA : handleEnable2FA}
+              variant={mfaEnabled ? "destructive" : "default"}
+              className={mfaEnabled ? "" : "bg-primary text-primary-foreground hover:bg-primary/90"}
+            >
+              {mfaEnabled ? "Disable" : "Enable"}
+            </Button>
+          </div>
+        </div>
+
+        {/* 2FA Setup Dialog */}
+        <Dialog open={showMfaDialog} onOpenChange={setShowMfaDialog}>
+          <DialogContent className="bg-background">
+            <DialogHeader>
+              <DialogTitle className="text-foreground">Set Up Two-Factor Authentication</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                Scan the QR code with your authenticator app or enter the secret key manually.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* QR Code */}
+              {qrCode && (
+                <div className="flex justify-center p-4 bg-white rounded-lg">
+                  <img src={qrCode} alt="2FA QR Code" className="w-48 h-48" />
+                </div>
+              )}
+
+              {/* Secret Key */}
+              {mfaSecret && (
+                <div className="space-y-2">
+                  <Label className="text-foreground">Secret Key</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={mfaSecret}
+                      readOnly
+                      className="bg-muted text-foreground font-mono text-sm"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={handleCopySecret}
+                      className="border-primary text-foreground hover:bg-primary/10"
+                    >
+                      {copiedSecret ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Use this key if you can't scan the QR code
+                  </p>
+                </div>
+              )}
+
+              {/* Verification Code Input */}
+              <div className="space-y-2">
+                <Label className="text-foreground">Verification Code</Label>
+                <Input
+                  value={verifyCode}
+                  onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="Enter 6-digit code"
+                  className="bg-background text-foreground"
+                  maxLength={6}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter the 6-digit code from your authenticator app
+                </p>
+              </div>
+
+              {/* Verify Button */}
+              <Button
+                onClick={handleVerify2FA}
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                disabled={verifyCode.length !== 6}
+              >
+                Verify and Enable 2FA
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Cloud Connections Section */}
         <div className="bg-background px-4 py-5">
