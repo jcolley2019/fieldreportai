@@ -181,21 +181,13 @@ const Index = () => {
           <h1 className="text-lg font-bold text-foreground">Project Alpha</h1>
           <ChevronDown className="h-5 w-5 text-muted-foreground" />
         </button>
-        <div className="flex gap-2">
-          <Button 
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={() => navigate("/new-project")}
-          >
-            + New Project/Customer
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/settings")}
-          >
-            <SettingsIcon className="h-5 w-5 text-foreground" />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/settings")}
+        >
+          <SettingsIcon className="h-5 w-5 text-foreground" />
+        </Button>
       </header>
 
       <main className="p-4">
@@ -333,13 +325,24 @@ const Index = () => {
       <Dialog open={showProjectDialog} onOpenChange={setShowProjectDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Select a Project</DialogTitle>
+            <DialogTitle className="text-foreground">Project Mode</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Choose an existing project or create a new one to continue
+              Create comprehensive field reports and checklists linked to a specific project or customer
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Instructions */}
+            <div className="rounded-lg bg-primary/10 border border-primary/20 p-4">
+              <h4 className="font-semibold text-foreground mb-2">How It Works:</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Create or select a project to organize your reports</li>
+                <li>• Add photos, notes, and checklists to the project</li>
+                <li>• All data is saved and linked to the project</li>
+                <li>• Generate comprehensive reports anytime</li>
+              </ul>
+            </div>
+
             {/* Create New Project Button */}
             <Button
               onClick={() => {
@@ -349,7 +352,7 @@ const Index = () => {
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12"
             >
               <Plus className="mr-2 h-5 w-5" />
-              Create New Project
+              Create New Project/Customer
             </Button>
 
             {/* Existing Projects */}
