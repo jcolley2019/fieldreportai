@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User } from "@supabase/supabase-js";
-import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Circle } from "lucide-react";
+import { FileText, Camera, Mic, Share2, Eye, ChevronDown, ChevronRight, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Circle } from "lucide-react";
 import { toast } from "sonner";
 import { TrialBanner } from "@/components/TrialBanner";
 import {
@@ -225,6 +225,10 @@ const Index = () => {
               <Plus className="mr-2 h-4 w-4" />
               New Project
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/projects")} className="cursor-pointer">
+              <FolderOpen className="mr-2 h-4 w-4" />
+              View All Projects
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })} className="cursor-pointer">
               <Camera className="mr-2 h-4 w-4" />
               Capture Screen
@@ -328,52 +332,35 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Projects/Customers Section */}
+        {/* Recent Projects Section */}
         <section id="projects-section">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-semibold text-foreground">Projects & Customers</h2>
+            <h2 className="text-2xl font-semibold text-foreground">Recent Projects</h2>
+            {projects.length > 5 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/projects")}
+                className="gap-2"
+              >
+                View All
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
           </div>
-          
-          {/* Search and Filter */}
-          {projects.length > 0 && (
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search projects, customers, or job numbers..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 bg-card border-border text-foreground placeholder:text-muted-foreground"
-                />
-              </div>
-              <Select value={sortBy} onValueChange={(value: "recent" | "name" | "customer") => setSortBy(value)}>
-                <SelectTrigger className="w-full sm:w-[180px] bg-card border-border text-foreground">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="recent">Most Recent</SelectItem>
-                  <SelectItem value="name">Project Name</SelectItem>
-                  <SelectItem value="customer">Customer Name</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
           
           {projects.length === 0 ? (
             <div className="rounded-lg bg-card p-8 text-center">
-              <FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-              <p className="text-muted-foreground">No projects yet. Create your first project to get started!</p>
-            </div>
-          ) : filteredProjects.length === 0 ? (
-            <div className="rounded-lg bg-card p-8 text-center">
-              <Search className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-              <p className="text-muted-foreground">No projects found matching "{searchQuery}"</p>
+              <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <p className="text-muted-foreground mb-4">No projects yet. Create your first project to get started!</p>
+              <Button onClick={() => navigate("/new-project")}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Project
+              </Button>
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredProjects.map((project) => (
+              {filteredProjects.slice(0, 5).map((project) => (
                 <div
                   key={project.id}
                   className="flex items-start gap-4 rounded-lg bg-card p-4 hover:bg-secondary/50 transition-colors"
