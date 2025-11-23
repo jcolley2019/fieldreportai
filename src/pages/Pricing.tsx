@@ -16,7 +16,7 @@ const Pricing = () => {
               <span className="text-xl font-bold text-foreground">Field Report AI</span>
             </Link>
             <Link to="/">
-              <Button variant="ghost" className="gap-2">
+              <Button variant="outline" className="gap-2 border-primary/30 text-foreground hover:border-primary hover:bg-primary/10">
                 <ArrowLeft className="h-4 w-4" />
                 Back to Home
               </Button>
