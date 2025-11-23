@@ -49,6 +49,7 @@ const Index = () => {
   const [trialStartDate, setTrialStartDate] = useState<string | null>(null);
   const [showTrialBanner, setShowTrialBanner] = useState(true);
   const [isUpgradeClicked, setIsUpgradeClicked] = useState(false);
+  const [isProjectsSectionVisible, setIsProjectsSectionVisible] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -103,6 +104,25 @@ const Index = () => {
       fetchProjects();
     }
   }, [user]);
+
+  useEffect(() => {
+    // Set up intersection observer for projects section
+    const projectsSection = document.querySelector('#projects-section');
+    if (!projectsSection) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          setIsProjectsSectionVisible(entry.isIntersecting);
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(projectsSection);
+
+    return () => observer.disconnect();
+  }, []);
 
   const fetchProjects = async () => {
     try {
@@ -207,8 +227,8 @@ const Index = () => {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => {
               // Scroll to projects section
-              document.querySelector('section:last-of-type')?.scrollIntoView({ behavior: 'smooth' });
-            }} className="cursor-pointer">
+              document.querySelector('#projects-section')?.scrollIntoView({ behavior: 'smooth' });
+            }} className={`cursor-pointer ${isProjectsSectionVisible ? 'bg-secondary text-primary font-medium' : ''}`}>
               <FolderOpen className="mr-2 h-4 w-4" />
               Previous Projects
             </DropdownMenuItem>
@@ -316,7 +336,7 @@ const Index = () => {
         </section>
 
         {/* Projects/Customers Section */}
-        <section>
+        <section id="projects-section">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-foreground">Projects & Customers</h2>
           </div>
