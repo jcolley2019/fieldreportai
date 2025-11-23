@@ -184,10 +184,12 @@ export type Database = {
           company_logo_url: string | null
           company_name: string | null
           created_at: string
+          current_plan: string | null
           display_name: string | null
           first_name: string | null
           id: string
           last_name: string | null
+          trial_start_date: string | null
           updated_at: string
         }
         Insert: {
@@ -195,10 +197,12 @@ export type Database = {
           company_logo_url?: string | null
           company_name?: string | null
           created_at?: string
+          current_plan?: string | null
           display_name?: string | null
           first_name?: string | null
           id: string
           last_name?: string | null
+          trial_start_date?: string | null
           updated_at?: string
         }
         Update: {
@@ -206,10 +210,12 @@ export type Database = {
           company_logo_url?: string | null
           company_name?: string | null
           created_at?: string
+          current_plan?: string | null
           display_name?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
+          trial_start_date?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -252,7 +258,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_trial_active: { Args: { user_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
