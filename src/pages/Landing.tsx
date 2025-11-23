@@ -420,7 +420,7 @@ const Landing = () => {
             {pricingPlans.map((plan, index) => {
               const displayPrice = billingPeriod === "monthly" ? plan.monthlyPrice : plan.annualPrice;
               return (
-                <Card key={index} className={plan.popular ? "border-primary shadow-lg" : ""}>
+                <Card key={index} className={`flex flex-col ${plan.popular ? "border-primary shadow-lg" : ""}`}>
                   {plan.popular && (
                     <div className="bg-primary text-primary-foreground text-center py-2 text-sm font-semibold">
                       Most Popular
@@ -449,9 +449,9 @@ const Landing = () => {
                       )}
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="flex flex-col flex-1">
                     <h3 className="font-semibold text-sm mb-3">Key Features</h3>
-                    <ul className="space-y-3 mb-6">
+                    <ul className="space-y-3 mb-6 flex-1">
                       {plan.features.map((feature, i) => (
                         <li key={i} className="flex items-center gap-2">
                           <Check className="h-4 w-4 text-primary" />
