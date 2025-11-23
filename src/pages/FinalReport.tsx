@@ -1000,7 +1000,7 @@ const FinalReport = () => {
 
       {/* Static Bottom Action Bar - Always Visible */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur-sm p-4 z-20">
-        <div className="mb-3 grid grid-cols-3 gap-3">
+        <div className="mb-3 grid grid-cols-2 gap-3">
           <Button
             onClick={handleDownloadPDF}
             disabled={!reportData}
@@ -1018,14 +1018,6 @@ const FinalReport = () => {
             <FileText className="mr-2 h-5 w-5" />
             Save as Word
           </Button>
-          <Button
-            onClick={handleCopyLink}
-            variant="outline"
-            className="py-6 text-base font-semibold"
-          >
-            <Link2 className="mr-2 h-5 w-5" />
-            Copy Link
-          </Button>
         </div>
         <div className="mb-3 flex gap-3">
           <Button
@@ -1036,6 +1028,13 @@ const FinalReport = () => {
           >
             <Printer className="mr-2 h-5 w-5" />
             Print Report
+          </Button>
+          <Button
+            onClick={handleCopyLink}
+            variant="secondary"
+            className="flex h-auto w-14 items-center justify-center py-6"
+          >
+            <Link2 className="h-5 w-5" />
           </Button>
           <Button
             onClick={handleShare}
