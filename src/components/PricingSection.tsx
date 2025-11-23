@@ -149,7 +149,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
         )}
         
         {/* Billing Period Toggle */}
-        <div className="max-w-4xl mx-auto text-center mb-6">
+        <div className="max-w-4xl mx-auto text-center mb-4">
           <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-lg">
             <Button
               variant="ghost"
