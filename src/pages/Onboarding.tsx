@@ -105,7 +105,7 @@ const Onboarding = () => {
   const uploadFile = async (file: File, bucket: string, userId: string, setUploadingState: (val: boolean) => void) => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}-${Math.random()}.${fileExt}`;
-    const filePath = `${fileName}`;
+    const filePath = `${userId}/${fileName}`;
 
     try {
       setUploadingState(true);
