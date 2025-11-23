@@ -44,6 +44,26 @@ export const EmailCaptureForm = ({
 
       if (error) throw error;
 
+      // Send to Zapier webhook for Google Sheets
+      try {
+        const zapierWebhookUrl = "YOUR_ZAPIER_WEBHOOK_URL_HERE";
+        await fetch(zapierWebhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          mode: "no-cors",
+          body: JSON.stringify({
+            email,
+            source,
+            type: "lead_capture",
+            timestamp: new Date().toISOString(),
+            sequence: source === "newsletter" ? "newsletter" : "welcome",
+          }),
+        });
+      } catch (zapierError) {
+        console.error("Zapier webhook failed:", zapierError);
+        // Don't throw - we still want to show success if lead was captured
+      }
+
       toast.success("Thanks! Check your email for next steps.");
       setEmail("");
     } catch (error: any) {
