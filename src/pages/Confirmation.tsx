@@ -102,28 +102,6 @@ const Confirmation = () => {
         </Button>
       </div>
 
-      {/* Cloud Storage Options */}
-      <div className="px-4 pt-8">
-        <h3 className="mb-4 text-base font-medium text-muted-foreground">
-          Also send to
-        </h3>
-        <div className="grid grid-cols-3 gap-4">
-          {cloudServices.map((service) => (
-            <button
-              key={service.id}
-              onClick={() => handleCloudShare(service.name)}
-              className="flex flex-col items-center gap-3 rounded-xl bg-card p-4 transition-colors hover:bg-secondary"
-            >
-              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-3xl">
-                {service.icon}
-              </div>
-              <span className="text-sm font-medium text-foreground">
-                {service.name}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* History Section */}
       {recentReports.length > 0 && (
