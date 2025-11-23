@@ -15,10 +15,25 @@ const Pricing = () => {
               <img src={logo} alt="Field Report AI" className="h-20 w-auto" />
               <span className="text-xl font-bold text-foreground">Field Report AI</span>
             </Link>
-            <Link to="/">
-              <Button variant="outline" className="gap-2 border-primary/30 text-foreground hover:border-primary hover:bg-primary/10">
+            <nav className="hidden md:flex items-center gap-6">
+              <a href="/#features" className="text-sm text-foreground/80 hover:text-foreground transition-colors">
+                Features
+              </a>
+              <a href="#faq" className="text-sm text-foreground/80 hover:text-foreground transition-colors">
+                FAQ
+              </a>
+              <Link to="/">
+                <Button variant="outline" className="gap-2 border-primary/30 text-foreground hover:border-primary hover:bg-primary/10">
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to Home
+                </Button>
+              </Link>
+            </nav>
+            {/* Mobile menu - just the back button */}
+            <Link to="/" className="md:hidden">
+              <Button variant="outline" size="sm" className="gap-2 border-primary/30 text-foreground hover:border-primary hover:bg-primary/10">
                 <ArrowLeft className="h-4 w-4" />
-                Back to Home
+                Home
               </Button>
             </Link>
           </div>
@@ -41,7 +56,7 @@ const Pricing = () => {
       <PricingSection showHeader={false} />
 
       {/* FAQ Section */}
-      <section className="py-20 bg-transparent">
+      <section id="faq" className="py-20 bg-transparent">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl font-bold text-center mb-12 text-white">Frequently Asked Questions</h2>
