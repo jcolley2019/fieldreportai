@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import logo from "@/assets/field-report-ai-logo.png";
+import { PricingSection } from "@/components/PricingSection";
 
 const Landing = () => {
   const features = [
@@ -64,87 +65,6 @@ const Landing = () => {
     { value: "95%", label: "Time Saved on Documentation" },
     { value: "100%", label: "Accurate AI Transcription" },
   ];
-
-  const pricingPlans = [
-    {
-      name: "Pro Plan 14-day Trial",
-      monthlyPrice: "$0",
-      annualPrice: "$0",
-      period: "",
-      description: "Try all Pro features free for 14 days",
-      features: [
-        "Unlimited reports & checklists",
-        "Advanced media capture",
-        "AI-powered insights",
-        "Team collaboration",
-        "Priority support",
-        "Unlimited Photo Storage",
-        "PDF Reports",
-        "5-Minute Video Capture",
-      ],
-      cta: "Start Pro Plan 14-day Trial",
-      popular: false,
-    },
-    {
-      name: "Pro",
-      monthlyPrice: "$49",
-      annualPrice: "$39",
-      period: "/month",
-      description: "For active field professionals",
-      features: [
-        "Unlimited reports & checklists",
-        "Advanced media capture",
-        "AI-powered insights",
-        "Team collaboration",
-        "Priority support",
-        "Unlimited Photo Storage",
-        "PDF Reports",
-        "5-Minute Video Capture",
-      ],
-      cta: "Start Pro Plan Today",
-      popular: true,
-      savings: "20",
-    },
-    {
-      name: "Premium",
-      monthlyPrice: "$99",
-      annualPrice: "$79",
-      period: "/month",
-      description: "For growing teams and businesses",
-      features: [
-        "Everything in Pro",
-        "Advanced analytics & reporting",
-        "Custom branding",
-        "API access",
-        "10-minute Video Capture",
-        "Project Templates",
-        "Report Templates",
-        "Company Dashboard",
-      ],
-      cta: "Get Premium",
-      popular: false,
-      savings: "20",
-    },
-    {
-      name: "Enterprise",
-      monthlyPrice: "Custom",
-      annualPrice: "Custom",
-      period: "",
-      description: "For large teams and organizations",
-      features: [
-        "Everything in Premium",
-        "Custom integrations",
-        "Dedicated support",
-        "Advanced security",
-        "Training & onboarding",
-        "SLA guarantee",
-      ],
-      cta: "Contact Sales",
-      popular: false,
-    },
-  ];
-
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
 
   const testimonials = [
     {
@@ -389,170 +309,7 @@ const Landing = () => {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-20 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Simple, Transparent Pricing</h2>
-            <p className="text-muted-foreground mb-8">Choose the plan that fits your needs</p>
-            
-            {/* Billing Period Toggle */}
-            <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-lg">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setBillingPeriod("monthly")}
-                className={`relative ${billingPeriod === "monthly" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : ""}`}
-              >
-                Monthly
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setBillingPeriod("annual")}
-                className={`relative ${billingPeriod === "annual" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : ""}`}
-              >
-                Annual
-                <Badge className="ml-2 bg-primary text-primary-foreground">Save 20%</Badge>
-              </Button>
-            </div>
-          </div>
-          <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {pricingPlans.map((plan, index) => {
-              const displayPrice = billingPeriod === "monthly" ? plan.monthlyPrice : plan.annualPrice;
-              return (
-                <Card key={index} className={`flex flex-col ${plan.popular ? "border-primary shadow-lg" : ""}`}>
-                  {plan.popular && (
-                    <div className="bg-primary text-primary-foreground text-center py-2 text-sm font-semibold">
-                      Most Popular
-                    </div>
-                  )}
-                  <CardHeader>
-                    <CardTitle>{plan.name}</CardTitle>
-                    <CardDescription>{plan.description}</CardDescription>
-                    <div className="mt-4 min-h-[140px]">
-                      <span className="text-4xl font-bold">{displayPrice}</span>
-                      <span className="text-muted-foreground">{plan.period}</span>
-                      <div className="text-sm text-muted-foreground mt-1 h-5">
-                        {plan.period && (billingPeriod === "annual" ? "Billed annually" : "Billed monthly")}
-                      </div>
-                      {plan.period && plan.name !== "Basic" && (
-                        <>
-                          <div className="text-sm text-foreground mt-2">
-                            Includes 3 Users
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            $19/each additional user per month
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex flex-col flex-1">
-                    <h3 className="font-semibold text-sm mb-3">Key Features</h3>
-                    <ul className="space-y-3 mb-6 flex-1">
-                      {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-primary" />
-                          <span className="text-sm">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Link to="/auth">
-                      <Button className="w-full" variant={plan.popular ? "default" : "outline"}>
-                        {plan.cta}
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Comparison Table */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Why Choose Field Report AI?</h2>
-          </div>
-          <div className="max-w-4xl mx-auto overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b-2 border-primary/50">
-                  <th className="text-left py-4 px-4 text-foreground font-bold text-base">Feature</th>
-                  <th className="text-center py-4 px-4 text-foreground font-bold text-base">Field Report AI</th>
-                  <th className="text-center py-4 px-4 text-foreground font-bold text-base">Traditional Methods</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { feature: "Report Generation Time", us: "10 minutes", them: "2+ hours" },
-                  { feature: "Voice-to-Text", us: "✓", them: "✗" },
-                  { feature: "AI-Powered Insights", us: "✓", them: "✗" },
-                  { feature: "Media Organization", us: "Automatic", them: "Manual" },
-                  { feature: "Team Collaboration", us: "Real-time", them: "Email chains" },
-                  { feature: "Mobile-First", us: "✓", them: "Limited" },
-                ].map((row, index) => (
-                  <tr key={index} className="border-b border-border/50">
-                    <td className="py-4 px-4 font-semibold text-foreground">{row.feature}</td>
-                    <td className="py-4 px-4 text-center text-primary font-bold text-lg">{row.us}</td>
-                    <td className="py-4 px-4 text-center text-foreground/70 font-medium">{row.them}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      {/* Integrations */}
-      <section className="py-20 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Integrates With Your Tools</h2>
-            <p className="text-muted-foreground">Connect with the platforms you already use</p>
-          </div>
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-8 max-w-4xl mx-auto">
-            {integrations.map((integration, index) => (
-              <div key={index} className="flex flex-col items-center gap-2">
-                <div className="text-4xl">{integration.logo}</div>
-                <div className="text-sm text-muted-foreground">{integration.name}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Security */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <Card>
-              <CardHeader className="text-center">
-                <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
-                <CardTitle className="text-2xl text-white">Enterprise-Grade Security & Privacy</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-3 gap-6 text-center">
-                  <div>
-                    <h3 className="font-semibold mb-2">Bank-Level Encryption</h3>
-                    <p className="text-sm text-muted-foreground">256-bit SSL encryption for all data</p>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-2">SOC 2 Compliant</h3>
-                    <p className="text-sm text-muted-foreground">Regular security audits</p>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-2">GDPR Ready</h3>
-                    <p className="text-sm text-muted-foreground">Full data privacy compliance</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+      <PricingSection />
 
       {/* FAQ */}
       <section id="faq" className="py-20 bg-muted/30">
