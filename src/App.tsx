@@ -20,6 +20,7 @@ import FinalReport from "./pages/FinalReport";
 import ReviewSummary from "./pages/ReviewSummary";
 import Settings from "./pages/Settings";
 import SavedReports from "./pages/SavedReports";
+import AllContent from "./pages/AllContent";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,7 +39,7 @@ const App = () => (
           <Route path="/dashboard" element={<Index />} />
           <Route path="/new-project" element={<NewProject />} />
           <Route path="/projects" element={<ProjectsCustomers />} />
-          <Route path="/projects/:projectId" element={<ProjectDetail />} />
+          <Route path="/project/:projectId" element={<ProjectDetail />} />
           <Route path="/notes" element={<Notes />} />
           <Route path="/capture-screen" element={<CaptureScreen />} />
           <Route path="/checklist" element={<Checklist />} />
@@ -47,6 +48,7 @@ const App = () => (
           <Route path="/final-report" element={<FinalReport />} />
           <Route path="/review-summary" element={<ReviewSummary />} />
           <Route path="/saved-reports" element={<SavedReports />} />
+          <Route path="/all-content" element={<AllContent />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
