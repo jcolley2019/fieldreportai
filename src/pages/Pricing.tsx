@@ -56,11 +56,11 @@ const Pricing = () => {
       <PricingSection showHeader={false} />
 
       {/* FAQ Section */}
-      <section id="faq" className="py-20 bg-transparent">
+      <section id="faq" className="py-12 bg-transparent">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12 text-white">Frequently Asked Questions</h2>
-            <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-center mb-8 text-white">Frequently Asked Questions</h2>
+            <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-semibold mb-2 text-white">Can I switch plans later?</h3>
                 <p className="text-muted-foreground">
@@ -91,10 +91,10 @@ const Pricing = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-transparent">
+      <section className="py-12 bg-transparent">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4 text-white">Ready to Get Started?</h2>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <h2 className="text-3xl font-bold mb-3 text-white">Ready to Get Started?</h2>
+          <p className="text-xl text-muted-foreground mb-6 max-w-2xl mx-auto">
             Join thousands of field professionals using Field Report AI to save time and improve documentation.
           </p>
           <Link to="/auth">
