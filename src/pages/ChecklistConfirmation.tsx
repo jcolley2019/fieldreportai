@@ -9,6 +9,7 @@ import { Document, Paragraph, TextRun, HeadingLevel, Packer } from 'docx';
 import { saveAs } from 'file-saver';
 import { pdf } from '@react-pdf/renderer';
 import { Page, Text, View, Document as PDFDocument, StyleSheet } from '@react-pdf/renderer';
+import { useState } from "react";
 
 interface ChecklistItem {
   text: string;
@@ -26,6 +27,9 @@ const ChecklistConfirmation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const checklist = location.state?.checklist as ChecklistData | undefined;
+  const [isSaving, setIsSaving] = useState(false);
+  const [checklistId, setChecklistId] = useState<string | null>(null);
+  const [reportId, setReportId] = useState<string | null>(null);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -187,6 +191,7 @@ const ChecklistConfirmation = () => {
     }
 
     try {
+      setIsSaving(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error("Please sign in to save to cloud");
@@ -194,12 +199,150 @@ const ChecklistConfirmation = () => {
       }
 
       toast.success("Saving to cloud...");
-      
-      // For now, just show success - full implementation would save to database
-      toast.success("Saved to cloud successfully!");
+
+      // Step 1: Create a report if we don't have one
+      let currentReportId = reportId;
+      if (!currentReportId) {
+        const { data: newReport, error: reportError } = await supabase
+          .from('reports')
+          .insert({
+            user_id: user.id,
+            project_name: checklist.title,
+            customer_name: 'Checklist Customer',
+            job_number: `CL-${Date.now()}`,
+            job_description: `Checklist: ${checklist.title}`
+          })
+          .select()
+          .single();
+
+        if (reportError) {
+          console.error("Error creating report:", reportError);
+          toast.error("Failed to create report");
+          return;
+        }
+
+        currentReportId = newReport.id;
+        setReportId(currentReportId);
+      }
+
+      // Step 2: Save checklist to database if not already saved
+      let currentChecklistId = checklistId;
+      if (!currentChecklistId) {
+        const { data: newChecklist, error: checklistError } = await supabase
+          .from('checklists')
+          .insert({
+            user_id: user.id,
+            report_id: currentReportId!,
+            title: checklist.title
+          })
+          .select()
+          .single();
+
+        if (checklistError) {
+          console.error("Error creating checklist:", checklistError);
+          toast.error("Failed to save checklist");
+          return;
+        }
+
+        currentChecklistId = newChecklist.id;
+        setChecklistId(currentChecklistId);
+
+        // Step 3: Save checklist items
+        const itemsToInsert = checklist.items.map(item => ({
+          checklist_id: currentChecklistId!,
+          text: item.text,
+          priority: item.priority,
+          category: item.category,
+          completed: item.completed
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('checklist_items')
+          .insert(itemsToInsert);
+
+        if (itemsError) {
+          console.error("Error saving checklist items:", itemsError);
+          toast.error("Failed to save checklist items");
+          return;
+        }
+      }
+
+      // Step 4: Generate PDF and save to storage
+      const pdfStyles = StyleSheet.create({
+        page: { padding: 40, backgroundColor: '#ffffff' },
+        title: { fontSize: 24, marginBottom: 10, fontWeight: 'bold' },
+        subtitle: { fontSize: 12, marginBottom: 20, color: '#666666' },
+        itemContainer: { marginBottom: 12, paddingLeft: 10 },
+        itemText: { fontSize: 12, marginBottom: 4 },
+        itemMeta: { fontSize: 10, color: '#666666' },
+      });
+
+      const ChecklistPDF = () => (
+        <PDFDocument>
+          <Page size="A4" style={pdfStyles.page}>
+            <Text style={pdfStyles.title}>{checklist.title}</Text>
+            <Text style={pdfStyles.subtitle}>
+              Generated on {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            </Text>
+            {checklist.items.map((item, index) => (
+              <View key={index} style={pdfStyles.itemContainer}>
+                <Text style={pdfStyles.itemText}>
+                  {item.completed ? '☑' : '☐'} {item.text}
+                </Text>
+                <Text style={pdfStyles.itemMeta}>
+                  Priority: {item.priority} • Category: {item.category}
+                </Text>
+              </View>
+            ))}
+          </Page>
+        </PDFDocument>
+      );
+
+      const blob = await pdf(<ChecklistPDF />).toBlob();
+
+      // Create filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const fileName = `${checklist.title}_${timestamp}.pdf`;
+      const filePath = `${user.id}/${currentReportId}/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, blob, {
+          contentType: 'application/pdf',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error("Storage upload error:", uploadError);
+        toast.error(`Upload failed: ${uploadError.message}`);
+        return;
+      }
+
+      // Save document metadata to database
+      const { error: dbError } = await supabase
+        .from('documents')
+        .insert({
+          user_id: user.id,
+          report_id: currentReportId!,
+          file_path: filePath,
+          file_name: fileName,
+          mime_type: 'application/pdf',
+          file_size: blob.size
+        });
+
+      if (dbError) {
+        console.error("Database error:", dbError);
+        toast.error(`Failed to save document metadata: ${dbError.message}`);
+        return;
+      }
+
+      toast.success("Checklist saved to cloud successfully!");
     } catch (error) {
       console.error('Error saving to cloud:', error);
       toast.error("Failed to save to cloud");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -304,11 +447,11 @@ const ChecklistConfirmation = () => {
         <div className="mb-3 grid grid-cols-2 gap-3">
           <Button
             onClick={handleSaveToCloud}
-            disabled={!checklist}
+            disabled={!checklist || isSaving}
             className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
           >
             <Cloud className="mr-2 h-5 w-5" />
-            Save to Cloud
+            {isSaving ? "Saving..." : "Save to Cloud"}
           </Button>
           <div className="grid grid-cols-[1fr_auto] gap-3">
             <Button
