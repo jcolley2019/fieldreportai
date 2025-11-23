@@ -72,6 +72,7 @@ const Settings = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
+  const [letterheadUrl, setLetterheadUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [showMfaDialog, setShowMfaDialog] = useState(false);
@@ -133,6 +134,7 @@ const Settings = () => {
         form.setValue("companyName", profile.company_name || "");
         setAvatarUrl(profile.avatar_url);
         setCompanyLogoUrl(profile.company_logo_url);
+        setLetterheadUrl(profile.letterhead_url);
         setCurrentPlan(profile.current_plan);
         setEmailTemplateColor(profile.email_template_color || "#007bff");
         setEmailTemplateMessage(profile.email_template_message || "");
@@ -195,6 +197,25 @@ const Settings = () => {
       await supabase
         .from("profiles")
         .update({ company_logo_url: url })
+        .eq("id", userId);
+    });
+  };
+
+  const handleLetterheadUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check if user has Premium or Enterprise plan
+    if (currentPlan !== 'premium' && currentPlan !== 'enterprise') {
+      toast.error("Letterhead upload is only available for Premium and Enterprise plans");
+      return;
+    }
+
+    await uploadImage(file, "letterheads", async (url) => {
+      setLetterheadUrl(url);
+      await supabase
+        .from("profiles")
+        .update({ letterhead_url: url })
         .eq("id", userId);
     });
   };
@@ -509,6 +530,65 @@ const Settings = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Letterhead Upload - Premium/Enterprise Only */}
+              {(currentPlan === 'premium' || currentPlan === 'enterprise') && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Company Letterhead</Label>
+                    <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
+                      {currentPlan === 'premium' ? 'Premium' : 'Enterprise'} Feature
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Upload your letterhead to use in PDF and Word document exports
+                  </p>
+                  <div className="flex items-center gap-4">
+                    {letterheadUrl && (
+                      <Avatar className="h-20 w-full max-w-[160px] rounded-lg">
+                        <AvatarImage src={letterheadUrl} className="object-contain" />
+                      </Avatar>
+                    )}
+                    <div className="flex-1">
+                      <Input
+                        id="letterhead-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLetterheadUpload}
+                        disabled={uploading}
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById("letterhead-upload")?.click()}
+                        disabled={uploading}
+                        className="border-primary text-foreground hover:bg-primary/10"
+                      >
+                        <Camera className="mr-2 h-4 w-4" />
+                        {uploading ? "Uploading..." : letterheadUrl ? "Change Letterhead" : "Upload Letterhead"}
+                      </Button>
+                      {letterheadUrl && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={async () => {
+                            setLetterheadUrl(null);
+                            await supabase
+                              .from("profiles")
+                              .update({ letterhead_url: null })
+                              .eq("id", userId);
+                            toast.success("Letterhead removed");
+                          }}
+                          className="ml-2 text-destructive hover:text-destructive"
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Save Button */}
               <Button
