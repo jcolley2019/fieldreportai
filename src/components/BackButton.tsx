@@ -18,7 +18,7 @@ export const BackButton = ({ className = "", fallbackPath = "/dashboard" }: Back
     <Button
       onClick={handleBack}
       size="sm"
-      className={`gap-2 ${className}`}
+      className={`gap-2 transition-transform duration-200 hover:scale-105 ${className}`}
     >
       <ArrowLeft className="h-4 w-4" />
       Back
