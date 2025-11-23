@@ -9,21 +9,7 @@ import { Document, Paragraph, TextRun, HeadingLevel, Packer } from 'docx';
 import { saveAs } from 'file-saver';
 import { pdf } from '@react-pdf/renderer';
 import { Page, Text, View, Document as PDFDocument, StyleSheet } from '@react-pdf/renderer';
-import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useState } from "react";
 
 interface ChecklistItem {
   text: string;
@@ -37,54 +23,13 @@ interface ChecklistData {
   items: ChecklistItem[];
 }
 
-interface Project {
-  id: string;
-  project_name: string;
-  customer_name: string;
-  job_number: string;
-}
-
 const ChecklistConfirmation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const checklist = location.state?.checklist as ChecklistData | undefined;
-  const existingReportId = location.state?.reportId as string | undefined;
   const [isSaving, setIsSaving] = useState(false);
   const [checklistId, setChecklistId] = useState<string | null>(null);
-  const [reportId, setReportId] = useState<string | null>(existingReportId || null);
-  const [showProjectDialog, setShowProjectDialog] = useState(false);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
-  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
-
-  useEffect(() => {
-    const loadProjects = async () => {
-      setIsLoadingProjects(true);
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data, error } = await supabase
-          .from('reports')
-          .select('id, project_name, customer_name, job_number')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error("Error loading projects:", error);
-          return;
-        }
-
-        setProjects(data || []);
-      } catch (error) {
-        console.error("Error loading projects:", error);
-      } finally {
-        setIsLoadingProjects(false);
-      }
-    };
-
-    loadProjects();
-  }, []);
+  const [reportId, setReportId] = useState<string | null>(null);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -245,21 +190,6 @@ const ChecklistConfirmation = () => {
       return;
     }
 
-    // If no report is selected and we have projects, show selection dialog
-    if (!reportId && projects.length > 0) {
-      setShowProjectDialog(true);
-      return;
-    }
-
-    await saveChecklistToCloud();
-  };
-
-  const saveChecklistToCloud = async () => {
-    if (!checklist) {
-      toast.error("No checklist to save");
-      return;
-    }
-
     try {
       setIsSaving(true);
       const { data: { user } } = await supabase.auth.getUser();
@@ -270,8 +200,8 @@ const ChecklistConfirmation = () => {
 
       toast.success("Saving to cloud...");
 
-      // Use selected project or create new one
-      let currentReportId = reportId || selectedProjectId;
+      // Step 1: Create a report if we don't have one
+      let currentReportId = reportId;
       if (!currentReportId) {
         const { data: newReport, error: reportError } = await supabase
           .from('reports')
@@ -408,8 +338,6 @@ const ChecklistConfirmation = () => {
       }
 
       toast.success("Checklist saved to cloud successfully!");
-      setShowProjectDialog(false);
-      setSelectedProjectId("");
     } catch (error) {
       console.error('Error saving to cloud:', error);
       toast.error("Failed to save to cloud");
@@ -420,57 +348,6 @@ const ChecklistConfirmation = () => {
 
   return (
     <div className="dark min-h-screen bg-background pb-[400px]">
-      {/* Project Selection Dialog */}
-      <Dialog open={showProjectDialog} onOpenChange={setShowProjectDialog}>
-        <DialogContent className="dark bg-background text-foreground border-border">
-          <DialogHeader>
-            <DialogTitle>Link to Existing Project</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Select a project to link this checklist to, or create a new project.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-              <SelectTrigger className="bg-background border-border text-foreground">
-                <SelectValue placeholder="Select a project..." />
-              </SelectTrigger>
-              <SelectContent className="dark bg-background border-border">
-                {isLoadingProjects ? (
-                  <SelectItem value="loading" disabled>Loading projects...</SelectItem>
-                ) : projects.length === 0 ? (
-                  <SelectItem value="none" disabled>No projects found</SelectItem>
-                ) : (
-                  projects.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.project_name} - {project.customer_name} (Job #{project.job_number})
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-            <div className="flex gap-3">
-              <Button
-                onClick={() => {
-                  setShowProjectDialog(false);
-                  navigate('/new-project', { state: { returnTo: '/checklist-confirmation', checklistData: checklist } });
-                }}
-                variant="outline"
-                className="flex-1 border-border text-foreground hover:bg-secondary"
-              >
-                Create New Project
-              </Button>
-              <Button
-                onClick={saveChecklistToCloud}
-                disabled={!selectedProjectId || isSaving}
-                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                {isSaving ? "Saving..." : "Link & Save"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         <BackButton />
