@@ -186,6 +186,8 @@ export type Database = {
           created_at: string
           current_plan: string | null
           display_name: string | null
+          email_template_color: string | null
+          email_template_message: string | null
           first_name: string | null
           id: string
           last_name: string | null
@@ -199,6 +201,8 @@ export type Database = {
           created_at?: string
           current_plan?: string | null
           display_name?: string | null
+          email_template_color?: string | null
+          email_template_message?: string | null
           first_name?: string | null
           id: string
           last_name?: string | null
@@ -212,6 +216,8 @@ export type Database = {
           created_at?: string
           current_plan?: string | null
           display_name?: string | null
+          email_template_color?: string | null
+          email_template_message?: string | null
           first_name?: string | null
           id?: string
           last_name?: string | null
