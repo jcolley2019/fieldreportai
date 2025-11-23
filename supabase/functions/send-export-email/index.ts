@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -33,6 +34,31 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Missing authorization header");
     }
 
+    // Create Supabase client
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    );
+
+    // Get authenticated user
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData } = await supabaseClient.auth.getUser(token);
+    const user = userData.user;
+    if (!user) throw new Error("User not authenticated");
+
+    // Get user profile for branding
+    const { data: profile } = await supabaseClient
+      .from("profiles")
+      .select("company_name, company_logo_url, email_template_color, email_template_message, current_plan")
+      .eq("id", user.id)
+      .single();
+
+    const isPremiumOrEnterprise = profile?.current_plan === 'premium' || profile?.current_plan === 'enterprise';
+    const brandColor = isPremiumOrEnterprise && profile?.email_template_color ? profile.email_template_color : "#007bff";
+    const customMessage = isPremiumOrEnterprise && profile?.email_template_message ? profile.email_template_message : "";
+    const companyName = profile?.company_name || "Field Report AI";
+    const companyLogoUrl = isPremiumOrEnterprise && profile?.company_logo_url ? profile.company_logo_url : null;
+
     const { 
       recipientEmail, 
       recipientName,
@@ -48,44 +74,58 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Sending export email to:", recipientEmail);
     console.log("File size:", fileSize);
     console.log("Has download URL:", !!downloadUrl);
+    console.log("Using custom branding:", isPremiumOrEnterprise);
 
     // Determine if we should send as attachment or download link
     const useAttachment = fileData && fileSize && fileSize <= MAX_ATTACHMENT_SIZE;
 
     let emailHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Field Report Export</h2>
-        <p>Hi${recipientName ? ` ${recipientName}` : ''},</p>
-        <p>${senderName} has shared a field report export with you.</p>
-        ${message ? `<p style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;"><em>${message}</em></p>` : ''}
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        ${companyLogoUrl ? `
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="${companyLogoUrl}" alt="${companyName}" style="max-height: 60px; width: auto;" />
+          </div>
+        ` : ''}
+        <div style="background: #ffffff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h2 style="color: #1a1a1a; margin: 0 0 10px 0; font-size: 24px;">Field Report Export</h2>
+          <p style="color: #666; margin: 0 0 5px 0;">Hi${recipientName ? ` ${recipientName}` : ''},</p>
+          <p style="color: #666; margin: 0 0 20px 0;">${senderName} from ${companyName} has shared a field report export with you.</p>
+          ${message ? `<div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid ${brandColor};"><p style="margin: 0; color: #333; font-style: italic;">${message}</p></div>` : ''}
     `;
 
     if (useAttachment && fileData && fileName) {
       emailHtml += `
-        <p>The export file is attached to this email.</p>
-        <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px;">
-          This file was exported from Field Report AI
-        </p>
+        <p style="color: #666; margin: 0 0 20px 0;">The export file is attached to this email.</p>
       `;
     } else if (downloadUrl) {
       emailHtml += `
-        <p>Your export file is ready to download. Click the button below to download:</p>
+        <p style="color: #666; margin: 0 0 20px 0;">Your export file is ready to download. Click the button below:</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${downloadUrl}" 
-             style="display: inline-block; background-color: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+             style="display: inline-block; background-color: ${brandColor}; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
             Download Export File
           </a>
         </div>
-        <p style="color: #666; font-size: 14px;">
+        <p style="color: #999; font-size: 13px; margin: 0;">
           <strong>Note:</strong> This download link will expire in 7 days for security reasons.
-        </p>
-        <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 12px;">
-          This file was exported from Field Report AI
         </p>
       `;
     }
 
-    emailHtml += `</div>`;
+    emailHtml += `
+          ${customMessage ? `
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e5e5;">
+              <p style="color: #666; font-size: 14px; margin: 0;">${customMessage}</p>
+            </div>
+          ` : ''}
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e5e5; text-align: center;">
+            <p style="color: #999; font-size: 12px; margin: 0;">
+              This file was exported from Field Report AI
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
 
     // Prepare email request for Resend API
     const emailPayload: any = {

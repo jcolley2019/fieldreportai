@@ -23,6 +23,7 @@ import {
   Smartphone,
   Copy,
   Check,
+  Palette,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -78,6 +79,9 @@ const Settings = () => {
   const [mfaSecret, setMfaSecret] = useState<string>("");
   const [verifyCode, setVerifyCode] = useState<string>("");
   const [copiedSecret, setCopiedSecret] = useState(false);
+  const [currentPlan, setCurrentPlan] = useState<string | null>(null);
+  const [emailTemplateColor, setEmailTemplateColor] = useState("#007bff");
+  const [emailTemplateMessage, setEmailTemplateMessage] = useState("");
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -129,6 +133,9 @@ const Settings = () => {
         form.setValue("companyName", profile.company_name || "");
         setAvatarUrl(profile.avatar_url);
         setCompanyLogoUrl(profile.company_logo_url);
+        setCurrentPlan(profile.current_plan);
+        setEmailTemplateColor(profile.email_template_color || "#007bff");
+        setEmailTemplateMessage(profile.email_template_message || "");
       }
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -319,6 +326,29 @@ const Settings = () => {
   const handleManageCloud = () => {
     toast.success("Opening cloud connections...");
   };
+
+  const handleSaveEmailTemplate = async () => {
+    if (!userId) return;
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          email_template_color: emailTemplateColor,
+          email_template_message: emailTemplateMessage,
+        })
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      toast.success("Email template saved successfully");
+    } catch (error) {
+      console.error("Error saving email template:", error);
+      toast.error("Failed to save email template");
+    }
+  };
+
+  const isPremiumOrEnterprise = currentPlan === 'premium' || currentPlan === 'enterprise';
 
   return (
     <div className="dark min-h-screen bg-background">
@@ -569,6 +599,100 @@ const Settings = () => {
             </form>
           </Form>
         </div>
+
+        {/* Email Branding Section - Premium/Enterprise Only */}
+        {isPremiumOrEnterprise && (
+          <div className="bg-background px-4 py-6 border-t border-border">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                Email Template Branding
+              </h2>
+              <p className="text-sm text-muted-foreground mt-2">
+                Customize the appearance of emails sent from your account with your company branding.
+              </p>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Brand Color */}
+              <div className="space-y-2">
+                <Label className="text-foreground">Brand Color</Label>
+                <div className="flex gap-2 items-center">
+                  <Input
+                    type="color"
+                    value={emailTemplateColor}
+                    onChange={(e) => setEmailTemplateColor(e.target.value)}
+                    className="h-10 w-20 cursor-pointer"
+                  />
+                  <Input
+                    type="text"
+                    value={emailTemplateColor}
+                    onChange={(e) => setEmailTemplateColor(e.target.value)}
+                    placeholder="#007bff"
+                    className="bg-background text-foreground flex-1"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  This color will be used for buttons and accents in your emails
+                </p>
+              </div>
+
+              {/* Custom Message */}
+              <div className="space-y-2">
+                <Label className="text-foreground">Custom Footer Message</Label>
+                <Input
+                  value={emailTemplateMessage}
+                  onChange={(e) => setEmailTemplateMessage(e.target.value)}
+                  placeholder="Thank you for using our services"
+                  className="bg-background text-foreground"
+                  maxLength={200}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Optional message to include at the bottom of your emails ({emailTemplateMessage.length}/200 characters)
+                </p>
+              </div>
+
+              {/* Preview */}
+              <div className="space-y-2">
+                <Label className="text-foreground">Email Preview</Label>
+                <div className="border border-border rounded-lg p-4 bg-muted/20">
+                  <div className="bg-white p-6 rounded shadow-sm max-w-md mx-auto">
+                    <div className="flex items-center gap-3 mb-4">
+                      {companyLogoUrl && (
+                        <img src={companyLogoUrl} alt="Company Logo" className="h-10 w-auto object-contain" />
+                      )}
+                      <div className="text-sm text-gray-600">
+                        {form.watch("companyName") || "Your Company"}
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Field Report Export</h3>
+                    <p className="text-sm text-gray-600 mb-4">Your export is ready</p>
+                    <button
+                      style={{ backgroundColor: emailTemplateColor }}
+                      className="text-white px-6 py-2 rounded font-medium text-sm"
+                    >
+                      Download Export
+                    </button>
+                    {emailTemplateMessage && (
+                      <p className="text-xs text-gray-500 mt-4 pt-4 border-t border-gray-200">
+                        {emailTemplateMessage}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <Button
+                onClick={handleSaveEmailTemplate}
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Save Email Template
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Two-Factor Authentication Section */}
         <div className="bg-background px-4 py-6 border-t border-border">
