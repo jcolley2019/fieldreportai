@@ -1,0 +1,371 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/BackButton";
+import { Textarea } from "@/components/ui/textarea";
+import { Edit2, Trash2, Sparkles, Save, X, Search } from "lucide-react";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+interface Note {
+  id: string;
+  note_text: string;
+  organized_notes: string | null;
+  created_at: string;
+  report_id: string | null;
+  project_name?: string;
+}
+
+const SavedNotes = () => {
+  const navigate = useNavigate();
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [editedText, setEditedText] = useState("");
+  const [isOrganizing, setIsOrganizing] = useState(false);
+  const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    fetchNotes();
+  }, []);
+
+  useEffect(() => {
+    filterNotes();
+  }, [searchQuery, notes]);
+
+  const fetchNotes = async () => {
+    try {
+      setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+
+      const { data: notesData, error } = await supabase
+        .from('notes')
+        .select('*, reports(project_name)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching notes:", error);
+        toast.error("Failed to load notes");
+        return;
+      }
+
+      const formattedNotes = notesData?.map(note => ({
+        ...note,
+        project_name: (note.reports as any)?.project_name || null
+      })) || [];
+
+      setNotes(formattedNotes);
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+      toast.error("Failed to load notes");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filterNotes = () => {
+    if (!searchQuery.trim()) {
+      setFilteredNotes(notes);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filtered = notes.filter(note => 
+      note.note_text.toLowerCase().includes(query) ||
+      note.organized_notes?.toLowerCase().includes(query) ||
+      note.project_name?.toLowerCase().includes(query)
+    );
+    setFilteredNotes(filtered);
+  };
+
+  const handleEdit = (note: Note) => {
+    setEditingNote(note);
+    setEditedText(note.organized_notes || note.note_text);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingNote) return;
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .update({ 
+          note_text: editedText,
+          organized_notes: editedText 
+        })
+        .eq('id', editingNote.id);
+
+      if (error) throw error;
+
+      toast.success("Note updated successfully!");
+      setEditingNote(null);
+      fetchNotes();
+    } catch (error) {
+      console.error("Error updating note:", error);
+      toast.error("Failed to update note");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleOrganizeWithAI = async (note: Note) => {
+    setIsOrganizing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-note-summary', {
+        body: { noteText: note.note_text }
+      });
+
+      if (error) {
+        console.error("Error organizing note:", error);
+        if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+          toast.error("Rate limit exceeded. Please try again in a moment.");
+        } else if (error.message?.includes('402') || error.message?.includes('credits')) {
+          toast.error("AI credits depleted. Please add credits to continue.");
+        } else {
+          toast.error("Failed to organize note");
+        }
+        return;
+      }
+
+      if (data?.organizedNotes) {
+        const { error: updateError } = await supabase
+          .from('notes')
+          .update({ organized_notes: data.organizedNotes })
+          .eq('id', note.id);
+
+        if (updateError) throw updateError;
+
+        toast.success("Note organized successfully!");
+        fetchNotes();
+      }
+    } catch (error) {
+      console.error("Error organizing note:", error);
+      toast.error("Failed to organize note");
+    } finally {
+      setIsOrganizing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteNoteId) return;
+
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', deleteNoteId);
+
+      if (error) throw error;
+
+      toast.success("Note deleted successfully!");
+      setDeleteNoteId(null);
+      fetchNotes();
+    } catch (error) {
+      console.error("Error deleting note:", error);
+      toast.error("Failed to delete note");
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="dark min-h-screen bg-background pb-8">
+      {/* Header */}
+      <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm border-b border-border">
+        <BackButton />
+        <h1 className="text-lg font-bold text-foreground">Saved Notes</h1>
+        <div className="w-[80px]" />
+      </header>
+
+      <main className="p-4">
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search notes..."
+              className="pl-9 bg-card"
+            />
+          </div>
+        </div>
+
+        {/* Notes List */}
+        {isLoading ? (
+          <div className="text-center text-muted-foreground py-8">
+            Loading notes...
+          </div>
+        ) : filteredNotes.length === 0 ? (
+          <div className="text-center text-muted-foreground py-8">
+            {searchQuery ? "No notes found matching your search" : "No saved notes yet"}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredNotes.map((note) => (
+              <div
+                key={note.id}
+                className="bg-card rounded-lg p-4 border border-border space-y-3"
+              >
+                {/* Note Header */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-xs text-muted-foreground">
+                        {formatDate(note.created_at)}
+                      </p>
+                      {note.project_name && (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                          {note.project_name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(note)}
+                      title="Edit note"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    {!note.organized_notes && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleOrganizeWithAI(note)}
+                        disabled={isOrganizing}
+                        title="Organize with AI"
+                      >
+                        <Sparkles className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setDeleteNoteId(note.id)}
+                      title="Delete note"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Note Content */}
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <p className="text-foreground whitespace-pre-wrap line-clamp-3">
+                    {note.organized_notes || note.note_text}
+                  </p>
+                </div>
+
+                {note.organized_notes && (
+                  <div className="pt-2 border-t border-border">
+                    <span className="text-xs text-primary flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      AI Organized
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingNote} onOpenChange={() => setEditingNote(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Note</DialogTitle>
+            <DialogDescription>
+              Make changes to your note below
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <Textarea
+              value={editedText}
+              onChange={(e) => setEditedText(e.target.value)}
+              className="min-h-[300px] resize-none bg-card"
+              placeholder="Enter your note..."
+            />
+
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setEditingNote(null)}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveEdit}
+                disabled={isSaving}
+              >
+                <Save className="mr-2 h-4 w-4" />
+                {isSaving ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteNoteId} onOpenChange={() => setDeleteNoteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Note</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this note? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
+export default SavedNotes;

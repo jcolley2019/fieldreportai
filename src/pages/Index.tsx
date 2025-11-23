@@ -265,6 +265,10 @@ const Index = () => {
               <Layers className="mr-2 h-4 w-4" />
               All Content
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/saved-notes")} className="cursor-pointer">
+              <Mic className="mr-2 h-4 w-4" />
+              Saved Notes
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/saved-reports")} className="cursor-pointer">
               <Cloud className="mr-2 h-4 w-4" />
               Saved Reports
