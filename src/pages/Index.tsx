@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User } from "@supabase/supabase-js";
-import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Check, TrendingUp } from "lucide-react";
+import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -181,23 +181,13 @@ const Index = () => {
           <h1 className="text-lg font-bold text-foreground">Project Alpha</h1>
           <ChevronDown className="h-5 w-5 text-muted-foreground" />
         </button>
-        <div className="flex gap-2">
-          <Button
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={() => navigate("/pricing")}
-            size="sm"
-          >
-            <TrendingUp className="h-4 w-4 mr-2" />
-            Upgrade Now
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/settings")}
-          >
-            <SettingsIcon className="h-5 w-5 text-foreground" />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/settings")}
+        >
+          <SettingsIcon className="h-5 w-5 text-foreground" />
+        </Button>
       </header>
 
       <main className="p-4">
