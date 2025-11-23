@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
-import { Building2, Download, Share2, ChevronRight, Edit2, Save, X, Link2, FileText, Printer } from "lucide-react";
+import { Building2, Download, Edit2, Save, X, Link2, FileText, Printer, Cloud } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -1012,8 +1012,7 @@ const FinalReport = () => {
           <Button
             onClick={handleDownloadWord}
             disabled={!reportData}
-            variant="secondary"
-            className="py-6 text-base font-semibold"
+            className="bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
             <FileText className="mr-2 h-5 w-5" />
             Save as Word
@@ -1021,36 +1020,27 @@ const FinalReport = () => {
         </div>
         <div className="mb-3 flex gap-3">
           <Button
+            onClick={() => toast({ title: "Save to Cloud feature coming soon" })}
+            disabled={!reportData}
+            className="bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 flex-1"
+          >
+            <Cloud className="mr-2 h-5 w-5" />
+            Save to Cloud
+          </Button>
+          <Button
             onClick={handlePrint}
             disabled={!reportData}
-            variant="secondary"
-            className="flex-1 py-6 text-base font-semibold"
+            className="bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 flex-1"
           >
             <Printer className="mr-2 h-5 w-5" />
-            Print Report
+            Print
           </Button>
           <Button
             onClick={handleCopyLink}
-            variant="secondary"
-            className="flex h-auto w-14 items-center justify-center py-6"
+            className="bg-primary h-auto w-20 items-center justify-center py-6 text-primary-foreground hover:bg-primary/90"
+            title="Copy Link"
           >
             <Link2 className="h-5 w-5" />
-          </Button>
-          <Button
-            onClick={handleShare}
-            disabled={!reportData}
-            variant="secondary"
-            className="flex h-auto w-14 items-center justify-center py-6"
-          >
-            <Share2 className="h-5 w-5" />
-          </Button>
-          <Button
-            onClick={handleForward}
-            disabled={!reportData}
-            variant="secondary"
-            className="flex h-auto w-14 items-center justify-center py-6"
-          >
-            <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
         <p className="text-center text-xs text-muted-foreground">
