@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User } from "@supabase/supabase-js";
-import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus } from "lucide-react";
+import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Check, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -194,7 +194,7 @@ const Index = () => {
         {/* Mode Selection Section */}
         <section className="mb-8">
           <h2 className="mb-4 text-2xl font-semibold text-foreground">Choose Your Workflow</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button 
               onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })}
               className="flex flex-col items-center gap-4 rounded-lg bg-card p-8 transition-colors hover:bg-secondary"
@@ -217,6 +217,18 @@ const Index = () => {
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-foreground mb-1">Project Mode</h3>
                 <p className="text-sm text-muted-foreground">Manage projects and customers</p>
+              </div>
+            </button>
+            <button 
+              onClick={() => window.open('/#pricing', '_blank')}
+              className="flex flex-col items-center gap-4 rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 border-2 border-primary/50 p-8 transition-colors hover:bg-primary/30"
+            >
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/20">
+                <TrendingUp className="h-10 w-10 text-primary" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-foreground mb-1">Upgrade Now</h3>
+                <p className="text-sm text-muted-foreground">Unlock premium features</p>
               </div>
             </button>
           </div>
