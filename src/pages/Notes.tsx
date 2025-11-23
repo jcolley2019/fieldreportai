@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { pdf } from '@react-pdf/renderer';
 import { Page, Text, View, Document as PDFDocument, StyleSheet } from '@react-pdf/renderer';
-import { Document, Paragraph, TextRun, HeadingLevel, Packer } from 'docx';
+import { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer } from 'docx';
 import { saveAs } from 'file-saver';
 import {
   Dialog,
@@ -229,14 +229,17 @@ const Notes = () => {
       toast.success("Generating PDF...");
 
       const pdfStyles = StyleSheet.create({
-        page: { padding: 40, backgroundColor: '#ffffff' },
+        page: { paddingTop: 60, paddingBottom: 60, paddingHorizontal: 40, backgroundColor: '#ffffff' },
+        header: { position: 'absolute', top: 30, left: 40, right: 40, borderBottom: '1 solid #cccccc', paddingBottom: 8 },
+        headerText: { fontSize: 10, color: '#666666' },
+        footer: { position: 'absolute', bottom: 30, left: 40, right: 40, borderTop: '1 solid #cccccc', paddingTop: 8, flexDirection: 'row', justifyContent: 'space-between' },
+        footerText: { fontSize: 10, color: '#666666' },
         title: { fontSize: 24, marginBottom: 10, fontWeight: 'bold' },
         subtitle: { fontSize: 12, marginBottom: 20, color: '#666666' },
         heading: { fontSize: 16, fontWeight: 'bold', marginTop: 15, marginBottom: 8, color: '#333333' },
         subheading: { fontSize: 14, fontWeight: 'bold', marginTop: 12, marginBottom: 6, color: '#555555' },
         paragraph: { fontSize: 12, lineHeight: 1.6, marginBottom: 8 },
         bulletPoint: { fontSize: 12, lineHeight: 1.6, marginBottom: 4, marginLeft: 20 },
-        bold: { fontWeight: 'bold' },
       });
 
       // Parse content into structured sections
@@ -251,7 +254,6 @@ const Notes = () => {
             return;
           }
 
-          // Detect headings (all caps lines or lines ending with :)
           if (trimmed === trimmed.toUpperCase() && trimmed.length > 3 && trimmed.length < 50) {
             elements.push(
               <Text key={`heading-${index}`} style={pdfStyles.heading}>
@@ -259,7 +261,6 @@ const Notes = () => {
               </Text>
             );
           }
-          // Detect subheadings (lines ending with colon)
           else if (trimmed.endsWith(':') && !trimmed.includes('•') && !trimmed.includes('-')) {
             elements.push(
               <Text key={`subheading-${index}`} style={pdfStyles.subheading}>
@@ -267,7 +268,6 @@ const Notes = () => {
               </Text>
             );
           }
-          // Detect bullet points
           else if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
             const bulletText = trimmed.replace(/^[•\-*]\s*/, '');
             elements.push(
@@ -276,7 +276,6 @@ const Notes = () => {
               </Text>
             );
           }
-          // Regular paragraph
           else {
             elements.push(
               <Text key={`para-${index}`} style={pdfStyles.paragraph}>
@@ -289,14 +288,30 @@ const Notes = () => {
         return elements;
       };
 
+      const currentDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
       const NotesPDF = () => (
         <PDFDocument>
           <Page size="A4" style={pdfStyles.page}>
+            {/* Header */}
+            <View style={pdfStyles.header} fixed>
+              <Text style={pdfStyles.headerText}>Notes - {currentDate}</Text>
+            </View>
+
+            {/* Content */}
             <Text style={pdfStyles.title}>Notes</Text>
             <Text style={pdfStyles.subtitle}>
-              Generated on {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              Generated on {currentDate}
             </Text>
             <View>{parseContent(content)}</View>
+
+            {/* Footer with page numbers */}
+            <View style={pdfStyles.footer} fixed>
+              <Text style={pdfStyles.footerText}>Field Report AI</Text>
+              <Text style={pdfStyles.footerText} render={({ pageNumber, totalPages }) => (
+                `Page ${pageNumber} of ${totalPages}`
+              )} />
+            </View>
           </Page>
         </PDFDocument>
       );
@@ -340,7 +355,6 @@ const Notes = () => {
             return;
           }
 
-          // Detect headings (all caps lines or lines ending with :)
           if (trimmed === trimmed.toUpperCase() && trimmed.length > 3 && trimmed.length < 50) {
             elements.push(
               new Paragraph({
@@ -350,7 +364,6 @@ const Notes = () => {
               })
             );
           }
-          // Detect subheadings (lines ending with colon)
           else if (trimmed.endsWith(':') && !trimmed.includes('•') && !trimmed.includes('-')) {
             elements.push(
               new Paragraph({
@@ -360,7 +373,6 @@ const Notes = () => {
               })
             );
           }
-          // Detect bullet points
           else if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
             const bulletText = trimmed.replace(/^[•\-*]\s*/, '');
             elements.push(
@@ -371,7 +383,6 @@ const Notes = () => {
               })
             );
           }
-          // Regular paragraph
           else {
             elements.push(
               new Paragraph({
@@ -385,6 +396,14 @@ const Notes = () => {
         return elements;
       };
 
+      const currentDate = new Date().toLocaleString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+
       const docSections = [
         new Paragraph({
           text: "Notes",
@@ -394,20 +413,29 @@ const Notes = () => {
         new Paragraph({
           children: [
             new TextRun({
-              text: `Generated on ${new Date().toLocaleString('en-US', { 
-                month: 'long', 
-                day: 'numeric', 
-                year: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit'
-              })}`,
+              text: `Generated on ${currentDate}`,
               size: 18,
               color: "999999",
             }),
           ],
           spacing: { after: 400 },
         }),
-        ...parseContentForWord(content)
+        ...parseContentForWord(content),
+        // Footer paragraph
+        new Paragraph({
+          text: "",
+          spacing: { before: 400 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "Field Report AI",
+              size: 18,
+              color: "999999",
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+        }),
       ];
 
       const doc = new Document({
