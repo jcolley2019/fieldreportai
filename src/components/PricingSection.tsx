@@ -54,13 +54,13 @@ const pricingPlans = [
     description: "Advanced features for growing teams",
     features: [
       "Everything in Pro",
+      "Custom email branding",
       "Custom branding",
       "API access",
       "Advanced analytics",
       "Dedicated support",
       "Custom integrations",
       "Unlimited Video Capture",
-      "Custom Report Templates",
     ],
     cta: "Start Plan",
     popular: false,
@@ -73,6 +73,7 @@ const pricingPlans = [
     description: "For large organizations",
     features: [
       "Everything in Premium",
+      "Custom email branding",
       "Custom integrations",
       "Dedicated account manager",
       "Advanced security",
