@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { Textarea } from "@/components/ui/textarea";
-import { Mic, Save, Download, Mail, Printer, FileText } from "lucide-react";
+import { Mic, Save, Download, Mail, Printer, FileText, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -13,18 +13,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const Notes = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isSimpleMode = location.state?.simpleMode || false;
+  const projectReportId = location.state?.reportId || null;
   const [noteText, setNoteText] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
@@ -32,7 +26,14 @@ const Notes = () => {
   const [showOptionsDialog, setShowOptionsDialog] = useState(false);
   const [organizedNotes, setOrganizedNotes] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<string>("");
+  const [projects, setProjects] = useState<any[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projectReportId);
+
+  useEffect(() => {
+    if (showOptionsDialog && isSimpleMode && !projectReportId) {
+      fetchProjects();
+    }
+  }, [showOptionsDialog]);
 
   const handleVoiceRecord = async () => {
     if (!isRecording) {
@@ -195,22 +196,53 @@ const Notes = () => {
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
+  const fetchProjects = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setProjects(data);
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
+  };
+
+  const handleCreateNewProject = () => {
+    setShowOptionsDialog(false);
+    navigate("/new-project", { 
+      state: { 
+        returnTo: "/notes",
+        notes: organizedNotes
+      } 
+    });
+  };
+
   const handleAssignToProject = async () => {
-    if (!selectedProject) {
+    if (!selectedProjectId) {
       toast.error("Please select a project");
       return;
     }
     
-    // TODO: Save notes to database with project assignment
+    // TODO: Save notes to database with project assignment linked to selectedProjectId
     toast.success("Notes assigned to project successfully!");
     setShowOptionsDialog(false);
-    navigate("/");
+    navigate("/dashboard");
   };
 
   const handleSkipProject = () => {
+    // Save as standalone
+    // TODO: Save notes to database without project link
     toast.success("Notes saved without project assignment!");
     setShowOptionsDialog(false);
-    navigate("/");
+    navigate("/dashboard");
   };
 
   return (
@@ -320,41 +352,92 @@ const Notes = () => {
             </Button>
           </div>
 
-          {/* Project assignment */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-muted-foreground" />
-              <h3 className="font-semibold">Assign to Project (Optional)</h3>
-            </div>
-            
-            <Select value={selectedProject} onValueChange={setSelectedProject}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a project..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="project-1">Project Alpha</SelectItem>
-                <SelectItem value="project-2">Project Beta</SelectItem>
-                <SelectItem value="project-3">Project Gamma</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <div className="flex gap-2">
+          {/* Project assignment - only show in Simple Mode */}
+          {isSimpleMode && !projectReportId && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-muted-foreground" />
+                <h3 className="font-semibold">Link to Project (Optional)</h3>
+              </div>
+              
+              {/* Save as Standalone Option */}
               <Button
-                onClick={handleAssignToProject}
-                disabled={!selectedProject}
-                className="flex-1"
-              >
-                Assign to Project
-              </Button>
-              <Button
-                variant="outline"
                 onClick={handleSkipProject}
-                className="flex-1"
+                variant="outline"
+                className="w-full justify-start h-auto p-4"
               >
-                Skip
+                <div className="text-left">
+                  <div className="font-semibold">Save as Standalone</div>
+                  <div className="text-xs text-muted-foreground">Not linked to any project</div>
+                </div>
+              </Button>
+
+              {/* Create New Project */}
+              <Button
+                onClick={handleCreateNewProject}
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create New Project
+              </Button>
+
+              {/* Existing Projects */}
+              {projects.length > 0 && (
+                <>
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">Or select existing</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {projects.map((project) => (
+                      <Button
+                        key={project.id}
+                        onClick={() => {
+                          setSelectedProjectId(project.id);
+                          handleAssignToProject();
+                        }}
+                        variant="outline"
+                        className="w-full justify-start h-auto p-4"
+                      >
+                        <div className="text-left">
+                          <div className="font-semibold">{project.project_name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {project.customer_name} • {project.job_number}
+                          </div>
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Project assignment confirmation for Project Mode */}
+          {!isSimpleMode && projectReportId && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold text-foreground">Linked to Project</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                This note will be automatically saved to the current project.
+              </p>
+              <Button
+                onClick={() => {
+                  handleAssignToProject();
+                }}
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Save to Project
               </Button>
             </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

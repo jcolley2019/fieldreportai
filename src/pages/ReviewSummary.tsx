@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
-import { ChevronDown, ChevronUp, Pencil, Play, Printer, Download, FolderPlus } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Play, Printer, Download, FolderPlus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -10,6 +10,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface SummarySection {
   id: string;
@@ -22,8 +29,12 @@ const ReviewSummary = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isSimpleMode = location.state?.simpleMode || false;
+  const projectReportId = location.state?.reportId || null;
   const summaryText = location.state?.summary || "";
   const capturedImages = location.state?.images || [];
+  const [showProjectSelector, setShowProjectSelector] = useState(false);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   
   // Parse the AI-generated summary into sections
   const parseSummary = (text: string) => {
@@ -85,46 +96,98 @@ const ReviewSummary = () => {
     toast.success("Regenerating summary...");
   };
 
-  const handleContinueToReport = async () => {
-    setIsSaving(true);
-    
+  const fetchProjects = async () => {
     try {
-      // Get the current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setProjects(data);
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
+  };
+
+  const handleLinkToProject = async () => {
+    if (isSimpleMode) {
+      await fetchProjects();
+      setShowProjectSelector(true);
+    } else {
+      toast.info("This report is already linked to a project");
+    }
+  };
+
+  const handleCreateNewProject = () => {
+    setShowProjectSelector(false);
+    navigate("/new-project", { 
+      state: { 
+        returnTo: "/review-summary",
+        summary: summaryText,
+        images: capturedImages
+      } 
+    });
+  };
+
+  const saveReportToProject = async (targetReportId: string | null) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
       
-      if (userError || !user) {
+      if (!user) {
         toast.error("You must be logged in to save reports");
-        setIsSaving(false);
         return;
       }
 
-      // Create report entry with full summary
-      const reportData = {
-        user_id: user.id,
-        project_name: "Simple Mode Report",
-        customer_name: "N/A",
-        job_number: `SM-${Date.now()}`,
-        job_description: summaryText // Store full summary
-      };
+      let currentReportId = targetReportId;
 
-      const { data: report, error: reportError } = await supabase
-        .from('reports')
-        .insert(reportData)
-        .select()
-        .single();
+      // If no project selected (standalone), create a new report
+      if (!currentReportId) {
+        const reportData = {
+          user_id: user.id,
+          project_name: "Simple Mode Report",
+          customer_name: "Standalone Report",
+          job_number: `SM-${Date.now()}`,
+          job_description: summaryText
+        };
 
-      if (reportError) {
-        console.error("Error saving report:", reportError);
-        toast.error("Failed to save report");
-        setIsSaving(false);
-        return;
+        const { data: report, error: reportError } = await supabase
+          .from('reports')
+          .insert(reportData)
+          .select()
+          .single();
+
+        if (reportError) {
+          console.error("Error saving report:", reportError);
+          toast.error("Failed to save report");
+          return;
+        }
+
+        currentReportId = report.id;
+      } else {
+        // Update existing project report with summary
+        const { error: updateError } = await supabase
+          .from('reports')
+          .update({ job_description: summaryText })
+          .eq('id', currentReportId);
+
+        if (updateError) {
+          console.error("Error updating report:", updateError);
+          toast.error("Failed to update report");
+          return;
+        }
       }
 
       // Save captured images to media table
       if (capturedImages.length > 0) {
         const mediaEntries = capturedImages.map((image: any) => ({
           user_id: user.id,
-          report_id: report.id,
+          report_id: currentReportId,
           file_path: image.path || image.url,
           file_type: 'image',
           mime_type: 'image/jpeg'
@@ -136,18 +199,31 @@ const ReviewSummary = () => {
 
         if (mediaError) {
           console.error("Error saving media:", mediaError);
-          // Don't fail the whole operation if media save fails
         }
       }
 
       toast.success("Report saved successfully!");
-      navigate("/confirmation", { state: { reportId: report.id, reportData: report } });
+      navigate("/confirmation", { state: { reportId: currentReportId } });
     } catch (error) {
       console.error("Error:", error);
       toast.error("An error occurred while saving");
-    } finally {
-      setIsSaving(false);
     }
+  };
+
+  const handleContinueToReport = async () => {
+    setIsSaving(true);
+    
+    // If in Simple Mode and no project selected, show selector
+    if (isSimpleMode && !selectedProjectId && !projectReportId) {
+      await fetchProjects();
+      setShowProjectSelector(true);
+      setIsSaving(false);
+      return;
+    }
+
+    // Use selected project or existing project from state
+    await saveReportToProject(selectedProjectId || projectReportId);
+    setIsSaving(false);
   };
 
   const handlePrint = () => {
@@ -156,11 +232,6 @@ const ReviewSummary = () => {
 
   const handleSaveAsPDF = () => {
     toast.success("Saving as PDF...");
-  };
-
-  const handleLinkToProject = () => {
-    toast.success("Link to project/customer");
-    // Navigate to project selection or creation
   };
 
   return (
@@ -302,6 +373,78 @@ const ReviewSummary = () => {
           </Button>
         )}
       </div>
+
+      {/* Project Selector Dialog for Simple Mode */}
+      <Dialog open={showProjectSelector} onOpenChange={setShowProjectSelector}>
+        <DialogContent className="max-w-md bg-background">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Link to Project</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Choose an existing project or save as standalone
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {/* Save as Standalone Option */}
+            <Button
+              onClick={() => {
+                setShowProjectSelector(false);
+                saveReportToProject(null);
+              }}
+              variant="outline"
+              className="w-full justify-start h-auto p-4"
+            >
+              <div className="text-left">
+                <div className="font-semibold">Save as Standalone</div>
+                <div className="text-xs text-muted-foreground">Not linked to any project</div>
+              </div>
+            </Button>
+
+            {/* Create New Project */}
+            <Button
+              onClick={handleCreateNewProject}
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create New Project
+            </Button>
+
+            {/* Existing Projects */}
+            {projects.length > 0 && (
+              <>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or select existing</span>
+                  </div>
+                </div>
+                
+                {projects.map((project) => (
+                  <Button
+                    key={project.id}
+                    onClick={() => {
+                      setSelectedProjectId(project.id);
+                      setShowProjectSelector(false);
+                      saveReportToProject(project.id);
+                    }}
+                    variant="outline"
+                    className="w-full justify-start h-auto p-4"
+                  >
+                    <div className="text-left">
+                      <div className="font-semibold">{project.project_name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {project.customer_name} • {project.job_number}
+                      </div>
+                    </div>
+                  </Button>
+                ))}
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
