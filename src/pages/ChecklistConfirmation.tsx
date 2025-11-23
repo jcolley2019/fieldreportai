@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
-import { Check, Share2, Download, CheckCircle2 } from "lucide-react";
+import { Check, Share2, Download, CheckCircle2, FileText, Cloud, Printer, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
@@ -135,26 +135,52 @@ const ChecklistConfirmation = () => {
         </Button>
       </div>
 
-      {/* Cloud Storage Options */}
-      <div className="px-4 pt-8">
-        <h3 className="mb-4 text-base font-medium text-muted-foreground">
-          Save as:
-        </h3>
-        <div className="grid grid-cols-3 gap-4">
-          {cloudServices.map((service) => (
-            <button
-              key={service.id}
-              onClick={() => handleCloudShare(service.name)}
-              className="flex flex-col items-center gap-3 rounded-xl bg-card p-4 transition-colors hover:bg-secondary"
+      {/* Save & Print Section */}
+      <div className="px-4 pt-8 pb-6">
+        <h3 className="mb-4 text-center text-lg font-semibold text-foreground">Save & Print</h3>
+        <div className="mb-3 grid grid-cols-2 gap-3">
+          <Button
+            onClick={() => toast.success("Downloading PDF...")}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
+          >
+            <Download className="mr-2 h-5 w-5" />
+            Save as PDF
+          </Button>
+          <Button
+            onClick={() => toast.success("Downloading Word document...")}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
+          >
+            <FileText className="mr-2 h-5 w-5" />
+            Save as Word
+          </Button>
+        </div>
+        <div className="mb-3 grid grid-cols-2 gap-3">
+          <Button
+            onClick={() => toast.success("Saving to cloud...")}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
+          >
+            <Cloud className="mr-2 h-5 w-5" />
+            Save to Cloud
+          </Button>
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <Button
+              onClick={handlePrintChecklist}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
             >
-              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-3xl">
-                {service.icon}
-              </div>
-              <span className="text-sm font-medium text-foreground">
-                {service.name}
-              </span>
-            </button>
-          ))}
+              <Printer className="mr-2 h-5 w-5" />
+              Print
+            </Button>
+            <Button
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                toast.success("Link copied to clipboard!");
+              }}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 w-14 items-center justify-center py-6 transition-transform duration-200 hover:scale-105"
+              title="Copy Link"
+            >
+              <Link2 className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </div>
 
