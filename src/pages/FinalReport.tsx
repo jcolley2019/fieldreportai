@@ -1,8 +1,8 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
-import { Building2, Download, Share2, ChevronRight, Edit2, Save, X } from "lucide-react";
-import { toast } from "sonner";
+import { Building2, Download, Share2, ChevronRight, Edit2, Save, X, Link2, FileText } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { RichTextEditor } from "@/components/RichTextEditor";
@@ -43,7 +43,10 @@ const FinalReport = () => {
     const loadReportData = async () => {
       if (!reportId) {
         console.error("No reportId found in location state");
-        toast.error("No report found");
+        toast({
+          title: "No report found",
+          variant: "destructive",
+        });
         setIsLoading(false);
         // Don't navigate away - stay on page and show error
         return;
@@ -61,7 +64,10 @@ const FinalReport = () => {
 
         if (reportError || !report) {
           console.error("Failed to load report:", reportError);
-          toast.error("Failed to load report");
+          toast({
+            title: "Failed to load report",
+            variant: "destructive",
+          });
           setIsLoading(false);
           return;
         }
@@ -106,7 +112,10 @@ const FinalReport = () => {
 
       } catch (error) {
         console.error('Error loading report data:', error);
-        toast.error('Failed to load report');
+        toast({
+          title: "Failed to load report",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -146,17 +155,51 @@ const FinalReport = () => {
   }
 
   const handleDownloadPDF = () => {
-    toast.success("Downloading PDF...");
-    navigate("/confirmation");
+    toast({
+      title: "Downloading PDF...",
+      description: "Your report is being prepared as a PDF file.",
+    });
+    // TODO: Implement actual PDF generation
+  };
+
+  const handleDownloadWord = () => {
+    toast({
+      title: "Downloading Word Document...",
+      description: "Your report is being prepared as a Word document.",
+    });
+    // TODO: Implement actual Word document generation
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      const url = window.location.href;
+      await navigator.clipboard.writeText(url);
+      toast({
+        title: "Link copied!",
+        description: "Report link has been copied to clipboard.",
+      });
+    } catch (err) {
+      toast({
+        title: "Failed to copy link",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleShare = () => {
-    toast.success("Sharing report...");
+    toast({
+      title: "Sharing report...",
+      description: "Opening share options.",
+    });
     navigate("/confirmation");
   };
 
   const handleForward = () => {
-    toast.success("Forwarding report...");
+    toast({
+      title: "Forwarding report...",
+      description: "Preparing to forward this report.",
+    });
   };
 
   const getMediaUrl = (filePath: string) => {
@@ -215,10 +258,15 @@ const FinalReport = () => {
       setReportData({ ...reportData, job_description: updatedText });
       setEditingSection(null);
       setEditedContent({});
-      toast.success("Section updated successfully");
+      toast({
+        title: "Section updated successfully",
+      });
     } catch (error) {
       console.error('Error updating section:', error);
-      toast.error("Failed to update section");
+      toast({
+        title: "Failed to update section",
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -540,7 +588,7 @@ const FinalReport = () => {
             </h3>
             <div className="grid grid-cols-3 gap-4">
               <button
-                onClick={() => toast.success("Sending to Google Drive...")}
+                onClick={() => toast({ title: "Sending to Google Drive..." })}
                 className="flex flex-col items-center gap-3 rounded-xl bg-card p-4 transition-colors hover:bg-secondary"
               >
                 <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-3xl">
@@ -551,7 +599,7 @@ const FinalReport = () => {
                 </span>
               </button>
               <button
-                onClick={() => toast.success("Sending to OneDrive...")}
+                onClick={() => toast({ title: "Sending to OneDrive..." })}
                 className="flex flex-col items-center gap-3 rounded-xl bg-card p-4 transition-colors hover:bg-secondary"
               >
                 <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-3xl">
@@ -562,7 +610,7 @@ const FinalReport = () => {
                 </span>
               </button>
               <button
-                onClick={() => toast.success("Sending to Dropbox...")}
+                onClick={() => toast({ title: "Sending to Dropbox..." })}
                 className="flex flex-col items-center gap-3 rounded-xl bg-card p-4 transition-colors hover:bg-secondary"
               >
                 <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-3xl">
@@ -579,13 +627,31 @@ const FinalReport = () => {
 
       {/* Bottom Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/80 p-4 backdrop-blur-sm">
-        <div className="mb-3 flex gap-3">
+        <div className="mb-3 grid grid-cols-2 gap-3">
           <Button
             onClick={handleDownloadPDF}
-            className="flex-1 bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90"
+            className="bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90"
           >
             <Download className="mr-2 h-5 w-5" />
-            PDF
+            Save as PDF
+          </Button>
+          <Button
+            onClick={handleDownloadWord}
+            variant="secondary"
+            className="py-6 text-base font-semibold"
+          >
+            <FileText className="mr-2 h-5 w-5" />
+            Save as Word
+          </Button>
+        </div>
+        <div className="mb-3 flex gap-3">
+          <Button
+            onClick={handleCopyLink}
+            variant="outline"
+            className="flex-1 py-6 text-base font-semibold"
+          >
+            <Link2 className="mr-2 h-5 w-5" />
+            Copy Link
           </Button>
           <Button
             onClick={handleShare}
