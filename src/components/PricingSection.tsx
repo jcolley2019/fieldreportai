@@ -144,7 +144,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
                     </div>
                     {plan.name === "Pro Plan 14-day Trial" && (
                       <div className="text-xs text-muted-foreground mt-3 leading-relaxed">
-                        This plan will expire in 14 days, after this plan will revert to a basic limited use plan.
+                        This plan will expire in 14 days unless a plan is chosen.
                       </div>
                     )}
                     {plan.period && plan.name !== "Basic" && (
