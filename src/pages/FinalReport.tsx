@@ -1099,7 +1099,7 @@ const FinalReport = () => {
           <Button
             onClick={handleDownloadPDF}
             disabled={!reportData}
-            className="py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
           >
             <Download className="mr-2 h-5 w-5" />
             Save as PDF
@@ -1107,7 +1107,7 @@ const FinalReport = () => {
           <Button
             onClick={handleDownloadWord}
             disabled={!reportData}
-            className="py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
           >
             <FileText className="mr-2 h-5 w-5" />
             Save as Word
@@ -1117,7 +1117,7 @@ const FinalReport = () => {
           <Button
             onClick={handleSaveToCloud}
             disabled={!reportData || isSaving}
-            className="py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
           >
             <Cloud className="mr-2 h-5 w-5" />
             {isSaving ? "Saving..." : "Save to Cloud"}
@@ -1126,14 +1126,14 @@ const FinalReport = () => {
             <Button
               onClick={handlePrint}
               disabled={!reportData}
-              className="py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
             >
               <Printer className="mr-2 h-5 w-5" />
               Print
             </Button>
             <Button
               onClick={handleCopyLink}
-              className="h-auto w-14 items-center justify-center py-6 transition-transform duration-200 hover:scale-105"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto w-14 items-center justify-center py-6 transition-transform duration-200 hover:scale-105"
               title="Copy Link"
             >
               <Link2 className="h-5 w-5" />
