@@ -21,6 +21,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Project {
   id: string;
@@ -186,10 +193,33 @@ const Index = () => {
     <div className="dark min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
-        <button className="flex items-center gap-2">
-          <h1 className="text-lg font-bold text-foreground">Project Alpha</h1>
-          <ChevronDown className="h-5 w-5 text-muted-foreground" />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2 hover:bg-secondary rounded-md px-2 py-1 transition-colors">
+              <h1 className="text-lg font-bold text-foreground">Project Alpha</h1>
+              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56 bg-popover">
+            <DropdownMenuItem onClick={() => navigate("/dashboard")} className="cursor-pointer">
+              <FolderOpen className="mr-2 h-4 w-4" />
+              Dashboard
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/new-project")} className="cursor-pointer">
+              <Plus className="mr-2 h-4 w-4" />
+              New Project
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })} className="cursor-pointer">
+              <Camera className="mr-2 h-4 w-4" />
+              Capture Screen
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
+              <SettingsIcon className="mr-2 h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <div className="flex items-center gap-2">
           <Button
             onClick={() => {
