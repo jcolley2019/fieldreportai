@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/BackButton";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, Mic, Save, Download, Mail, Printer, FileText } from "lucide-react";
+import { Mic, Save, Download, Mail, Printer, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -216,15 +217,9 @@ const Notes = () => {
     <div className="dark min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate("/dashboard")}
-        >
-          <ChevronLeft className="h-6 w-6 text-foreground" />
-        </Button>
+        <BackButton />
         <h1 className="text-lg font-bold text-foreground">Add Note</h1>
-        <div className="w-10" />
+        <div className="w-[80px]" />
       </header>
 
       <main className="p-4 pb-32">

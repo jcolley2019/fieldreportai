@@ -4,7 +4,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Mic, MicOff, Building2, Hash, User, FileText } from "lucide-react";
+import { BackButton } from "@/components/BackButton";
+import { Mic, MicOff, Building2, Hash, User, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -171,14 +172,7 @@ const NewProject = () => {
     <div className="dark min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
-        <Button
-          onClick={() => navigate("/dashboard")}
-          size="sm"
-          className="gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
+        <BackButton />
         <h1 className="text-lg font-bold text-foreground">New Project/Customer</h1>
         <div className="w-[80px]"></div> {/* Spacer for centering title */}
       </header>

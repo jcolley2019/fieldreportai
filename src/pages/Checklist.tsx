@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/BackButton";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight } from "lucide-react";
@@ -368,15 +369,9 @@ const Checklist = () => {
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/80 px-4 py-3 backdrop-blur-sm">
         <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-          >
-            <ChevronLeft className="h-5 w-5 text-foreground" />
-          </Button>
+          <BackButton />
           <h1 className="text-lg font-semibold text-foreground">Lets Create a Checklist</h1>
-          <div className="w-10" /> {/* Spacer for alignment */}
+          <div className="w-[80px]" /> {/* Spacer for alignment */}
         </div>
       </header>
 

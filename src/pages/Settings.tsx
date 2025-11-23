@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/BackButton";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
-  ArrowLeft,
   User,
   ChevronRight,
   CloudOff,
@@ -324,16 +324,11 @@ const Settings = () => {
     <div className="dark min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background p-4 pb-2">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex h-12 w-12 shrink-0 items-center justify-center text-foreground"
-        >
-          <ArrowLeft className="h-6 w-6" />
-        </button>
+        <BackButton />
         <h1 className="flex-1 text-center text-lg font-bold text-foreground">
           Settings
         </h1>
-        <div className="h-12 w-12 shrink-0"></div>
+        <div className="w-[80px]"></div>
       </header>
 
       <main className="flex-grow pb-8">
