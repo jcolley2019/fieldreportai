@@ -512,7 +512,7 @@ const Notes = () => {
       {/* Action Toolbar */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-zinc-800 bg-zinc-950 z-20">
         <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-end gap-3">
             {/* Tertiary Action - Copy Link */}
             <Button
               onClick={handleCopyLink}
