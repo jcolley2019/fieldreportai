@@ -41,6 +41,7 @@ const Index = () => {
   const [showProjectDialog, setShowProjectDialog] = useState(false);
   const [trialStartDate, setTrialStartDate] = useState<string | null>(null);
   const [showTrialBanner, setShowTrialBanner] = useState(true);
+  const [isUpgradeClicked, setIsUpgradeClicked] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -191,9 +192,15 @@ const Index = () => {
         </button>
         <div className="flex items-center gap-2">
           <Button
-            onClick={() => navigate("/pricing")}
+            onClick={() => {
+              setIsUpgradeClicked(true);
+              setTimeout(() => {
+                setIsUpgradeClicked(false);
+                navigate("/pricing");
+              }, 200);
+            }}
             size="sm"
-            className="gap-2"
+            className={`gap-2 transition-transform duration-200 ${isUpgradeClicked ? "scale-95" : "hover:scale-105"}`}
           >
             <Zap className="h-4 w-4" />
             Upgrade Now
