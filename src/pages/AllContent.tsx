@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BackButton } from "@/components/BackButton";
-import { FileText, ListChecks, StickyNote, Search, Filter, Calendar, Building2, Hash, User as UserIcon, Download } from "lucide-react";
+import { FileText, ListChecks, StickyNote, Search, Filter, Calendar, Building2, Hash, User as UserIcon, Download, Mail, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import JSZip from 'jszip';
 import { pdf } from '@react-pdf/renderer';
 import { Document as PDFDocument, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
@@ -57,6 +67,15 @@ const AllContent = () => {
   const [activeTab, setActiveTab] = useState<"all" | "reports" | "checklists">("all");
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all");
   const [isExporting, setIsExporting] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [emailForm, setEmailForm] = useState({
+    recipientEmail: "",
+    recipientName: "",
+    subject: "",
+    message: "",
+  });
+  const [emailFormat, setEmailFormat] = useState<'pdf' | 'docx'>('pdf');
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   useEffect(() => {
     fetchAllContent();
@@ -493,6 +512,159 @@ const AllContent = () => {
     }
   };
 
+  const handleEmailExport = async () => {
+    if (!emailForm.recipientEmail) {
+      toast.error("Please enter a recipient email");
+      return;
+    }
+
+    if (filteredContent.length === 0) {
+      toast.error("No content to export");
+      return;
+    }
+
+    setIsSendingEmail(true);
+    toast.success(`Preparing ${emailFormat.toUpperCase()} export for email...`);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please sign in to send emails");
+        return;
+      }
+
+      // Get user profile for sender name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, company_name')
+        .eq('id', user.id)
+        .single();
+
+      const senderName = profile 
+        ? `${profile.first_name} ${profile.last_name}${profile.company_name ? ` (${profile.company_name})` : ''}`
+        : 'Field Report AI User';
+
+      // Generate ZIP file
+      const zip = new JSZip();
+      const timestamp = new Date().toISOString().split('T')[0];
+      const reportsFolder = zip.folder("reports");
+      const checklistsFolder = zip.folder("checklists");
+
+      for (const item of filteredContent) {
+        try {
+          let blob: Blob;
+          let fileName: string;
+
+          if (item.type === 'report') {
+            fileName = `${item.project_name.replace(/[^a-z0-9]/gi, '_')}_${item.job_number}.${emailFormat}`;
+            blob = emailFormat === 'pdf' 
+              ? await generateReportPDF(item)
+              : await generateReportWord(item);
+            reportsFolder?.file(fileName, blob);
+          } else {
+            fileName = `${item.title.replace(/[^a-z0-9]/gi, '_')}.${emailFormat}`;
+            blob = emailFormat === 'pdf'
+              ? await generateChecklistPDF(item)
+              : await generateChecklistWord(item);
+            checklistsFolder?.file(fileName, blob);
+          }
+        } catch (error) {
+          console.error(`Error generating document for ${item.type}:`, error);
+        }
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const zipFileName = `field_reports_export_${timestamp}.zip`;
+      const zipSize = zipBlob.size;
+
+      const MAX_EMAIL_ATTACHMENT = 25 * 1024 * 1024; // 25MB
+
+      let emailPayload: any = {
+        recipientEmail: emailForm.recipientEmail,
+        recipientName: emailForm.recipientName || undefined,
+        senderName,
+        subject: emailForm.subject || `Field Report Export - ${timestamp}`,
+        message: emailForm.message || undefined,
+        fileSize: zipSize,
+        fileName: zipFileName,
+      };
+
+      // If file is too large, upload to storage and send download link
+      if (zipSize > MAX_EMAIL_ATTACHMENT) {
+        toast.success("File is large, uploading to cloud storage...");
+
+        // Convert blob to array buffer for upload
+        const arrayBuffer = await zipBlob.arrayBuffer();
+        const filePath = `exports/${user.id}/${Date.now()}_${zipFileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(filePath, arrayBuffer, {
+            contentType: 'application/zip',
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error("Storage upload error:", uploadError);
+          toast.error("Failed to upload file to storage");
+          return;
+        }
+
+        // Create a signed URL that expires in 7 days
+        const { data: signedUrlData, error: urlError } = await supabase.storage
+          .from('documents')
+          .createSignedUrl(filePath, 60 * 60 * 24 * 7); // 7 days
+
+        if (urlError || !signedUrlData) {
+          toast.error("Failed to generate download link");
+          return;
+        }
+
+        emailPayload.downloadUrl = signedUrlData.signedUrl;
+        console.log("Using download link for large file");
+      } else {
+        // Convert blob to base64 for email attachment
+        const reader = new FileReader();
+        const base64Data = await new Promise<string>((resolve) => {
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            resolve(result.split(',')[1]); // Remove data URL prefix
+          };
+          reader.readAsDataURL(zipBlob);
+        });
+
+        emailPayload.fileData = base64Data;
+        console.log("Using email attachment for small file");
+      }
+
+      // Call edge function to send email
+      const { data, error } = await supabase.functions.invoke('send-export-email', {
+        body: emailPayload
+      });
+
+      if (error) {
+        console.error("Email send error:", error);
+        toast.error(`Failed to send email: ${error.message}`);
+        return;
+      }
+
+      console.log("Email sent:", data);
+      toast.success(`Export sent successfully to ${emailForm.recipientEmail}!`);
+      setShowEmailDialog(false);
+      setEmailForm({
+        recipientEmail: "",
+        recipientName: "",
+        subject: "",
+        message: "",
+      });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast.error("Failed to send export email");
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="dark min-h-screen bg-background">
@@ -516,23 +688,30 @@ const AllContent = () => {
 
       <main className="p-4 pb-20">
         {/* Export Actions Bar */}
-        <div className="mb-4 flex gap-3">
+        <div className="mb-4 grid grid-cols-3 gap-3">
           <Button
             onClick={() => handleExportAll('pdf')}
             disabled={isExporting || filteredContent.length === 0}
-            className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Download className="mr-2 h-4 w-4" />
-            {isExporting ? "Exporting..." : "Export All as PDF"}
+            Export PDF
           </Button>
           <Button
             onClick={() => handleExportAll('docx')}
             disabled={isExporting || filteredContent.length === 0}
             variant="outline"
-            className="flex-1"
           >
             <Download className="mr-2 h-4 w-4" />
-            {isExporting ? "Exporting..." : "Export All as Word"}
+            Export Word
+          </Button>
+          <Button
+            onClick={() => setShowEmailDialog(true)}
+            disabled={filteredContent.length === 0}
+            variant="outline"
+          >
+            <Mail className="mr-2 h-4 w-4" />
+            Email
           </Button>
         </div>
 
@@ -683,6 +862,104 @@ const AllContent = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Email Export Dialog */}
+      <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+        <DialogContent className="max-w-md bg-background">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Email Export</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Send the exported content via email. Large files will be sent as download links.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="recipientEmail" className="text-foreground">Recipient Email *</Label>
+              <Input
+                id="recipientEmail"
+                type="email"
+                placeholder="recipient@example.com"
+                value={emailForm.recipientEmail}
+                onChange={(e) => setEmailForm({ ...emailForm, recipientEmail: e.target.value })}
+                className="bg-card border-border"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="recipientName" className="text-foreground">Recipient Name (Optional)</Label>
+              <Input
+                id="recipientName"
+                type="text"
+                placeholder="John Doe"
+                value={emailForm.recipientName}
+                onChange={(e) => setEmailForm({ ...emailForm, recipientName: e.target.value })}
+                className="bg-card border-border"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="format" className="text-foreground">Export Format</Label>
+              <Select value={emailFormat} onValueChange={(value: any) => setEmailFormat(value)}>
+                <SelectTrigger className="bg-card border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pdf">PDF</SelectItem>
+                  <SelectItem value="docx">Word Document</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="subject" className="text-foreground">Subject (Optional)</Label>
+              <Input
+                id="subject"
+                type="text"
+                placeholder="Field Report Export"
+                value={emailForm.subject}
+                onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
+                className="bg-card border-border"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="message" className="text-foreground">Message (Optional)</Label>
+              <Textarea
+                id="message"
+                placeholder="Add a personal message..."
+                value={emailForm.message}
+                onChange={(e) => setEmailForm({ ...emailForm, message: e.target.value })}
+                className="bg-card border-border min-h-[100px]"
+              />
+            </div>
+
+            <div className="text-xs text-muted-foreground">
+              Exporting {filteredContent.length} item{filteredContent.length !== 1 ? 's' : ''}. 
+              Files larger than 25MB will be sent as download links.
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowEmailDialog(false)}
+              disabled={isSendingEmail}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEmailExport}
+              disabled={isSendingEmail || !emailForm.recipientEmail}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Send className="mr-2 h-4 w-4" />
+              {isSendingEmail ? "Sending..." : "Send Email"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
