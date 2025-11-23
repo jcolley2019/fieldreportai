@@ -6,44 +6,107 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+interface MediaItem {
+  id: string;
+  file_path: string;
+  file_type: string;
+}
+
+interface ChecklistItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  priority: string;
+  category: string;
+}
+
+interface Checklist {
+  id: string;
+  title: string;
+  items: ChecklistItem[];
+}
+
 const FinalReport = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const reportId = location.state?.reportId;
   const [reportData, setReportData] = useState<any>(location.state?.reportData || null);
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [isLoading, setIsLoading] = useState(!reportData);
 
   useEffect(() => {
-    const loadReport = async () => {
-      if (reportData) {
-        setIsLoading(false);
-        return;
-      }
-
+    const loadReportData = async () => {
       if (!reportId) {
         toast.error("No report found");
         navigate("/dashboard");
         return;
       }
 
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .eq('id', reportId)
-        .single();
+      try {
+        setIsLoading(true);
 
-      if (error || !data) {
-        toast.error("Failed to load report");
-        navigate("/dashboard");
-        return;
+        // Fetch report data
+        const { data: report, error: reportError } = await supabase
+          .from('reports')
+          .select('*')
+          .eq('id', reportId)
+          .single();
+
+        if (reportError || !report) {
+          toast.error("Failed to load report");
+          navigate("/dashboard");
+          return;
+        }
+
+        setReportData(report);
+
+        // Fetch media
+        const { data: mediaData, error: mediaError } = await supabase
+          .from('media')
+          .select('*')
+          .eq('report_id', reportId)
+          .order('created_at', { ascending: false });
+
+        if (!mediaError && mediaData) {
+          setMedia(mediaData);
+        }
+
+        // Fetch checklists with items
+        const { data: checklistsData, error: checklistsError } = await supabase
+          .from('checklists')
+          .select('*')
+          .eq('report_id', reportId)
+          .order('created_at', { ascending: false });
+
+        if (!checklistsError && checklistsData) {
+          const checklistsWithItems = await Promise.all(
+            checklistsData.map(async (checklist) => {
+              const { data: itemsData } = await supabase
+                .from('checklist_items')
+                .select('*')
+                .eq('checklist_id', checklist.id)
+                .order('created_at', { ascending: false });
+
+              return {
+                ...checklist,
+                items: itemsData || []
+              };
+            })
+          );
+          setChecklists(checklistsWithItems);
+        }
+
+      } catch (error) {
+        console.error('Error loading report data:', error);
+        toast.error('Failed to load report');
+      } finally {
+        setIsLoading(false);
       }
-
-      setReportData(data);
-      setIsLoading(false);
     };
 
-    loadReport();
-  }, [reportId, reportData, navigate]);
+    loadReportData();
+  }, [reportId, navigate]);
 
   if (isLoading) {
     return (
@@ -65,6 +128,11 @@ const FinalReport = () => {
 
   const handleForward = () => {
     toast.success("Forwarding report...");
+  };
+
+  const getMediaUrl = (filePath: string) => {
+    const { data } = supabase.storage.from('media').getPublicUrl(filePath);
+    return data.publicUrl;
   };
 
   const formatDate = (dateString: string) => {
@@ -104,62 +172,112 @@ const FinalReport = () => {
             {reportData?.job_description || 'No description available'}
           </p>
 
-          {/* Photo Grid */}
-          <div className="grid grid-cols-2 gap-3 px-4 pb-8">
-            <div className="aspect-square overflow-hidden rounded-xl bg-muted">
-              <div className="h-full w-full bg-gradient-to-br from-primary/20 to-primary/5" />
-            </div>
-            <div className="aspect-square overflow-hidden rounded-xl bg-muted">
-              <div className="h-full w-full bg-gradient-to-br from-accent/20 to-accent/5" />
-            </div>
-          </div>
-
-          {/* Safety Observations Section */}
-          <div className="px-4 pb-8">
-            <h2 className="pb-2 text-2xl font-bold text-foreground">
-              Safety Observations
-            </h2>
-            <p className="text-base leading-relaxed text-muted-foreground">
-              Minor safety infractions were noted, including improper use of
-              personal protective equipment (PPE) in Zone B. All issues were
-              addressed immediately with the site supervisor and corrective actions
-              have been implemented.
-            </p>
-          </div>
-
-          {/* Material Deliveries Section */}
-          <div className="px-4 pb-8">
-            <h2 className="pb-2 text-2xl font-bold text-foreground">
-              Material Deliveries
-            </h2>
-            <p className="pb-4 text-base leading-relaxed text-muted-foreground">
-              Scheduled delivery of steel beams was completed on Monday. Concrete
-              delivery is on track for next Wednesday. No material shortages are
-              currently reported.
-            </p>
-
-            {/* Photo Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="aspect-square overflow-hidden rounded-xl bg-muted">
-                <div className="h-full w-full bg-gradient-to-br from-secondary/30 to-secondary/10" />
+          {/* Photos Section */}
+          {media.length > 0 && (
+            <div className="px-4 pb-8">
+              <h2 className="pb-4 text-2xl font-bold text-foreground">
+                Photos & Media ({media.length})
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                {media.slice(0, 6).map((item) => (
+                  <div key={item.id} className="aspect-square overflow-hidden rounded-xl bg-muted">
+                    {item.file_type === 'image' ? (
+                      <img
+                        src={getMediaUrl(item.file_path)}
+                        alt="Project media"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+                        <p className="text-sm text-muted-foreground">Video</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-              <div className="aspect-square overflow-hidden rounded-xl bg-muted">
-                <div className="h-full w-full bg-gradient-to-br from-muted to-secondary/20" />
+              {media.length > 6 && (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  + {media.length - 6} more photo{media.length - 6 !== 1 ? 's' : ''}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Checklists Section */}
+          {checklists.map((checklist) => (
+            <div key={checklist.id} className="px-4 pb-8">
+              <h2 className="pb-2 text-2xl font-bold text-foreground">
+                {checklist.title}
+              </h2>
+              <div className="space-y-3">
+                {checklist.items.map((item) => (
+                  <div key={item.id} className="flex items-start gap-3 rounded-lg bg-card p-3">
+                    <div className={`mt-0.5 h-5 w-5 rounded border-2 flex-shrink-0 ${
+                      item.completed ? 'bg-primary border-primary' : 'border-muted-foreground'
+                    }`}>
+                      {item.completed && (
+                        <svg className="h-full w-full text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-base leading-relaxed ${
+                        item.completed ? 'line-through text-muted-foreground' : 'text-foreground'
+                      }`}>
+                        {item.text}
+                      </p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className={`text-xs px-2 py-0.5 rounded ${
+                          item.priority === 'high' ? 'bg-destructive/20 text-destructive' :
+                          item.priority === 'medium' ? 'bg-primary/20 text-primary' :
+                          'bg-secondary text-muted-foreground'
+                        }`}>
+                          {item.priority}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{item.category}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* Project Details Section */}
+          <div className="px-4 pb-8">
+            <h2 className="pb-2 text-2xl font-bold text-foreground">
+              Project Information
+            </h2>
+            <div className="space-y-2 rounded-lg bg-card p-4">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Customer:</span>
+                <span className="font-medium text-foreground">{reportData?.customer_name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Job Number:</span>
+                <span className="font-medium text-foreground">{reportData?.job_number}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Created:</span>
+                <span className="font-medium text-foreground">
+                  {reportData?.created_at ? formatDate(reportData.created_at) : 'N/A'}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Next Steps Section */}
-          <div className="px-4 pb-8">
-            <h2 className="pb-2 text-2xl font-bold text-foreground">
-              Next Steps
-            </h2>
-            <p className="text-base leading-relaxed text-muted-foreground">
-              Focus for the upcoming week will be on completing the foundation pour
-              in Zone C and beginning the structural steel assembly. A pre-pour
-              inspection is scheduled for Tuesday morning.
-            </p>
-          </div>
+          {/* Empty State */}
+          {media.length === 0 && checklists.length === 0 && (
+            <div className="px-4 pb-8">
+              <div className="rounded-lg bg-card p-8 text-center">
+                <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                <p className="text-muted-foreground">
+                  No photos or checklists have been added to this report yet.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
