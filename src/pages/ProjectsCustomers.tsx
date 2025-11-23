@@ -197,45 +197,49 @@ const ProjectsCustomers = () => {
             <p className="text-muted-foreground">No projects found matching "{searchQuery}"</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredProjects.map((project) => (
-              <div
-                key={project.id}
-                className="flex items-start gap-4 rounded-lg bg-card p-4 hover:bg-secondary/50 transition-colors"
-              >
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <Building2 className="h-7 w-7 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground text-lg mb-1">
-                    {highlightText(project.project_name, searchQuery)}
-                  </h3>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <UserIcon className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{highlightText(project.customer_name, searchQuery)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Hash className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{highlightText(project.job_number, searchQuery)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <ListChecks className="h-4 w-4 flex-shrink-0" />
-                      <span>{project.checklist_count} checklist{project.checklist_count !== 1 ? 's' : ''}</span>
+            <div className="space-y-3">
+              {filteredProjects.map((project) => (
+                <div
+                  key={project.id}
+                  onClick={() => navigate(`/projects/${project.id}`)}
+                  className="flex items-start gap-4 rounded-lg bg-card p-4 hover:bg-secondary/50 transition-colors cursor-pointer"
+                >
+                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <Building2 className="h-7 w-7 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground text-lg mb-1">
+                      {highlightText(project.project_name, searchQuery)}
+                    </h3>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <UserIcon className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{highlightText(project.customer_name, searchQuery)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Hash className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{highlightText(project.job_number, searchQuery)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <ListChecks className="h-4 w-4 flex-shrink-0" />
+                        <span>{project.checklist_count} checklist{project.checklist_count !== 1 ? 's' : ''}</span>
+                      </div>
                     </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteProject(project.id, project.project_name);
+                    }}
+                    className="flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDeleteProject(project.id, project.project_name)}
-                  className="flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-5 w-5" />
-                </Button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
         )}
       </main>
     </div>

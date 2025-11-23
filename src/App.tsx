@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import NewProject from "./pages/NewProject";
 import ProjectsCustomers from "./pages/ProjectsCustomers";
+import ProjectDetail from "./pages/ProjectDetail";
 import Notes from "./pages/Notes";
 import CaptureScreen from "./pages/CaptureScreen";
 import Checklist from "./pages/Checklist";
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/dashboard" element={<Index />} />
           <Route path="/new-project" element={<NewProject />} />
           <Route path="/projects" element={<ProjectsCustomers />} />
+          <Route path="/projects/:projectId" element={<ProjectDetail />} />
           <Route path="/notes" element={<Notes />} />
           <Route path="/capture-screen" element={<CaptureScreen />} />
           <Route path="/checklist" element={<Checklist />} />
