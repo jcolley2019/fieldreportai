@@ -151,7 +151,7 @@ const Pricing = () => {
               </Button>
             </div>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 max-w-7xl mx-auto">
             {pricingPlans.map((plan, index) => {
               const displayPrice = billingPeriod === "monthly" ? plan.monthlyPrice : plan.annualPrice;
               return (
@@ -169,32 +169,32 @@ const Pricing = () => {
                       Your Current Plan
                     </div>
                   )}
-                  <CardHeader>
-                    <CardTitle className="text-foreground">{plan.name}</CardTitle>
-                    <CardDescription className="text-muted-foreground">{plan.description}</CardDescription>
-                    <div className="mt-4">
-                      <span className="text-4xl font-bold text-foreground">{displayPrice}</span>
-                      {plan.period && <span className="text-muted-foreground">{plan.period}</span>}
+                  <CardHeader className="p-4">
+                    <CardTitle className="text-base text-foreground">{plan.name}</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground line-clamp-2">{plan.description}</CardDescription>
+                    <div className="mt-3">
+                      <span className="text-2xl font-bold text-foreground">{displayPrice}</span>
+                      {plan.period && <span className="text-xs text-muted-foreground">{plan.period}</span>}
                       {billingPeriod === "annual" && plan.savings && (
-                        <Badge className="ml-2 bg-primary/20 text-primary">Save {plan.savings}%</Badge>
+                        <Badge className="ml-1 text-xs bg-primary/20 text-primary">Save {plan.savings}%</Badge>
                       )}
                     </div>
                     {plan.name === "Pro" || plan.name === "Premium" ? (
-                      <p className="text-xs text-muted-foreground mt-2">Includes 3 users · $19/each additional user per month</p>
+                      <p className="text-xs text-muted-foreground mt-1">Includes 3 users · $19/each additional user per month</p>
                     ) : null}
                   </CardHeader>
-                  <CardContent>
-                    <p className="font-semibold text-foreground mb-3">Key Features:</p>
-                    <ul className="space-y-2 mb-6">
-                      {plan.features.map((feature, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm">
-                          <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                          <span className="text-muted-foreground">{feature}</span>
+                  <CardContent className="p-4 pt-0">
+                    <p className="font-semibold text-sm text-foreground mb-2">Key Features:</p>
+                    <ul className="space-y-1 mb-4 min-h-[180px]">
+                      {plan.features.slice(0, 6).map((feature, i) => (
+                        <li key={i} className="flex items-start gap-1.5 text-xs">
+                          <Check className="h-3 w-3 text-primary mt-0.5 flex-shrink-0" />
+                          <span className="text-muted-foreground line-clamp-2">{feature}</span>
                         </li>
                       ))}
                     </ul>
                     <Button 
-                      className="w-full" 
+                      className="w-full text-xs h-8" 
                       variant={plan.current ? "secondary" : plan.popular ? "default" : "outline"}
                       disabled={plan.current}
                     >
