@@ -398,18 +398,18 @@ const Landing = () => {
             {/* Billing Period Toggle */}
             <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-lg">
               <Button
-                variant={billingPeriod === "monthly" ? "secondary" : "ghost"}
+                variant="ghost"
                 size="sm"
                 onClick={() => setBillingPeriod("monthly")}
-                className="relative"
+                className={`relative ${billingPeriod === "monthly" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : ""}`}
               >
                 Monthly
               </Button>
               <Button
-                variant={billingPeriod === "annual" ? "secondary" : "ghost"}
+                variant="ghost"
                 size="sm"
                 onClick={() => setBillingPeriod("annual")}
-                className="relative"
+                className={`relative ${billingPeriod === "annual" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : ""}`}
               >
                 Annual
                 <Badge className="ml-2 bg-primary text-primary-foreground">Save 20%</Badge>
