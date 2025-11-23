@@ -134,6 +134,86 @@ export type Database = {
           },
         ]
       }
+      email_sequence_log: {
+        Row: {
+          clicked: boolean | null
+          email_subject: string
+          id: string
+          lead_id: string
+          opened: boolean | null
+          sent_at: string | null
+          sequence_type: Database["public"]["Enums"]["email_sequence"]
+        }
+        Insert: {
+          clicked?: boolean | null
+          email_subject: string
+          id?: string
+          lead_id: string
+          opened?: boolean | null
+          sent_at?: string | null
+          sequence_type: Database["public"]["Enums"]["email_sequence"]
+        }
+        Update: {
+          clicked?: boolean | null
+          email_subject?: string
+          id?: string
+          lead_id?: string
+          opened?: boolean | null
+          sent_at?: string | null
+          sequence_type?: Database["public"]["Enums"]["email_sequence"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_sequence_log_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          active_sequences:
+            | Database["public"]["Enums"]["email_sequence"][]
+            | null
+          company: string | null
+          created_at: string | null
+          email: string
+          id: string
+          name: string | null
+          source: Database["public"]["Enums"]["lead_source"]
+          subscribed: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          active_sequences?:
+            | Database["public"]["Enums"]["email_sequence"][]
+            | null
+          company?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          name?: string | null
+          source: Database["public"]["Enums"]["lead_source"]
+          subscribed?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          active_sequences?:
+            | Database["public"]["Enums"]["email_sequence"][]
+            | null
+          company?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string | null
+          source?: Database["public"]["Enums"]["lead_source"]
+          subscribed?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       media: {
         Row: {
           created_at: string
@@ -300,7 +380,18 @@ export type Database = {
       is_trial_active: { Args: { user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      email_sequence:
+        | "welcome"
+        | "trial"
+        | "enterprise_nurture"
+        | "newsletter"
+        | "abandoned_signup"
+      lead_source:
+        | "pricing_page"
+        | "landing_page"
+        | "enterprise_inquiry"
+        | "newsletter"
+        | "trial_signup"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -427,6 +518,21 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      email_sequence: [
+        "welcome",
+        "trial",
+        "enterprise_nurture",
+        "newsletter",
+        "abandoned_signup",
+      ],
+      lead_source: [
+        "pricing_page",
+        "landing_page",
+        "enterprise_inquiry",
+        "newsletter",
+        "trial_signup",
+      ],
+    },
   },
 } as const

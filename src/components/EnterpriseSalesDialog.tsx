@@ -63,6 +63,7 @@ export const EnterpriseSalesDialog = ({ open, onOpenChange }: EnterpriseSalesDia
     setLoading(true);
 
     try {
+      // Submit inquiry and capture lead in one call
       const { error } = await supabase.functions.invoke("send-enterprise-sales-inquiry", {
         body: {
           name: formData.name,
