@@ -523,7 +523,7 @@ const Notes = () => {
             className={`w-full gap-2 h-12 transition-all ${
               showSuccess 
                 ? 'bg-green-600 hover:bg-green-700' 
-                : 'bg-teal-600 hover:bg-teal-700'
+                : 'bg-primary hover:bg-primary/90'
             } text-white`}
             disabled={isSaving || !noteText.trim()}
           >
