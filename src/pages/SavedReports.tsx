@@ -207,12 +207,12 @@ const SavedReports = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-10 border-b border-border bg-black/95 backdrop-blur-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <BackButton />
-          <h1 className="text-xl font-bold">Saved Reports</h1>
+          <h1 className="text-xl font-bold text-white">Saved Reports</h1>
           <div className="w-20" /> {/* Spacer for centering */}
         </div>
       </header>
@@ -227,7 +227,7 @@ const SavedReports = () => {
         ) : reports.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <FileText className="mb-4 h-16 w-16 text-muted-foreground" />
-            <h2 className="mb-2 text-xl font-semibold">No saved reports</h2>
+            <h2 className="mb-2 text-xl font-semibold text-white">No saved reports</h2>
             <p className="mb-6 text-center text-muted-foreground">
               Reports you save to cloud will appear here
             </p>
@@ -240,12 +240,12 @@ const SavedReports = () => {
             {reports.map((report) => (
               <Card
                 key={report.id}
-                className="overflow-hidden transition-transform duration-200 hover:scale-105"
+                className="overflow-hidden border-border bg-card transition-transform duration-200 hover:scale-105"
               >
                 <div className="p-6">
                   <div className="mb-4 flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="mb-1 font-semibold text-foreground line-clamp-2">
+                      <h3 className="mb-1 font-semibold text-white line-clamp-2">
                         {report.file_name}
                       </h3>
                       <p className="text-xs text-muted-foreground">
@@ -284,10 +284,10 @@ const SavedReports = () => {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Report?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-white">Delete Report?</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
               Are you sure you want to delete "{selectedReport?.file_name}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
