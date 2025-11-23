@@ -67,23 +67,6 @@ const Landing = () => {
 
   const pricingPlans = [
     {
-      name: "Basic",
-      monthlyPrice: "$0",
-      annualPrice: "$0",
-      period: "/month",
-      description: "Perfect for getting started",
-      features: [
-        "6 projects",
-        "Limited reports & checklists",
-        "Basic media capture",
-        "Voice transcription",
-        "PDF export",
-        "Email support",
-      ],
-      cta: "Get Started Free",
-      popular: false,
-    },
-    {
       name: "Pro Plan 14-day Trial",
       monthlyPrice: "$0",
       annualPrice: "$0",
