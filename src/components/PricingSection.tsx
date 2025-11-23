@@ -142,7 +142,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
   };
 
   return (
-    <section id="pricing" className="py-8 bg-muted/30">
+    <section id="pricing" className="pt-0 pb-8 bg-muted/30">
       <div className="container mx-auto px-4">
         {showHeader && (
           <div className="max-w-4xl mx-auto text-center mb-4">

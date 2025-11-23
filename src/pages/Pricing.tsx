@@ -45,7 +45,7 @@ const Pricing = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-4 bg-transparent">
+      <section className="pt-4 pb-0 bg-transparent">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-2 text-white">
             Choose Your Perfect Plan
@@ -57,7 +57,7 @@ const Pricing = () => {
       </section>
 
       {/* Billing Period Toggle */}
-      <div className="max-w-4xl mx-auto text-center py-6">
+      <div className="max-w-4xl mx-auto text-center py-8">
         <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-lg">
           <Button
             variant="ghost"
