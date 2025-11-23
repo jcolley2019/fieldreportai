@@ -189,13 +189,24 @@ const Index = () => {
           <h1 className="text-lg font-bold text-foreground">Project Alpha</h1>
           <ChevronDown className="h-5 w-5 text-muted-foreground" />
         </button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate("/settings")}
-        >
-          <SettingsIcon className="h-5 w-5 text-foreground" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => navigate("/pricing")}
+            size="sm"
+            variant="outline"
+            className="gap-2"
+          >
+            <Zap className="h-4 w-4" />
+            Upgrade Now
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/settings")}
+          >
+            <SettingsIcon className="h-5 w-5 text-foreground" />
+          </Button>
+        </div>
       </header>
 
       <main className="p-4">
@@ -242,15 +253,6 @@ const Index = () => {
         <section>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-foreground">Projects & Customers</h2>
-            <Button
-              onClick={() => navigate("/pricing")}
-              size="sm"
-              variant="outline"
-              className="gap-2"
-            >
-              <Zap className="h-4 w-4" />
-              Upgrade Now
-            </Button>
           </div>
           
           {/* Search and Filter */}
