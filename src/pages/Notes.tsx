@@ -536,43 +536,46 @@ const Notes = () => {
               Print
             </Button>
 
-            {/* Primary Action - Quick Save Split Button */}
-            <div className="flex items-center">
-              <Button
-                onClick={handleQuickSave}
-                size="sm"
-                className="gap-2 bg-teal-600 hover:bg-teal-700 text-white rounded-r-none border-r border-teal-700"
-                disabled={isSaving || !noteText.trim()}
-              >
-                <Save className="h-4 w-4" />
-                {isSaving ? "Saving..." : "Quick Save"}
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="sm"
-                    className="bg-teal-600 hover:bg-teal-700 text-white rounded-l-none px-2"
-                    disabled={!noteText && !organizedNotes}
-                  >
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-                  <DropdownMenuItem onClick={handleDownloadPDF} className="gap-2 cursor-pointer">
-                    <FileText className="h-4 w-4" />
-                    Save as PDF
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleDownloadWord} className="gap-2 cursor-pointer">
-                    <Download className="h-4 w-4" />
-                    Save as Word
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleSaveToCloud} className="gap-2 cursor-pointer" disabled={isSaving}>
-                    <Cloud className="h-4 w-4" />
-                    Save to Cloud
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            {/* Save Options Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  disabled={!noteText && !organizedNotes}
+                >
+                  <Download className="h-4 w-4" />
+                  Save Options
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
+                <DropdownMenuItem onClick={handleDownloadPDF} className="gap-2 cursor-pointer">
+                  <FileText className="h-4 w-4" />
+                  Save as PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDownloadWord} className="gap-2 cursor-pointer">
+                  <Download className="h-4 w-4" />
+                  Save as Word
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSaveToCloud} className="gap-2 cursor-pointer" disabled={isSaving}>
+                  <Cloud className="h-4 w-4" />
+                  Save to Cloud
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Primary Action - Quick Save */}
+            <Button
+              onClick={handleQuickSave}
+              size="sm"
+              className="gap-2 bg-teal-600 hover:bg-teal-700 text-white"
+              disabled={isSaving || !noteText.trim()}
+            >
+              <Save className="h-4 w-4" />
+              {isSaving ? "Saving..." : "Quick Save"}
+            </Button>
           </div>
         </div>
       </div>
