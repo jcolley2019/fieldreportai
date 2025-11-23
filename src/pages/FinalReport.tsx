@@ -1099,8 +1099,7 @@ const FinalReport = () => {
           <Button
             onClick={handleDownloadPDF}
             disabled={!reportData}
-            variant="default"
-            className="py-6 text-base font-semibold"
+            className="py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
           >
             <Download className="mr-2 h-5 w-5" />
             Save as PDF
@@ -1108,8 +1107,7 @@ const FinalReport = () => {
           <Button
             onClick={handleDownloadWord}
             disabled={!reportData}
-            variant="default"
-            className="py-6 text-base font-semibold"
+            className="py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
           >
             <FileText className="mr-2 h-5 w-5" />
             Save as Word
@@ -1119,8 +1117,7 @@ const FinalReport = () => {
           <Button
             onClick={handleSaveToCloud}
             disabled={!reportData || isSaving}
-            variant="default"
-            className="py-6 text-base font-semibold"
+            className="py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
           >
             <Cloud className="mr-2 h-5 w-5" />
             {isSaving ? "Saving..." : "Save to Cloud"}
@@ -1129,16 +1126,14 @@ const FinalReport = () => {
             <Button
               onClick={handlePrint}
               disabled={!reportData}
-              variant="default"
-              className="py-6 text-base font-semibold"
+              className="py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
             >
               <Printer className="mr-2 h-5 w-5" />
               Print
             </Button>
             <Button
               onClick={handleCopyLink}
-              variant="default"
-              className="h-auto w-14 items-center justify-center py-6"
+              className="h-auto w-14 items-center justify-center py-6 transition-transform duration-200 hover:scale-105"
               title="Copy Link"
             >
               <Link2 className="h-5 w-5" />
