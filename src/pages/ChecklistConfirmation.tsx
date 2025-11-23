@@ -1,9 +1,10 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
-import { Check, CheckCircle2, FileText, Cloud, Printer, Link2, Download } from "lucide-react";
+import { Check, CheckCircle2, FileText, Cloud, Printer, Link2, Download, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Document, Paragraph, TextRun, HeadingLevel, Packer } from 'docx';
 import { saveAs } from 'file-saver';
@@ -27,9 +28,13 @@ const ChecklistConfirmation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const checklist = location.state?.checklist as ChecklistData | undefined;
+  const isSimpleMode = location.state?.simpleMode || false;
+  const projectReportId = location.state?.reportId || null;
   const [isSaving, setIsSaving] = useState(false);
   const [checklistId, setChecklistId] = useState<string | null>(null);
-  const [reportId, setReportId] = useState<string | null>(null);
+  const [reportId, setReportId] = useState<string | null>(projectReportId);
+  const [showProjectSelector, setShowProjectSelector] = useState(false);
+  const [projects, setProjects] = useState<any[]>([]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -184,11 +189,50 @@ const ChecklistConfirmation = () => {
     }
   };
 
+  const fetchProjects = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setProjects(data);
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
+  };
+
+  const handleLinkToProject = async (selectedReportId: string) => {
+    setReportId(selectedReportId);
+    setShowProjectSelector(false);
+    await saveChecklistToCloud(selectedReportId);
+  };
+
   const handleSaveToCloud = async () => {
     if (!checklist) {
       toast.error("No checklist to save");
       return;
     }
+
+    // If in Simple Mode and no report selected, show project selector
+    if (isSimpleMode && !reportId) {
+      await fetchProjects();
+      setShowProjectSelector(true);
+      return;
+    }
+
+    // If in Project Mode or report is already selected, save directly
+    await saveChecklistToCloud(reportId);
+  };
+
+  const saveChecklistToCloud = async (targetReportId: string | null) => {
+    if (!checklist) return;
 
     try {
       setIsSaving(true);
@@ -200,15 +244,15 @@ const ChecklistConfirmation = () => {
 
       toast.success("Saving to cloud...");
 
-      // Step 1: Create a report if we don't have one
-      let currentReportId = reportId;
+      // Step 1: Create a report if we don't have one (Simple Mode standalone)
+      let currentReportId = targetReportId;
       if (!currentReportId) {
         const { data: newReport, error: reportError } = await supabase
           .from('reports')
           .insert({
             user_id: user.id,
             project_name: checklist.title,
-            customer_name: 'Checklist Customer',
+            customer_name: 'Standalone Checklist',
             job_number: `CL-${Date.now()}`,
             job_description: `Checklist: ${checklist.title}`
           })
@@ -346,6 +390,16 @@ const ChecklistConfirmation = () => {
     }
   };
 
+  const handleCreateNewProject = () => {
+    setShowProjectSelector(false);
+    navigate("/new-project", { 
+      state: { 
+        returnTo: "/checklist-confirmation",
+        checklist: checklist 
+      } 
+    });
+  };
+
   return (
     <div className="dark min-h-screen bg-background pb-[400px]">
       {/* Header */}
@@ -474,6 +528,74 @@ const ChecklistConfirmation = () => {
           </div>
         </div>
       </div>
+
+      {/* Project Selector Dialog for Simple Mode */}
+      <Dialog open={showProjectSelector} onOpenChange={setShowProjectSelector}>
+        <DialogContent className="max-w-md bg-background">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Link to Project</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Choose an existing project or save as standalone
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {/* Save as Standalone Option */}
+            <Button
+              onClick={() => {
+                setShowProjectSelector(false);
+                saveChecklistToCloud(null);
+              }}
+              variant="outline"
+              className="w-full justify-start h-auto p-4"
+            >
+              <div className="text-left">
+                <div className="font-semibold">Save as Standalone</div>
+                <div className="text-xs text-muted-foreground">Not linked to any project</div>
+              </div>
+            </Button>
+
+            {/* Create New Project */}
+            <Button
+              onClick={handleCreateNewProject}
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create New Project
+            </Button>
+
+            {/* Existing Projects */}
+            {projects.length > 0 && (
+              <>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or select existing</span>
+                  </div>
+                </div>
+                
+                {projects.map((project) => (
+                  <Button
+                    key={project.id}
+                    onClick={() => handleLinkToProject(project.id)}
+                    variant="outline"
+                    className="w-full justify-start h-auto p-4"
+                  >
+                    <div className="text-left">
+                      <div className="font-semibold">{project.project_name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {project.customer_name} • {project.job_number}
+                      </div>
+                    </div>
+                  </Button>
+                ))}
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
