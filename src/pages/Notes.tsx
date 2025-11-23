@@ -120,6 +120,60 @@ const Notes = () => {
     }
   };
 
+  const handleQuickSave = async () => {
+    if (!noteText.trim()) {
+      toast.error("Please add some content to your note");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please sign in to save notes");
+        return;
+      }
+
+      // Quick save: Save raw notes directly to database
+      const noteData: any = {
+        user_id: user.id,
+        note_text: noteText,
+        organized_notes: organizedNotes || null,
+      };
+
+      // If in Project Mode, link to the project
+      if (projectReportId) {
+        noteData.report_id = projectReportId;
+      }
+
+      const { error } = await supabase
+        .from('notes')
+        .insert(noteData);
+
+      if (error) {
+        console.error("Error saving note:", error);
+        toast.error("Failed to save note");
+        return;
+      }
+
+      if (projectReportId) {
+        toast.success("Note saved to project!");
+      } else {
+        toast.success("Note saved!");
+      }
+
+      // Clear the note text after successful save
+      setNoteText("");
+      setOrganizedNotes("");
+      
+    } catch (error) {
+      console.error("Error saving note:", error);
+      toast.error("Failed to save note");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSaveNote = async () => {
     if (!noteText.trim()) {
       toast.error("Please add some content to your note");
@@ -458,15 +512,15 @@ const Notes = () => {
       <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur-sm p-4 z-20">
         <h3 className="mb-4 text-center text-lg font-semibold text-foreground">Save & Print</h3>
         
-        {/* Save Note Button - AI Processing */}
+        {/* Quick Save Button */}
         <div className="mb-3">
           <Button
-            onClick={handleSaveNote}
+            onClick={handleQuickSave}
             className="w-full bg-accent text-accent-foreground hover:bg-accent/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
-            disabled={isProcessing || !noteText.trim()}
+            disabled={isSaving || !noteText.trim()}
           >
             <Save className="mr-2 h-5 w-5" />
-            {isProcessing ? "Processing..." : "Save Note"}
+            {isSaving ? "Saving..." : "Quick Save"}
           </Button>
         </div>
 
