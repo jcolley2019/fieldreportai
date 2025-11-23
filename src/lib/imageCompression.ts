@@ -5,6 +5,16 @@ export interface CompressionOptions {
   mimeType?: string;
 }
 
+function getOptimalQuality(width: number, height: number): number {
+  const pixels = width * height;
+  
+  // Automatically determine quality based on image size
+  if (pixels > 1000000) return 0.75; // Large images (>1MP)
+  if (pixels > 500000) return 0.80;  // Medium-large (>0.5MP)
+  if (pixels > 250000) return 0.85;  // Medium (>0.25MP)
+  return 0.90; // Small images
+}
+
 export async function compressImage(
   file: Blob,
   options: CompressionOptions = {}
@@ -12,7 +22,6 @@ export async function compressImage(
   const {
     maxWidth = 1024,
     maxHeight = 1024,
-    quality = 0.85,
     mimeType = 'image/jpeg',
   } = options;
 
@@ -43,6 +52,9 @@ export async function compressImage(
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, width, height);
+
+      // Use optimal quality based on final dimensions
+      const quality = options.quality ?? getOptimalQuality(width, height);
 
       canvas.toBlob(
         (blob) => {
