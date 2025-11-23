@@ -83,7 +83,7 @@ const Auth = () => {
           navigate(isProfileComplete ? "/dashboard" : "/onboarding");
         }
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { error, data } = await supabase.auth.signUp({
           email: validatedData.email,
           password: validatedData.password,
           options: {
@@ -106,6 +106,38 @@ const Auth = () => {
             });
           }
         } else {
+          // Capture lead in database
+          try {
+            await supabase.functions.invoke("capture-lead", {
+              body: {
+                email: validatedData.email,
+                source: "trial_signup",
+                sequence: "trial",
+              },
+            });
+          } catch (leadError) {
+            console.error("Lead capture failed:", leadError);
+          }
+
+          // Send to Zapier webhook for Google Sheets
+          try {
+            const zapierWebhookUrl = "YOUR_ZAPIER_WEBHOOK_URL_HERE";
+            await fetch(zapierWebhookUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              mode: "no-cors",
+              body: JSON.stringify({
+                email: validatedData.email,
+                source: "trial_signup",
+                type: "user_signup",
+                timestamp: new Date().toISOString(),
+                plan: "trial",
+              }),
+            });
+          } catch (zapierError) {
+            console.error("Zapier webhook failed:", zapierError);
+          }
+
           toast({
             title: "Success",
             description: "Account created successfully! You can now log in.",
