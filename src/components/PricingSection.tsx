@@ -180,7 +180,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
           {pricingPlans.map((plan, index) => {
             const displayPrice = billingPeriod === "monthly" ? plan.monthlyPrice : plan.annualPrice;
             return (
-              <Card key={index} className={`flex flex-col ${plan.popular ? "border-primary shadow-lg" : ""}`}>
+              <Card key={index} className={`flex flex-col ${plan.popular ? "border-primary shadow-lg rounded-tl-none rounded-tr-none" : ""}`}>
                 {plan.popular && (
                   <div className="bg-primary text-primary-foreground text-center py-2 text-sm font-semibold">
                     Most Popular
