@@ -452,7 +452,7 @@ const Landing = () => {
                           Billed annually
                         </div>
                       )}
-                      {plan.period && (
+                      {plan.period && plan.name !== "Basic" && (
                         <>
                           <div className="text-sm text-foreground mt-2">
                             Includes 3 Users
