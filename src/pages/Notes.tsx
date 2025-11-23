@@ -232,8 +232,62 @@ const Notes = () => {
         page: { padding: 40, backgroundColor: '#ffffff' },
         title: { fontSize: 24, marginBottom: 10, fontWeight: 'bold' },
         subtitle: { fontSize: 12, marginBottom: 20, color: '#666666' },
-        content: { fontSize: 12, lineHeight: 1.6, whiteSpace: 'pre-wrap' },
+        heading: { fontSize: 16, fontWeight: 'bold', marginTop: 15, marginBottom: 8, color: '#333333' },
+        subheading: { fontSize: 14, fontWeight: 'bold', marginTop: 12, marginBottom: 6, color: '#555555' },
+        paragraph: { fontSize: 12, lineHeight: 1.6, marginBottom: 8 },
+        bulletPoint: { fontSize: 12, lineHeight: 1.6, marginBottom: 4, marginLeft: 20 },
+        bold: { fontWeight: 'bold' },
       });
+
+      // Parse content into structured sections
+      const parseContent = (text: string) => {
+        const lines = text.split('\n');
+        const elements: any[] = [];
+
+        lines.forEach((line, index) => {
+          const trimmed = line.trim();
+          if (!trimmed) {
+            elements.push(<Text key={`empty-${index}`} style={{ marginBottom: 4 }}> </Text>);
+            return;
+          }
+
+          // Detect headings (all caps lines or lines ending with :)
+          if (trimmed === trimmed.toUpperCase() && trimmed.length > 3 && trimmed.length < 50) {
+            elements.push(
+              <Text key={`heading-${index}`} style={pdfStyles.heading}>
+                {trimmed}
+              </Text>
+            );
+          }
+          // Detect subheadings (lines ending with colon)
+          else if (trimmed.endsWith(':') && !trimmed.includes('•') && !trimmed.includes('-')) {
+            elements.push(
+              <Text key={`subheading-${index}`} style={pdfStyles.subheading}>
+                {trimmed}
+              </Text>
+            );
+          }
+          // Detect bullet points
+          else if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
+            const bulletText = trimmed.replace(/^[•\-*]\s*/, '');
+            elements.push(
+              <Text key={`bullet-${index}`} style={pdfStyles.bulletPoint}>
+                • {bulletText}
+              </Text>
+            );
+          }
+          // Regular paragraph
+          else {
+            elements.push(
+              <Text key={`para-${index}`} style={pdfStyles.paragraph}>
+                {trimmed}
+              </Text>
+            );
+          }
+        });
+
+        return elements;
+      };
 
       const NotesPDF = () => (
         <PDFDocument>
@@ -242,7 +296,7 @@ const Notes = () => {
             <Text style={pdfStyles.subtitle}>
               Generated on {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
             </Text>
-            <Text style={pdfStyles.content}>{content}</Text>
+            <View>{parseContent(content)}</View>
           </Page>
         </PDFDocument>
       );
