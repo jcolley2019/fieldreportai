@@ -429,14 +429,12 @@ const Landing = () => {
                   <CardHeader>
                     <CardTitle>{plan.name}</CardTitle>
                     <CardDescription>{plan.description}</CardDescription>
-                    <div className="mt-4">
+                    <div className="mt-4 min-h-[140px]">
                       <span className="text-4xl font-bold">{displayPrice}</span>
                       <span className="text-muted-foreground">{plan.period}</span>
-                      {billingPeriod === "annual" && plan.period && (
-                        <div className="text-sm text-muted-foreground mt-1">
-                          Billed annually
-                        </div>
-                      )}
+                      <div className="text-sm text-muted-foreground mt-1 h-5">
+                        {billingPeriod === "annual" && plan.period && "Billed annually"}
+                      </div>
                       {plan.period && plan.name !== "Basic" && (
                         <>
                           <div className="text-sm text-foreground mt-2">
