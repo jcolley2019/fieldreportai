@@ -1,10 +1,11 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
-import { Building2, Download, Share2, ChevronRight } from "lucide-react";
+import { Building2, Download, Share2, ChevronRight, Edit2, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Textarea } from "@/components/ui/textarea";
 
 interface MediaItem {
   id: string;
@@ -34,6 +35,9 @@ const FinalReport = () => {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [checklists, setChecklists] = useState<Checklist[]>([]);
   const [isLoading, setIsLoading] = useState(!reportData);
+  const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [editedContent, setEditedContent] = useState<{ [key: string]: string }>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const loadReportData = async () => {
@@ -140,6 +144,61 @@ const FinalReport = () => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
+  const handleEditSection = (sectionKey: string, content: string) => {
+    setEditingSection(sectionKey);
+    setEditedContent({ ...editedContent, [sectionKey]: content });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSection(null);
+    setEditedContent({});
+  };
+
+  const handleSaveSection = async (sectionKey: string) => {
+    if (!reportId || !reportData) return;
+
+    setIsSaving(true);
+    try {
+      const text = reportData.job_description;
+      let updatedText = text;
+
+      // Update the specific section in the full text
+      if (sectionKey === 'summary') {
+        updatedText = text.replace(
+          /SUMMARY:\s*([\s\S]*?)(?=KEY POINTS:|ACTION ITEMS:|$)/i,
+          `SUMMARY:\n${editedContent[sectionKey]}\n\n`
+        );
+      } else if (sectionKey === 'keypoints') {
+        updatedText = text.replace(
+          /KEY POINTS:\s*([\s\S]*?)(?=ACTION ITEMS:|$)/i,
+          `KEY POINTS:\n${editedContent[sectionKey]}\n\n`
+        );
+      } else if (sectionKey === 'actions') {
+        updatedText = text.replace(
+          /ACTION ITEMS:\s*([\s\S]*?)$/i,
+          `ACTION ITEMS:\n${editedContent[sectionKey]}`
+        );
+      }
+
+      const { error } = await supabase
+        .from('reports')
+        .update({ job_description: updatedText })
+        .eq('id', reportId);
+
+      if (error) throw error;
+
+      setReportData({ ...reportData, job_description: updatedText });
+      setEditingSection(null);
+      setEditedContent({});
+      toast.success("Section updated successfully");
+    } catch (error) {
+      console.error('Error updating section:', error);
+      toast.error("Failed to update section");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="dark min-h-screen bg-background">
       {/* Sticky Header */}
@@ -184,28 +243,148 @@ const FinalReport = () => {
                   <div className="space-y-4">
                     {summaryMatch && (
                       <div className="rounded-lg bg-card p-4">
-                        <h2 className="mb-2 text-lg font-bold text-foreground">Summary</h2>
-                        <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
-                          {summaryMatch[1].trim()}
-                        </p>
+                        <div className="flex items-center justify-between mb-2">
+                          <h2 className="text-lg font-bold text-foreground">Summary</h2>
+                          {editingSection !== 'summary' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditSection('summary', summaryMatch[1].trim())}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                        {editingSection === 'summary' ? (
+                          <div className="space-y-2">
+                            <Textarea
+                              value={editedContent['summary'] || ''}
+                              onChange={(e) => setEditedContent({ ...editedContent, summary: e.target.value })}
+                              className="min-h-[120px] text-base"
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleSaveSection('summary')}
+                                disabled={isSaving}
+                              >
+                                <Save className="h-4 w-4 mr-1" />
+                                {isSaving ? 'Saving...' : 'Save'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelEdit}
+                                disabled={isSaving}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
+                            {summaryMatch[1].trim()}
+                          </p>
+                        )}
                       </div>
                     )}
                     
                     {keyPointsMatch && (
                       <div className="rounded-lg bg-card p-4">
-                        <h2 className="mb-2 text-lg font-bold text-foreground">Key Points</h2>
-                        <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
-                          {keyPointsMatch[1].trim()}
-                        </p>
+                        <div className="flex items-center justify-between mb-2">
+                          <h2 className="text-lg font-bold text-foreground">Key Points</h2>
+                          {editingSection !== 'keypoints' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditSection('keypoints', keyPointsMatch[1].trim())}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                        {editingSection === 'keypoints' ? (
+                          <div className="space-y-2">
+                            <Textarea
+                              value={editedContent['keypoints'] || ''}
+                              onChange={(e) => setEditedContent({ ...editedContent, keypoints: e.target.value })}
+                              className="min-h-[120px] text-base"
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleSaveSection('keypoints')}
+                                disabled={isSaving}
+                              >
+                                <Save className="h-4 w-4 mr-1" />
+                                {isSaving ? 'Saving...' : 'Save'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelEdit}
+                                disabled={isSaving}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
+                            {keyPointsMatch[1].trim()}
+                          </p>
+                        )}
                       </div>
                     )}
                     
                     {actionItemsMatch && (
                       <div className="rounded-lg bg-card p-4">
-                        <h2 className="mb-2 text-lg font-bold text-foreground">Action Items</h2>
-                        <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
-                          {actionItemsMatch[1].trim()}
-                        </p>
+                        <div className="flex items-center justify-between mb-2">
+                          <h2 className="text-lg font-bold text-foreground">Action Items</h2>
+                          {editingSection !== 'actions' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditSection('actions', actionItemsMatch[1].trim())}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                        {editingSection === 'actions' ? (
+                          <div className="space-y-2">
+                            <Textarea
+                              value={editedContent['actions'] || ''}
+                              onChange={(e) => setEditedContent({ ...editedContent, actions: e.target.value })}
+                              className="min-h-[120px] text-base"
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleSaveSection('actions')}
+                                disabled={isSaving}
+                              >
+                                <Save className="h-4 w-4 mr-1" />
+                                {isSaving ? 'Saving...' : 'Save'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelEdit}
+                                disabled={isSaving}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
+                            {actionItemsMatch[1].trim()}
+                          </p>
+                        )}
                       </div>
                     )}
                     
