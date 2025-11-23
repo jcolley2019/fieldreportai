@@ -433,7 +433,7 @@ const Landing = () => {
                       <span className="text-4xl font-bold">{displayPrice}</span>
                       <span className="text-muted-foreground">{plan.period}</span>
                       <div className="text-sm text-muted-foreground mt-1 h-5">
-                        {billingPeriod === "annual" && plan.period && "Billed annually"}
+                        {plan.period && (billingPeriod === "annual" ? "Billed annually" : "Billed monthly")}
                       </div>
                       {plan.period && plan.name !== "Basic" && (
                         <>
