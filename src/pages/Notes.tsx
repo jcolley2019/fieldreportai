@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { pdf } from '@react-pdf/renderer';
+import { Page, Text, View, Document as PDFDocument, StyleSheet } from '@react-pdf/renderer';
 import { Document, Paragraph, TextRun, HeadingLevel, Packer } from 'docx';
 import { saveAs } from 'file-saver';
 import {
@@ -227,21 +228,39 @@ const Notes = () => {
     try {
       toast.success("Generating PDF...");
 
-      // Create a simple text file download
-      const textBlob = new Blob([content], { type: 'text/plain' });
-      const url = URL.createObjectURL(textBlob);
+      const pdfStyles = StyleSheet.create({
+        page: { padding: 40, backgroundColor: '#ffffff' },
+        title: { fontSize: 24, marginBottom: 10, fontWeight: 'bold' },
+        subtitle: { fontSize: 12, marginBottom: 20, color: '#666666' },
+        content: { fontSize: 12, lineHeight: 1.6, whiteSpace: 'pre-wrap' },
+      });
+
+      const NotesPDF = () => (
+        <PDFDocument>
+          <Page size="A4" style={pdfStyles.page}>
+            <Text style={pdfStyles.title}>Notes</Text>
+            <Text style={pdfStyles.subtitle}>
+              Generated on {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            </Text>
+            <Text style={pdfStyles.content}>{content}</Text>
+          </Page>
+        </PDFDocument>
+      );
+
+      const blob = await pdf(<NotesPDF />).toBlob();
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `notes-${new Date().toISOString().split('T')[0]}.txt`;
+      link.download = `notes-${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      toast.success("Notes Downloaded!");
+      toast.success("PDF Downloaded!");
     } catch (error) {
-      console.error('Error generating file:', error);
-      toast.error("Failed to generate file");
+      console.error('Error generating PDF:', error);
+      toast.error("Failed to generate PDF");
     }
   };
 
