@@ -29,23 +29,6 @@ const Pricing = () => {
       current: true,
     },
     {
-      name: "Pro Plan 14-day Trial",
-      monthlyPrice: "$0",
-      annualPrice: "$0",
-      period: "",
-      description: "Try all Pro features free for 14 days",
-      features: [
-        "Unlimited reports & checklists",
-        "Advanced media capture",
-        "AI-powered insights",
-        "Team collaboration",
-        "Priority support",
-        "Custom templates",
-      ],
-      cta: "Start Pro Plan 14-day Trial",
-      popular: false,
-    },
-    {
       name: "Pro",
       monthlyPrice: "$49",
       annualPrice: "$39",
@@ -151,7 +134,7 @@ const Pricing = () => {
               </Button>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
             {pricingPlans.map((plan, index) => {
               const displayPrice = billingPeriod === "monthly" ? plan.monthlyPrice : plan.annualPrice;
               return (
