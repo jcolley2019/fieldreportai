@@ -56,7 +56,6 @@ const Pricing = () => {
         "Advanced media capture",
         "AI-powered insights",
         "Team collaboration",
-        "Priority support",
         "Unlimited Photo Storage",
         "PDF Reports",
         "5-Minute Video Capture",
