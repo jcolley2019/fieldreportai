@@ -4,9 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { Textarea } from "@/components/ui/textarea";
-import { Edit2, Trash2, Sparkles, Save, X, Search } from "lucide-react";
+import { Edit2, Trash2, Sparkles, Save, X, Search, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -45,6 +49,11 @@ const SavedNotes = () => {
   const [isOrganizing, setIsOrganizing] = useState(false);
   const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<string>("all");
+  const [aiOrganizedFilter, setAiOrganizedFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [uniqueProjects, setUniqueProjects] = useState<string[]>([]);
 
   useEffect(() => {
     fetchNotes();
@@ -52,7 +61,13 @@ const SavedNotes = () => {
 
   useEffect(() => {
     filterNotes();
-  }, [searchQuery, notes]);
+  }, [searchQuery, notes, selectedProject, aiOrganizedFilter, dateFrom, dateTo]);
+
+  useEffect(() => {
+    // Extract unique project names from notes
+    const projects = Array.from(new Set(notes.map(note => note.project_name).filter(Boolean))) as string[];
+    setUniqueProjects(projects);
+  }, [notes]);
 
   const fetchNotes = async () => {
     try {
@@ -90,17 +105,46 @@ const SavedNotes = () => {
   };
 
   const filterNotes = () => {
-    if (!searchQuery.trim()) {
-      setFilteredNotes(notes);
-      return;
+    let filtered = [...notes];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(note => 
+        note.note_text.toLowerCase().includes(query) ||
+        note.organized_notes?.toLowerCase().includes(query) ||
+        note.project_name?.toLowerCase().includes(query)
+      );
     }
 
-    const query = searchQuery.toLowerCase();
-    const filtered = notes.filter(note => 
-      note.note_text.toLowerCase().includes(query) ||
-      note.organized_notes?.toLowerCase().includes(query) ||
-      note.project_name?.toLowerCase().includes(query)
-    );
+    // Project filter
+    if (selectedProject !== "all") {
+      if (selectedProject === "standalone") {
+        filtered = filtered.filter(note => !note.project_name);
+      } else {
+        filtered = filtered.filter(note => note.project_name === selectedProject);
+      }
+    }
+
+    // AI-organized filter
+    if (aiOrganizedFilter !== "all") {
+      if (aiOrganizedFilter === "organized") {
+        filtered = filtered.filter(note => note.organized_notes);
+      } else {
+        filtered = filtered.filter(note => !note.organized_notes);
+      }
+    }
+
+    // Date range filter
+    if (dateFrom) {
+      filtered = filtered.filter(note => new Date(note.created_at) >= dateFrom);
+    }
+    if (dateTo) {
+      const endOfDay = new Date(dateTo);
+      endOfDay.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(note => new Date(note.created_at) <= endOfDay);
+    }
+
     setFilteredNotes(filtered);
   };
 
@@ -214,8 +258,8 @@ const SavedNotes = () => {
       </header>
 
       <main className="p-4">
-        {/* Search Bar */}
-        <div className="mb-6">
+        {/* Search and Filters */}
+        <div className="mb-6 space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -225,6 +269,86 @@ const SavedNotes = () => {
               className="pl-9 bg-card"
             />
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* Project Filter */}
+            <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <SelectTrigger className="bg-card">
+                <SelectValue placeholder="Filter by project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                <SelectItem value="standalone">Standalone Notes</SelectItem>
+                {uniqueProjects.map(project => (
+                  <SelectItem key={project} value={project}>{project}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* AI-Organized Filter */}
+            <Select value={aiOrganizedFilter} onValueChange={setAiOrganizedFilter}>
+              <SelectTrigger className="bg-card">
+                <SelectValue placeholder="Filter by AI status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Notes</SelectItem>
+                <SelectItem value="organized">AI Organized</SelectItem>
+                <SelectItem value="not-organized">Not Organized</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Date Range Filter */}
+            <div className="flex gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="flex-1 bg-card justify-start text-left font-normal">
+                    {dateFrom ? format(dateFrom, "MMM d, yyyy") : "From date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateFrom}
+                    onSelect={setDateFrom}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="flex-1 bg-card justify-start text-left font-normal">
+                    {dateTo ? format(dateTo, "MMM d, yyyy") : "To date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateTo}
+                    onSelect={setDateTo}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          {/* Clear Filters */}
+          {(selectedProject !== "all" || aiOrganizedFilter !== "all" || dateFrom || dateTo) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedProject("all");
+                setAiOrganizedFilter("all");
+                setDateFrom(undefined);
+                setDateTo(undefined);
+              }}
+              className="w-full"
+            >
+              <X className="mr-2 h-4 w-4" />
+              Clear Filters
+            </Button>
+          )}
         </div>
 
         {/* Notes List */}
