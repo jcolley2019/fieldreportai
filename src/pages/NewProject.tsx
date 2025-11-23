@@ -170,15 +170,17 @@ const NewProject = () => {
   return (
     <div className="dark min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center gap-4 bg-background/80 px-4 py-3 backdrop-blur-sm">
+      <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
         <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/dashboard")}
+          size="sm"
+          className="gap-2"
         >
-          <ArrowLeft className="h-5 w-5 text-foreground" />
+          <ArrowLeft className="h-4 w-4" />
+          Back
         </Button>
         <h1 className="text-lg font-bold text-foreground">New Project/Customer</h1>
+        <div className="w-[80px]"></div> {/* Spacer for centering title */}
       </header>
 
       <main className="flex min-h-screen flex-col px-4 pb-8 pt-4">
