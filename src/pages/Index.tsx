@@ -181,20 +181,30 @@ const Index = () => {
           <h1 className="text-lg font-bold text-foreground">Project Alpha</h1>
           <ChevronDown className="h-5 w-5 text-muted-foreground" />
         </button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate("/settings")}
-        >
-          <SettingsIcon className="h-5 w-5 text-foreground" />
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={() => window.open('/#pricing', '_blank')}
+            size="sm"
+          >
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Upgrade Now
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/settings")}
+          >
+            <SettingsIcon className="h-5 w-5 text-foreground" />
+          </Button>
+        </div>
       </header>
 
       <main className="p-4">
         {/* Mode Selection Section */}
         <section className="mb-8">
           <h2 className="mb-4 text-2xl font-semibold text-foreground">Choose Your Workflow</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <button 
               onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })}
               className="flex flex-col items-center gap-4 rounded-lg bg-card p-8 transition-colors hover:bg-secondary"
@@ -217,18 +227,6 @@ const Index = () => {
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-foreground mb-1">Project Mode</h3>
                 <p className="text-sm text-muted-foreground">Manage projects and customers</p>
-              </div>
-            </button>
-            <button 
-              onClick={() => window.open('/#pricing', '_blank')}
-              className="flex flex-col items-center gap-4 rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 border-2 border-primary/50 p-8 transition-colors hover:bg-primary/30"
-            >
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/20">
-                <TrendingUp className="h-10 w-10 text-primary" />
-              </div>
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-foreground mb-1">Upgrade Now</h3>
-                <p className="text-sm text-muted-foreground">Unlock premium features</p>
               </div>
             </button>
           </div>
