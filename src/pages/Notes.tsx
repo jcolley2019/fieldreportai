@@ -547,7 +547,7 @@ const Notes = () => {
               onClick={handleCopyLink}
               variant="ghost"
               size="sm"
-              className="gap-2"
+              className="gap-2 text-zinc-200 hover:text-white"
             >
               <Link className="h-4 w-4" />
               <span className="hidden md:inline">Copy Link</span>
@@ -561,7 +561,7 @@ const Notes = () => {
               onClick={handlePrint}
               variant="outline"
               size="sm"
-              className="gap-2"
+              className="gap-2 text-zinc-200 hover:text-white border-zinc-600"
               disabled={!noteText && !organizedNotes}
             >
               <Printer className="h-4 w-4" />
@@ -577,7 +577,7 @@ const Notes = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1 md:gap-2"
+                  className="gap-1 md:gap-2 text-zinc-200 hover:text-white border-zinc-600"
                   disabled={!noteText && !organizedNotes}
                 >
                   <Download className="h-4 w-4" />
