@@ -459,7 +459,7 @@ const CaptureScreen = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/dashboard")}
           >
             <ChevronLeft className="h-5 w-5 text-foreground" />
           </Button>
