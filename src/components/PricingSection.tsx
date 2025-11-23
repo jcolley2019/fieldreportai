@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const pricingPlans = [
   {
@@ -89,6 +91,51 @@ interface PricingSectionProps {
 
 export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = true }) => {
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleStartTrial = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+
+      // Check if user already has a trial
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('trial_start_date, current_plan')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.trial_start_date) {
+        toast.error("You have already used your trial period");
+        return;
+      }
+
+      // Update profile with trial info
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          trial_start_date: new Date().toISOString(),
+          current_plan: 'trial',
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast.success("Trial activated! Enjoy 14 days of Pro features");
+      navigate("/dashboard");
+    } catch (error) {
+      console.error('Error activating trial:', error);
+      toast.error("Failed to activate trial. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <section id="pricing" className="py-20 bg-muted/30">
@@ -169,11 +216,22 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
                       </li>
                     ))}
                   </ul>
-                  <Link to="/auth">
-                    <Button className="w-full" variant={plan.popular ? "default" : "outline"}>
-                      {plan.cta}
+                  {plan.name === "Pro Plan 14-day Trial" ? (
+                    <Button 
+                      className="w-full" 
+                      variant={plan.popular ? "default" : "outline"}
+                      onClick={handleStartTrial}
+                      disabled={loading}
+                    >
+                      {loading ? "Activating..." : plan.cta}
                     </Button>
-                  </Link>
+                  ) : (
+                    <Link to="/auth">
+                      <Button className="w-full" variant={plan.popular ? "default" : "outline"}>
+                        {plan.cta}
+                      </Button>
+                    </Link>
+                  )}
                 </CardContent>
               </Card>
             );
