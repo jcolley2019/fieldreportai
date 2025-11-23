@@ -1,0 +1,180 @@
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Check } from "lucide-react";
+import { Link } from "react-router-dom";
+
+const pricingPlans = [
+  {
+    name: "Pro Plan 14-day Trial",
+    monthlyPrice: "$0",
+    annualPrice: "$0",
+    period: "",
+    description: "Try all Pro features free for 14 days",
+    features: [
+      "Unlimited reports & checklists",
+      "Advanced media capture",
+      "AI-powered insights",
+      "Team collaboration",
+      "Priority support",
+      "Unlimited Photo Storage",
+      "PDF Reports",
+      "5-Minute Video Capture",
+    ],
+    cta: "Start Pro Plan 14-day Trial",
+    popular: false,
+  },
+  {
+    name: "Pro",
+    monthlyPrice: "$49",
+    annualPrice: "$39",
+    period: "/month",
+    description: "For active field professionals",
+    features: [
+      "Unlimited reports & checklists",
+      "Advanced media capture",
+      "AI-powered insights",
+      "Team collaboration",
+      "Priority support",
+      "Unlimited Photo Storage",
+      "PDF Reports",
+      "5-Minute Video Capture",
+    ],
+    cta: "Start Plan",
+    popular: true,
+  },
+  {
+    name: "Premium",
+    monthlyPrice: "$99",
+    annualPrice: "$79",
+    period: "/month",
+    description: "Advanced features for growing teams",
+    features: [
+      "Everything in Pro",
+      "Custom branding",
+      "API access",
+      "Advanced analytics",
+      "Dedicated support",
+      "Custom integrations",
+      "Unlimited Video Capture",
+      "Custom Report Templates",
+    ],
+    cta: "Start Plan",
+    popular: false,
+  },
+  {
+    name: "Enterprise",
+    monthlyPrice: "Custom",
+    annualPrice: "Custom",
+    period: "",
+    description: "For large organizations",
+    features: [
+      "Everything in Premium",
+      "Custom integrations",
+      "Dedicated account manager",
+      "Advanced security",
+      "Custom contract terms",
+      "Training & onboarding",
+      "SLA guarantee",
+    ],
+    cta: "Contact Sales",
+    popular: false,
+  },
+];
+
+interface PricingSectionProps {
+  showHeader?: boolean;
+}
+
+export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = true }) => {
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
+
+  return (
+    <section id="pricing" className="py-20 bg-muted/30">
+      <div className="container mx-auto px-4">
+        {showHeader && (
+          <div className="max-w-4xl mx-auto text-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Simple, Transparent Pricing</h2>
+            <p className="text-muted-foreground mb-8">Choose the plan that fits your needs</p>
+          </div>
+        )}
+        
+        {/* Billing Period Toggle */}
+        <div className="max-w-4xl mx-auto text-center mb-8">
+          <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-lg">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setBillingPeriod("monthly")}
+              className={`relative ${billingPeriod === "monthly" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : ""}`}
+            >
+              Monthly
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setBillingPeriod("annual")}
+              className={`relative ${billingPeriod === "annual" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : ""}`}
+            >
+              Annual
+              <Badge className="ml-2 bg-primary text-primary-foreground">Save 20%</Badge>
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          {pricingPlans.map((plan, index) => {
+            const displayPrice = billingPeriod === "monthly" ? plan.monthlyPrice : plan.annualPrice;
+            return (
+              <Card key={index} className={`flex flex-col ${plan.popular ? "border-primary shadow-lg" : ""}`}>
+                {plan.popular && (
+                  <div className="bg-primary text-primary-foreground text-center py-2 text-sm font-semibold">
+                    Most Popular
+                  </div>
+                )}
+                <CardHeader>
+                  <CardTitle>{plan.name}</CardTitle>
+                  <CardDescription>{plan.description}</CardDescription>
+                  <div className="mt-4 min-h-[140px]">
+                    <span className="text-4xl font-bold">{displayPrice}</span>
+                    <span className="text-muted-foreground">{plan.period}</span>
+                    <div className="text-sm text-muted-foreground mt-1 h-5">
+                      {plan.period && (billingPeriod === "annual" ? "Billed annually" : "Billed monthly")}
+                    </div>
+                    {plan.period && plan.name !== "Basic" && (
+                      <>
+                        <div className="text-sm text-foreground mt-2">
+                          Includes 3 Users
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          $19/each additional user per month
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="flex flex-col flex-1">
+                  <h3 className="font-semibold text-sm mb-3">Key Features</h3>
+                  <ul className="space-y-3 mb-6 flex-1">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-primary" />
+                        <span className="text-sm">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link to="/auth">
+                    <Button className="w-full" variant={plan.popular ? "default" : "outline"}>
+                      {plan.cta}
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+};
