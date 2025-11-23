@@ -530,7 +530,7 @@ const Notes = () => {
             {isSaving ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : showSuccess ? (
-              <Check className="h-5 w-5 animate-scale-in" />
+              <Check className="h-5 w-5 animate-in zoom-in-50 duration-300" />
             ) : (
               <Save className="h-4 w-4" />
             )}
