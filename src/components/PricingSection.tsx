@@ -60,7 +60,7 @@ const pricingPlans = [
       "API access",
       "Advanced analytics",
       "Dedicated support",
-      "Unlimited Video Capture",
+      "10-Minute Video Capture",
     ],
     cta: "Start Plan",
     popular: false,
