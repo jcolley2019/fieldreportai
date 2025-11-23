@@ -98,14 +98,13 @@ const ReviewSummary = () => {
         return;
       }
 
-      // For Simple Mode, we'll create a temporary report entry
-      // In Project Mode, this would be linked to an actual project
+      // Create report entry with full summary
       const reportData = {
         user_id: user.id,
         project_name: "Simple Mode Report",
         customer_name: "N/A",
         job_number: `SM-${Date.now()}`,
-        job_description: summaryText.substring(0, 500) // Store a portion of the summary
+        job_description: summaryText // Store full summary
       };
 
       const { data: report, error: reportError } = await supabase
@@ -119,6 +118,26 @@ const ReviewSummary = () => {
         toast.error("Failed to save report");
         setIsSaving(false);
         return;
+      }
+
+      // Save captured images to media table
+      if (capturedImages.length > 0) {
+        const mediaEntries = capturedImages.map((image: any) => ({
+          user_id: user.id,
+          report_id: report.id,
+          file_path: image.path || image.url,
+          file_type: 'image',
+          mime_type: 'image/jpeg'
+        }));
+
+        const { error: mediaError } = await supabase
+          .from('media')
+          .insert(mediaEntries);
+
+        if (mediaError) {
+          console.error("Error saving media:", mediaError);
+          // Don't fail the whole operation if media save fails
+        }
       }
 
       toast.success("Report saved successfully!");

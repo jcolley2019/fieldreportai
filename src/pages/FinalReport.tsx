@@ -168,9 +168,59 @@ const FinalReport = () => {
           <h1 className="px-4 pb-3 text-left text-[32px] font-bold leading-tight tracking-tight text-foreground">
             Report Summary
           </h1>
-          <p className="px-4 pb-3 pt-1 text-base font-normal leading-relaxed text-muted-foreground">
-            {reportData?.job_description || 'No description available'}
-          </p>
+
+          {/* Display formatted report summary */}
+          {reportData?.job_description && (
+            <div className="px-4 pb-6">
+              {(() => {
+                const text = reportData.job_description;
+                
+                // Parse Summary section
+                const summaryMatch = text.match(/SUMMARY:\s*([\s\S]*?)(?=KEY POINTS:|ACTION ITEMS:|$)/i);
+                const keyPointsMatch = text.match(/KEY POINTS:\s*([\s\S]*?)(?=ACTION ITEMS:|$)/i);
+                const actionItemsMatch = text.match(/ACTION ITEMS:\s*([\s\S]*?)$/i);
+                
+                return (
+                  <div className="space-y-4">
+                    {summaryMatch && (
+                      <div className="rounded-lg bg-card p-4">
+                        <h2 className="mb-2 text-lg font-bold text-foreground">Summary</h2>
+                        <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
+                          {summaryMatch[1].trim()}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {keyPointsMatch && (
+                      <div className="rounded-lg bg-card p-4">
+                        <h2 className="mb-2 text-lg font-bold text-foreground">Key Points</h2>
+                        <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
+                          {keyPointsMatch[1].trim()}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {actionItemsMatch && (
+                      <div className="rounded-lg bg-card p-4">
+                        <h2 className="mb-2 text-lg font-bold text-foreground">Action Items</h2>
+                        <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
+                          {actionItemsMatch[1].trim()}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {!summaryMatch && !keyPointsMatch && !actionItemsMatch && (
+                      <div className="rounded-lg bg-card p-4">
+                        <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
+                          {text}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
 
           {/* Photos Section */}
           {media.length > 0 && (
