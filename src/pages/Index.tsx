@@ -200,7 +200,7 @@ const Index = () => {
               <ChevronDown className="h-5 w-5 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56 bg-popover">
+          <DropdownMenuContent align="start" className="w-64 bg-popover">
             <DropdownMenuItem onClick={() => navigate("/dashboard")} className="cursor-pointer">
               <FolderOpen className="mr-2 h-4 w-4" />
               Dashboard
@@ -213,6 +213,33 @@ const Index = () => {
               <Camera className="mr-2 h-4 w-4" />
               Capture Screen
             </DropdownMenuItem>
+            
+            {/* Recent Projects Section */}
+            {projects.length > 0 && (
+              <>
+                <DropdownMenuSeparator />
+                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                  Recent Projects
+                </div>
+                {projects.slice(0, 5).map((project) => (
+                  <DropdownMenuItem 
+                    key={project.id}
+                    onClick={() => toast.info(`View project: ${project.project_name}`)}
+                    className="cursor-pointer flex-col items-start gap-1"
+                  >
+                    <div className="flex items-center gap-2 w-full">
+                      <Building2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                      <span className="font-medium truncate">{project.project_name}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground ml-6">
+                      <UserIcon className="h-3 w-3" />
+                      <span className="truncate">{project.customer_name}</span>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </>
+            )}
+            
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
               <SettingsIcon className="mr-2 h-4 w-4" />
