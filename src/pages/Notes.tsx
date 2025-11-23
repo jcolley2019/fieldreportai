@@ -452,22 +452,24 @@ const Notes = () => {
             <p className="text-sm text-muted-foreground animate-pulse">Recording... tap to stop</p>
           )}
         </div>
-
-        {/* Save Note Button */}
-        <Button
-          onClick={handleSaveNote}
-          className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-          size="lg"
-          disabled={isProcessing}
-        >
-          <Save className="mr-2 h-5 w-5" />
-          {isProcessing ? "Processing..." : "Save Note"}
-        </Button>
       </main>
 
       {/* Static Bottom Action Bar - Always Visible */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur-sm p-4 z-20">
         <h3 className="mb-4 text-center text-lg font-semibold text-foreground">Save & Print</h3>
+        
+        {/* Save Note Button - AI Processing */}
+        <div className="mb-3">
+          <Button
+            onClick={handleSaveNote}
+            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
+            disabled={isProcessing || !noteText.trim()}
+          >
+            <Save className="mr-2 h-5 w-5" />
+            {isProcessing ? "Processing..." : "Save Note"}
+          </Button>
+        </div>
+
         <div className="mb-3 grid grid-cols-2 gap-3">
           <Button
             onClick={handleDownloadPDF}
