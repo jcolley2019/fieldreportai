@@ -196,6 +196,8 @@ const Onboarding = () => {
           company_name: companyName.trim(),
           avatar_url: avatarUrl || null,
           company_logo_url: logoUrl || null,
+          trial_start_date: new Date().toISOString(),
+          current_plan: 'trial',
         })
         .eq("id", user.id);
 

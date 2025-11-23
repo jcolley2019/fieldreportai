@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { User } from "@supabase/supabase-js";
 import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { TrialBanner } from "@/components/TrialBanner";
 import {
   Select,
   SelectContent,
@@ -38,6 +39,8 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"recent" | "name" | "customer">("recent");
   const [showProjectDialog, setShowProjectDialog] = useState(false);
+  const [trialStartDate, setTrialStartDate] = useState<string | null>(null);
+  const [showTrialBanner, setShowTrialBanner] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -71,7 +74,7 @@ const Index = () => {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('first_name, last_name, company_name')
+      .select('first_name, last_name, company_name, trial_start_date, current_plan')
       .eq('id', user.id)
       .single();
 
@@ -79,6 +82,11 @@ const Index = () => {
     
     if (!isProfileComplete) {
       navigate("/onboarding");
+    }
+
+    // Check if user is on trial and set trial start date
+    if (profile?.current_plan === 'trial' && profile?.trial_start_date) {
+      setTrialStartDate(profile.trial_start_date);
     }
   };
 
@@ -191,6 +199,14 @@ const Index = () => {
       </header>
 
       <main className="p-4">
+        {/* Trial Banner */}
+        {trialStartDate && showTrialBanner && (
+          <TrialBanner 
+            trialStartDate={trialStartDate} 
+            onDismiss={() => setShowTrialBanner(false)}
+          />
+        )}
+        
         {/* Mode Selection Section */}
         <section className="mb-8">
           <h2 className="mb-4 text-2xl font-semibold text-foreground">Choose Your Workflow</h2>
