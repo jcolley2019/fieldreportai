@@ -90,6 +90,26 @@ const ProjectsCustomers = () => {
     }
   };
 
+  // Highlight matching text
+  const highlightText = (text: string, query: string) => {
+    if (!query.trim()) return text;
+    
+    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    return (
+      <>
+        {parts.map((part, index) => 
+          part.toLowerCase() === query.toLowerCase() ? (
+            <mark key={index} className="bg-primary/30 text-foreground rounded px-0.5">
+              {part}
+            </mark>
+          ) : (
+            part
+          )
+        )}
+      </>
+    );
+  };
+
   // Filter and sort projects
   const filteredProjects = projects
     .filter((project) => {
@@ -187,15 +207,17 @@ const ProjectsCustomers = () => {
                   <Building2 className="h-7 w-7 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground text-lg mb-1">{project.project_name}</h3>
+                  <h3 className="font-semibold text-foreground text-lg mb-1">
+                    {highlightText(project.project_name, searchQuery)}
+                  </h3>
                   <div className="space-y-1 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <UserIcon className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{project.customer_name}</span>
+                      <span className="truncate">{highlightText(project.customer_name, searchQuery)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Hash className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{project.job_number}</span>
+                      <span className="truncate">{highlightText(project.job_number, searchQuery)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <ListChecks className="h-4 w-4 flex-shrink-0" />
