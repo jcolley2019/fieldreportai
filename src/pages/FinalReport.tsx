@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { pdf } from '@react-pdf/renderer';
 import { ReportPDF } from '@/components/ReportPDF';
+import { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer, Table, TableCell, TableRow, WidthType, BorderStyle } from 'docx';
+import { saveAs } from 'file-saver';
 
 interface MediaItem {
   id: string;
@@ -178,7 +180,7 @@ const FinalReport = () => {
     }
   };
 
-  const handleDownloadWord = () => {
+  const handleDownloadWord = async () => {
     if (!reportData) {
       toast({
         title: "No report to download",
@@ -188,11 +190,264 @@ const FinalReport = () => {
       return;
     }
 
-    toast({
-      title: "Downloading Word Document...",
-      description: "Your report is being prepared as a Word document.",
-    });
-    // TODO: Implement actual Word document generation
+    try {
+      toast({
+        title: "Generating Word Document...",
+        description: "Your report is being prepared as a Word document.",
+      });
+
+      // Parse report sections
+      const text = reportData.job_description || '';
+      const summaryMatch = text.match(/SUMMARY:\s*([\s\S]*?)(?=KEY POINTS:|ACTION ITEMS:|$)/i);
+      const keyPointsMatch = text.match(/KEY POINTS:\s*([\s\S]*?)(?=ACTION ITEMS:|$)/i);
+      const actionItemsMatch = text.match(/ACTION ITEMS:\s*([\s\S]*?)$/i);
+
+      // Helper to strip HTML tags
+      const stripHtml = (html: string) => {
+        return html
+          .replace(/<br\s*\/?>/gi, '\n')
+          .replace(/<\/p>/gi, '\n\n')
+          .replace(/<[^>]+>/g, '')
+          .trim();
+      };
+
+      // Build document sections
+      const docSections: any[] = [];
+
+      // Header section
+      docSections.push(
+        new Paragraph({
+          text: reportData.project_name,
+          heading: HeadingLevel.TITLE,
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `${reportData.customer_name} • Job #${reportData.job_number}`,
+              color: "666666",
+            }),
+          ],
+          spacing: { after: 100 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Generated on ${new Date(reportData.created_at).toLocaleDateString('en-US', { 
+                month: 'long', 
+                day: 'numeric', 
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+              })}`,
+              size: 18,
+              color: "999999",
+            }),
+          ],
+          spacing: { after: 400 },
+        })
+      );
+
+      // Summary section
+      if (summaryMatch) {
+        docSections.push(
+          new Paragraph({
+            text: "Summary",
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 200, after: 200 },
+          }),
+          new Paragraph({
+            text: stripHtml(summaryMatch[1].trim()),
+            spacing: { after: 300 },
+          })
+        );
+      }
+
+      // Key Points section
+      if (keyPointsMatch) {
+        docSections.push(
+          new Paragraph({
+            text: "Key Points",
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 200, after: 200 },
+          })
+        );
+
+        const points = stripHtml(keyPointsMatch[1].trim())
+          .split('\n')
+          .filter(line => line.trim());
+
+        points.forEach(point => {
+          docSections.push(
+            new Paragraph({
+              text: point.replace(/^[•\-*]\s*/, '').trim(),
+              bullet: { level: 0 },
+              spacing: { after: 100 },
+            })
+          );
+        });
+
+        docSections.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+      }
+
+      // Action Items section
+      if (actionItemsMatch) {
+        docSections.push(
+          new Paragraph({
+            text: "Action Items",
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 200, after: 200 },
+          })
+        );
+
+        const actions = stripHtml(actionItemsMatch[1].trim())
+          .split('\n')
+          .filter(line => line.trim());
+
+        actions.forEach(action => {
+          docSections.push(
+            new Paragraph({
+              text: action.replace(/^[•\-*]\s*/, '').trim(),
+              bullet: { level: 0 },
+              spacing: { after: 100 },
+            })
+          );
+        });
+
+        docSections.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+      }
+
+      // Project Information section
+      docSections.push(
+        new Paragraph({
+          text: "Project Information",
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 200, after: 200 },
+        })
+      );
+
+      const infoTable = new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+          top: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+          bottom: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+          left: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+          right: { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" },
+        },
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({
+                children: [new Paragraph({ children: [new TextRun({ text: "Customer:", bold: true })] })],
+                width: { size: 30, type: WidthType.PERCENTAGE },
+              }),
+              new TableCell({
+                children: [new Paragraph({ text: reportData.customer_name })],
+                width: { size: 70, type: WidthType.PERCENTAGE },
+              }),
+            ],
+          }),
+          new TableRow({
+            children: [
+              new TableCell({
+                children: [new Paragraph({ children: [new TextRun({ text: "Job Number:", bold: true })] })],
+              }),
+              new TableCell({
+                children: [new Paragraph({ text: reportData.job_number })],
+              }),
+            ],
+          }),
+          new TableRow({
+            children: [
+              new TableCell({
+                children: [new Paragraph({ children: [new TextRun({ text: "Created:", bold: true })] })],
+              }),
+              new TableCell({
+                children: [new Paragraph({ text: formatDate(reportData.created_at) })],
+              }),
+            ],
+          }),
+        ],
+      });
+
+      docSections.push(infoTable);
+
+      // Checklists
+      if (checklists.length > 0) {
+        checklists.forEach((checklist) => {
+          docSections.push(
+            new Paragraph({
+              text: checklist.title,
+              heading: HeadingLevel.HEADING_1,
+              spacing: { before: 400, after: 200 },
+            })
+          );
+
+          checklist.items.forEach((item) => {
+            docSections.push(
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: item.completed ? "☑ " : "☐ ",
+                  }),
+                  new TextRun({
+                    text: item.text,
+                    strike: item.completed,
+                  }),
+                  new TextRun({
+                    text: ` (${item.priority} priority, ${item.category})`,
+                    size: 18,
+                    color: "666666",
+                  }),
+                ],
+                spacing: { after: 100 },
+              })
+            );
+          });
+        });
+      }
+
+      // Photos & Media note
+      if (media.length > 0) {
+        docSections.push(
+          new Paragraph({
+            text: "Photos & Media",
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 400, after: 200 },
+          }),
+          new Paragraph({
+            text: `${media.length} photo${media.length !== 1 ? 's' : ''} and media files are associated with this report.`,
+            spacing: { after: 200 },
+          })
+        );
+      }
+
+      // Create document
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: docSections,
+          },
+        ],
+      });
+
+      // Generate and download
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, `${reportData.project_name}_${new Date().toISOString().split('T')[0]}.docx`);
+
+      toast({
+        title: "Word Document Downloaded!",
+        description: "Your report has been saved as a Word document.",
+      });
+    } catch (error) {
+      console.error('Error generating Word document:', error);
+      toast({
+        title: "Failed to generate Word document",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCopyLink = async () => {
