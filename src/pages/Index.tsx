@@ -193,7 +193,6 @@ const Index = () => {
           <Button
             onClick={() => navigate("/pricing")}
             size="sm"
-            variant="outline"
             className="gap-2"
           >
             <Zap className="h-4 w-4" />
