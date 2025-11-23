@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { Textarea } from "@/components/ui/textarea";
-import { Mic, Save, Download, Mail, Printer, FileText, Plus, Link2, Cloud, ChevronDown, Link, Loader2 } from "lucide-react";
+import { Mic, Save, Download, Mail, Printer, FileText, Plus, Link2, Cloud, ChevronDown, Link, Loader2, Check } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +33,7 @@ const Notes = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projectReportId);
   const [isSaving, setIsSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     if (showOptionsDialog && isSimpleMode && !projectReportId) {
@@ -162,6 +163,10 @@ const Notes = () => {
       } else {
         toast.success("Note saved!");
       }
+
+      // Show success animation
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
 
       // Clear the note text after successful save
       setNoteText("");
@@ -515,15 +520,21 @@ const Notes = () => {
         <div className="border-b border-zinc-800 px-4 py-3">
           <Button
             onClick={handleQuickSave}
-            className="w-full gap-2 bg-teal-600 hover:bg-teal-700 text-white h-12"
+            className={`w-full gap-2 h-12 transition-all ${
+              showSuccess 
+                ? 'bg-green-600 hover:bg-green-700' 
+                : 'bg-teal-600 hover:bg-teal-700'
+            } text-white`}
             disabled={isSaving || !noteText.trim()}
           >
             {isSaving ? (
               <Loader2 className="h-4 w-4 animate-spin" />
+            ) : showSuccess ? (
+              <Check className="h-5 w-5 animate-scale-in" />
             ) : (
               <Save className="h-4 w-4" />
             )}
-            {isSaving ? "Saving..." : "Quick Save"}
+            {isSaving ? "Saving..." : showSuccess ? "Saved!" : "Quick Save"}
           </Button>
         </div>
 
