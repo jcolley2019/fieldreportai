@@ -24,7 +24,7 @@ const pricingPlans = [
       "PDF Reports",
       "5-Minute Video Capture",
     ],
-    cta: "Start Pro Plan 14-day Trial",
+    cta: "Start Trial",
     popular: false,
   },
   {
