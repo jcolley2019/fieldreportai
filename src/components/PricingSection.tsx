@@ -225,6 +225,12 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
                     >
                       {loading ? "Activating..." : plan.cta}
                     </Button>
+                  ) : plan.name === "Enterprise" ? (
+                    <a href="mailto:jcolley2019@gmail.com?subject=Enterprise Plan Inquiry" className="w-full">
+                      <Button className="w-full" variant={plan.popular ? "default" : "outline"}>
+                        {plan.cta}
+                      </Button>
+                    </a>
                   ) : (
                     <Link to="/auth">
                       <Button className="w-full" variant={plan.popular ? "default" : "outline"}>
