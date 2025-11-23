@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, User, Building2 } from "lucide-react";
+import { Upload, User, Building2, X } from "lucide-react";
 import { ImageCropDialog } from "@/components/ImageCropDialog";
 
 const Onboarding = () => {
@@ -83,6 +83,12 @@ const Onboarding = () => {
     setAvatarPreview(URL.createObjectURL(croppedBlob));
   };
 
+  const handleRemoveAvatar = () => {
+    setAvatarFile(null);
+    setAvatarPreview("");
+    setTempAvatarUrl("");
+  };
+
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -119,6 +125,12 @@ const Onboarding = () => {
     const file = new File([croppedBlob], "logo.jpg", { type: "image/jpeg" });
     setLogoFile(file);
     setLogoPreview(URL.createObjectURL(croppedBlob));
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoFile(null);
+    setLogoPreview("");
+    setTempLogoUrl("");
   };
 
   const uploadFile = async (file: File, bucket: string, userId: string, setUploadingState: (val: boolean) => void) => {
@@ -322,11 +334,21 @@ const Onboarding = () => {
                 <Label>Profile Picture</Label>
                 <div className="flex flex-col items-center gap-3">
                   {avatarPreview ? (
-                    <img
-                      src={avatarPreview}
-                      alt="Avatar preview"
-                      className="w-24 h-24 rounded-full object-cover border-2 border-border"
-                    />
+                    <div className="relative">
+                      <img
+                        src={avatarPreview}
+                        alt="Avatar preview"
+                        className="w-24 h-24 rounded-full object-cover border-2 border-border"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90 transition-colors"
+                        aria-label="Remove avatar"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   ) : (
                     <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border-2 border-border">
                       <User className="w-12 h-12 text-muted-foreground" />
@@ -337,7 +359,7 @@ const Onboarding = () => {
                     className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
                   >
                     <Upload className="w-4 h-4" />
-                    {uploadingAvatar ? "Uploading..." : "Upload Photo"}
+                    {uploadingAvatar ? "Uploading..." : avatarPreview ? "Change Photo" : "Upload Photo"}
                   </Label>
                   {errors.avatar && (
                     <p className="text-sm text-destructive">{errors.avatar}</p>
@@ -357,11 +379,21 @@ const Onboarding = () => {
                 <Label>Company Logo</Label>
                 <div className="flex flex-col items-center gap-3">
                   {logoPreview ? (
-                    <img
-                      src={logoPreview}
-                      alt="Logo preview"
-                      className="w-24 h-24 rounded-lg object-cover border-2 border-border"
-                    />
+                    <div className="relative">
+                      <img
+                        src={logoPreview}
+                        alt="Logo preview"
+                        className="w-24 h-24 rounded-lg object-cover border-2 border-border"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveLogo}
+                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90 transition-colors"
+                        aria-label="Remove logo"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   ) : (
                     <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center border-2 border-border">
                       <Building2 className="w-12 h-12 text-muted-foreground" />
@@ -372,7 +404,7 @@ const Onboarding = () => {
                     className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
                   >
                     <Upload className="w-4 h-4" />
-                    {uploadingLogo ? "Uploading..." : "Upload Logo"}
+                    {uploadingLogo ? "Uploading..." : logoPreview ? "Change Logo" : "Upload Logo"}
                   </Label>
                   {errors.logo && (
                     <p className="text-sm text-destructive">{errors.logo}</p>
