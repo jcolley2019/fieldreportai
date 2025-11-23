@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PricingSection } from "@/components/PricingSection";
+import { EmailCaptureForm } from "@/components/EmailCaptureForm";
 import logo from "@/assets/field-report-ai-logo.png";
 import { useState } from "react";
 
@@ -124,11 +125,17 @@ const Pricing = () => {
           <p className="text-xl text-muted-foreground mb-6 max-w-2xl mx-auto">
             Join thousands of field professionals using Field Report AI to save time and improve documentation.
           </p>
-          <Link to="/auth">
-            <Button size="lg" className="gap-2">
-              Start Your Free Trial
-            </Button>
-          </Link>
+          <div className="max-w-md mx-auto mb-6">
+            <EmailCaptureForm 
+              source="pricing_page"
+              placeholder="Enter your work email"
+              buttonText="Start Free Trial"
+              className="flex-col sm:flex-row"
+            />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            No credit card required • 14-day free trial
+          </p>
         </div>
       </section>
     </div>
