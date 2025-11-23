@@ -1018,7 +1018,7 @@ const FinalReport = () => {
             Save as Word
           </Button>
         </div>
-        <div className="mb-3 grid grid-cols-[1fr_1fr_80px] gap-3">
+        <div className="mb-3 grid grid-cols-2 gap-3">
           <Button
             onClick={() => toast({ title: "Save to Cloud feature coming soon" })}
             disabled={!reportData}
@@ -1027,21 +1027,23 @@ const FinalReport = () => {
             <Cloud className="mr-2 h-5 w-5" />
             Save to Cloud
           </Button>
-          <Button
-            onClick={handlePrint}
-            disabled={!reportData}
-            className="bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-          >
-            <Printer className="mr-2 h-5 w-5" />
-            Print
-          </Button>
-          <Button
-            onClick={handleCopyLink}
-            className="bg-primary h-auto items-center justify-center py-6 text-primary-foreground hover:bg-primary/90"
-            title="Copy Link"
-          >
-            <Link2 className="h-5 w-5" />
-          </Button>
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <Button
+              onClick={handlePrint}
+              disabled={!reportData}
+              className="bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              <Printer className="mr-2 h-5 w-5" />
+              Print
+            </Button>
+            <Button
+              onClick={handleCopyLink}
+              className="bg-primary h-auto w-14 items-center justify-center py-6 text-primary-foreground hover:bg-primary/90"
+              title="Copy Link"
+            >
+              <Link2 className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
         <p className="text-center text-xs text-muted-foreground">
           {reportData?.created_at 
