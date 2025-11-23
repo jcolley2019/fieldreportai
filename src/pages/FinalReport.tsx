@@ -50,14 +50,12 @@ const FinalReport = () => {
           variant: "destructive",
         });
         setIsLoading(false);
-        // Don't navigate away - stay on page and show error
         return;
       }
 
       try {
         setIsLoading(true);
 
-        // Fetch report data
         const { data: report, error: reportError } = await supabase
           .from('reports')
           .select('*')
@@ -76,7 +74,6 @@ const FinalReport = () => {
 
         setReportData(report);
 
-        // Fetch media
         const { data: mediaData, error: mediaError } = await supabase
           .from('media')
           .select('*')
@@ -87,7 +84,6 @@ const FinalReport = () => {
           setMedia(mediaData);
         }
 
-        // Fetch checklists with items
         const { data: checklistsData, error: checklistsError } = await supabase
           .from('checklists')
           .select('*')
@@ -101,7 +97,7 @@ const FinalReport = () => {
                 .from('checklist_items')
                 .select('*')
                 .eq('checklist_id', checklist.id)
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: false});
 
               return {
                 ...checklist,
@@ -126,44 +122,22 @@ const FinalReport = () => {
     loadReportData();
   }, [reportId]);
 
-  if (isLoading) {
-    return (
-      <div className="dark min-h-screen bg-background flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-      </div>
-    );
-  }
-
-  if (!reportData) {
-    return (
-      <div className="dark min-h-screen bg-background">
-        <header className="sticky top-0 z-10 w-full border-b border-border bg-background/80 backdrop-blur-sm">
-          <div className="flex h-12 items-center p-4">
-            <BackButton />
-          </div>
-        </header>
-        <div className="flex flex-col items-center justify-center p-8 text-center">
-          <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-          <h2 className="text-xl font-bold text-foreground mb-2">No Report Found</h2>
-          <p className="text-muted-foreground mb-4">
-            The report could not be loaded. Please try again or go back to the dashboard.
-          </p>
-          <Button onClick={() => navigate("/dashboard")}>
-            Back to Dashboard
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   const handleDownloadPDF = async () => {
+    if (!reportData) {
+      toast({
+        title: "No report to download",
+        description: "Please load a report first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       toast({
         title: "Generating PDF...",
         description: "Your report is being prepared as a PDF file.",
       });
 
-      // Fetch media URLs if there are media items
       const mediaUrlsMap = new Map<string, string>();
       for (const item of media) {
         if (item.file_type === 'image') {
@@ -172,7 +146,6 @@ const FinalReport = () => {
         }
       }
 
-      // Generate PDF
       const blob = await pdf(
         <ReportPDF
           reportData={reportData}
@@ -182,7 +155,6 @@ const FinalReport = () => {
         />
       ).toBlob();
 
-      // Create download link
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -207,6 +179,15 @@ const FinalReport = () => {
   };
 
   const handleDownloadWord = () => {
+    if (!reportData) {
+      toast({
+        title: "No report to download",
+        description: "Please load a report first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
       title: "Downloading Word Document...",
       description: "Your report is being prepared as a Word document.",
@@ -232,14 +213,31 @@ const FinalReport = () => {
   };
 
   const handleShare = () => {
+    if (!reportData) {
+      toast({
+        title: "No report to share",
+        description: "Please load a report first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
       title: "Sharing report...",
       description: "Opening share options.",
     });
-    navigate("/confirmation");
   };
 
   const handleForward = () => {
+    if (!reportData) {
+      toast({
+        title: "No report to forward",
+        description: "Please load a report first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
       title: "Forwarding report...",
       description: "Preparing to forward this report.",
@@ -274,7 +272,6 @@ const FinalReport = () => {
       const text = reportData.job_description;
       let updatedText = text;
 
-      // Update the specific section in the full text
       if (sectionKey === 'summary') {
         updatedText = text.replace(
           /SUMMARY:\s*([\s\S]*?)(?=KEY POINTS:|ACTION ITEMS:|$)/i,
@@ -317,7 +314,7 @@ const FinalReport = () => {
   };
 
   return (
-    <div className="dark min-h-screen bg-background">
+    <div className="dark min-h-screen bg-background pb-64">
       {/* Sticky Header */}
       <header className="sticky top-0 z-10 w-full border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="flex flex-col gap-2 p-4 pb-3">
@@ -333,354 +330,371 @@ const FinalReport = () => {
             {reportData?.project_name || 'Report'}
           </p>
           <p className="text-sm text-muted-foreground">
-            {reportData?.customer_name} • Job #{reportData?.job_number}
+            {reportData?.customer_name || 'N/A'} • Job #{reportData?.job_number || 'N/A'}
           </p>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-grow pb-64">{/* Increased padding to account for cloud storage section and action bar */}
-        <div className="pt-6">
-          <h1 className="px-4 pb-3 text-left text-[32px] font-bold leading-tight tracking-tight text-foreground">
-            Report Summary
-          </h1>
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        </div>
+      ) : !reportData ? (
+        <div className="flex flex-col items-center justify-center p-8 text-center min-h-[400px]">
+          <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+          <h2 className="text-xl font-bold text-foreground mb-2">No Report Found</h2>
+          <p className="text-muted-foreground mb-4">
+            The report could not be loaded. Please try again or go back to the dashboard.
+          </p>
+          <Button onClick={() => navigate("/dashboard")}>
+            Back to Dashboard
+          </Button>
+        </div>
+      ) : (
+        <main className="flex-grow">
+          <div className="pt-6">
+            <h1 className="px-4 pb-3 text-left text-[32px] font-bold leading-tight tracking-tight text-foreground">
+              Report Summary
+            </h1>
 
-          {/* Display formatted report summary */}
-          {reportData?.job_description && (
-            <div className="px-4 pb-6">
-              {(() => {
-                const text = reportData.job_description;
-                
-                // Parse Summary section
-                const summaryMatch = text.match(/SUMMARY:\s*([\s\S]*?)(?=KEY POINTS:|ACTION ITEMS:|$)/i);
-                const keyPointsMatch = text.match(/KEY POINTS:\s*([\s\S]*?)(?=ACTION ITEMS:|$)/i);
-                const actionItemsMatch = text.match(/ACTION ITEMS:\s*([\s\S]*?)$/i);
-                
-                return (
-                  <div className="space-y-4">
-                    {summaryMatch && (
-                      <div className="rounded-lg bg-card p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h2 className="text-lg font-bold text-foreground">Summary</h2>
-                          {editingSection !== 'summary' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditSection('summary', summaryMatch[1].trim())}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
+            {/* Display formatted report summary */}
+            {reportData?.job_description && (
+              <div className="px-4 pb-6">
+                {(() => {
+                  const text = reportData.job_description;
+                  
+                  const summaryMatch = text.match(/SUMMARY:\s*([\s\S]*?)(?=KEY POINTS:|ACTION ITEMS:|$)/i);
+                  const keyPointsMatch = text.match(/KEY POINTS:\s*([\s\S]*?)(?=ACTION ITEMS:|$)/i);
+                  const actionItemsMatch = text.match(/ACTION ITEMS:\s*([\s\S]*?)$/i);
+                  
+                  return (
+                    <div className="space-y-4">
+                      {summaryMatch && (
+                        <div className="rounded-lg bg-card p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h2 className="text-lg font-bold text-foreground">Summary</h2>
+                            {editingSection !== 'summary' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditSection('summary', summaryMatch[1].trim())}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                          {editingSection === 'summary' ? (
+                            <div className="space-y-2">
+                              <RichTextEditor
+                                content={editedContent['summary'] || ''}
+                                onChange={(content) => setEditedContent({ ...editedContent, summary: content })}
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveSection('summary')}
+                                  disabled={isSaving}
+                                >
+                                  <Save className="h-4 w-4 mr-1" />
+                                  {isSaving ? 'Saving...' : 'Save'}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={handleCancelEdit}
+                                  disabled={isSaving}
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div 
+                              className="prose prose-sm max-w-none text-base leading-relaxed text-muted-foreground"
+                              dangerouslySetInnerHTML={{ __html: summaryMatch[1].trim() }}
+                            />
                           )}
                         </div>
-                        {editingSection === 'summary' ? (
-                          <div className="space-y-2">
-                            <RichTextEditor
-                              content={editedContent['summary'] || ''}
-                              onChange={(content) => setEditedContent({ ...editedContent, summary: content })}
-                            />
-                            <div className="flex gap-2">
+                      )}
+                      
+                      {keyPointsMatch && (
+                        <div className="rounded-lg bg-card p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h2 className="text-lg font-bold text-foreground">Key Points</h2>
+                            {editingSection !== 'keypoints' && (
                               <Button
+                                variant="ghost"
                                 size="sm"
-                                onClick={() => handleSaveSection('summary')}
-                                disabled={isSaving}
+                                onClick={() => handleEditSection('keypoints', keyPointsMatch[1].trim())}
                               >
-                                <Save className="h-4 w-4 mr-1" />
-                                {isSaving ? 'Saving...' : 'Save'}
+                                <Edit2 className="h-4 w-4" />
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleCancelEdit}
-                                disabled={isSaving}
-                              >
-                                <X className="h-4 w-4 mr-1" />
-                                Cancel
-                              </Button>
-                            </div>
+                            )}
                           </div>
-                        ) : (
-                          <div 
-                            className="prose prose-sm max-w-none text-base leading-relaxed text-muted-foreground"
-                            dangerouslySetInnerHTML={{ __html: summaryMatch[1].trim() }}
-                          />
-                        )}
-                      </div>
-                    )}
-                    
-                    {keyPointsMatch && (
-                      <div className="rounded-lg bg-card p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h2 className="text-lg font-bold text-foreground">Key Points</h2>
-                          {editingSection !== 'keypoints' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditSection('keypoints', keyPointsMatch[1].trim())}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
+                          {editingSection === 'keypoints' ? (
+                            <div className="space-y-2">
+                              <RichTextEditor
+                                content={editedContent['keypoints'] || ''}
+                                onChange={(content) => setEditedContent({ ...editedContent, keypoints: content })}
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveSection('keypoints')}
+                                  disabled={isSaving}
+                                >
+                                  <Save className="h-4 w-4 mr-1" />
+                                  {isSaving ? 'Saving...' : 'Save'}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={handleCancelEdit}
+                                  disabled={isSaving}
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div 
+                              className="prose prose-sm max-w-none text-base leading-relaxed text-muted-foreground"
+                              dangerouslySetInnerHTML={{ __html: keyPointsMatch[1].trim() }}
+                            />
                           )}
                         </div>
-                        {editingSection === 'keypoints' ? (
-                          <div className="space-y-2">
-                            <RichTextEditor
-                              content={editedContent['keypoints'] || ''}
-                              onChange={(content) => setEditedContent({ ...editedContent, keypoints: content })}
-                            />
-                            <div className="flex gap-2">
+                      )}
+                      
+                      {actionItemsMatch && (
+                        <div className="rounded-lg bg-card p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h2 className="text-lg font-bold text-foreground">Action Items</h2>
+                            {editingSection !== 'actions' && (
                               <Button
+                                variant="ghost"
                                 size="sm"
-                                onClick={() => handleSaveSection('keypoints')}
-                                disabled={isSaving}
+                                onClick={() => handleEditSection('actions', actionItemsMatch[1].trim())}
                               >
-                                <Save className="h-4 w-4 mr-1" />
-                                {isSaving ? 'Saving...' : 'Save'}
+                                <Edit2 className="h-4 w-4" />
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleCancelEdit}
-                                disabled={isSaving}
-                              >
-                                <X className="h-4 w-4 mr-1" />
-                                Cancel
-                              </Button>
-                            </div>
+                            )}
                           </div>
-                        ) : (
-                          <div 
-                            className="prose prose-sm max-w-none text-base leading-relaxed text-muted-foreground"
-                            dangerouslySetInnerHTML={{ __html: keyPointsMatch[1].trim() }}
-                          />
-                        )}
-                      </div>
-                    )}
-                    
-                    {actionItemsMatch && (
-                      <div className="rounded-lg bg-card p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h2 className="text-lg font-bold text-foreground">Action Items</h2>
-                          {editingSection !== 'actions' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditSection('actions', actionItemsMatch[1].trim())}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
+                          {editingSection === 'actions' ? (
+                            <div className="space-y-2">
+                              <RichTextEditor
+                                content={editedContent['actions'] || ''}
+                                onChange={(content) => setEditedContent({ ...editedContent, actions: content })}
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveSection('actions')}
+                                  disabled={isSaving}
+                                >
+                                  <Save className="h-4 w-4 mr-1" />
+                                  {isSaving ? 'Saving...' : 'Save'}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={handleCancelEdit}
+                                  disabled={isSaving}
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div 
+                              className="prose prose-sm max-w-none text-base leading-relaxed text-muted-foreground"
+                              dangerouslySetInnerHTML={{ __html: actionItemsMatch[1].trim() }}
+                            />
                           )}
                         </div>
-                        {editingSection === 'actions' ? (
-                          <div className="space-y-2">
-                            <RichTextEditor
-                              content={editedContent['actions'] || ''}
-                              onChange={(content) => setEditedContent({ ...editedContent, actions: content })}
-                            />
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => handleSaveSection('actions')}
-                                disabled={isSaving}
-                              >
-                                <Save className="h-4 w-4 mr-1" />
-                                {isSaving ? 'Saving...' : 'Save'}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleCancelEdit}
-                                disabled={isSaving}
-                              >
-                                <X className="h-4 w-4 mr-1" />
-                                Cancel
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div 
-                            className="prose prose-sm max-w-none text-base leading-relaxed text-muted-foreground"
-                            dangerouslySetInnerHTML={{ __html: actionItemsMatch[1].trim() }}
-                          />
-                        )}
-                      </div>
-                    )}
-                    
-                    {!summaryMatch && !keyPointsMatch && !actionItemsMatch && (
-                      <div className="rounded-lg bg-card p-4">
-                        <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
-                          {text}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-          )}
-
-          {/* Photos Section */}
-          {media.length > 0 && (
-            <div className="px-4 pb-8">
-              <h2 className="pb-4 text-2xl font-bold text-foreground">
-                Photos & Media ({media.length})
-              </h2>
-              <div className="grid grid-cols-2 gap-3">
-                {media.slice(0, 6).map((item) => (
-                  <div key={item.id} className="aspect-square overflow-hidden rounded-xl bg-muted">
-                    {item.file_type === 'image' ? (
-                      <img
-                        src={getMediaUrl(item.file_path)}
-                        alt="Project media"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
-                        <p className="text-sm text-muted-foreground">Video</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {media.length > 6 && (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  + {media.length - 6} more photo{media.length - 6 !== 1 ? 's' : ''}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Checklists Section */}
-          {checklists.map((checklist) => (
-            <div key={checklist.id} className="px-4 pb-8">
-              <h2 className="pb-2 text-2xl font-bold text-foreground">
-                {checklist.title}
-              </h2>
-              <div className="space-y-3">
-                {checklist.items.map((item) => (
-                  <div key={item.id} className="flex items-start gap-3 rounded-lg bg-card p-3">
-                    <div className={`mt-0.5 h-5 w-5 rounded border-2 flex-shrink-0 ${
-                      item.completed ? 'bg-primary border-primary' : 'border-muted-foreground'
-                    }`}>
-                      {item.completed && (
-                        <svg className="h-full w-full text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
+                      )}
+                      
+                      {!summaryMatch && !keyPointsMatch && !actionItemsMatch && (
+                        <div className="rounded-lg bg-card p-4">
+                          <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
+                            {text}
+                          </p>
+                        </div>
                       )}
                     </div>
-                    <div className="flex-1">
-                      <p className={`text-base leading-relaxed ${
-                        item.completed ? 'line-through text-muted-foreground' : 'text-foreground'
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Photos Section */}
+            {media.length > 0 && (
+              <div className="px-4 pb-8">
+                <h2 className="pb-4 text-2xl font-bold text-foreground">
+                  Photos & Media ({media.length})
+                </h2>
+                <div className="grid grid-cols-2 gap-3">
+                  {media.slice(0, 6).map((item) => (
+                    <div key={item.id} className="aspect-square overflow-hidden rounded-xl bg-muted">
+                      {item.file_type === 'image' ? (
+                        <img
+                          src={getMediaUrl(item.file_path)}
+                          alt="Project media"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+                          <p className="text-sm text-muted-foreground">Video</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {media.length > 6 && (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    + {media.length - 6} more photo{media.length - 6 !== 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Checklists Section */}
+            {checklists.map((checklist) => (
+              <div key={checklist.id} className="px-4 pb-8">
+                <h2 className="pb-2 text-2xl font-bold text-foreground">
+                  {checklist.title}
+                </h2>
+                <div className="space-y-3">
+                  {checklist.items.map((item) => (
+                    <div key={item.id} className="flex items-start gap-3 rounded-lg bg-card p-3">
+                      <div className={`mt-0.5 h-5 w-5 rounded border-2 flex-shrink-0 ${
+                        item.completed ? 'bg-primary border-primary' : 'border-muted-foreground'
                       }`}>
-                        {item.text}
-                      </p>
-                      <div className="mt-1 flex items-center gap-2">
-                        <span className={`text-xs px-2 py-0.5 rounded ${
-                          item.priority === 'high' ? 'bg-destructive/20 text-destructive' :
-                          item.priority === 'medium' ? 'bg-primary/20 text-primary' :
-                          'bg-secondary text-muted-foreground'
+                        {item.completed && (
+                          <svg className="h-full w-full text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className={`text-base leading-relaxed ${
+                          item.completed ? 'line-through text-muted-foreground' : 'text-foreground'
                         }`}>
-                          {item.priority}
-                        </span>
-                        <span className="text-xs text-muted-foreground">{item.category}</span>
+                          {item.text}
+                        </p>
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className={`text-xs px-2 py-0.5 rounded ${
+                            item.priority === 'high' ? 'bg-destructive/20 text-destructive' :
+                            item.priority === 'medium' ? 'bg-primary/20 text-primary' :
+                            'bg-secondary text-muted-foreground'
+                          }`}>
+                            {item.priority}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{item.category}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
 
-          {/* Project Details Section */}
-          <div className="px-4 pb-8">
-            <h2 className="pb-2 text-2xl font-bold text-foreground">
-              Project Information
-            </h2>
-            <div className="space-y-2 rounded-lg bg-card p-4">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Customer:</span>
-                <span className="font-medium text-foreground">{reportData?.customer_name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Job Number:</span>
-                <span className="font-medium text-foreground">{reportData?.job_number}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Created:</span>
-                <span className="font-medium text-foreground">
-                  {reportData?.created_at ? formatDate(reportData.created_at) : 'N/A'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Empty State */}
-          {media.length === 0 && checklists.length === 0 && (
+            {/* Project Details Section */}
             <div className="px-4 pb-8">
-              <div className="rounded-lg bg-card p-8 text-center">
-                <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                <p className="text-muted-foreground">
-                  No photos or checklists have been added to this report yet.
-                </p>
+              <h2 className="pb-2 text-2xl font-bold text-foreground">
+                Project Information
+              </h2>
+              <div className="space-y-2 rounded-lg bg-card p-4">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Customer:</span>
+                  <span className="font-medium text-foreground">{reportData?.customer_name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Job Number:</span>
+                  <span className="font-medium text-foreground">{reportData?.job_number}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Created:</span>
+                  <span className="font-medium text-foreground">
+                    {reportData?.created_at ? formatDate(reportData.created_at) : 'N/A'}
+                  </span>
+                </div>
               </div>
             </div>
-          )}
 
-          {/* Cloud Storage Options */}
-          <div className="px-4 pb-8">
-            <h3 className="mb-4 text-base font-medium text-muted-foreground">
-              Also send to
-            </h3>
-            <div className="grid grid-cols-3 gap-4">
-              <button
-                onClick={() => toast({ title: "Sending to Google Drive..." })}
-                className="flex flex-col items-center gap-3 rounded-xl bg-card p-4 transition-colors hover:bg-secondary"
-              >
-                <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-3xl">
-                  📄
+            {/* Empty State */}
+            {media.length === 0 && checklists.length === 0 && (
+              <div className="px-4 pb-8">
+                <div className="rounded-lg bg-card p-8 text-center">
+                  <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                  <p className="text-muted-foreground">
+                    No photos or checklists have been added to this report yet.
+                  </p>
                 </div>
-                <span className="text-sm font-medium text-foreground">
-                  Google Drive
-                </span>
-              </button>
-              <button
-                onClick={() => toast({ title: "Sending to OneDrive..." })}
-                className="flex flex-col items-center gap-3 rounded-xl bg-card p-4 transition-colors hover:bg-secondary"
-              >
-                <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-3xl">
-                  📁
-                </div>
-                <span className="text-sm font-medium text-foreground">
-                  OneDrive
-                </span>
-              </button>
-              <button
-                onClick={() => toast({ title: "Sending to Dropbox..." })}
-                className="flex flex-col items-center gap-3 rounded-xl bg-card p-4 transition-colors hover:bg-secondary"
-              >
-                <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-3xl">
-                  📦
-                </div>
-                <span className="text-sm font-medium text-foreground">
-                  Dropbox
-                </span>
-              </button>
+              </div>
+            )}
+
+            {/* Cloud Storage Options */}
+            <div className="px-4 pb-8">
+              <h3 className="mb-4 text-base font-medium text-muted-foreground">
+                Also send to
+              </h3>
+              <div className="grid grid-cols-3 gap-4">
+                <button
+                  onClick={() => toast({ title: "Sending to Google Drive..." })}
+                  className="flex flex-col items-center gap-3 rounded-xl bg-card p-4 transition-colors hover:bg-secondary"
+                >
+                  <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-3xl">
+                    📄
+                  </div>
+                  <span className="text-sm font-medium text-foreground">
+                    Google Drive
+                  </span>
+                </button>
+                <button
+                  onClick={() => toast({ title: "Sending to OneDrive..." })}
+                  className="flex flex-col items-center gap-3 rounded-xl bg-card p-4 transition-colors hover:bg-secondary"
+                >
+                  <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-3xl">
+                    📁
+                  </div>
+                  <span className="text-sm font-medium text-foreground">
+                    OneDrive
+                  </span>
+                </button>
+                <button
+                  onClick={() => toast({ title: "Sending to Dropbox..." })}
+                  className="flex flex-col items-center gap-3 rounded-xl bg-card p-4 transition-colors hover:bg-secondary"
+                >
+                  <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-3xl">
+                    📦
+                  </div>
+                  <span className="text-sm font-medium text-foreground">
+                    Dropbox
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
+      )}
 
-      {/* Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/80 p-4 backdrop-blur-sm">
+      {/* Static Bottom Action Bar - Always Visible */}
+      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur-sm p-4 z-20">
         <div className="mb-3 grid grid-cols-2 gap-3">
           <Button
             onClick={handleDownloadPDF}
-            className="bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90"
+            disabled={!reportData}
+            className="bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
             <Download className="mr-2 h-5 w-5" />
             Save as PDF
           </Button>
           <Button
             onClick={handleDownloadWord}
+            disabled={!reportData}
             variant="secondary"
             className="py-6 text-base font-semibold"
           >
@@ -699,6 +713,7 @@ const FinalReport = () => {
           </Button>
           <Button
             onClick={handleShare}
+            disabled={!reportData}
             variant="secondary"
             className="flex h-auto w-14 items-center justify-center py-6"
           >
@@ -706,6 +721,7 @@ const FinalReport = () => {
           </Button>
           <Button
             onClick={handleForward}
+            disabled={!reportData}
             variant="secondary"
             className="flex h-auto w-14 items-center justify-center py-6"
           >
@@ -713,7 +729,9 @@ const FinalReport = () => {
           </Button>
         </div>
         <p className="text-center text-xs text-muted-foreground">
-          Report generated on {reportData?.created_at ? new Date(reportData.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'N/A'}
+          {reportData?.created_at 
+            ? `Report generated on ${new Date(reportData.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}`
+            : 'No report loaded'}
         </p>
       </div>
     </div>
