@@ -6,7 +6,7 @@ import logo from "@/assets/field-report-ai-logo.png";
 
 const Pricing = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="dark min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
       {/* Header */}
       <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
@@ -26,7 +26,7 @@ const Pricing = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-12 bg-gradient-to-b from-background to-muted/30">
+      <section className="py-12 bg-transparent">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">
             Choose Your Perfect Plan
@@ -41,7 +41,7 @@ const Pricing = () => {
       <PricingSection showHeader={false} />
 
       {/* FAQ Section */}
-      <section className="py-20">
+      <section className="py-20 bg-transparent">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl font-bold text-center mb-12 text-white">Frequently Asked Questions</h2>
@@ -76,7 +76,7 @@ const Pricing = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-muted/30">
+      <section className="py-20 bg-transparent">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4 text-white">Ready to Get Started?</h2>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
