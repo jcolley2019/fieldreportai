@@ -328,36 +328,92 @@ const Notes = () => {
     try {
       toast.success("Generating Word Document...");
 
+      // Parse content into structured sections
+      const parseContentForWord = (text: string) => {
+        const lines = text.split('\n');
+        const elements: any[] = [];
+
+        lines.forEach((line) => {
+          const trimmed = line.trim();
+          if (!trimmed) {
+            elements.push(new Paragraph({ text: "", spacing: { after: 100 } }));
+            return;
+          }
+
+          // Detect headings (all caps lines or lines ending with :)
+          if (trimmed === trimmed.toUpperCase() && trimmed.length > 3 && trimmed.length < 50) {
+            elements.push(
+              new Paragraph({
+                text: trimmed,
+                heading: HeadingLevel.HEADING_1,
+                spacing: { before: 200, after: 100 },
+              })
+            );
+          }
+          // Detect subheadings (lines ending with colon)
+          else if (trimmed.endsWith(':') && !trimmed.includes('•') && !trimmed.includes('-')) {
+            elements.push(
+              new Paragraph({
+                text: trimmed,
+                heading: HeadingLevel.HEADING_2,
+                spacing: { before: 150, after: 80 },
+              })
+            );
+          }
+          // Detect bullet points
+          else if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
+            const bulletText = trimmed.replace(/^[•\-*]\s*/, '');
+            elements.push(
+              new Paragraph({
+                text: bulletText,
+                bullet: { level: 0 },
+                spacing: { after: 80 },
+              })
+            );
+          }
+          // Regular paragraph
+          else {
+            elements.push(
+              new Paragraph({
+                text: trimmed,
+                spacing: { after: 100 },
+              })
+            );
+          }
+        });
+
+        return elements;
+      };
+
+      const docSections = [
+        new Paragraph({
+          text: "Notes",
+          heading: HeadingLevel.TITLE,
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Generated on ${new Date().toLocaleString('en-US', { 
+                month: 'long', 
+                day: 'numeric', 
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+              })}`,
+              size: 18,
+              color: "999999",
+            }),
+          ],
+          spacing: { after: 400 },
+        }),
+        ...parseContentForWord(content)
+      ];
+
       const doc = new Document({
         sections: [{
           properties: {},
-          children: [
-            new Paragraph({
-              text: `Notes - ${new Date().toLocaleDateString()}`,
-              heading: HeadingLevel.TITLE,
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Generated on ${new Date().toLocaleString('en-US', { 
-                    month: 'long', 
-                    day: 'numeric', 
-                    year: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit'
-                  })}`,
-                  size: 18,
-                  color: "999999",
-                }),
-              ],
-              spacing: { after: 400 },
-            }),
-            new Paragraph({
-              text: content,
-              spacing: { after: 200 },
-            }),
-          ],
+          children: docSections,
         }],
       });
 
