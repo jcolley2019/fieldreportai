@@ -512,44 +512,47 @@ const Notes = () => {
       {/* Action Toolbar */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-zinc-800 bg-zinc-950 z-20">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex items-center justify-end gap-2 md:gap-3">
             {/* Tertiary Action - Copy Link */}
             <Button
               onClick={handleCopyLink}
               variant="ghost"
+              size="sm"
               className="gap-2"
             >
               <Link className="h-4 w-4" />
-              Copy Link
+              <span className="hidden md:inline">Copy Link</span>
             </Button>
 
             {/* Divider */}
-            <div className="h-8 w-px bg-zinc-700" />
+            <div className="hidden md:block h-8 w-px bg-zinc-700" />
 
             {/* Secondary Action - Print */}
             <Button
               onClick={handlePrint}
               variant="outline"
+              size="sm"
               className="gap-2"
               disabled={!noteText && !organizedNotes}
             >
               <Printer className="h-4 w-4" />
-              Print
+              <span className="hidden md:inline">Print</span>
             </Button>
 
             {/* Divider */}
-            <div className="h-8 w-px bg-zinc-700" />
+            <div className="hidden md:block h-8 w-px bg-zinc-700" />
 
             {/* Save Options Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="gap-2"
+                  size="sm"
+                  className="gap-1 md:gap-2"
                   disabled={!noteText && !organizedNotes}
                 >
                   <Download className="h-4 w-4" />
-                  Save Options
+                  <span className="hidden sm:inline">Save Options</span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -572,11 +575,13 @@ const Notes = () => {
             {/* Primary Action - Quick Save */}
             <Button
               onClick={handleQuickSave}
-              className="gap-2 bg-teal-600 hover:bg-teal-700 text-white"
+              size="sm"
+              className="gap-1 md:gap-2 bg-teal-600 hover:bg-teal-700 text-white"
               disabled={isSaving || !noteText.trim()}
             >
               <Save className="h-4 w-4" />
-              {isSaving ? "Saving..." : "Quick Save"}
+              <span className="hidden sm:inline">{isSaving ? "Saving..." : "Quick Save"}</span>
+              <span className="sm:hidden">{isSaving ? "..." : "Save"}</span>
             </Button>
           </div>
         </div>
