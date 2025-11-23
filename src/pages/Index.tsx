@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User } from "@supabase/supabase-js";
-import { FileText, Camera, Mic, Share2, Eye, ChevronDown, ChevronRight, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Circle, Cloud } from "lucide-react";
+import { FileText, Camera, Mic, Share2, Eye, ChevronDown, ChevronRight, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Circle, Cloud, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { TrialBanner } from "@/components/TrialBanner";
 import {
@@ -261,6 +261,10 @@ const Index = () => {
             )}
             
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate("/all-content")} className="cursor-pointer">
+              <Layers className="mr-2 h-4 w-4" />
+              All Content
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/saved-reports")} className="cursor-pointer">
               <Cloud className="mr-2 h-4 w-4" />
               Saved Reports
