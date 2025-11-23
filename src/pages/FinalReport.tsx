@@ -42,8 +42,10 @@ const FinalReport = () => {
   useEffect(() => {
     const loadReportData = async () => {
       if (!reportId) {
+        console.error("No reportId found in location state");
         toast.error("No report found");
-        navigate("/dashboard");
+        setIsLoading(false);
+        // Don't navigate away - stay on page and show error
         return;
       }
 
@@ -58,8 +60,9 @@ const FinalReport = () => {
           .single();
 
         if (reportError || !report) {
+          console.error("Failed to load report:", reportError);
           toast.error("Failed to load report");
-          navigate("/dashboard");
+          setIsLoading(false);
           return;
         }
 
@@ -110,12 +113,34 @@ const FinalReport = () => {
     };
 
     loadReportData();
-  }, [reportId, navigate]);
+  }, [reportId]);
 
   if (isLoading) {
     return (
       <div className="dark min-h-screen bg-background flex items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  if (!reportData) {
+    return (
+      <div className="dark min-h-screen bg-background">
+        <header className="sticky top-0 z-10 w-full border-b border-border bg-background/80 backdrop-blur-sm">
+          <div className="flex h-12 items-center p-4">
+            <BackButton />
+          </div>
+        </header>
+        <div className="flex flex-col items-center justify-center p-8 text-center">
+          <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+          <h2 className="text-xl font-bold text-foreground mb-2">No Report Found</h2>
+          <p className="text-muted-foreground mb-4">
+            The report could not be loaded. Please try again or go back to the dashboard.
+          </p>
+          <Button onClick={() => navigate("/dashboard")}>
+            Back to Dashboard
+          </Button>
+        </div>
       </div>
     );
   }
