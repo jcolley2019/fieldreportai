@@ -5,7 +5,7 @@ import { Building2, Download, Share2, ChevronRight, Edit2, Save, X } from "lucid
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 interface MediaItem {
   id: string;
@@ -257,10 +257,9 @@ const FinalReport = () => {
                         </div>
                         {editingSection === 'summary' ? (
                           <div className="space-y-2">
-                            <Textarea
-                              value={editedContent['summary'] || ''}
-                              onChange={(e) => setEditedContent({ ...editedContent, summary: e.target.value })}
-                              className="min-h-[120px] text-base"
+                            <RichTextEditor
+                              content={editedContent['summary'] || ''}
+                              onChange={(content) => setEditedContent({ ...editedContent, summary: content })}
                             />
                             <div className="flex gap-2">
                               <Button
@@ -283,9 +282,10 @@ const FinalReport = () => {
                             </div>
                           </div>
                         ) : (
-                          <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
-                            {summaryMatch[1].trim()}
-                          </p>
+                          <div 
+                            className="prose prose-sm max-w-none text-base leading-relaxed text-muted-foreground"
+                            dangerouslySetInnerHTML={{ __html: summaryMatch[1].trim() }}
+                          />
                         )}
                       </div>
                     )}
@@ -306,10 +306,9 @@ const FinalReport = () => {
                         </div>
                         {editingSection === 'keypoints' ? (
                           <div className="space-y-2">
-                            <Textarea
-                              value={editedContent['keypoints'] || ''}
-                              onChange={(e) => setEditedContent({ ...editedContent, keypoints: e.target.value })}
-                              className="min-h-[120px] text-base"
+                            <RichTextEditor
+                              content={editedContent['keypoints'] || ''}
+                              onChange={(content) => setEditedContent({ ...editedContent, keypoints: content })}
                             />
                             <div className="flex gap-2">
                               <Button
@@ -332,9 +331,10 @@ const FinalReport = () => {
                             </div>
                           </div>
                         ) : (
-                          <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
-                            {keyPointsMatch[1].trim()}
-                          </p>
+                          <div 
+                            className="prose prose-sm max-w-none text-base leading-relaxed text-muted-foreground"
+                            dangerouslySetInnerHTML={{ __html: keyPointsMatch[1].trim() }}
+                          />
                         )}
                       </div>
                     )}
@@ -355,10 +355,9 @@ const FinalReport = () => {
                         </div>
                         {editingSection === 'actions' ? (
                           <div className="space-y-2">
-                            <Textarea
-                              value={editedContent['actions'] || ''}
-                              onChange={(e) => setEditedContent({ ...editedContent, actions: e.target.value })}
-                              className="min-h-[120px] text-base"
+                            <RichTextEditor
+                              content={editedContent['actions'] || ''}
+                              onChange={(content) => setEditedContent({ ...editedContent, actions: content })}
                             />
                             <div className="flex gap-2">
                               <Button
@@ -381,9 +380,10 @@ const FinalReport = () => {
                             </div>
                           </div>
                         ) : (
-                          <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
-                            {actionItemsMatch[1].trim()}
-                          </p>
+                          <div 
+                            className="prose prose-sm max-w-none text-base leading-relaxed text-muted-foreground"
+                            dangerouslySetInnerHTML={{ __html: actionItemsMatch[1].trim() }}
+                          />
                         )}
                       </div>
                     )}
