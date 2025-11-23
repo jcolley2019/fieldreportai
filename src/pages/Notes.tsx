@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { Textarea } from "@/components/ui/textarea";
-import { Mic, Save, Download, Mail, Printer, FileText, Plus, Link2, Cloud } from "lucide-react";
+import { Mic, Save, Download, Mail, Printer, FileText, Plus, Link2, Cloud, ChevronDown, Link } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { pdf } from '@react-pdf/renderer';
@@ -508,70 +509,72 @@ const Notes = () => {
         </div>
       </main>
 
-      {/* Static Bottom Action Bar - Always Visible */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur-sm p-4 z-20">
-        <h3 className="mb-4 text-center text-lg font-semibold text-foreground">Save & Print</h3>
-        
-        {/* Quick Save Button */}
-        <div className="mb-3">
-          <Button
-            onClick={handleQuickSave}
-            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
-            disabled={isSaving || !noteText.trim()}
-          >
-            <Save className="mr-2 h-5 w-5" />
-            {isSaving ? "Saving..." : "Quick Save"}
-          </Button>
-        </div>
-
-        <div className="mb-3 grid grid-cols-2 gap-3">
-          <Button
-            onClick={handleDownloadPDF}
-            disabled={!noteText && !organizedNotes}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
-          >
-            <Download className="mr-2 h-5 w-5" />
-            Save as PDF
-          </Button>
-          <Button
-            onClick={handleDownloadWord}
-            disabled={!noteText && !organizedNotes}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
-          >
-            <FileText className="mr-2 h-5 w-5" />
-            Save as Word
-          </Button>
-        </div>
-        <div className="mb-3 grid grid-cols-2 gap-3">
-          <Button
-            onClick={handleSaveToCloud}
-            disabled={(!noteText && !organizedNotes) || isSaving}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
-          >
-            <Cloud className="mr-2 h-5 w-5" />
-            {isSaving ? "Saving..." : "Save to Cloud"}
-          </Button>
-          <div className="grid grid-cols-[1fr_auto] gap-3">
-            <Button
-              onClick={handlePrint}
-              disabled={!noteText && !organizedNotes}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
-            >
-              <Printer className="mr-2 h-5 w-5" />
-              Print
-            </Button>
+      {/* Action Toolbar */}
+      <div className="fixed bottom-0 left-0 right-0 border-t border-zinc-800 bg-zinc-950 z-20">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-end gap-2">
+            {/* Tertiary Action - Copy Link */}
             <Button
               onClick={handleCopyLink}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 w-14 items-center justify-center py-6 transition-transform duration-200 hover:scale-105"
-              title="Copy Link"
+              variant="ghost"
+              size="sm"
+              className="gap-2"
             >
-              <Link2 className="h-5 w-5" />
+              <Link className="h-4 w-4" />
+              Copy Link
             </Button>
+
+            {/* Secondary Action - Print */}
+            <Button
+              onClick={handlePrint}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              disabled={!noteText && !organizedNotes}
+            >
+              <Printer className="h-4 w-4" />
+              Print
+            </Button>
+
+            {/* Primary Action - Quick Save Split Button */}
+            <div className="flex items-center">
+              <Button
+                onClick={handleQuickSave}
+                size="sm"
+                className="gap-2 bg-teal-600 hover:bg-teal-700 text-white rounded-r-none border-r border-teal-700"
+                disabled={isSaving || !noteText.trim()}
+              >
+                <Save className="h-4 w-4" />
+                {isSaving ? "Saving..." : "Quick Save"}
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
+                    className="bg-teal-600 hover:bg-teal-700 text-white rounded-l-none px-2"
+                    disabled={!noteText && !organizedNotes}
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
+                  <DropdownMenuItem onClick={handleDownloadPDF} className="gap-2 cursor-pointer">
+                    <FileText className="h-4 w-4" />
+                    Save as PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDownloadWord} className="gap-2 cursor-pointer">
+                    <Download className="h-4 w-4" />
+                    Save as Word
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSaveToCloud} className="gap-2 cursor-pointer" disabled={isSaving}>
+                    <Cloud className="h-4 w-4" />
+                    Save to Cloud
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
-        <p className="text-center text-xs text-muted-foreground">
-          Notes generated on {new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
-        </p>
       </div>
 
       {/* Options Dialog */}
