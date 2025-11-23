@@ -1133,7 +1133,7 @@ const FinalReport = () => {
             </Button>
             <Button
               onClick={handleCopyLink}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 h-auto w-14 items-center justify-center py-6 transition-transform duration-200 hover:scale-105"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 w-14 items-center justify-center py-6 transition-transform duration-200 hover:scale-105"
               title="Copy Link"
             >
               <Link2 className="h-5 w-5" />
