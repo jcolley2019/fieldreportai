@@ -172,7 +172,7 @@ const NewProject = () => {
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
         <Button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/dashboard")}
           size="sm"
           className="gap-2"
         >
