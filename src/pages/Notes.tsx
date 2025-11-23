@@ -520,11 +520,12 @@ const Notes = () => {
         <div className="border-b border-zinc-800 px-4 py-3">
           <Button
             onClick={handleQuickSave}
+            variant={showSuccess ? undefined : "default"}
             className={`w-full gap-2 h-12 transition-all ${
               showSuccess 
-                ? 'bg-green-600 hover:bg-green-700' 
-                : 'bg-teal-600 hover:bg-teal-700'
-            } text-white`}
+                ? 'bg-green-600 hover:bg-green-700 text-white' 
+                : ''
+            }`}
             disabled={isSaving || !noteText.trim()}
           >
             {isSaving ? (
