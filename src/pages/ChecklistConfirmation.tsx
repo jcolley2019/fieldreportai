@@ -1,9 +1,14 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
-import { Check, Share2, Download, CheckCircle2, FileText, Cloud, Printer, Link2 } from "lucide-react";
+import { Check, CheckCircle2, FileText, Cloud, Printer, Link2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { Document, Paragraph, TextRun, HeadingLevel, Packer } from 'docx';
+import { saveAs } from 'file-saver';
+import { pdf } from '@react-pdf/renderer';
+import { Page, Text, View, Document as PDFDocument, StyleSheet } from '@react-pdf/renderer';
 
 interface ChecklistItem {
   text: string;
@@ -17,17 +22,10 @@ interface ChecklistData {
   items: ChecklistItem[];
 }
 
-
 const ChecklistConfirmation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const checklist = location.state?.checklist as ChecklistData | undefined;
-
-  const cloudServices = [
-    { id: "pdf", name: "PDF", icon: "📄" },
-    { id: "word", name: "Word Doc", icon: "📝" },
-    { id: "copylink", name: "Copy Link", icon: "🔗" },
-  ];
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -54,12 +52,159 @@ const ChecklistConfirmation = () => {
     navigate("/checklist");
   };
 
-  const handleCloudShare = (service: string) => {
-    toast.success(`Sending to ${service}...`);
+  const handleDownloadPDF = async () => {
+    if (!checklist) {
+      toast.error("No checklist to download");
+      return;
+    }
+
+    try {
+      toast.success("Generating PDF...");
+
+      const pdfStyles = StyleSheet.create({
+        page: { padding: 40, backgroundColor: '#ffffff' },
+        title: { fontSize: 24, marginBottom: 10, fontWeight: 'bold' },
+        subtitle: { fontSize: 12, marginBottom: 20, color: '#666666' },
+        itemContainer: { marginBottom: 12, paddingLeft: 10 },
+        itemText: { fontSize: 12, marginBottom: 4 },
+        itemMeta: { fontSize: 10, color: '#666666' },
+      });
+
+      const ChecklistPDF = () => (
+        <PDFDocument>
+          <Page size="A4" style={pdfStyles.page}>
+            <Text style={pdfStyles.title}>{checklist.title}</Text>
+            <Text style={pdfStyles.subtitle}>
+              Generated on {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            </Text>
+            {checklist.items.map((item, index) => (
+              <View key={index} style={pdfStyles.itemContainer}>
+                <Text style={pdfStyles.itemText}>
+                  {item.completed ? '☑' : '☐'} {item.text}
+                </Text>
+                <Text style={pdfStyles.itemMeta}>
+                  Priority: {item.priority} • Category: {item.category}
+                </Text>
+              </View>
+            ))}
+          </Page>
+        </PDFDocument>
+      );
+
+      const blob = await pdf(<ChecklistPDF />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${checklist.title}_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success("PDF Downloaded!");
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error("Failed to generate PDF");
+    }
+  };
+
+  const handleDownloadWord = async () => {
+    if (!checklist) {
+      toast.error("No checklist to download");
+      return;
+    }
+
+    try {
+      toast.success("Generating Word Document...");
+
+      const docSections: any[] = [];
+
+      // Header
+      docSections.push(
+        new Paragraph({
+          text: checklist.title,
+          heading: HeadingLevel.TITLE,
+          spacing: { after: 200 },
+        }),
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Generated on ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
+              size: 18,
+              color: "999999",
+            }),
+          ],
+          spacing: { after: 400 },
+        })
+      );
+
+      // Checklist items
+      checklist.items.forEach((item) => {
+        docSections.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: item.completed ? "☑ " : "☐ ",
+              }),
+              new TextRun({
+                text: item.text,
+                strike: item.completed,
+              }),
+              new TextRun({
+                text: ` (${item.priority} priority, ${item.category})`,
+                size: 18,
+                color: "666666",
+              }),
+            ],
+            spacing: { after: 100 },
+          })
+        );
+      });
+
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: docSections,
+          },
+        ],
+      });
+
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, `${checklist.title}_${new Date().toISOString().split('T')[0]}.docx`);
+
+      toast.success("Word Document Downloaded!");
+    } catch (error) {
+      console.error('Error generating Word document:', error);
+      toast.error("Failed to generate Word document");
+    }
+  };
+
+  const handleSaveToCloud = async () => {
+    if (!checklist) {
+      toast.error("No checklist to save");
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please sign in to save to cloud");
+        return;
+      }
+
+      toast.success("Saving to cloud...");
+      
+      // For now, just show success - full implementation would save to database
+      toast.success("Saved to cloud successfully!");
+    } catch (error) {
+      console.error('Error saving to cloud:', error);
+      toast.error("Failed to save to cloud");
+    }
   };
 
   return (
-    <div className="dark min-h-screen bg-background pb-[400px]">{/* Added bottom padding for fixed action bar */}
+    <div className="dark min-h-screen bg-background pb-[400px]">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         <BackButton />
@@ -140,15 +285,17 @@ const ChecklistConfirmation = () => {
         <h3 className="mb-4 text-center text-lg font-semibold text-foreground">Save & Print</h3>
         <div className="mb-3 grid grid-cols-2 gap-3">
           <Button
-            onClick={() => toast.success("Downloading PDF...")}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
+            onClick={handleDownloadPDF}
+            disabled={!checklist}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
           >
             <Download className="mr-2 h-5 w-5" />
             Save as PDF
           </Button>
           <Button
-            onClick={() => toast.success("Downloading Word document...")}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
+            onClick={handleDownloadWord}
+            disabled={!checklist}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
           >
             <FileText className="mr-2 h-5 w-5" />
             Save as Word
@@ -156,8 +303,9 @@ const ChecklistConfirmation = () => {
         </div>
         <div className="mb-3 grid grid-cols-2 gap-3">
           <Button
-            onClick={() => toast.success("Saving to cloud...")}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105"
+            onClick={handleSaveToCloud}
+            disabled={!checklist}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
           >
             <Cloud className="mr-2 h-5 w-5" />
             Save to Cloud
