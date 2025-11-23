@@ -59,7 +59,7 @@ const ChecklistConfirmation = () => {
   };
 
   return (
-    <div className="dark min-h-screen bg-background">
+    <div className="dark min-h-screen bg-background pb-[400px]">{/* Added bottom padding for fixed action bar */}
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         <BackButton />
@@ -135,8 +135,8 @@ const ChecklistConfirmation = () => {
         </Button>
       </div>
 
-      {/* Save & Print Section */}
-      <div className="px-4 pt-8 pb-6">
+      {/* Static Bottom Action Bar - Always Visible */}
+      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur-sm p-4 z-20">
         <h3 className="mb-4 text-center text-lg font-semibold text-foreground">Save & Print</h3>
         <div className="mb-3 grid grid-cols-2 gap-3">
           <Button
