@@ -100,13 +100,6 @@ const Confirmation = () => {
         >
           View Report
         </Button>
-        <Button
-          onClick={handleCreateNew}
-          variant="outline"
-          className="h-14 w-full border-2 border-border bg-transparent text-base font-bold text-foreground hover:bg-secondary"
-        >
-          Create New
-        </Button>
       </div>
 
       {/* Cloud Storage Options */}
