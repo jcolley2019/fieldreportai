@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BackButton } from "@/components/BackButton";
-import { FileText, ListChecks, StickyNote, Search, Filter, Calendar, Building2, Hash, User as UserIcon } from "lucide-react";
+import { FileText, ListChecks, StickyNote, Search, Filter, Calendar, Building2, Hash, User as UserIcon, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import JSZip from 'jszip';
+import { pdf } from '@react-pdf/renderer';
+import { Document as PDFDocument, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Paragraph, TextRun, HeadingLevel, Packer } from 'docx';
+import { saveAs } from 'file-saver';
 
 interface Report {
   id: string;
@@ -51,6 +56,7 @@ const AllContent = () => {
   const [sortBy, setSortBy] = useState<"recent" | "name" | "project">("recent");
   const [activeTab, setActiveTab] = useState<"all" | "reports" | "checklists">("all");
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all");
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     fetchAllContent();
@@ -203,6 +209,290 @@ const AllContent = () => {
 
   const filteredContent = getFilteredAndSortedContent();
 
+  const generateReportPDF = async (report: Report) => {
+    const pdfStyles = StyleSheet.create({
+      page: { padding: 40, backgroundColor: '#ffffff' },
+      title: { fontSize: 24, marginBottom: 10, fontWeight: 'bold' },
+      subtitle: { fontSize: 14, marginBottom: 20, color: '#666666' },
+      section: { marginBottom: 10 },
+      text: { fontSize: 12, marginBottom: 5 },
+      label: { fontSize: 10, color: '#999999', marginBottom: 3 },
+    });
+
+    const ReportPDF = () => (
+      <PDFDocument>
+        <Page size="A4" style={pdfStyles.page}>
+          <Text style={pdfStyles.title}>{report.project_name}</Text>
+          <Text style={pdfStyles.subtitle}>
+            Field Report - {new Date(report.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          </Text>
+          
+          <View style={pdfStyles.section}>
+            <Text style={pdfStyles.label}>Customer</Text>
+            <Text style={pdfStyles.text}>{report.customer_name}</Text>
+          </View>
+
+          <View style={pdfStyles.section}>
+            <Text style={pdfStyles.label}>Job Number</Text>
+            <Text style={pdfStyles.text}>{report.job_number}</Text>
+          </View>
+
+          <View style={pdfStyles.section}>
+            <Text style={pdfStyles.label}>Description</Text>
+            <Text style={pdfStyles.text}>{report.job_description}</Text>
+          </View>
+        </Page>
+      </PDFDocument>
+    );
+
+    return await pdf(<ReportPDF />).toBlob();
+  };
+
+  const generateChecklistPDF = async (checklist: Checklist) => {
+    // Fetch checklist items
+    const { data: items } = await supabase
+      .from('checklist_items')
+      .select('*')
+      .eq('checklist_id', checklist.id)
+      .order('created_at', { ascending: false });
+
+    const pdfStyles = StyleSheet.create({
+      page: { padding: 40, backgroundColor: '#ffffff' },
+      title: { fontSize: 24, marginBottom: 10, fontWeight: 'bold' },
+      subtitle: { fontSize: 12, marginBottom: 20, color: '#666666' },
+      itemContainer: { marginBottom: 12, paddingLeft: 10 },
+      itemText: { fontSize: 12, marginBottom: 4 },
+      itemMeta: { fontSize: 10, color: '#666666' },
+    });
+
+    const ChecklistPDF = () => (
+      <PDFDocument>
+        <Page size="A4" style={pdfStyles.page}>
+          <Text style={pdfStyles.title}>{checklist.title}</Text>
+          <Text style={pdfStyles.subtitle}>
+            Generated on {new Date(checklist.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          </Text>
+          {checklist.report && (
+            <Text style={pdfStyles.subtitle}>
+              Project: {checklist.report.project_name} • {checklist.report.customer_name}
+            </Text>
+          )}
+          {(items || []).map((item, index) => (
+            <View key={index} style={pdfStyles.itemContainer}>
+              <Text style={pdfStyles.itemText}>
+                {item.completed ? '☑' : '☐'} {item.text}
+              </Text>
+              <Text style={pdfStyles.itemMeta}>
+                Priority: {item.priority} • Category: {item.category}
+              </Text>
+            </View>
+          ))}
+        </Page>
+      </PDFDocument>
+    );
+
+    return await pdf(<ChecklistPDF />).toBlob();
+  };
+
+  const generateReportWord = async (report: Report) => {
+    const docSections: any[] = [];
+
+    docSections.push(
+      new Paragraph({
+        text: report.project_name,
+        heading: HeadingLevel.TITLE,
+        spacing: { after: 200 },
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `Field Report - ${new Date(report.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
+            size: 20,
+            color: "666666",
+          }),
+        ],
+        spacing: { after: 400 },
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "Customer: ",
+            bold: true,
+          }),
+          new TextRun({
+            text: report.customer_name,
+          }),
+        ],
+        spacing: { after: 100 },
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "Job Number: ",
+            bold: true,
+          }),
+          new TextRun({
+            text: report.job_number,
+          }),
+        ],
+        spacing: { after: 100 },
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "Description: ",
+            bold: true,
+          }),
+          new TextRun({
+            text: report.job_description,
+          }),
+        ],
+        spacing: { after: 200 },
+      })
+    );
+
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: docSections,
+        },
+      ],
+    });
+
+    return await Packer.toBlob(doc);
+  };
+
+  const generateChecklistWord = async (checklist: Checklist) => {
+    // Fetch checklist items
+    const { data: items } = await supabase
+      .from('checklist_items')
+      .select('*')
+      .eq('checklist_id', checklist.id)
+      .order('created_at', { ascending: false });
+
+    const docSections: any[] = [];
+
+    docSections.push(
+      new Paragraph({
+        text: checklist.title,
+        heading: HeadingLevel.TITLE,
+        spacing: { after: 200 },
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `Generated on ${new Date(checklist.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
+            size: 18,
+            color: "999999",
+          }),
+        ],
+        spacing: { after: 400 },
+      })
+    );
+
+    if (checklist.report) {
+      docSections.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `Project: ${checklist.report.project_name} • ${checklist.report.customer_name}`,
+              size: 18,
+              color: "666666",
+            }),
+          ],
+          spacing: { after: 400 },
+        })
+      );
+    }
+
+    (items || []).forEach((item) => {
+      docSections.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: item.completed ? "☑ " : "☐ ",
+            }),
+            new TextRun({
+              text: item.text,
+              strike: item.completed,
+            }),
+            new TextRun({
+              text: ` (${item.priority} priority, ${item.category})`,
+              size: 18,
+              color: "666666",
+            }),
+          ],
+          spacing: { after: 100 },
+        })
+      );
+    });
+
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: docSections,
+        },
+      ],
+    });
+
+    return await Packer.toBlob(doc);
+  };
+
+  const handleExportAll = async (format: 'pdf' | 'docx') => {
+    if (filteredContent.length === 0) {
+      toast.error("No content to export");
+      return;
+    }
+
+    setIsExporting(true);
+    toast.success(`Preparing ${format.toUpperCase()} export...`);
+
+    try {
+      const zip = new JSZip();
+      const timestamp = new Date().toISOString().split('T')[0];
+
+      // Create separate folders for reports and checklists
+      const reportsFolder = zip.folder("reports");
+      const checklistsFolder = zip.folder("checklists");
+
+      for (const item of filteredContent) {
+        try {
+          let blob: Blob;
+          let fileName: string;
+
+          if (item.type === 'report') {
+            fileName = `${item.project_name.replace(/[^a-z0-9]/gi, '_')}_${item.job_number}.${format}`;
+            blob = format === 'pdf' 
+              ? await generateReportPDF(item)
+              : await generateReportWord(item);
+            reportsFolder?.file(fileName, blob);
+          } else {
+            fileName = `${item.title.replace(/[^a-z0-9]/gi, '_')}.${format}`;
+            blob = format === 'pdf'
+              ? await generateChecklistPDF(item)
+              : await generateChecklistWord(item);
+            checklistsFolder?.file(fileName, blob);
+          }
+        } catch (error) {
+          console.error(`Error generating document for ${item.type}:`, error);
+        }
+      }
+
+      // Generate ZIP file
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      saveAs(zipBlob, `field_reports_export_${timestamp}.zip`);
+
+      toast.success(`Successfully exported ${filteredContent.length} items as ${format.toUpperCase()}`);
+    } catch (error) {
+      console.error('Error creating export:', error);
+      toast.error("Failed to create export");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="dark min-h-screen bg-background">
@@ -225,6 +515,27 @@ const AllContent = () => {
       </header>
 
       <main className="p-4 pb-20">
+        {/* Export Actions Bar */}
+        <div className="mb-4 flex gap-3">
+          <Button
+            onClick={() => handleExportAll('pdf')}
+            disabled={isExporting || filteredContent.length === 0}
+            className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {isExporting ? "Exporting..." : "Export All as PDF"}
+          </Button>
+          <Button
+            onClick={() => handleExportAll('docx')}
+            disabled={isExporting || filteredContent.length === 0}
+            variant="outline"
+            className="flex-1"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {isExporting ? "Exporting..." : "Export All as Word"}
+          </Button>
+        </div>
+
         {/* Search and Filters */}
         <div className="mb-6 space-y-3">
           {/* Search Bar */}
