@@ -1099,7 +1099,8 @@ const FinalReport = () => {
           <Button
             onClick={handleDownloadPDF}
             disabled={!reportData}
-            className="bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            variant="default"
+            className="py-6 text-base font-semibold"
           >
             <Download className="mr-2 h-5 w-5" />
             Save as PDF
@@ -1107,7 +1108,8 @@ const FinalReport = () => {
           <Button
             onClick={handleDownloadWord}
             disabled={!reportData}
-            className="bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            variant="default"
+            className="py-6 text-base font-semibold"
           >
             <FileText className="mr-2 h-5 w-5" />
             Save as Word
@@ -1117,7 +1119,8 @@ const FinalReport = () => {
           <Button
             onClick={handleSaveToCloud}
             disabled={!reportData || isSaving}
-            className="bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            variant="default"
+            className="py-6 text-base font-semibold"
           >
             <Cloud className="mr-2 h-5 w-5" />
             {isSaving ? "Saving..." : "Save to Cloud"}
@@ -1126,14 +1129,16 @@ const FinalReport = () => {
             <Button
               onClick={handlePrint}
               disabled={!reportData}
-              className="bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              variant="default"
+              className="py-6 text-base font-semibold"
             >
               <Printer className="mr-2 h-5 w-5" />
               Print
             </Button>
             <Button
               onClick={handleCopyLink}
-              className="bg-primary h-auto w-14 items-center justify-center py-6 text-primary-foreground hover:bg-primary/90"
+              variant="default"
+              className="h-auto w-14 items-center justify-center py-6"
               title="Copy Link"
             >
               <Link2 className="h-5 w-5" />
