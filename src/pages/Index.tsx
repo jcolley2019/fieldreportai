@@ -196,7 +196,7 @@ const Index = () => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 hover:bg-secondary rounded-md px-2 py-1 transition-colors">
-              <h1 className="text-lg font-bold text-foreground">Project Alpha</h1>
+              <h1 className="text-lg font-bold text-foreground">Menu</h1>
               <ChevronDown className="h-5 w-5 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
