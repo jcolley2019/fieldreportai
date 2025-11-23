@@ -6,6 +6,8 @@ import { toast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { pdf } from '@react-pdf/renderer';
+import { ReportPDF } from '@/components/ReportPDF';
 
 interface MediaItem {
   id: string;
@@ -154,12 +156,54 @@ const FinalReport = () => {
     );
   }
 
-  const handleDownloadPDF = () => {
-    toast({
-      title: "Downloading PDF...",
-      description: "Your report is being prepared as a PDF file.",
-    });
-    // TODO: Implement actual PDF generation
+  const handleDownloadPDF = async () => {
+    try {
+      toast({
+        title: "Generating PDF...",
+        description: "Your report is being prepared as a PDF file.",
+      });
+
+      // Fetch media URLs if there are media items
+      const mediaUrlsMap = new Map<string, string>();
+      for (const item of media) {
+        if (item.file_type === 'image') {
+          const { data } = supabase.storage.from('media').getPublicUrl(item.file_path);
+          mediaUrlsMap.set(item.id, data.publicUrl);
+        }
+      }
+
+      // Generate PDF
+      const blob = await pdf(
+        <ReportPDF
+          reportData={reportData}
+          media={media}
+          checklists={checklists}
+          mediaUrls={mediaUrlsMap}
+        />
+      ).toBlob();
+
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${reportData?.project_name || 'Report'}_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "PDF Downloaded!",
+        description: "Your report has been saved as a PDF file.",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Failed to generate PDF",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDownloadWord = () => {
