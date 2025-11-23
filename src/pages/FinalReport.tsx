@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { pdf } from '@react-pdf/renderer';
 import { ReportPDF } from '@/components/ReportPDF';
-import { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer, Table, TableCell, TableRow, WidthType, BorderStyle } from 'docx';
+import { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer, Table, TableCell, TableRow, WidthType, BorderStyle, ImageRun } from 'docx';
 import { saveAs } from 'file-saver';
 
 interface MediaItem {
@@ -372,6 +372,79 @@ const FinalReport = () => {
 
       docSections.push(infoTable);
 
+      // Photos & Media
+      if (media.length > 0) {
+        docSections.push(
+          new Paragraph({
+            text: "Photos & Media",
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 400, after: 200 },
+          })
+        );
+
+        // Fetch and embed images
+        const imagePromises = media
+          .filter(item => item.file_type === 'image')
+          .slice(0, 6) // Limit to 6 images to avoid file size issues
+          .map(async (item) => {
+            try {
+              const { data } = supabase.storage.from('media').getPublicUrl(item.file_path);
+              const response = await fetch(data.publicUrl);
+              const blob = await response.blob();
+              const arrayBuffer = await blob.arrayBuffer();
+              
+              return {
+                buffer: Buffer.from(arrayBuffer),
+                success: true,
+              };
+            } catch (error) {
+              console.error('Error fetching image:', error);
+              return { success: false };
+            }
+          });
+
+        const imageResults = await Promise.all(imagePromises);
+        
+        // Add images to document
+        for (const result of imageResults) {
+          if (result.success && result.buffer) {
+            try {
+              docSections.push(
+                new Paragraph({
+                  children: [
+                    new ImageRun({
+                      data: result.buffer,
+                      transformation: {
+                        width: 500,
+                        height: 375,
+                      },
+                      type: "png",
+                    }),
+                  ],
+                  spacing: { after: 200 },
+                  alignment: AlignmentType.CENTER,
+                })
+              );
+            } catch (error) {
+              console.error('Error adding image to document:', error);
+            }
+          }
+        }
+
+        if (media.length > 6) {
+          docSections.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `+ ${media.length - 6} more photo${media.length - 6 !== 1 ? 's' : ''} not shown`,
+                  italics: true,
+                }),
+              ],
+              spacing: { after: 200 },
+            })
+          );
+        }
+      }
       // Checklists
       if (checklists.length > 0) {
         checklists.forEach((checklist) => {
@@ -405,21 +478,6 @@ const FinalReport = () => {
             );
           });
         });
-      }
-
-      // Photos & Media note
-      if (media.length > 0) {
-        docSections.push(
-          new Paragraph({
-            text: "Photos & Media",
-            heading: HeadingLevel.HEADING_1,
-            spacing: { before: 400, after: 200 },
-          }),
-          new Paragraph({
-            text: `${media.length} photo${media.length !== 1 ? 's' : ''} and media files are associated with this report.`,
-            spacing: { after: 200 },
-          })
-        );
       }
 
       // Create document
