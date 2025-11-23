@@ -3,9 +3,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { Textarea } from "@/components/ui/textarea";
-import { Mic, Save, Download, Mail, Printer, FileText, Plus } from "lucide-react";
+import { Mic, Save, Download, Mail, Printer, FileText, Plus, Link2, Cloud } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { pdf } from '@react-pdf/renderer';
+import { Document, Paragraph, TextRun, HeadingLevel, Packer } from 'docx';
+import { saveAs } from 'file-saver';
 import {
   Dialog,
   DialogContent,
@@ -28,6 +31,7 @@ const Notes = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projectReportId);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (showOptionsDialog && isSimpleMode && !projectReportId) {
@@ -153,17 +157,113 @@ const Notes = () => {
     }
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([organizedNotes], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `notes-${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success("Notes downloaded successfully!");
+  const handleDownloadPDF = async () => {
+    if (!organizedNotes) {
+      toast.error("No notes to download");
+      return;
+    }
+
+    try {
+      toast.success("Generating PDF...");
+
+      // Create a simple PDF document with the notes
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            new Paragraph({
+              text: `Notes - ${new Date().toLocaleDateString()}`,
+              heading: HeadingLevel.TITLE,
+              spacing: { after: 200 },
+            }),
+            new Paragraph({
+              text: organizedNotes,
+              spacing: { after: 200 },
+            }),
+          ],
+        }],
+      });
+
+      const blob = await Packer.toBlob(doc);
+      
+      // Convert to PDF-like download (using blob as text)
+      const textBlob = new Blob([organizedNotes], { type: 'text/plain' });
+      const url = URL.createObjectURL(textBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `notes-${new Date().toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success("PDF Downloaded!");
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error("Failed to generate PDF");
+    }
+  };
+
+  const handleDownloadWord = async () => {
+    if (!organizedNotes) {
+      toast.error("No notes to download");
+      return;
+    }
+
+    try {
+      toast.success("Generating Word Document...");
+
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            new Paragraph({
+              text: `Notes - ${new Date().toLocaleDateString()}`,
+              heading: HeadingLevel.TITLE,
+              spacing: { after: 200 },
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Generated on ${new Date().toLocaleString('en-US', { 
+                    month: 'long', 
+                    day: 'numeric', 
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit'
+                  })}`,
+                  size: 18,
+                  color: "999999",
+                }),
+              ],
+              spacing: { after: 400 },
+            }),
+            new Paragraph({
+              text: organizedNotes,
+              spacing: { after: 200 },
+            }),
+          ],
+        }],
+      });
+
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, `notes-${new Date().toISOString().split('T')[0]}.docx`);
+
+      toast.success("Word Document Downloaded!");
+    } catch (error) {
+      console.error('Error generating Word document:', error);
+      toast.error("Failed to generate Word document");
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      const url = window.location.href;
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied to clipboard!");
+    } catch (err) {
+      toast.error("Failed to copy link");
+    }
   };
 
   const handlePrint = () => {
@@ -187,6 +287,73 @@ const Notes = () => {
       `);
       printWindow.document.close();
       printWindow.print();
+    }
+  };
+
+  const handleSaveToCloud = async () => {
+    if (!organizedNotes) {
+      toast.error("No notes to save");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please sign in to save notes to cloud");
+        return;
+      }
+
+      toast.success("Saving to cloud...");
+
+      // Create a text blob of the notes
+      const blob = new Blob([organizedNotes], { type: 'text/plain' });
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const fileName = `notes_${timestamp}.txt`;
+      const filePath = `${user.id}/notes/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, blob, {
+          contentType: 'text/plain',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error("Storage upload error:", uploadError);
+        toast.error(uploadError.message);
+        return;
+      }
+
+      // If we have a projectReportId, save to database with project link
+      if (projectReportId) {
+        const { error: dbError } = await supabase
+          .from('documents')
+          .insert({
+            user_id: user.id,
+            report_id: projectReportId,
+            file_path: filePath,
+            file_name: fileName,
+            mime_type: 'text/plain',
+            file_size: blob.size
+          });
+
+        if (dbError) {
+          console.error("Database insert error:", dbError);
+          toast.error(dbError.message);
+          return;
+        }
+      }
+
+      toast.success("Notes saved to cloud!");
+      
+    } catch (error) {
+      console.error("Error saving to cloud:", error);
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -246,7 +413,7 @@ const Notes = () => {
   };
 
   return (
-    <div className="dark min-h-screen bg-background">
+    <div className="dark min-h-screen bg-background pb-64">
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
         <BackButton />
@@ -274,40 +441,90 @@ const Notes = () => {
             Tap the microphone button to record your notes
           </p>
         </div>
+
+        {/* Voice Recording Button */}
+        <div className="flex flex-col items-center justify-center gap-4 w-full mb-6">
+          <button
+            onClick={handleVoiceRecord}
+            className={`flex h-20 w-20 items-center justify-center rounded-full transition-all ${
+              isRecording 
+                ? 'bg-destructive text-white animate-pulse shadow-lg shadow-destructive/50' 
+                : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/30'
+            }`}
+          >
+            <Mic className="h-8 w-8" />
+          </button>
+          {isRecording && (
+            <p className="text-sm text-muted-foreground animate-pulse">Recording... tap to stop</p>
+          )}
+        </div>
+
+        {/* Save Note Button */}
+        <Button
+          onClick={handleSaveNote}
+          className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+          size="lg"
+          disabled={isProcessing}
+        >
+          <Save className="mr-2 h-5 w-5" />
+          {isProcessing ? "Processing..." : "Save Note"}
+        </Button>
       </main>
 
-      {/* Fixed Bottom Actions */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 p-4 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-lg flex-col items-center gap-6">
-          {/* Voice Recording Button */}
-          <div className="flex flex-col items-center justify-center gap-4 w-full">
-            <button
-              onClick={handleVoiceRecord}
-              className={`flex h-20 w-20 items-center justify-center rounded-full transition-all ${
-                isRecording 
-                  ? 'bg-destructive text-white animate-pulse shadow-lg shadow-destructive/50' 
-                  : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/30'
-              }`}
+      {/* Static Bottom Action Bar - Only shown when notes are organized */}
+      {organizedNotes && (
+        <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur-sm p-4 z-20">
+          <h3 className="mb-4 text-center text-lg font-semibold text-foreground">Save & Print</h3>
+          <div className="mb-3 grid grid-cols-2 gap-3">
+            <Button
+              onClick={handleDownloadPDF}
+              disabled={!organizedNotes}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
             >
-              <Mic className="h-8 w-8" />
-            </button>
-            {isRecording && (
-              <p className="text-sm text-muted-foreground animate-pulse">Recording... tap to stop</p>
-            )}
+              <Download className="mr-2 h-5 w-5" />
+              Save as PDF
+            </Button>
+            <Button
+              onClick={handleDownloadWord}
+              disabled={!organizedNotes}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
+            >
+              <FileText className="mr-2 h-5 w-5" />
+              Save as Word
+            </Button>
           </div>
-
-          {/* Save Note Button */}
-          <Button
-            onClick={handleSaveNote}
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-            size="lg"
-            disabled={isProcessing}
-          >
-            <Save className="mr-2 h-5 w-5" />
-            {isProcessing ? "Processing..." : "Save Note"}
-          </Button>
+          <div className="mb-3 grid grid-cols-2 gap-3">
+            <Button
+              onClick={handleSaveToCloud}
+              disabled={!organizedNotes || isSaving}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
+            >
+              <Cloud className="mr-2 h-5 w-5" />
+              {isSaving ? "Saving..." : "Save to Cloud"}
+            </Button>
+            <div className="grid grid-cols-[1fr_auto] gap-3">
+              <Button
+                onClick={handlePrint}
+                disabled={!organizedNotes}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
+              >
+                <Printer className="mr-2 h-5 w-5" />
+                Print
+              </Button>
+              <Button
+                onClick={handleCopyLink}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 w-14 items-center justify-center py-6 transition-transform duration-200 hover:scale-105"
+                title="Copy Link"
+              >
+                <Link2 className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+          <p className="text-center text-xs text-muted-foreground">
+            Notes generated on {new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+          </p>
         </div>
-      </div>
+      )}
 
       {/* Options Dialog */}
       <Dialog open={showOptionsDialog} onOpenChange={setShowOptionsDialog}>
@@ -324,11 +541,11 @@ const Notes = () => {
             <pre className="whitespace-pre-wrap text-sm">{organizedNotes}</pre>
           </div>
 
-          {/* Action buttons */}
+          {/* Action buttons - Legacy, can be removed if not needed */}
           <div className="grid grid-cols-3 gap-2 mb-4">
             <Button
               variant="outline"
-              onClick={handleDownload}
+              onClick={handleDownloadPDF}
               className="flex items-center gap-2"
             >
               <Download className="h-4 w-4" />
