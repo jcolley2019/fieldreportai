@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { EnterpriseSalesDialog } from "./EnterpriseSalesDialog";
 
 const pricingPlans = [
   {
@@ -94,6 +95,7 @@ interface PricingSectionProps {
 export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = true, billingPeriod: externalBillingPeriod }) => {
   const [internalBillingPeriod, setInternalBillingPeriod] = useState<"monthly" | "annual">("monthly");
   const [loading, setLoading] = useState(false);
+  const [showEnterpriseDialog, setShowEnterpriseDialog] = useState(false);
   const navigate = useNavigate();
 
   const billingPeriod = externalBillingPeriod ?? internalBillingPeriod;
@@ -232,14 +234,13 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
                       {loading ? "Activating..." : plan.cta}
                     </Button>
                   ) : plan.name === "Enterprise" ? (
-                    <a 
-                      href={`mailto:jcolley2019@gmail.com?subject=Enterprise Plan Inquiry&body=Hello,%0D%0A%0D%0AI am interested in the Enterprise plan for Field Report AI.%0D%0A%0D%0APlease provide information about:%0D%0A%0D%0A- Team Size: [Please specify]%0D%0A- Number of Projects per Month: [Please specify]%0D%0A- Required Integrations: [Please specify]%0D%0A- Specific Requirements: [Please describe]%0D%0A- Preferred Start Date: [Please specify]%0D%0A%0D%0AThank you,%0D%0A[Your Name]%0D%0A[Company Name]`}
-                      className="w-full"
+                    <Button 
+                      className="w-full" 
+                      variant={plan.popular ? "default" : "outline"}
+                      onClick={() => setShowEnterpriseDialog(true)}
                     >
-                      <Button className="w-full" variant={plan.popular ? "default" : "outline"}>
-                        {plan.cta}
-                      </Button>
-                    </a>
+                      {plan.cta}
+                    </Button>
                   ) : (
                     <Link to="/auth">
                       <Button className="w-full" variant={plan.popular ? "default" : "outline"}>
@@ -253,6 +254,11 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
           })}
         </div>
       </div>
+      
+      <EnterpriseSalesDialog 
+        open={showEnterpriseDialog} 
+        onOpenChange={setShowEnterpriseDialog} 
+      />
     </section>
   );
 };
