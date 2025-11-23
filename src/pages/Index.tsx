@@ -201,13 +201,16 @@ const Index = () => {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-64 bg-popover">
-            <DropdownMenuItem onClick={() => navigate("/dashboard")} className="cursor-pointer">
-              <Circle className="mr-2 h-4 w-4" />
-              Dashboard
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/new-project")} className="cursor-pointer">
               <Plus className="mr-2 h-4 w-4" />
               New Project
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              // Scroll to projects section
+              document.querySelector('section:last-of-type')?.scrollIntoView({ behavior: 'smooth' });
+            }} className="cursor-pointer">
+              <FolderOpen className="mr-2 h-4 w-4" />
+              Previous Projects
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })} className="cursor-pointer">
               <Camera className="mr-2 h-4 w-4" />
