@@ -1095,7 +1095,7 @@ const FinalReport = () => {
 
       {/* Static Bottom Action Bar - Always Visible */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur-sm p-4 z-20">
-        <h3 className="mb-4 text-lg font-semibold text-foreground">Save and Print</h3>
+        <h3 className="mb-4 text-center text-lg font-semibold text-foreground">Save & Print</h3>
         <div className="mb-3 grid grid-cols-2 gap-3">
           <Button
             onClick={handleDownloadPDF}
