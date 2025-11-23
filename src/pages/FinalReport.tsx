@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Building2, Download, Share2, ChevronRight, ArrowLeft } from "lucide-react";
+import { BackButton } from "@/components/BackButton";
+import { Building2, Download, Share2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -77,12 +78,7 @@ const FinalReport = () => {
       <header className="sticky top-0 z-10 w-full border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="flex flex-col gap-2 p-4 pb-3">
           <div className="flex h-12 items-center justify-between">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-secondary"
-            >
-              <ArrowLeft className="h-5 w-5 text-foreground" />
-            </button>
+            <BackButton />
             <div className="flex w-auto items-center justify-end">
               <p className="shrink-0 text-sm font-medium text-muted-foreground">
                 {reportData?.created_at ? formatDate(reportData.created_at) : 'N/A'}
