@@ -225,13 +225,6 @@ const Index = () => {
               <Plus className="mr-2 h-4 w-4" />
               New Project
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => {
-              // Scroll to projects section
-              document.querySelector('#projects-section')?.scrollIntoView({ behavior: 'smooth' });
-            }} className={`cursor-pointer ${isProjectsSectionVisible ? 'bg-secondary text-primary font-medium' : ''}`}>
-              <FolderOpen className="mr-2 h-4 w-4" />
-              Previous Projects
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })} className="cursor-pointer">
               <Camera className="mr-2 h-4 w-4" />
               Capture Screen
