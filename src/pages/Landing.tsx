@@ -391,28 +391,28 @@ const Landing = () => {
       {/* Pricing */}
       <section id="pricing" className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center mb-12">
+          <div className="max-w-4xl mx-auto text-center mb-8">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Simple, Transparent Pricing</h2>
             <p className="text-muted-foreground mb-8">Choose the plan that fits your needs</p>
             
             {/* Billing Period Toggle */}
-            <div className="inline-flex items-center gap-2 p-1.5 bg-muted/50 rounded-xl border-2 border-primary/30 shadow-lg">
+            <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-lg">
               <Button
-                variant={billingPeriod === "monthly" ? "default" : "ghost"}
-                size="lg"
+                variant={billingPeriod === "monthly" ? "secondary" : "ghost"}
+                size="sm"
                 onClick={() => setBillingPeriod("monthly")}
-                className="relative text-base font-semibold px-8"
+                className="relative"
               >
                 Monthly
               </Button>
               <Button
-                variant={billingPeriod === "annual" ? "default" : "ghost"}
-                size="lg"
+                variant={billingPeriod === "annual" ? "secondary" : "ghost"}
+                size="sm"
                 onClick={() => setBillingPeriod("annual")}
-                className="relative text-base font-semibold px-8"
+                className="relative"
               >
                 Annual
-                <Badge className="ml-2 bg-primary text-primary-foreground font-bold">Save 20%</Badge>
+                <Badge className="ml-2 bg-primary text-primary-foreground">Save 20%</Badge>
               </Button>
             </div>
           </div>
