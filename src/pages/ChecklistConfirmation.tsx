@@ -481,8 +481,8 @@ const ChecklistConfirmation = () => {
 
       {/* Action Toolbar */}
       <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 z-20">
-        {/* Primary Action - Save to Cloud (Full Width) */}
-        <div className="border-b border-zinc-800 px-4 py-3">
+        {/* Primary Action - Quick Save (Full Width) */}
+        <div className="px-4 py-3">
           <Button
             onClick={async () => {
               setIsSaving(true);
@@ -508,14 +508,28 @@ const ChecklistConfirmation = () => {
             ) : (
               <Cloud className="h-4 w-4" />
             )}
-            {isSaving ? "Saving..." : showSuccess ? "Saved!" : "Save to Cloud"}
+            {isSaving ? "Saving..." : showSuccess ? "Quick Save" : "Quick Save"}
           </Button>
         </div>
 
         {/* Secondary Actions Bar (Centered) */}
         <div className="border-t border-zinc-800 px-4 py-4">
           <div className="flex items-center justify-center gap-2 md:gap-3">
-            {/* Tertiary Action - Copy Link */}
+            {/* Print Button */}
+            <Button
+              onClick={handlePrintChecklist}
+              variant="outline"
+              size="sm"
+              className="gap-2 text-zinc-200 hover:text-white border-zinc-600"
+            >
+              <Printer className="h-4 w-4" />
+              <span className="hidden md:inline">Print</span>
+            </Button>
+
+            {/* Divider */}
+            <div className="hidden md:block h-8 w-px bg-zinc-700" />
+
+            {/* Copy Link Button */}
             <Button
               onClick={() => {
                 navigator.clipboard.writeText(window.location.href);
@@ -532,20 +546,6 @@ const ChecklistConfirmation = () => {
             {/* Divider */}
             <div className="hidden md:block h-8 w-px bg-zinc-700" />
 
-            {/* Secondary Action - Print */}
-            <Button
-              onClick={handlePrintChecklist}
-              variant="outline"
-              size="sm"
-              className="gap-2 text-zinc-200 hover:text-white border-zinc-600"
-            >
-              <Printer className="h-4 w-4" />
-              <span className="hidden md:inline">Print</span>
-            </Button>
-
-            {/* Divider */}
-            <div className="hidden md:block h-8 w-px bg-zinc-700" />
-
             {/* Save Options Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -556,7 +556,7 @@ const ChecklistConfirmation = () => {
                   disabled={!checklist}
                 >
                   <Download className="h-4 w-4" />
-                  <span className="hidden sm:inline">Download</span>
+                  <span className="hidden sm:inline">Save Options</span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
