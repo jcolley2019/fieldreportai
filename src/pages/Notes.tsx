@@ -510,9 +510,22 @@ const Notes = () => {
       </main>
 
       {/* Action Toolbar */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-zinc-800 bg-zinc-950 z-20">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-end gap-2 md:gap-3">
+      <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 z-20">
+        {/* Primary Action - Quick Save (Full Width) */}
+        <div className="border-b border-zinc-800 px-4 py-3">
+          <Button
+            onClick={handleQuickSave}
+            className="w-full gap-2 bg-teal-600 hover:bg-teal-700 text-white h-12"
+            disabled={isSaving || !noteText.trim()}
+          >
+            <Save className="h-4 w-4" />
+            {isSaving ? "Saving..." : "Quick Save"}
+          </Button>
+        </div>
+
+        {/* Secondary Actions Bar (Centered) */}
+        <div className="border-t border-zinc-800 px-4 py-4">
+          <div className="flex items-center justify-center gap-2 md:gap-3">
             {/* Tertiary Action - Copy Link */}
             <Button
               onClick={handleCopyLink}
@@ -571,18 +584,6 @@ const Notes = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            {/* Primary Action - Quick Save */}
-            <Button
-              onClick={handleQuickSave}
-              size="sm"
-              className="gap-1 md:gap-2 bg-teal-600 hover:bg-teal-700 text-white"
-              disabled={isSaving || !noteText.trim()}
-            >
-              <Save className="h-4 w-4" />
-              <span className="hidden sm:inline">{isSaving ? "Saving..." : "Quick Save"}</span>
-              <span className="sm:hidden">{isSaving ? "..." : "Save"}</span>
-            </Button>
           </div>
         </div>
       </div>
