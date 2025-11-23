@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
-import { Building2, Download, Share2, ChevronRight, Edit2, Save, X, Link2, FileText } from "lucide-react";
+import { Building2, Download, Share2, ChevronRight, Edit2, Save, X, Link2, FileText, Printer } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -525,6 +525,10 @@ const FinalReport = () => {
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   const handleShare = () => {
     if (!reportData) {
       toast({
@@ -996,7 +1000,7 @@ const FinalReport = () => {
 
       {/* Static Bottom Action Bar - Always Visible */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur-sm p-4 z-20">
-        <div className="mb-3 grid grid-cols-2 gap-3">
+        <div className="mb-3 grid grid-cols-3 gap-3">
           <Button
             onClick={handleDownloadPDF}
             disabled={!reportData}
@@ -1014,15 +1018,24 @@ const FinalReport = () => {
             <FileText className="mr-2 h-5 w-5" />
             Save as Word
           </Button>
-        </div>
-        <div className="mb-3 flex gap-3">
           <Button
             onClick={handleCopyLink}
             variant="outline"
-            className="flex-1 py-6 text-base font-semibold"
+            className="py-6 text-base font-semibold"
           >
             <Link2 className="mr-2 h-5 w-5" />
             Copy Link
+          </Button>
+        </div>
+        <div className="mb-3 flex gap-3">
+          <Button
+            onClick={handlePrint}
+            disabled={!reportData}
+            variant="secondary"
+            className="flex-1 py-6 text-base font-semibold"
+          >
+            <Printer className="mr-2 h-5 w-5" />
+            Print Report
           </Button>
           <Button
             onClick={handleShare}
