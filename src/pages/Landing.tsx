@@ -84,23 +84,6 @@ const Landing = () => {
       popular: false,
     },
     {
-      name: "Pro Plan 14-day Trial",
-      monthlyPrice: "$0",
-      annualPrice: "$0",
-      period: "",
-      description: "Try all Pro features free for 14 days",
-      features: [
-        "Unlimited reports & checklists",
-        "Advanced media capture",
-        "AI-powered insights",
-        "Team collaboration",
-        "Priority support",
-        "Custom templates",
-      ],
-      cta: "Start Pro Plan 14-day Trial",
-      popular: false,
-    },
-    {
       name: "Pro",
       monthlyPrice: "$49",
       annualPrice: "$39",
