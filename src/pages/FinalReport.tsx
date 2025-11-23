@@ -529,6 +529,101 @@ const FinalReport = () => {
     window.print();
   };
 
+  const handleSaveToCloud = async () => {
+    if (!reportData) return;
+
+    try {
+      setIsSaving(true);
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to save reports to cloud",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Saving to cloud...",
+        description: "Your report is being uploaded",
+      });
+
+      // Generate PDF blob
+      const reportPDF = (
+        <ReportPDF
+          reportData={reportData}
+          media={media}
+          checklists={checklists}
+        />
+      );
+      
+      const blob = await pdf(reportPDF).toBlob();
+      
+      // Create filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const fileName = `${reportData.project_name}_${timestamp}.pdf`;
+      const filePath = `${user.id}/${reportId}/${fileName}`;
+      
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, blob, {
+          contentType: 'application/pdf',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error("Storage upload error:", uploadError);
+        toast({
+          title: "Upload failed",
+          description: uploadError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Save document metadata to database
+      const { error: dbError } = await supabase
+        .from('documents')
+        .insert({
+          user_id: user.id,
+          report_id: reportId,
+          file_path: filePath,
+          file_name: fileName,
+          mime_type: 'application/pdf',
+          file_size: blob.size
+        });
+
+      if (dbError) {
+        console.error("Database insert error:", dbError);
+        toast({
+          title: "Save failed",
+          description: dbError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Report saved to cloud!",
+        description: "Your report has been securely saved and can be accessed anytime",
+      });
+      
+    } catch (error) {
+      console.error("Error saving to cloud:", error);
+      toast({
+        title: "Save failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleShare = () => {
     if (!reportData) {
       toast({
@@ -1020,12 +1115,12 @@ const FinalReport = () => {
         </div>
         <div className="mb-3 grid grid-cols-2 gap-3">
           <Button
-            onClick={() => toast({ title: "Save to Cloud feature coming soon" })}
-            disabled={!reportData}
+            onClick={handleSaveToCloud}
+            disabled={!reportData || isSaving}
             className="bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
             <Cloud className="mr-2 h-5 w-5" />
-            Save to Cloud
+            {isSaving ? "Saving..." : "Save to Cloud"}
           </Button>
           <div className="grid grid-cols-[1fr_auto] gap-3">
             <Button
