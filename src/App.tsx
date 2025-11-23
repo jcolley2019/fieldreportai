@@ -12,6 +12,7 @@ import NewProject from "./pages/NewProject";
 import ProjectsCustomers from "./pages/ProjectsCustomers";
 import ProjectDetail from "./pages/ProjectDetail";
 import Notes from "./pages/Notes";
+import SavedNotes from "./pages/SavedNotes";
 import CaptureScreen from "./pages/CaptureScreen";
 import Checklist from "./pages/Checklist";
 import ChecklistConfirmation from "./pages/ChecklistConfirmation";
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/projects" element={<ProjectsCustomers />} />
           <Route path="/project/:projectId" element={<ProjectDetail />} />
           <Route path="/notes" element={<Notes />} />
+          <Route path="/saved-notes" element={<SavedNotes />} />
           <Route path="/capture-screen" element={<CaptureScreen />} />
           <Route path="/checklist" element={<Checklist />} />
           <Route path="/checklist-confirmation" element={<ChecklistConfirmation />} />
