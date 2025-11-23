@@ -139,17 +139,17 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
   };
 
   return (
-    <section id="pricing" className="py-20 bg-muted/30">
+    <section id="pricing" className="py-12 bg-muted/30">
       <div className="container mx-auto px-4">
         {showHeader && (
-          <div className="max-w-4xl mx-auto text-center mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Simple, Transparent Pricing</h2>
-            <p className="text-muted-foreground mb-8">Choose the plan that fits your needs</p>
+          <div className="max-w-4xl mx-auto text-center mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold mb-3 text-white">Simple, Transparent Pricing</h2>
+            <p className="text-muted-foreground mb-6">Choose the plan that fits your needs</p>
           </div>
         )}
         
         {/* Billing Period Toggle */}
-        <div className="max-w-4xl mx-auto text-center mb-8">
+        <div className="max-w-4xl mx-auto text-center mb-6">
           <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-lg">
             <Button
               variant="ghost"
