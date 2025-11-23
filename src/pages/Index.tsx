@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User } from "@supabase/supabase-js";
-import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus } from "lucide-react";
+import { FileText, Camera, Mic, Share2, Eye, ChevronDown, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Circle } from "lucide-react";
 import { toast } from "sonner";
 import { TrialBanner } from "@/components/TrialBanner";
 import {
@@ -202,7 +202,7 @@ const Index = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-64 bg-popover">
             <DropdownMenuItem onClick={() => navigate("/dashboard")} className="cursor-pointer">
-              <FolderOpen className="mr-2 h-4 w-4" />
+              <Circle className="mr-2 h-4 w-4" />
               Dashboard
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/new-project")} className="cursor-pointer">
