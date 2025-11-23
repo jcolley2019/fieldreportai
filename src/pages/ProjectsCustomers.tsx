@@ -135,7 +135,7 @@ const ProjectsCustomers = () => {
           className="gap-2"
         >
           <Plus className="h-4 w-4" />
-          New
+          Create Project
         </Button>
       </header>
 
@@ -171,11 +171,7 @@ const ProjectsCustomers = () => {
         {projects.length === 0 ? (
           <div className="rounded-lg bg-card p-8 text-center">
             <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <p className="text-muted-foreground mb-4">No projects yet. Create your first project to get started!</p>
-            <Button onClick={() => navigate("/new-project")}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Project
-            </Button>
+            <p className="text-muted-foreground">No projects yet. Create your first project to get started!</p>
           </div>
         ) : filteredProjects.length === 0 ? (
           <div className="rounded-lg bg-card p-8 text-center">
