@@ -339,7 +339,7 @@ const FinalReport = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow pb-40">
+      <main className="flex-grow pb-64">{/* Increased padding to account for cloud storage section and action bar */}
         <div className="pt-6">
           <h1 className="px-4 pb-3 text-left text-[32px] font-bold leading-tight tracking-tight text-foreground">
             Report Summary
