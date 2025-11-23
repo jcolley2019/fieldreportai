@@ -88,12 +88,15 @@ const pricingPlans = [
 
 interface PricingSectionProps {
   showHeader?: boolean;
+  billingPeriod?: "monthly" | "annual";
 }
 
-export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = true }) => {
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
+export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = true, billingPeriod: externalBillingPeriod }) => {
+  const [internalBillingPeriod, setInternalBillingPeriod] = useState<"monthly" | "annual">("monthly");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const billingPeriod = externalBillingPeriod ?? internalBillingPeriod;
 
   const handleStartTrial = async () => {
     setLoading(true);
@@ -148,28 +151,30 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
           </div>
         )}
         
-        {/* Billing Period Toggle */}
-        <div className="max-w-4xl mx-auto text-center mb-4">
-          <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-lg">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setBillingPeriod("monthly")}
-              className={`relative ${billingPeriod === "monthly" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : ""}`}
-            >
-              Monthly
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setBillingPeriod("annual")}
-              className={`relative ${billingPeriod === "annual" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : ""}`}
-            >
-              Annual
-              <Badge className="ml-2 bg-primary text-primary-foreground">Save 20%</Badge>
-            </Button>
+        {/* Billing Period Toggle - only show if not controlled externally */}
+        {!externalBillingPeriod && (
+          <div className="max-w-4xl mx-auto text-center mb-4">
+            <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-lg">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setInternalBillingPeriod("monthly")}
+                className={`relative ${billingPeriod === "monthly" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : ""}`}
+              >
+                Monthly
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setInternalBillingPeriod("annual")}
+                className={`relative ${billingPeriod === "annual" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : ""}`}
+              >
+                Annual
+                <Badge className="ml-2 bg-primary text-primary-foreground">Save 20%</Badge>
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
           {pricingPlans.map((plan, index) => {

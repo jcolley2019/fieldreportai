@@ -1,10 +1,14 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PricingSection } from "@/components/PricingSection";
 import logo from "@/assets/field-report-ai-logo.png";
+import { useState } from "react";
 
 const Pricing = () => {
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
+
   return (
     <div className="dark min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
       {/* Header */}
@@ -52,8 +56,31 @@ const Pricing = () => {
         </div>
       </section>
 
+      {/* Billing Period Toggle */}
+      <div className="max-w-4xl mx-auto text-center py-6">
+        <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-lg">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setBillingPeriod("monthly")}
+            className={`relative ${billingPeriod === "monthly" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : ""}`}
+          >
+            Monthly
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setBillingPeriod("annual")}
+            className={`relative ${billingPeriod === "annual" ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground" : ""}`}
+          >
+            Annual
+            <Badge className="ml-2 bg-primary text-primary-foreground">Save 20%</Badge>
+          </Button>
+        </div>
+      </div>
+
       {/* Pricing Section */}
-      <PricingSection showHeader={false} />
+      <PricingSection showHeader={false} billingPeriod={billingPeriod} />
 
       {/* FAQ Section */}
       <section id="faq" className="py-12 bg-transparent">
