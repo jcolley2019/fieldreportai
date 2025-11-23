@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { Textarea } from "@/components/ui/textarea";
-import { Mic, Save, Download, Mail, Printer, FileText, Plus, Link2, Cloud, ChevronDown, Link } from "lucide-react";
+import { Mic, Save, Download, Mail, Printer, FileText, Plus, Link2, Cloud, ChevronDown, Link, Loader2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -518,7 +518,11 @@ const Notes = () => {
             className="w-full gap-2 bg-teal-600 hover:bg-teal-700 text-white h-12"
             disabled={isSaving || !noteText.trim()}
           >
-            <Save className="h-4 w-4" />
+            {isSaving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
             {isSaving ? "Saving..." : "Quick Save"}
           </Button>
         </div>
