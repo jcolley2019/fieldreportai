@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Check, Share2, Download, CheckCircle2 } from "lucide-react";
+import { Check, Share2, Download, CheckCircle2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
@@ -61,7 +61,14 @@ const ChecklistConfirmation = () => {
     <div className="dark min-h-screen bg-background">
       {/* Header */}
       <div className="flex items-center p-4">
-        <div className="h-12 w-12 shrink-0"></div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate(-1)}
+          className="h-12 w-12 shrink-0"
+        >
+          <ArrowLeft className="h-5 w-5 text-foreground" />
+        </Button>
         <h2 className="flex-1 text-center text-lg font-bold text-foreground">
           Confirmation
         </h2>
