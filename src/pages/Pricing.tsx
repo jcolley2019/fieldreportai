@@ -41,9 +41,9 @@ const Pricing = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-6 bg-transparent">
+      <section className="py-4 bg-transparent">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-3 text-white">
+          <h1 className="text-4xl md:text-5xl font-bold mb-2 text-white">
             Choose Your Perfect Plan
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
