@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, User, Building2 } from "lucide-react";
+import { ImageCropDialog } from "@/components/ImageCropDialog";
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -21,6 +22,10 @@ const Onboarding = () => {
   const [avatarPreview, setAvatarPreview] = useState<string>("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
+  const [tempAvatarUrl, setTempAvatarUrl] = useState<string>("");
+  const [tempLogoUrl, setTempLogoUrl] = useState<string>("");
+  const [showAvatarCrop, setShowAvatarCrop] = useState(false);
+  const [showLogoCrop, setShowLogoCrop] = useState(false);
   const [errors, setErrors] = useState({
     firstName: "",
     lastName: "",
@@ -66,9 +71,16 @@ const Onboarding = () => {
       }
 
       setErrors(prev => ({ ...prev, avatar: "" }));
-      setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
+      const url = URL.createObjectURL(file);
+      setTempAvatarUrl(url);
+      setShowAvatarCrop(true);
     }
+  };
+
+  const handleAvatarCropComplete = (croppedBlob: Blob) => {
+    const file = new File([croppedBlob], "avatar.jpg", { type: "image/jpeg" });
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(croppedBlob));
   };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,9 +109,16 @@ const Onboarding = () => {
       }
 
       setErrors(prev => ({ ...prev, logo: "" }));
-      setLogoFile(file);
-      setLogoPreview(URL.createObjectURL(file));
+      const url = URL.createObjectURL(file);
+      setTempLogoUrl(url);
+      setShowLogoCrop(true);
     }
+  };
+
+  const handleLogoCropComplete = (croppedBlob: Blob) => {
+    const file = new File([croppedBlob], "logo.jpg", { type: "image/jpeg" });
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(croppedBlob));
   };
 
   const uploadFile = async (file: File, bucket: string, userId: string, setUploadingState: (val: boolean) => void) => {
@@ -376,6 +395,24 @@ const Onboarding = () => {
           </form>
         </CardContent>
       </Card>
+
+      <ImageCropDialog
+        open={showAvatarCrop}
+        imageUrl={tempAvatarUrl}
+        onClose={() => setShowAvatarCrop(false)}
+        onCropComplete={handleAvatarCropComplete}
+        aspectRatio={1}
+        cropShape="round"
+      />
+
+      <ImageCropDialog
+        open={showLogoCrop}
+        imageUrl={tempLogoUrl}
+        onClose={() => setShowLogoCrop(false)}
+        onCropComplete={handleLogoCropComplete}
+        aspectRatio={1}
+        cropShape="rect"
+      />
     </div>
   );
 };
