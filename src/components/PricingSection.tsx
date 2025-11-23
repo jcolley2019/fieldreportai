@@ -67,8 +67,8 @@ const pricingPlans = [
   },
   {
     name: "Enterprise",
-    monthlyPrice: "Custom",
-    annualPrice: "Custom",
+    monthlyPrice: "Custom Price Quote",
+    annualPrice: "Custom Price Quote",
     period: "",
     description: "For large organizations",
     features: [
