@@ -140,32 +140,30 @@ const ProjectsCustomers = () => {
       </header>
 
       <main className="p-4">
-        {/* Search and Filter */}
-        {projects.length > 0 && (
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search projects, customers, or job numbers..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-card border-border text-foreground placeholder:text-muted-foreground"
-              />
-            </div>
-            <Select value={sortBy} onValueChange={(value: "recent" | "name" | "customer") => setSortBy(value)}>
-              <SelectTrigger className="w-full sm:w-[180px] bg-card border-border text-foreground">
-                <Filter className="mr-2 h-4 w-4" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recent">Most Recent</SelectItem>
-                <SelectItem value="name">Project Name</SelectItem>
-                <SelectItem value="customer">Customer Name</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* Search and Filter - Always visible */}
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search projects, customers, or job numbers..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 bg-card border-border text-foreground placeholder:text-muted-foreground"
+            />
           </div>
-        )}
+          <Select value={sortBy} onValueChange={(value: "recent" | "name" | "customer") => setSortBy(value)}>
+            <SelectTrigger className="w-full sm:w-[180px] bg-card border-border text-foreground">
+              <Filter className="mr-2 h-4 w-4" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Most Recent</SelectItem>
+              <SelectItem value="name">Project Name</SelectItem>
+              <SelectItem value="customer">Customer Name</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         
         {/* Projects List */}
         {projects.length === 0 ? (
