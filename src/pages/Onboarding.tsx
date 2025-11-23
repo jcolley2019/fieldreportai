@@ -264,11 +264,11 @@ const Onboarding = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-2xl">
+    <div className="dark min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-4">
+      <Card className="w-full max-w-2xl bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-2xl">Welcome to Field Report AI</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl text-foreground">Welcome to Field Report AI</CardTitle>
+          <CardDescription className="text-muted-foreground">
             Let's set up your profile to get started
           </CardDescription>
         </CardHeader>
