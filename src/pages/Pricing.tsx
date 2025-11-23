@@ -41,12 +41,12 @@ const Pricing = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-12 bg-transparent">
+      <section className="py-6 bg-transparent">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-white">
+          <h1 className="text-4xl md:text-5xl font-bold mb-3 text-white">
             Choose Your Perfect Plan
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Start with a 14-day free trial. No credit card required. Upgrade, downgrade, or cancel anytime.
           </p>
         </div>
