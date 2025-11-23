@@ -3,9 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { toast } from "@/hooks/use-toast";
-import { Download, Trash2, FileText, Cloud } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { Download, Trash2, FileText, Cloud, Search, Filter } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +36,8 @@ interface SavedReport {
 const SavedReports = () => {
   const navigate = useNavigate();
   const [reports, setReports] = useState<SavedReport[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"recent" | "name" | "size">("recent");
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<SavedReport | null>(null);
@@ -44,11 +53,7 @@ const SavedReports = () => {
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to view saved reports",
-          variant: "destructive",
-        });
+        toast.error("Please sign in to view saved reports");
         navigate("/auth");
         return;
       }
@@ -61,33 +66,24 @@ const SavedReports = () => {
 
       if (error) {
         console.error("Error loading reports:", error);
-        toast({
-          title: "Failed to load reports",
-          description: error.message,
-          variant: "destructive",
-        });
+        toast.error("Failed to load reports");
         return;
       }
 
       setReports(data || []);
     } catch (error) {
       console.error("Error:", error);
-      toast({
-        title: "Error loading reports",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
+      toast.error("An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDownload = async (report: SavedReport) => {
+  const handleDownload = async (report: SavedReport, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
     try {
-      toast({
-        title: "Downloading...",
-        description: "Your report is being downloaded",
-      });
+      toast("Downloading...", { description: "Your report is being downloaded" });
 
       const { data, error } = await supabase.storage
         .from("documents")
@@ -95,11 +91,7 @@ const SavedReports = () => {
 
       if (error) {
         console.error("Download error:", error);
-        toast({
-          title: "Download failed",
-          description: error.message,
-          variant: "destructive",
-        });
+        toast.error("Download failed");
         return;
       }
 
@@ -113,21 +105,15 @@ const SavedReports = () => {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast({
-        title: "Download complete",
-        description: "Your report has been downloaded",
-      });
+      toast.success("Download complete");
     } catch (error) {
       console.error("Download error:", error);
-      toast({
-        title: "Download failed",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
+      toast.error("Download failed");
     }
   };
 
-  const handleDeleteClick = (report: SavedReport) => {
+  const handleDeleteClick = (report: SavedReport, e: React.MouseEvent) => {
+    e.stopPropagation();
     setSelectedReport(report);
     setDeleteDialogOpen(true);
   };
@@ -145,11 +131,7 @@ const SavedReports = () => {
 
       if (storageError) {
         console.error("Storage delete error:", storageError);
-        toast({
-          title: "Delete failed",
-          description: storageError.message,
-          variant: "destructive",
-        });
+        toast.error("Delete failed");
         return;
       }
 
@@ -161,28 +143,15 @@ const SavedReports = () => {
 
       if (dbError) {
         console.error("Database delete error:", dbError);
-        toast({
-          title: "Delete failed",
-          description: dbError.message,
-          variant: "destructive",
-        });
+        toast.error("Delete failed");
         return;
       }
 
-      toast({
-        title: "Report deleted",
-        description: "The report has been removed from your saved reports",
-      });
-
-      // Reload reports
+      toast.success("Report deleted");
       loadSavedReports();
     } catch (error) {
       console.error("Delete error:", error);
-      toast({
-        title: "Delete failed",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
+      toast.error("Delete failed");
     } finally {
       setIsDeleting(false);
       setDeleteDialogOpen(false);
@@ -206,77 +175,145 @@ const SavedReports = () => {
     });
   };
 
-  return (
-    <div className="min-h-screen bg-black">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-border bg-black/95 backdrop-blur-sm">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <BackButton />
-          <h1 className="text-xl font-bold text-white">Saved Reports</h1>
-          <div className="w-20" /> {/* Spacer for centering */}
+  // Highlight matching text
+  const highlightText = (text: string, query: string) => {
+    if (!query.trim()) return text;
+    
+    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    return (
+      <>
+        {parts.map((part, index) => 
+          part.toLowerCase() === query.toLowerCase() ? (
+            <mark key={index} className="bg-primary/30 text-foreground rounded px-0.5">
+              {part}
+            </mark>
+          ) : (
+            part
+          )
+        )}
+      </>
+    );
+  };
+
+  // Filter and sort reports
+  const filteredReports = reports
+    .filter((report) => {
+      const searchLower = searchQuery.toLowerCase();
+      return report.file_name.toLowerCase().includes(searchLower);
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.file_name.localeCompare(b.file_name);
+        case "size":
+          return (b.file_size || 0) - (a.file_size || 0);
+        case "recent":
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+  if (isLoading) {
+    return (
+      <div className="dark min-h-screen bg-background">
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="dark min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
+        <BackButton />
+        <h1 className="text-lg font-bold text-foreground">Saved Reports</h1>
+        <div className="w-[120px]" /> {/* Spacer for centering */}
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 pb-24">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <Cloud className="mb-4 h-16 w-16 animate-pulse text-primary" />
-            <p className="text-muted-foreground">Loading saved reports...</p>
+      <main className="p-4">
+        {/* Search and Filter - Always visible */}
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search saved reports..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 bg-card border-border text-foreground placeholder:text-muted-foreground"
+            />
           </div>
-        ) : reports.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <FileText className="mb-4 h-16 w-16 text-muted-foreground" />
-            <h2 className="mb-2 text-xl font-semibold text-white">No saved reports</h2>
-            <p className="mb-6 text-center text-muted-foreground">
-              Reports you save to cloud will appear here
-            </p>
-            <Button onClick={() => navigate("/dashboard")}>
-              Go to Dashboard
-            </Button>
+          <Select value={sortBy} onValueChange={(value: "recent" | "name" | "size") => setSortBy(value)}>
+            <SelectTrigger className="w-full sm:w-[180px] bg-card border-border text-foreground">
+              <Filter className="mr-2 h-4 w-4" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Most Recent</SelectItem>
+              <SelectItem value="name">File Name</SelectItem>
+              <SelectItem value="size">File Size</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {/* Reports List */}
+        {reports.length === 0 ? (
+          <div className="rounded-lg bg-card p-8 text-center">
+            <Cloud className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <p className="text-muted-foreground">No saved reports yet. Reports you save to cloud will appear here!</p>
+          </div>
+        ) : filteredReports.length === 0 ? (
+          <div className="rounded-lg bg-card p-8 text-center">
+            <Search className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <p className="text-muted-foreground">No reports found matching "{searchQuery}"</p>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {reports.map((report) => (
-              <Card
+          <div className="space-y-3">
+            {filteredReports.map((report) => (
+              <div
                 key={report.id}
-                className="overflow-hidden border-border bg-card transition-transform duration-200 hover:scale-105"
+                className="flex items-start gap-4 rounded-lg bg-card p-4 hover:bg-secondary/50 transition-colors cursor-pointer"
+                onClick={() => handleDownload(report, { stopPropagation: () => {} } as React.MouseEvent)}
               >
-                <div className="p-6">
-                  <div className="mb-4 flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="mb-1 font-semibold text-white line-clamp-2">
-                        {report.file_name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(report.created_at)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatFileSize(report.file_size)}
-                      </p>
+                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <FileText className="h-7 w-7 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-foreground text-lg mb-1 truncate">
+                    {highlightText(report.file_name, searchQuery)}
+                  </h3>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Cloud className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{formatDate(report.created_at)}</span>
                     </div>
-                    <FileText className="h-8 w-8 text-primary" />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleDownload(report)}
-                      className="flex-1"
-                      size="sm"
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Download
-                    </Button>
-                    <Button
-                      onClick={() => handleDeleteClick(report)}
-                      variant="destructive"
-                      size="sm"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <FileText className="h-4 w-4 flex-shrink-0" />
+                      <span>{formatFileSize(report.file_size)}</span>
+                    </div>
                   </div>
                 </div>
-              </Card>
+                <div className="flex gap-2 flex-shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => handleDownload(report, e)}
+                    className="text-primary hover:text-primary hover:bg-primary/10"
+                  >
+                    <Download className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => handleDeleteClick(report, e)}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
             ))}
           </div>
         )}
