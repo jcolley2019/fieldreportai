@@ -214,23 +214,16 @@ const Checklist = () => {
       console.log("Checklist generated:", data);
       toast.success("Checklist generated successfully!");
       
-      // Navigate based on mode
-      if (isSimpleMode) {
-        navigate("/review-summary", { 
-          state: { 
-            simpleMode: true,
-            checklist: data.checklist,
-            images: images.filter(img => !img.deleted).map(img => img.url)
-          } 
-        });
-      } else {
-        navigate("/checklist-confirmation", { 
-          state: { 
-            checklist: data.checklist,
-            images: images.filter(img => !img.deleted).map(img => img.url)
-          } 
-        });
-      }
+      // Navigate to checklist-confirmation with mode and project info
+      const projectReportId = location.state?.reportId || null;
+      navigate("/checklist-confirmation", { 
+        state: { 
+          checklist: data.checklist,
+          images: images.filter(img => !img.deleted).map(img => img.url),
+          simpleMode: isSimpleMode,
+          reportId: projectReportId
+        } 
+      });
     } catch (err) {
       console.error("Error:", err);
       toast.error("An error occurred. Please try again.");
