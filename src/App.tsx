@@ -19,6 +19,7 @@ import Confirmation from "./pages/Confirmation";
 import FinalReport from "./pages/FinalReport";
 import ReviewSummary from "./pages/ReviewSummary";
 import Settings from "./pages/Settings";
+import SavedReports from "./pages/SavedReports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
           <Route path="/confirmation" element={<Confirmation />} />
           <Route path="/final-report" element={<FinalReport />} />
           <Route path="/review-summary" element={<ReviewSummary />} />
+          <Route path="/saved-reports" element={<SavedReports />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
