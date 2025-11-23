@@ -184,7 +184,7 @@ const Index = () => {
         <div className="flex gap-2">
           <Button
             className="bg-primary text-primary-foreground hover:bg-primary/90"
-            onClick={() => window.open('/#pricing', '_blank')}
+            onClick={() => window.location.href = '/#pricing'}
             size="sm"
           >
             <TrendingUp className="h-4 w-4 mr-2" />
