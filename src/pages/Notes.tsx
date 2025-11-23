@@ -158,7 +158,8 @@ const Notes = () => {
   };
 
   const handleDownloadPDF = async () => {
-    if (!organizedNotes) {
+    const content = organizedNotes || noteText;
+    if (!content) {
       toast.error("No notes to download");
       return;
     }
@@ -166,28 +167,8 @@ const Notes = () => {
     try {
       toast.success("Generating PDF...");
 
-      // Create a simple PDF document with the notes
-      const doc = new Document({
-        sections: [{
-          properties: {},
-          children: [
-            new Paragraph({
-              text: `Notes - ${new Date().toLocaleDateString()}`,
-              heading: HeadingLevel.TITLE,
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              text: organizedNotes,
-              spacing: { after: 200 },
-            }),
-          ],
-        }],
-      });
-
-      const blob = await Packer.toBlob(doc);
-      
-      // Convert to PDF-like download (using blob as text)
-      const textBlob = new Blob([organizedNotes], { type: 'text/plain' });
+      // Create a simple text file download
+      const textBlob = new Blob([content], { type: 'text/plain' });
       const url = URL.createObjectURL(textBlob);
       const link = document.createElement('a');
       link.href = url;
@@ -197,15 +178,16 @@ const Notes = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      toast.success("PDF Downloaded!");
+      toast.success("Notes Downloaded!");
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error("Failed to generate PDF");
+      console.error('Error generating file:', error);
+      toast.error("Failed to generate file");
     }
   };
 
   const handleDownloadWord = async () => {
-    if (!organizedNotes) {
+    const content = organizedNotes || noteText;
+    if (!content) {
       toast.error("No notes to download");
       return;
     }
@@ -239,7 +221,7 @@ const Notes = () => {
               spacing: { after: 400 },
             }),
             new Paragraph({
-              text: organizedNotes,
+              text: content,
               spacing: { after: 200 },
             }),
           ],
@@ -267,6 +249,12 @@ const Notes = () => {
   };
 
   const handlePrint = () => {
+    const content = organizedNotes || noteText;
+    if (!content) {
+      toast.error("No notes to print");
+      return;
+    }
+    
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(`
@@ -281,7 +269,7 @@ const Notes = () => {
           </head>
           <body>
             <h1>Notes - ${new Date().toLocaleDateString()}</h1>
-            <pre>${organizedNotes}</pre>
+            <pre>${content}</pre>
           </body>
         </html>
       `);
@@ -291,7 +279,8 @@ const Notes = () => {
   };
 
   const handleSaveToCloud = async () => {
-    if (!organizedNotes) {
+    const content = organizedNotes || noteText;
+    if (!content) {
       toast.error("No notes to save");
       return;
     }
@@ -308,7 +297,7 @@ const Notes = () => {
       toast.success("Saving to cloud...");
 
       // Create a text blob of the notes
-      const blob = new Blob([organizedNotes], { type: 'text/plain' });
+      const blob = new Blob([content], { type: 'text/plain' });
       
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const fileName = `notes_${timestamp}.txt`;
@@ -358,8 +347,13 @@ const Notes = () => {
   };
 
   const handleEmail = () => {
+    const content = organizedNotes || noteText;
+    if (!content) {
+      toast.error("No notes to email");
+      return;
+    }
     const subject = encodeURIComponent(`Notes - ${new Date().toLocaleDateString()}`);
-    const body = encodeURIComponent(organizedNotes);
+    const body = encodeURIComponent(content);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
@@ -471,60 +465,58 @@ const Notes = () => {
         </Button>
       </main>
 
-      {/* Static Bottom Action Bar - Only shown when notes are organized */}
-      {organizedNotes && (
-        <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur-sm p-4 z-20">
-          <h3 className="mb-4 text-center text-lg font-semibold text-foreground">Save & Print</h3>
-          <div className="mb-3 grid grid-cols-2 gap-3">
-            <Button
-              onClick={handleDownloadPDF}
-              disabled={!organizedNotes}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
-            >
-              <Download className="mr-2 h-5 w-5" />
-              Save as PDF
-            </Button>
-            <Button
-              onClick={handleDownloadWord}
-              disabled={!organizedNotes}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
-            >
-              <FileText className="mr-2 h-5 w-5" />
-              Save as Word
-            </Button>
-          </div>
-          <div className="mb-3 grid grid-cols-2 gap-3">
-            <Button
-              onClick={handleSaveToCloud}
-              disabled={!organizedNotes || isSaving}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
-            >
-              <Cloud className="mr-2 h-5 w-5" />
-              {isSaving ? "Saving..." : "Save to Cloud"}
-            </Button>
-            <div className="grid grid-cols-[1fr_auto] gap-3">
-              <Button
-                onClick={handlePrint}
-                disabled={!organizedNotes}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
-              >
-                <Printer className="mr-2 h-5 w-5" />
-                Print
-              </Button>
-              <Button
-                onClick={handleCopyLink}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 w-14 items-center justify-center py-6 transition-transform duration-200 hover:scale-105"
-                title="Copy Link"
-              >
-                <Link2 className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-          <p className="text-center text-xs text-muted-foreground">
-            Notes generated on {new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
-          </p>
+      {/* Static Bottom Action Bar - Always Visible */}
+      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur-sm p-4 z-20">
+        <h3 className="mb-4 text-center text-lg font-semibold text-foreground">Save & Print</h3>
+        <div className="mb-3 grid grid-cols-2 gap-3">
+          <Button
+            onClick={handleDownloadPDF}
+            disabled={!noteText && !organizedNotes}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
+          >
+            <Download className="mr-2 h-5 w-5" />
+            Save as PDF
+          </Button>
+          <Button
+            onClick={handleDownloadWord}
+            disabled={!noteText && !organizedNotes}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
+          >
+            <FileText className="mr-2 h-5 w-5" />
+            Save as Word
+          </Button>
         </div>
-      )}
+        <div className="mb-3 grid grid-cols-2 gap-3">
+          <Button
+            onClick={handleSaveToCloud}
+            disabled={(!noteText && !organizedNotes) || isSaving}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
+          >
+            <Cloud className="mr-2 h-5 w-5" />
+            {isSaving ? "Saving..." : "Save to Cloud"}
+          </Button>
+          <div className="grid grid-cols-[1fr_auto] gap-3">
+            <Button
+              onClick={handlePrint}
+              disabled={!noteText && !organizedNotes}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 py-6 text-base font-semibold transition-transform duration-200 hover:scale-105 disabled:opacity-50"
+            >
+              <Printer className="mr-2 h-5 w-5" />
+              Print
+            </Button>
+            <Button
+              onClick={handleCopyLink}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 w-14 items-center justify-center py-6 transition-transform duration-200 hover:scale-105"
+              title="Copy Link"
+            >
+              <Link2 className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+        <p className="text-center text-xs text-muted-foreground">
+          Notes generated on {new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+        </p>
+      </div>
 
       {/* Options Dialog */}
       <Dialog open={showOptionsDialog} onOpenChange={setShowOptionsDialog}>
