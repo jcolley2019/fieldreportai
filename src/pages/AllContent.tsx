@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +62,7 @@ type ContentItem = Report | Checklist;
 
 const AllContent = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [reports, setReports] = useState<Report[]>([]);
   const [checklists, setChecklists] = useState<Checklist[]>([]);
@@ -679,7 +681,7 @@ const AllContent = () => {
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
           <BackButton fallbackPath="/dashboard" />
-          <h1 className="text-lg font-bold text-foreground">All Content</h1>
+          <h1 className="text-lg font-bold text-foreground">{t('allContent.title')}</h1>
           <SettingsButton />
         </div>
       </header>
@@ -693,7 +695,7 @@ const AllContent = () => {
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Download className="mr-2 h-4 w-4" />
-            Export PDF
+            {t('allContent.exportPdf')}
           </Button>
           <Button
             onClick={() => handleExportAll('docx')}
@@ -701,7 +703,7 @@ const AllContent = () => {
             variant="outline"
           >
             <Download className="mr-2 h-4 w-4" />
-            Export Word
+            {t('allContent.exportWord')}
           </Button>
           <Button
             onClick={() => setShowEmailDialog(true)}
@@ -709,7 +711,7 @@ const AllContent = () => {
             variant="outline"
           >
             <Mail className="mr-2 h-4 w-4" />
-            Email
+            {t('allContent.email')}
           </Button>
         </div>
 
@@ -719,7 +721,7 @@ const AllContent = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search by project, customer, job number..."
+              placeholder={t('allContent.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 bg-card border-border"
@@ -757,15 +759,15 @@ const AllContent = () => {
         <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)} className="w-full">
           <TabsList className="grid w-full grid-cols-3 bg-muted mb-4">
             <TabsTrigger value="all">
-              All ({reports.length + checklists.length})
+              {t('allContent.all')} ({reports.length + checklists.length})
             </TabsTrigger>
             <TabsTrigger value="reports" className="gap-2">
               <FileText className="h-4 w-4" />
-              Reports ({reports.length})
+              {t('allContent.reports')} ({reports.length})
             </TabsTrigger>
             <TabsTrigger value="checklists" className="gap-2">
               <ListChecks className="h-4 w-4" />
-              Checklists ({checklists.length})
+              {t('allContent.checklists')} ({checklists.length})
             </TabsTrigger>
           </TabsList>
 
@@ -777,7 +779,7 @@ const AllContent = () => {
                   <p className="text-muted-foreground text-center">
                     {searchQuery || dateFilter !== "all" 
                       ? "No content matches your filters"
-                      : "No content yet. Create your first project to get started!"}
+                      : t('allContent.emptyState')}
                   </p>
                 </CardContent>
               </Card>
@@ -945,7 +947,7 @@ const AllContent = () => {
               onClick={() => setShowEmailDialog(false)}
               disabled={isSendingEmail}
             >
-              Cancel
+              {t('common.back')}
             </Button>
             <Button
               onClick={handleEmailExport}

@@ -537,6 +537,17 @@
   },
   "allContent": {
     "title": "Todo el Contenido",
+    "exportPdf": "Exportar PDF",
+    "exportWord": "Exportar Word",
+    "email": "Correo Electrónico",
+    "searchPlaceholder": "Buscar por proyecto, cliente, número de trabajo...",
+    "all": "Todo",
+    "reports": "Informes",
+    "checklists": "Listas de Verificación",
+    "emptyState": "No hay contenido aún. ¡Crea tu primer proyecto para comenzar!"
+  },
+  "allContent": {
+    "title": "Todo el Contenido",
     "exportAll": "Exportar Todo",
     "searchPlaceholder": "Buscar contenido...",
     "filterByType": "Filtrar por tipo",
