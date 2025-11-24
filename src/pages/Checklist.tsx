@@ -570,7 +570,7 @@ const Checklist = () => {
   return (
     <div className="dark min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 px-4 py-2 backdrop-blur-sm">
+      <header className="sticky top-0 z-10 bg-background/80 px-4 py-1 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <BackButton />
           <div className="w-10" /> {/* Spacer for alignment */}
