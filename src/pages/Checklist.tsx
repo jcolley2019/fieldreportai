@@ -269,38 +269,7 @@ const Checklist = () => {
 
   const handleLiveCameraSelect = () => {
     setShowCameraDialog(false);
-    handleVoiceRecord(); // Start audio + photo recording
-  };
-
-  const handleAudioOnlySelect = async () => {
-    setShowCameraDialog(false);
-    // Start audio-only recording without opening camera
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      const chunks: Blob[] = [];
-
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunks.push(e.data);
-        }
-      };
-
-      recorder.onstop = async () => {
-        const audioBlob = new Blob(chunks, { type: 'audio/webm' });
-        await transcribeAudio(audioBlob);
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      recorder.start();
-      setMediaRecorder(recorder);
-      setAudioChunks(chunks);
-      setIsRecording(true);
-      toast.success(t('checklist.recordingStarted'));
-    } catch (error) {
-      console.error("Error accessing microphone:", error);
-      toast.error(t('checklist.microphoneError'));
-    }
+    setShowLiveCamera(true);
   };
 
   const handleLiveCameraCapture = (files: File[]) => {
@@ -333,46 +302,6 @@ const Checklist = () => {
     toast.success(t('checklist.allDiscarded'));
   };
 
-  const handleVoiceRecord = async () => {
-    if (!isRecording) {
-      // Start recording and open camera for Audio + Photo mode
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recorder = new MediaRecorder(stream);
-        const chunks: Blob[] = [];
-
-        recorder.ondataavailable = (e) => {
-          if (e.data.size > 0) {
-            chunks.push(e.data);
-          }
-        };
-
-        recorder.onstop = async () => {
-          const audioBlob = new Blob(chunks, { type: 'audio/webm' });
-          await transcribeAudio(audioBlob);
-          stream.getTracks().forEach(track => track.stop());
-        };
-
-        recorder.start();
-        setMediaRecorder(recorder);
-        setAudioChunks(chunks);
-        setIsRecording(true);
-        setShowLiveCamera(true); // Open camera for Audio + Photo
-        toast.success(t('checklist.recordingStarted'));
-      } catch (error) {
-        console.error("Error accessing microphone:", error);
-        toast.error(t('checklist.microphoneError'));
-      }
-    } else {
-      // Stop recording
-      if (mediaRecorder) {
-        mediaRecorder.stop();
-        setMediaRecorder(null);
-        setIsRecording(false);
-        toast.success(t('checklist.processingAudio'));
-      }
-    }
-  };
 
   const transcribeAudio = async (audioBlob: Blob) => {
     try {
@@ -639,10 +568,7 @@ const Checklist = () => {
               onClick={() => setShowCameraDialog(true)}
               className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-all hover:bg-primary/30 shadow-xl shadow-primary/50 animate-pulse ring-4 ring-primary/30"
             >
-              <div className="flex items-center gap-3">
-                <Camera className="h-16 w-16" />
-                <Mic className="h-14 w-14" />
-              </div>
+              <Camera className="h-16 w-16" />
               <p className="text-base font-bold text-foreground drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 {t('checklist.takePhotos')}
               </p>
@@ -782,8 +708,6 @@ const Checklist = () => {
         onCameraSelect={handleCameraSelect}
         onGallerySelect={handleGallerySelect}
         onLiveCameraSelect={handleLiveCameraSelect}
-        onAudioOnlySelect={handleAudioOnlySelect}
-        showAudioOptions={true}
       />
 
       {/* Live Camera Capture */}
@@ -791,7 +715,6 @@ const Checklist = () => {
         open={showLiveCamera}
         onOpenChange={setShowLiveCamera}
         onCapture={handleLiveCameraCapture}
-        isRecording={false}
       />
 
       {/* Full-size Image Viewer */}
