@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, X, Check, Pause, Play, MicOff } from "lucide-react";
+import { Camera, X, Check, Pause, Play } from "lucide-react";
 import { toast } from "sonner";
 
 interface LiveCameraCaptureProps {
@@ -28,6 +28,8 @@ export const LiveCameraCapture = ({
   const streamRef = useRef<MediaStream | null>(null);
   const [capturedImages, setCapturedImages] = useState<File[]>([]);
   const [isReady, setIsReady] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -41,6 +43,37 @@ export const LiveCameraCapture = ({
       stopCamera();
     };
   }, [open]);
+
+  // Timer effect for recording duration
+  useEffect(() => {
+    if (isRecording && !isPaused) {
+      timerRef.current = setInterval(() => {
+        setRecordingDuration((prev) => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+
+    // Reset duration when recording stops
+    if (!isRecording) {
+      setRecordingDuration(0);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [isRecording, isPaused]);
+
+  const formatDuration = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const startCamera = async () => {
     try {
@@ -147,7 +180,8 @@ export const LiveCameraCapture = ({
             {isRecording && (
               <div className="absolute top-4 left-4 flex items-center gap-3 bg-destructive text-white px-6 py-3 rounded-full text-lg font-bold backdrop-blur-sm shadow-lg shadow-destructive/50 animate-in fade-in">
                 <div className={`h-4 w-4 rounded-full bg-white ${isPaused ? '' : 'animate-pulse'}`}></div>
-                {isPaused ? 'Paused' : 'Recording'}
+                <span>{isPaused ? 'Paused' : 'Recording'}</span>
+                <span className="font-mono">{formatDuration(recordingDuration)}</span>
               </div>
             )}
 
