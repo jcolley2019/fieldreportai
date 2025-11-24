@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { differenceInDays, parseISO } from "date-fns";
 import { Clock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ interface TrialBannerProps {
 export const TrialBanner = ({ trialStartDate, onDismiss }: TrialBannerProps) => {
   const [daysRemaining, setDaysRemaining] = useState(0);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const calculateDaysRemaining = () => {
@@ -47,7 +49,7 @@ export const TrialBanner = ({ trialStartDate, onDismiss }: TrialBannerProps) => 
               ) : daysRemaining === 1 ? (
                 <span className="text-destructive font-medium">1 day remaining</span>
               ) : (
-                <span>{daysRemaining} days remaining</span>
+                <span>{daysRemaining} {t('dashboard.trialDaysRemaining')}</span>
               )}
             </p>
           </div>
