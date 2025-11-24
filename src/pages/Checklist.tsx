@@ -50,6 +50,8 @@ const Checklist = () => {
   const location = useLocation();
   const { t, i18n } = useTranslation();
   const isSimpleMode = location.state?.simpleMode || false;
+  const projectName = location.state?.projectName || null;
+  const jobNumber = location.state?.jobNumber || null;
   const [images, setImages] = useState<ImageItem[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [imageScale, setImageScale] = useState(1);
@@ -577,15 +579,25 @@ const Checklist = () => {
       </header>
 
       <main className="flex-1 px-4 pt-4 pb-36">
-        {/* Project Info Pills */}
-        <div className="flex flex-wrap gap-2 pb-4">
-          <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
-            <p className="text-xs font-medium text-muted-foreground">{t('checklist.project')}: Alpha Site</p>
+        {/* Project Info Pills - Only show if there's project data */}
+        {(projectName || jobNumber) && (
+          <div className="flex flex-wrap gap-2 pb-4">
+            {projectName && (
+              <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {t('checklist.project')}: {projectName}
+                </p>
+              </div>
+            )}
+            {jobNumber && (
+              <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {t('checklist.job')}: {jobNumber}
+                </p>
+              </div>
+            )}
           </div>
-          <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
-            <p className="text-xs font-medium text-muted-foreground">{t('checklist.job')}: 23-001</p>
-          </div>
-        </div>
+        )}
 
         <div className="flex flex-col gap-y-6">
           {/* Upload/Camera Section */}
