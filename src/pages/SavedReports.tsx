@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { BackButton } from "@/components/BackButton";
+import { SettingsButton } from "@/components/SettingsButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -229,7 +230,7 @@ const SavedReports = () => {
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
         <BackButton />
         <h1 className="text-lg font-bold text-foreground">Saved Reports</h1>
-        <div className="w-[120px]" /> {/* Spacer for centering */}
+        <SettingsButton />
       </header>
 
       <main className="p-4">

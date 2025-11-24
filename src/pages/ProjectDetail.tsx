@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
+import { SettingsButton } from "@/components/SettingsButton";
 import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -206,7 +207,7 @@ const ProjectDetail = () => {
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm border-b border-border">
         <BackButton fallbackPath="/projects" />
         <h1 className="text-lg font-bold text-foreground">Project Details</h1>
-        <div className="w-[80px]"></div>
+        <SettingsButton />
       </header>
 
       <main className="p-4 pb-20">

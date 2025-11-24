@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
+import { SettingsButton } from "@/components/SettingsButton";
 import { Mic, MicOff, Building2, Hash, User, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -174,7 +175,7 @@ const NewProject = () => {
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
         <BackButton />
         <h1 className="text-lg font-bold text-foreground">New Project/Customer</h1>
-        <div className="w-[80px]"></div> {/* Spacer for centering title */}
+        <SettingsButton />
       </header>
 
       <main className="flex min-h-screen flex-col px-4 pb-8 pt-4">

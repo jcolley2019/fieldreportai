@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
+import { SettingsButton } from "@/components/SettingsButton";
 import { Check, CheckCircle2, FileText, Cloud, Printer, Link2, Download, Plus, Loader2, ChevronDown, Link } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
@@ -410,7 +411,7 @@ const ChecklistConfirmation = () => {
         <h2 className="flex-1 text-center text-lg font-bold text-foreground">
           Confirmation
         </h2>
-        <div className="w-[80px]"></div>
+        <SettingsButton />
       </div>
 
       {/* Success Icon and Message */}

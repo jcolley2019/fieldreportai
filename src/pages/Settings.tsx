@@ -374,12 +374,11 @@ const Settings = () => {
   return (
     <div className="dark min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center justify-between bg-background p-4 pb-2">
-        <BackButton />
-        <h1 className="flex-1 text-center text-lg font-bold text-foreground">
+      <header className="sticky top-0 z-10 flex items-center justify-center bg-background p-4 pb-2">
+        <BackButton className="absolute left-4" />
+        <h1 className="text-lg font-bold text-foreground">
           Settings
         </h1>
-        <div className="w-[80px]"></div>
       </header>
 
       <main className="flex-grow pb-8">

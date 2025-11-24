@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BackButton } from "@/components/BackButton";
+import { SettingsButton } from "@/components/SettingsButton";
 import { FileText, ListChecks, StickyNote, Search, Filter, Calendar, Building2, Hash, User as UserIcon, Download, Mail, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -682,7 +683,7 @@ const AllContent = () => {
         <div className="flex items-center justify-between px-4 py-3">
           <BackButton fallbackPath="/dashboard" />
           <h1 className="text-lg font-bold text-foreground">All Content</h1>
-          <div className="w-[80px]"></div>
+          <SettingsButton />
         </div>
       </header>
 

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
+import { SettingsButton } from "@/components/SettingsButton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
@@ -459,7 +460,7 @@ const CaptureScreen = () => {
         <div className="flex items-center justify-between">
           <BackButton />
           <h1 className="text-lg font-semibold text-foreground">Capture Photos and Video</h1>
-          <div className="w-[80px]" /> {/* Spacer for alignment */}
+          <SettingsButton />
         </div>
       </header>
 

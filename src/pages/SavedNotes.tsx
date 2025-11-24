@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
+import { SettingsButton } from "@/components/SettingsButton";
 import { Textarea } from "@/components/ui/textarea";
 import { Edit2, Trash2, Sparkles, Save, X, Search, Filter } from "lucide-react";
 import { toast } from "sonner";
@@ -254,7 +255,7 @@ const SavedNotes = () => {
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm border-b border-border">
         <BackButton />
         <h1 className="text-lg font-bold text-foreground">Saved Notes</h1>
-        <div className="w-[80px]" />
+        <SettingsButton />
       </header>
 
       <main className="p-4">

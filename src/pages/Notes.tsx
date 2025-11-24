@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
+import { SettingsButton } from "@/components/SettingsButton";
 import { Textarea } from "@/components/ui/textarea";
 import { Mic, Save, Download, Mail, Printer, FileText, Plus, Link2, Cloud, ChevronDown, Link, Loader2, Check } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -629,7 +630,7 @@ const Notes = () => {
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
         <BackButton />
         <h1 className="text-lg font-bold text-foreground">Add Note</h1>
-        <div className="w-[80px]" />
+        <SettingsButton />
       </header>
 
       <main className="p-4 pb-32">

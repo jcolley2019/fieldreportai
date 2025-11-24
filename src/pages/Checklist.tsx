@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
+import { SettingsButton } from "@/components/SettingsButton";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight } from "lucide-react";
@@ -364,7 +365,7 @@ const Checklist = () => {
         <div className="flex items-center justify-between">
           <BackButton />
           <h1 className="text-lg font-semibold text-foreground">Lets Create a Checklist</h1>
-          <div className="w-[80px]" /> {/* Spacer for alignment */}
+          <SettingsButton />
         </div>
       </header>
 
