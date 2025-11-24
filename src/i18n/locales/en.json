@@ -130,8 +130,10 @@
   "captureScreen": {
     "title": "Capture Photos and Video",
     "takePhotos": "Tap to Take Photos/Video or to upload from gallery",
+    "takePhotosWithVoice": "Tap to Take Photos/Video with Voice Recording",
     "notes": "Notes",
     "checklist": "Checklist",
+    "addNote": "Add Note",
     "recording": "Recording",
     "paused": "Paused",
     "fieldNotes": "Field Notes",
@@ -145,8 +147,14 @@
     "imageDeleted": "Image Deleted",
     "undo": "Undo",
     "generate": "Generate Report",
+    "generateSummary": "Generate Summary",
+    "generating": "Generating...",
     "discardAll": "Discard All",
-    "project": "Project"
+    "project": "Project",
+    "generatingTitle": "Generating Summary",
+    "analyzingContent": "Analyzing your photos and notes with AI...",
+    "estimatedTime": "This usually takes 10-20 seconds",
+    "addContentFirst": "Please add some content first"
   },
   "newProject": {
     "title": "New Project/Customer",

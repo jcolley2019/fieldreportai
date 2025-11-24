@@ -130,8 +130,10 @@
   "captureScreen": {
     "title": "Capturar Fotos y Video",
     "takePhotos": "Toca para Tomar Fotos/Video o para subir desde la galería",
+    "takePhotosWithVoice": "Toca para Tomar Fotos/Video con Grabación de Voz",
     "notes": "Notas",
     "checklist": "Lista de Verificación",
+    "addNote": "Agregar Nota",
     "recording": "Grabando",
     "paused": "Pausado",
     "fieldNotes": "Notas de Campo",
@@ -145,8 +147,14 @@
     "imageDeleted": "Imagen Eliminada",
     "undo": "Deshacer",
     "generate": "Generar Informe",
+    "generateSummary": "Generar Resumen",
+    "generating": "Generando...",
     "discardAll": "Descartar Todo",
-    "project": "Proyecto"
+    "project": "Proyecto",
+    "generatingTitle": "Generando Resumen",
+    "analyzingContent": "Analizando tus fotos y notas con IA...",
+    "estimatedTime": "Esto generalmente toma 10-20 segundos",
+    "addContentFirst": "Por favor agrega contenido primero"
   },
   "newProject": {
     "title": "Nuevo Proyecto/Cliente",
