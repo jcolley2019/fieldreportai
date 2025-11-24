@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/accordion";
 import logo from "@/assets/field-report-ai-logo.png";
 import { PricingSection } from "@/components/PricingSection";
-import { LanguageSelector } from "@/components/LanguageSelector";
 
 const Landing = () => {
   const features = [
@@ -131,31 +130,22 @@ const Landing = () => {
     <div className="min-h-screen bg-background dark">
       {/* Header */}
       <header className="border-b border-border sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <img src={logo} alt="Field Report AI" className="h-16 w-auto" />
-              <span className="font-bold text-xl text-white">Field Report AI</span>
-            </div>
-            <div className="hidden md:flex items-start gap-6">
-              <nav className="flex items-center gap-6 pt-2">
-                <a href="#features" className="text-sm text-foreground/80 hover:text-foreground">Features</a>
-                <a href="#pricing" className="text-sm text-foreground/80 hover:text-foreground">Pricing</a>
-                <a href="#faq" className="text-sm text-foreground/80 hover:text-foreground">FAQ</a>
-                <Link to="/auth">
-                  <Button variant="secondary" size="sm" className="border-2 border-primary font-bold">Sign In</Button>
-                </Link>
-              </nav>
-              <div className="flex flex-col items-end gap-2">
-                <Link to="/auth">
-                  <Button size="sm">Get Started Free</Button>
-                </Link>
-                <div className="p-2 rounded-lg bg-accent/50 border border-border/50 backdrop-blur-sm">
-                  <LanguageSelector />
-                </div>
-              </div>
-            </div>
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="Field Report AI" className="h-16 w-auto" />
+            <span className="font-bold text-xl text-white">Field Report AI</span>
           </div>
+          <nav className="hidden md:flex items-center gap-6">
+            <a href="#features" className="text-sm text-foreground/80 hover:text-foreground">Features</a>
+            <a href="#pricing" className="text-sm text-foreground/80 hover:text-foreground">Pricing</a>
+            <a href="#faq" className="text-sm text-foreground/80 hover:text-foreground">FAQ</a>
+            <Link to="/auth">
+              <Button variant="secondary" size="sm" className="border-2 border-primary font-bold">Sign In</Button>
+            </Link>
+            <Link to="/auth">
+              <Button size="sm">Get Started Free</Button>
+            </Link>
+          </nav>
         </div>
       </header>
 
