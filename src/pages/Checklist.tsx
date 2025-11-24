@@ -103,6 +103,108 @@ const Checklist = () => {
     });
   };
 
+  const handleLoadChecklist = async (checklistId: string) => {
+    try {
+      toast.info(i18n.language === 'es' ? 'Cargando lista...' : 'Loading checklist...');
+      
+      // Fetch the full checklist with all items
+      const { data: checklist, error: checklistError } = await supabase
+        .from('checklists')
+        .select(`
+          id,
+          title,
+          report_id,
+          checklist_items (
+            id,
+            text,
+            category,
+            priority,
+            completed
+          )
+        `)
+        .eq('id', checklistId)
+        .single();
+
+      if (checklistError) {
+        console.error("Error fetching checklist:", checklistError);
+        toast.error(i18n.language === 'es' ? 'Error al cargar la lista' : 'Failed to load checklist');
+        return;
+      }
+
+      if (!checklist) {
+        toast.error(i18n.language === 'es' ? 'Lista no encontrada' : 'Checklist not found');
+        return;
+      }
+
+      // Fetch associated media if there's a report_id
+      let imageUrls: string[] = [];
+      if (checklist.report_id) {
+        const { data: media } = await supabase
+          .from('media')
+          .select('file_path')
+          .eq('report_id', checklist.report_id);
+
+        if (media && media.length > 0) {
+          // Get public URLs for the images
+          imageUrls = await Promise.all(
+            media.map(async (m) => {
+              const { data } = supabase.storage
+                .from('media')
+                .getPublicUrl(m.file_path);
+              return data.publicUrl;
+            })
+          );
+        }
+      }
+
+      // Format the checklist data for the confirmation page
+      const formattedChecklist = {
+        title: checklist.title,
+        sections: [] as any[]
+      };
+
+      // Group items by category
+      const itemsByCategory: { [key: string]: any[] } = {};
+      
+      if (checklist.checklist_items && Array.isArray(checklist.checklist_items)) {
+        checklist.checklist_items.forEach((item: any) => {
+          if (!itemsByCategory[item.category]) {
+            itemsByCategory[item.category] = [];
+          }
+          itemsByCategory[item.category].push({
+            id: item.id,
+            text: item.text,
+            priority: item.priority,
+            completed: item.completed
+          });
+        });
+
+        // Convert to sections format
+        formattedChecklist.sections = Object.entries(itemsByCategory).map(([category, items]) => ({
+          category,
+          items
+        }));
+      }
+
+      toast.success(i18n.language === 'es' ? '¡Lista cargada!' : 'Checklist loaded!');
+
+      // Navigate to checklist confirmation page with the loaded data
+      navigate("/checklist-confirmation", { 
+        state: { 
+          checklist: formattedChecklist,
+          images: imageUrls,
+          simpleMode: isSimpleMode,
+          reportId: checklist.report_id,
+          checklistId: checklist.id,
+          isExisting: true // Flag to indicate this is a loaded checklist
+        } 
+      });
+    } catch (error) {
+      console.error("Error loading checklist:", error);
+      toast.error(i18n.language === 'es' ? 'Error al cargar la lista' : 'Failed to load checklist');
+    }
+  };
+
   const handleImageUpload = (files: FileList | null) => {
     if (!files) return;
 
@@ -520,6 +622,7 @@ const Checklist = () => {
                   previousChecklists.map((checklist) => (
                     <div 
                       key={checklist.id}
+                      onClick={() => handleLoadChecklist(checklist.id)}
                       className="rounded-lg border border-border bg-secondary p-4 hover:bg-secondary/80 transition-colors cursor-pointer"
                     >
                       <h4 className="font-medium text-foreground mb-2">{checklist.title}</h4>
