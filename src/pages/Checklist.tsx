@@ -47,7 +47,7 @@ const Checklist = () => {
     }));
 
     setImages(prev => [...prev, ...newImages]);
-    toast.success(`${files.length} image${files.length > 1 ? 's' : ''} added`);
+    toast.success(`${files.length} ${files.length > 1 ? t('checklist.imagesAdded') : t('checklist.imageAdded')}`);
   };
 
   const handleCameraSelect = () => {
@@ -80,19 +80,19 @@ const Checklist = () => {
     setImages(prev => prev.map(img => 
       img.id === id ? { ...img, deleted: true } : img
     ));
-    toast.success("Image deleted. Tap undo to restore.");
+    toast.success(t('checklist.imageDeletedToast'));
   };
 
   const undoDelete = (id: string) => {
     setImages(prev => prev.map(img => 
       img.id === id ? { ...img, deleted: false } : img
     ));
-    toast.success("Image restored");
+    toast.success(t('checklist.imageRestored'));
   };
 
   const discardAll = () => {
     setImages([]);
-    toast.success("All content discarded");
+    toast.success(t('checklist.allDiscarded'));
   };
 
   const handleVoiceRecord = async () => {
@@ -119,10 +119,10 @@ const Checklist = () => {
         setMediaRecorder(recorder);
         setAudioChunks(chunks);
         setIsRecording(true);
-        toast.success("Recording started - tap again to stop");
+        toast.success(t('checklist.recordingStarted'));
       } catch (error) {
         console.error("Error accessing microphone:", error);
-        toast.error("Could not access microphone");
+        toast.error(t('checklist.microphoneError'));
       }
     } else {
       // Stop recording
@@ -130,7 +130,7 @@ const Checklist = () => {
         mediaRecorder.stop();
         setMediaRecorder(null);
         setIsRecording(false);
-        toast.success("Processing audio...");
+        toast.success(t('checklist.processingAudio'));
       }
     }
   };
@@ -152,29 +152,29 @@ const Checklist = () => {
 
         if (error) {
           console.error("Transcription error:", error);
-          toast.error("Failed to transcribe audio");
+          toast.error(t('checklist.transcribeFailed'));
           return;
         }
 
         if (data?.text) {
           // Append transcribed text to description
-          toast.success("Audio transcribed successfully!");
+          toast.success(t('checklist.audioTranscribed'));
         }
       };
     } catch (error) {
       console.error("Error transcribing audio:", error);
-      toast.error("Failed to process audio");
+      toast.error(t('checklist.audioProcessFailed'));
     }
   };
 
   const generateSummary = async () => {
     if (images.filter(img => !img.deleted).length === 0) {
-      toast.error("Please add some content first");
+      toast.error(t('checklist.addContentFirst'));
       return;
     }
 
     setIsRecording(true); // Use as loading state
-    toast.success("Generating checklist with AI...");
+    toast.success(t('checklist.generatingChecklist'));
 
     try {
       // Convert images to base64
@@ -204,18 +204,18 @@ const Checklist = () => {
       if (error) {
         console.error("Error generating checklist:", error);
         if (error.message.includes("Rate limit")) {
-          toast.error("Rate limit exceeded. Please try again later.");
+          toast.error(t('checklist.rateLimitError'));
         } else if (error.message.includes("Payment required")) {
-          toast.error("AI credits depleted. Please add credits to continue.");
+          toast.error(t('checklist.creditsError'));
         } else {
-          toast.error("Failed to generate checklist. Please try again.");
+          toast.error(t('checklist.generateFailed'));
         }
         setIsRecording(false);
         return;
       }
 
       console.log("Checklist generated:", data);
-      toast.success("Checklist generated successfully!");
+      toast.success(t('checklist.checklistGenerated'));
       
       // Navigate to checklist-confirmation with mode and project info
       const projectReportId = location.state?.reportId || null;
@@ -229,7 +229,7 @@ const Checklist = () => {
       });
     } catch (err) {
       console.error("Error:", err);
-      toast.error("An error occurred. Please try again.");
+      toast.error(t('checklist.errorOccurred'));
     } finally {
       setIsRecording(false);
     }
@@ -426,18 +426,18 @@ const Checklist = () => {
                 <Mic className="h-8 w-8" />
               </button>
               {isRecording ? (
-                <p className="text-sm text-muted-foreground animate-pulse">Recording... tap to stop</p>
+                <p className="text-sm text-muted-foreground animate-pulse">{t('checklist.recordingStatus')}</p>
               ) : (
                 <div className="text-center">
-                  <p className="text-sm font-medium text-foreground mb-1">Press Record to describe checklist items</p>
-                  <p className="text-xs text-muted-foreground">Tap again to stop. You can record multiple times to add more details.</p>
+                  <p className="text-sm font-medium text-foreground mb-1">{t('checklist.recordInstructions')}</p>
+                  <p className="text-xs text-muted-foreground">{t('checklist.recordDetails')}</p>
                 </div>
               )}
             </div>
 
             {/* Previous Checklists Section */}
             <div className="w-full mt-8">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Previous Checklists</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-4">{t('checklist.previousChecklists')}</h3>
               <div className="space-y-3">
                 {/* Placeholder for previous checklists - will be populated with actual data */}
                 <div className="rounded-lg border border-border bg-secondary p-4 hover:bg-secondary/80 transition-colors cursor-pointer">
@@ -471,13 +471,13 @@ const Checklist = () => {
                         <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-lg bg-destructive/80 px-2 text-center text-white">
                           <Trash2 className="h-5 w-5" />
                           <p className="text-[10px] font-semibold leading-tight">
-                            Image Deleted
+                            {t('checklist.imageDeleted')}
                           </p>
                           <button
                             onClick={() => undoDelete(image.id)}
                             className="mt-1 rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold backdrop-blur-sm hover:bg-white/30"
                           >
-                            Undo
+                            {t('checklist.undo')}
                           </button>
                         </div>
                       ) : (
@@ -509,7 +509,7 @@ const Checklist = () => {
                   onClick={discardAll}
                   className="text-sm font-medium text-destructive transition-colors hover:text-destructive/80"
                 >
-                  Discard All
+                  {t('checklist.discardAll')}
                 </button>
               </div>
             )}
@@ -524,7 +524,7 @@ const Checklist = () => {
           disabled={isRecording}
           className="w-full rounded-xl bg-primary px-4 py-6 text-base font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
         >
-          {isRecording ? "Generating with AI..." : "Generate Checklist"}
+          {isRecording ? t('checklist.generatingWithAI') : t('checklist.generateChecklist')}
         </Button>
       </div>
 
