@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
@@ -23,6 +24,7 @@ import {
 const Notes = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const isSimpleMode = location.state?.simpleMode || false;
   const projectReportId = location.state?.reportId || null;
   const [noteText, setNoteText] = useState("");

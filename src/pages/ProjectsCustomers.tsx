@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
@@ -27,6 +28,7 @@ interface Project {
 
 const ProjectsCustomers = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [projects, setProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"recent" | "name" | "customer">("recent");
@@ -71,7 +73,7 @@ const ProjectsCustomers = () => {
   };
 
   const handleDeleteProject = async (projectId: string, projectName: string) => {
-    if (!confirm(`Are you sure you want to delete "${projectName}"? This will also delete all associated checklists and media.`)) {
+    if (!confirm(`${t('projects.deleteConfirm')} "${projectName}"? This will also delete all associated checklists and media.`)) {
       return;
     }
 
@@ -149,7 +151,7 @@ const ProjectsCustomers = () => {
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
         <BackButton />
-        <h1 className="text-lg font-bold text-foreground">Projects & Customers</h1>
+        <h1 className="text-lg font-bold text-foreground">{t('projects.title')}</h1>
         <div className="flex items-center gap-2">
           <Button
             onClick={() => navigate("/new-project")}
@@ -157,7 +159,7 @@ const ProjectsCustomers = () => {
             className="gap-2"
           >
             <Plus className="h-4 w-4" />
-            Create Project
+            {t('dashboard.createProject')}
           </Button>
           <SettingsButton />
         </div>
@@ -170,7 +172,7 @@ const ProjectsCustomers = () => {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search projects, customers, or job numbers..."
+              placeholder={t('projects.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 bg-card border-border text-foreground placeholder:text-muted-foreground"
@@ -182,9 +184,9 @@ const ProjectsCustomers = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="recent">Most Recent</SelectItem>
-              <SelectItem value="name">Project Name</SelectItem>
-              <SelectItem value="customer">Customer Name</SelectItem>
+              <SelectItem value="recent">{t('projects.sortRecent')}</SelectItem>
+              <SelectItem value="name">{t('projects.sortName')}</SelectItem>
+              <SelectItem value="customer">{t('projects.sortCustomer')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -193,12 +195,12 @@ const ProjectsCustomers = () => {
         {projects.length === 0 ? (
           <div className="rounded-lg bg-card p-8 text-center">
             <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <p className="text-muted-foreground">No projects yet. Create your first project to get started!</p>
+            <p className="text-muted-foreground">{t('projects.noProjects')}</p>
           </div>
         ) : filteredProjects.length === 0 ? (
           <div className="rounded-lg bg-card p-8 text-center">
             <Search className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <p className="text-muted-foreground">No projects found matching "{searchQuery}"</p>
+            <p className="text-muted-foreground">{t('projects.noMatches')} "{searchQuery}"</p>
           </div>
         ) : (
             <div className="space-y-3">
@@ -226,7 +228,7 @@ const ProjectsCustomers = () => {
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <ListChecks className="h-4 w-4 flex-shrink-0" />
-                        <span>{project.checklist_count} checklist{project.checklist_count !== 1 ? 's' : ''}</span>
+                        <span>{project.checklist_count} {project.checklist_count !== 1 ? t('dashboard.checklists') : t('dashboard.checklist')}</span>
                       </div>
                     </div>
                   </div>

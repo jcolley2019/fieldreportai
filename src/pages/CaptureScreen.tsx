@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
@@ -22,6 +23,7 @@ interface ImageItem {
 const CaptureScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const isSimpleMode = location.state?.simpleMode || false;
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<ImageItem[]>([]);
@@ -49,7 +51,7 @@ const CaptureScreen = () => {
     }));
 
     setImages(prev => [...prev, ...newImages]);
-    toast.success(`${files.length} image${files.length > 1 ? 's' : ''} added`);
+    toast.success(`${files.length} ${files.length > 1 ? t('common.imagesAdded') : t('common.imageAdded')}`);
   };
 
   const handleCameraSelect = () => {
@@ -82,20 +84,20 @@ const CaptureScreen = () => {
     setImages(prev => prev.map(img => 
       img.id === id ? { ...img, deleted: true } : img
     ));
-    toast.success("Image deleted. Tap undo to restore.");
+    toast.success(t('captureScreen.imageDeleted') + ". " + t('captureScreen.undo') + " to restore.");
   };
 
   const undoDelete = (id: string) => {
     setImages(prev => prev.map(img => 
       img.id === id ? { ...img, deleted: false } : img
     ));
-    toast.success("Image restored");
+    toast.success(t('common.imageRestored'));
   };
 
   const discardAll = () => {
     setImages([]);
     setDescription("");
-    toast.success("All content discarded");
+    toast.success(t('common.allDiscarded'));
   };
 
   const handleVoiceRecord = async () => {
@@ -156,10 +158,10 @@ const CaptureScreen = () => {
         setAudioChunks(chunks);
         setIsRecording(true);
         setShowLiveCamera(true);
-        toast.success("Recording started - camera opened");
+        toast.success(t('common.recordingStarted'));
       } catch (error) {
         console.error("Error accessing microphone:", error);
-        toast.error("Could not access microphone");
+        toast.error(t('common.microphoneError'));
       }
     } else {
       // Stop recording
@@ -167,7 +169,7 @@ const CaptureScreen = () => {
         mediaRecorder.stop();
         setMediaRecorder(null);
         setIsRecording(false);
-        toast.success("Processing audio...");
+        toast.success(t('common.processingAudio'));
       }
     }
   };
@@ -176,10 +178,10 @@ const CaptureScreen = () => {
     if (mediaRecorder && isRecording) {
       if (mediaRecorder.state === 'recording') {
         mediaRecorder.pause();
-        toast.info("Recording paused");
+        toast.info(t('common.recordingPaused'));
       } else if (mediaRecorder.state === 'paused') {
         mediaRecorder.resume();
-        toast.info("Recording resumed");
+        toast.info(t('common.recordingResumed'));
       }
     }
   };
@@ -190,7 +192,7 @@ const CaptureScreen = () => {
       setMediaRecorder(null);
       setIsRecording(false);
       setShowLiveCamera(false);
-      toast.success("Processing audio...");
+      toast.success(t('common.processingAudio'));
     }
   };
 
@@ -233,13 +235,13 @@ const CaptureScreen = () => {
         if (data?.text) {
           // Append transcribed text to description
           setDescription(prev => prev ? `${prev}\n${data.text}` : data.text);
-          toast.success("Audio transcribed successfully!");
+          toast.success(t('common.transcriptionSuccess'));
         }
       };
     } catch (error: any) {
       console.error("Error transcribing audio:", error);
       const message = error?.message || 'Unknown error while processing audio';
-      toast.error(`Transcription failed: ${message}`);
+      toast.error(t('common.transcriptionError'));
     }
   };
 
@@ -459,7 +461,7 @@ const CaptureScreen = () => {
       <header className="sticky top-0 z-10 bg-background/80 px-4 py-3 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <BackButton />
-          <h1 className="text-lg font-semibold text-foreground">Capture Photos and Video</h1>
+          <h1 className="text-lg font-semibold text-foreground">{t('captureScreen.title')}</h1>
           <SettingsButton />
         </div>
       </header>
@@ -468,7 +470,7 @@ const CaptureScreen = () => {
         {/* Project Info Pills */}
         <div className="flex flex-wrap gap-2 pb-4">
           <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
-            <p className="text-xs font-medium text-muted-foreground">Project: Alpha Site</p>
+            <p className="text-xs font-medium text-muted-foreground">{t('captureScreen.project')}: Alpha Site</p>
           </div>
           <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
             <p className="text-xs font-medium text-muted-foreground">
@@ -482,12 +484,12 @@ const CaptureScreen = () => {
           <div className="relative">
             <label className="text-foreground font-medium flex items-center gap-2 mb-2">
               <FileText className="h-4 w-4 text-primary" />
-              Field Notes
+              {t('captureScreen.fieldNotes')}
             </label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe the progress, issues, or observations..."
+              placeholder={t('captureScreen.descriptionPlaceholder')}
               className="min-h-[200px] resize-none rounded-xl border-none bg-secondary text-base focus-visible:ring-2 focus-visible:ring-primary"
               maxLength={1000}
             />
