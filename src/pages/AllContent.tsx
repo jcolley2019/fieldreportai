@@ -32,6 +32,7 @@ import { formatDate, formatDateLong } from '@/lib/dateFormat';
 import { Document as PDFDocument, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { Document, Paragraph, TextRun, HeadingLevel, Packer } from 'docx';
 import { saveAs } from 'file-saver';
+import { useTranslation } from "react-i18next";
 
 interface Report {
   id: string;
@@ -61,6 +62,7 @@ type ContentItem = Report | Checklist;
 
 const AllContent = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [reports, setReports] = useState<Report[]>([]);
   const [checklists, setChecklists] = useState<Checklist[]>([]);
@@ -133,7 +135,7 @@ const AllContent = () => {
       setChecklists(checklistsWithCounts);
     } catch (error) {
       console.error('Error fetching content:', error);
-      toast.error('Failed to load content');
+      toast.error(t('allContent.failedToLoad'));
     } finally {
       setLoading(false);
     }
@@ -459,12 +461,12 @@ const AllContent = () => {
 
   const handleExportAll = async (format: 'pdf' | 'docx') => {
     if (filteredContent.length === 0) {
-      toast.error("No content to export");
+      toast.error(t('allContent.noContentToExport'));
       return;
     }
 
     setIsExporting(true);
-    toast.success(`Preparing ${format.toUpperCase()} export...`);
+    toast.success(t('allContent.preparingExport', { format: format.toUpperCase() }));
 
     try {
       const zip = new JSZip();
@@ -501,10 +503,10 @@ const AllContent = () => {
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       saveAs(zipBlob, `field_reports_export_${timestamp}.zip`);
 
-      toast.success(`Successfully exported ${filteredContent.length} items as ${format.toUpperCase()}`);
+      toast.success(t('allContent.exportSuccess', { count: filteredContent.length, format: format.toUpperCase() }));
     } catch (error) {
       console.error('Error creating export:', error);
-      toast.error("Failed to create export");
+      toast.error(t('allContent.exportFailed'));
     } finally {
       setIsExporting(false);
     }
@@ -512,22 +514,22 @@ const AllContent = () => {
 
   const handleEmailExport = async () => {
     if (!emailForm.recipientEmail) {
-      toast.error("Please enter a recipient email");
+      toast.error(t('allContent.enterRecipientEmail'));
       return;
     }
 
     if (filteredContent.length === 0) {
-      toast.error("No content to export");
+      toast.error(t('allContent.noContentToExport'));
       return;
     }
 
     setIsSendingEmail(true);
-    toast.success(`Preparing ${emailFormat.toUpperCase()} export for email...`);
+    toast.success(t('allContent.preparingEmailExport', { format: emailFormat.toUpperCase() }));
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("Please sign in to send emails");
+        toast.error(t('allContent.signInToSend'));
         return;
       }
 
@@ -589,7 +591,7 @@ const AllContent = () => {
 
       // If file is too large, upload to storage and send download link
       if (zipSize > MAX_EMAIL_ATTACHMENT) {
-        toast.success("File is large, uploading to cloud storage...");
+        toast.success(t('allContent.uploadingLargeFile'));
 
         // Convert blob to array buffer for upload
         const arrayBuffer = await zipBlob.arrayBuffer();
@@ -604,7 +606,7 @@ const AllContent = () => {
 
         if (uploadError) {
           console.error("Storage upload error:", uploadError);
-          toast.error("Failed to upload file to storage");
+          toast.error(t('allContent.uploadFailed'));
           return;
         }
 
@@ -614,7 +616,7 @@ const AllContent = () => {
           .createSignedUrl(filePath, 60 * 60 * 24 * 7); // 7 days
 
         if (urlError || !signedUrlData) {
-          toast.error("Failed to generate download link");
+          toast.error(t('allContent.linkFailed'));
           return;
         }
 
@@ -642,12 +644,12 @@ const AllContent = () => {
 
       if (error) {
         console.error("Email send error:", error);
-        toast.error(`Failed to send email: ${error.message}`);
+        toast.error(t('allContent.emailSendFailed', { message: error.message }));
         return;
       }
 
       console.log("Email sent:", data);
-      toast.success(`Export sent successfully to ${emailForm.recipientEmail}!`);
+      toast.success(t('allContent.emailSentSuccess', { email: emailForm.recipientEmail }));
       setShowEmailDialog(false);
       setEmailForm({
         recipientEmail: "",
@@ -657,7 +659,7 @@ const AllContent = () => {
       });
     } catch (error) {
       console.error('Error sending email:', error);
-      toast.error("Failed to send export email");
+      toast.error(t('allContent.emailExportFailed'));
     } finally {
       setIsSendingEmail(false);
     }
@@ -679,7 +681,7 @@ const AllContent = () => {
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between px-4 py-3">
           <BackButton fallbackPath="/dashboard" />
-          <h1 className="text-lg font-bold text-foreground">All Content</h1>
+          <h1 className="text-lg font-bold text-foreground">{t('allContent.title')}</h1>
           <SettingsButton />
         </div>
       </header>
@@ -693,7 +695,7 @@ const AllContent = () => {
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Download className="mr-2 h-4 w-4" />
-            Export PDF
+            {t('allContent.exportPDF')}
           </Button>
           <Button
             onClick={() => handleExportAll('docx')}
@@ -701,7 +703,7 @@ const AllContent = () => {
             variant="outline"
           >
             <Download className="mr-2 h-4 w-4" />
-            Export Word
+            {t('allContent.exportWord')}
           </Button>
           <Button
             onClick={() => setShowEmailDialog(true)}
@@ -709,7 +711,7 @@ const AllContent = () => {
             variant="outline"
           >
             <Mail className="mr-2 h-4 w-4" />
-            Email
+            {t('allContent.email')}
           </Button>
         </div>
 
@@ -719,7 +721,7 @@ const AllContent = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search by project, customer, job number..."
+              placeholder={t('allContent.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 bg-card border-border"
@@ -730,24 +732,24 @@ const AllContent = () => {
           <div className="grid grid-cols-2 gap-3">
             <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
               <SelectTrigger className="bg-card border-border">
-                <SelectValue placeholder="Sort by..." />
+                <SelectValue placeholder={t('allContent.sortBy')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="recent">Most Recent</SelectItem>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="project">Project</SelectItem>
+                <SelectItem value="recent">{t('allContent.sortRecent')}</SelectItem>
+                <SelectItem value="name">{t('allContent.sortName')}</SelectItem>
+                <SelectItem value="project">{t('allContent.sortProject')}</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={dateFilter} onValueChange={(value: any) => setDateFilter(value)}>
               <SelectTrigger className="bg-card border-border">
-                <SelectValue placeholder="Date filter..." />
+                <SelectValue placeholder={t('allContent.dateFilter')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Time</SelectItem>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="week">This Week</SelectItem>
-                <SelectItem value="month">This Month</SelectItem>
+                <SelectItem value="all">{t('allContent.allTime')}</SelectItem>
+                <SelectItem value="today">{t('allContent.today')}</SelectItem>
+                <SelectItem value="week">{t('allContent.thisWeek')}</SelectItem>
+                <SelectItem value="month">{t('allContent.thisMonth')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -757,15 +759,15 @@ const AllContent = () => {
         <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)} className="w-full">
           <TabsList className="grid w-full grid-cols-3 bg-muted mb-4">
             <TabsTrigger value="all">
-              All ({reports.length + checklists.length})
+              {t('allContent.all')} ({reports.length + checklists.length})
             </TabsTrigger>
             <TabsTrigger value="reports" className="gap-2">
               <FileText className="h-4 w-4" />
-              Reports ({reports.length})
+              {t('allContent.reports')} ({reports.length})
             </TabsTrigger>
             <TabsTrigger value="checklists" className="gap-2">
               <ListChecks className="h-4 w-4" />
-              Checklists ({checklists.length})
+              {t('allContent.checklists')} ({checklists.length})
             </TabsTrigger>
           </TabsList>
 
@@ -776,8 +778,8 @@ const AllContent = () => {
                   <Filter className="h-12 w-12 text-muted-foreground mb-4" />
                   <p className="text-muted-foreground text-center">
                     {searchQuery || dateFilter !== "all" 
-                      ? "No content matches your filters"
-                      : "No content yet. Create your first project to get started!"}
+                      ? t('allContent.noMatches')
+                      : t('allContent.noContent')}
                   </p>
                 </CardContent>
               </Card>
@@ -810,7 +812,7 @@ const AllContent = () => {
                                 ? 'bg-primary/20 text-primary' 
                                 : 'bg-accent/20 text-accent'
                             }`}>
-                              {item.type === 'report' ? 'Report' : 'Checklist'}
+                              {item.type === 'report' ? t('allContent.report') : t('allContent.checklist')}
                             </span>
                           </div>
                           <CardDescription className="space-y-1">
@@ -841,7 +843,7 @@ const AllContent = () => {
                                 )}
                                 <div className="flex items-center gap-2 text-xs">
                                   <ListChecks className="h-3 w-3" />
-                                  <span>{item.item_count || 0} items</span>
+                                  <span>{t('allContent.itemCount', { count: item.item_count || 0 })}</span>
                                 </div>
                               </>
                             )}
@@ -865,15 +867,15 @@ const AllContent = () => {
       <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
         <DialogContent className="max-w-md bg-background">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Email Export</DialogTitle>
+            <DialogTitle className="text-foreground">{t('allContent.emailExportTitle')}</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Send the exported content via email. Large files will be sent as download links.
+              {t('allContent.emailExportDescription')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="recipientEmail" className="text-foreground">Recipient Email *</Label>
+              <Label htmlFor="recipientEmail" className="text-foreground">{t('allContent.recipientEmail')}</Label>
               <Input
                 id="recipientEmail"
                 type="email"
@@ -886,7 +888,7 @@ const AllContent = () => {
             </div>
 
             <div>
-              <Label htmlFor="recipientName" className="text-foreground">Recipient Name (Optional)</Label>
+              <Label htmlFor="recipientName" className="text-foreground">{t('allContent.recipientName')}</Label>
               <Input
                 id="recipientName"
                 type="text"
@@ -898,24 +900,24 @@ const AllContent = () => {
             </div>
 
             <div>
-              <Label htmlFor="format" className="text-foreground">Export Format</Label>
+              <Label htmlFor="format" className="text-foreground">{t('allContent.exportFormat')}</Label>
               <Select value={emailFormat} onValueChange={(value: any) => setEmailFormat(value)}>
                 <SelectTrigger className="bg-card border-border">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="pdf">PDF</SelectItem>
-                  <SelectItem value="docx">Word Document</SelectItem>
+                  <SelectItem value="docx">{t('allContent.wordDocument')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="subject" className="text-foreground">Subject (Optional)</Label>
+              <Label htmlFor="subject" className="text-foreground">{t('allContent.subject')}</Label>
               <Input
                 id="subject"
                 type="text"
-                placeholder="Field Report Export"
+                placeholder={t('allContent.subjectPlaceholder')}
                 value={emailForm.subject}
                 onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
                 className="bg-card border-border"
@@ -923,10 +925,10 @@ const AllContent = () => {
             </div>
 
             <div>
-              <Label htmlFor="message" className="text-foreground">Message (Optional)</Label>
+              <Label htmlFor="message" className="text-foreground">{t('allContent.message')}</Label>
               <Textarea
                 id="message"
-                placeholder="Add a personal message..."
+                placeholder={t('allContent.messagePlaceholder')}
                 value={emailForm.message}
                 onChange={(e) => setEmailForm({ ...emailForm, message: e.target.value })}
                 className="bg-card border-border min-h-[100px]"
@@ -934,8 +936,8 @@ const AllContent = () => {
             </div>
 
             <div className="text-xs text-muted-foreground">
-              Exporting {filteredContent.length} item{filteredContent.length !== 1 ? 's' : ''}. 
-              Files larger than 25MB will be sent as download links.
+              {t('allContent.exportingItems', { count: filteredContent.length })} 
+              {t('allContent.largeFileNotice')}
             </div>
           </div>
 
@@ -945,7 +947,7 @@ const AllContent = () => {
               onClick={() => setShowEmailDialog(false)}
               disabled={isSendingEmail}
             >
-              Cancel
+              {t('allContent.cancel')}
             </Button>
             <Button
               onClick={handleEmailExport}
@@ -953,7 +955,7 @@ const AllContent = () => {
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Send className="mr-2 h-4 w-4" />
-              {isSendingEmail ? "Sending..." : "Send Email"}
+              {isSendingEmail ? t('allContent.sending') : t('allContent.sendEmail')}
             </Button>
           </DialogFooter>
         </DialogContent>
