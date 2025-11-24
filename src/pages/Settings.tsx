@@ -71,7 +71,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const [offlineMode, setOfflineMode] = useState(true);
-  const [autoRecord, setAutoRecord] = useState(false);
+  
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState(i18n.language);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -946,21 +946,6 @@ const Settings = () => {
             <Switch checked={offlineMode} onCheckedChange={setOfflineMode} />
           </div>
 
-          {/* Auto Record Toggle */}
-          <div className="flex flex-col gap-2 border-b border-border py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Mic className="h-5 w-5 text-foreground" />
-                <span className="text-base font-medium text-foreground">
-                  Auto Record
-                </span>
-              </div>
-              <Switch checked={autoRecord} onCheckedChange={setAutoRecord} />
-            </div>
-            <p className="pl-9 text-sm text-muted-foreground">
-              Automatically record audio when taking photos or videos.
-            </p>
-          </div>
         </div>
 
         {/* LANGUAGE Section */}
