@@ -562,8 +562,8 @@ const CaptureScreen = () => {
               className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-all hover:bg-primary/30 shadow-xl shadow-primary/50 animate-pulse ring-4 ring-primary/30"
             >
               <div className="flex items-center gap-3">
-                <Camera className="h-10 w-10" />
-                <Mic className="h-8 w-8" />
+                <Camera className="h-16 w-16" />
+                <Mic className="h-14 w-14" />
               </div>
               <p className="text-base font-bold text-foreground drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 {t('captureScreen.takePhotosWithVoice')}
