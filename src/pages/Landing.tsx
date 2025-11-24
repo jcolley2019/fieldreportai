@@ -136,24 +136,17 @@ const Landing = () => {
             <img src={logo} alt="Field Report AI" className="h-16 w-auto" />
             <span className="font-bold text-xl text-white">Field Report AI</span>
           </div>
-          <div className="hidden md:flex items-start gap-6">
-            <nav className="flex items-center gap-6 pt-2">
-              <a href="#features" className="text-sm text-foreground/80 hover:text-foreground">Features</a>
-              <a href="#pricing" className="text-sm text-foreground/80 hover:text-foreground">Pricing</a>
-              <a href="#faq" className="text-sm text-foreground/80 hover:text-foreground">FAQ</a>
-              <Link to="/auth">
-                <Button variant="secondary" size="sm" className="border-2 border-primary font-bold">Sign In</Button>
-              </Link>
-            </nav>
-            <div className="flex flex-col items-end gap-2">
-              <Link to="/auth">
-                <Button size="sm">Get Started Free</Button>
-              </Link>
-              <div className="p-2 rounded-lg bg-accent/50 border border-border/50 backdrop-blur-sm">
-                <LanguageSelector />
-              </div>
-            </div>
-          </div>
+          <nav className="hidden md:flex items-center gap-6">
+            <a href="#features" className="text-sm text-foreground/80 hover:text-foreground">Features</a>
+            <a href="#pricing" className="text-sm text-foreground/80 hover:text-foreground">Pricing</a>
+            <a href="#faq" className="text-sm text-foreground/80 hover:text-foreground">FAQ</a>
+            <Link to="/auth">
+              <Button variant="secondary" size="sm" className="border-2 border-primary font-bold">Sign In</Button>
+            </Link>
+            <Link to="/auth">
+              <Button size="sm">Get Started Free</Button>
+            </Link>
+          </nav>
         </div>
       </header>
 
@@ -191,7 +184,7 @@ const Landing = () => {
               Capture photos, videos, and voice notes—Field Report AI instantly turns them into professional reports and structured checklists.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
               <Link to="/auth">
                 <Button size="lg" className="gap-2 shadow-lg shadow-primary/20">
                   Get Started Free <ArrowRight className="h-4 w-4" />
@@ -200,6 +193,12 @@ const Landing = () => {
               <Button size="lg" variant="secondary" className="gap-2 border-2 border-primary font-bold hover:bg-primary/10">
                 <Play className="h-4 w-4" /> Watch Demo
               </Button>
+            </div>
+            
+            <div className="flex justify-center mb-12">
+              <div className="inline-flex p-2 rounded-lg bg-accent/50 border border-border/50 backdrop-blur-sm">
+                <LanguageSelector />
+              </div>
             </div>
             
             <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto">
