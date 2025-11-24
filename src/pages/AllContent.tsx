@@ -461,12 +461,12 @@ const AllContent = () => {
 
   const handleExportAll = async (format: 'pdf' | 'docx') => {
     if (filteredContent.length === 0) {
-      toast.error("No content to export");
+      toast.error(t('allContent.noContentToExport'));
       return;
     }
 
     setIsExporting(true);
-    toast.success(`Preparing ${format.toUpperCase()} export...`);
+    toast.success(t('allContent.preparingExport', { format: format.toUpperCase() }));
 
     try {
       const zip = new JSZip();
@@ -503,10 +503,10 @@ const AllContent = () => {
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       saveAs(zipBlob, `field_reports_export_${timestamp}.zip`);
 
-      toast.success(`Successfully exported ${filteredContent.length} items as ${format.toUpperCase()}`);
+      toast.success(t('allContent.exportSuccess', { count: filteredContent.length, format: format.toUpperCase() }));
     } catch (error) {
       console.error('Error creating export:', error);
-      toast.error("Failed to create export");
+      toast.error(t('allContent.exportFailed'));
     } finally {
       setIsExporting(false);
     }
@@ -514,22 +514,22 @@ const AllContent = () => {
 
   const handleEmailExport = async () => {
     if (!emailForm.recipientEmail) {
-      toast.error("Please enter a recipient email");
+      toast.error(t('allContent.enterRecipientEmail'));
       return;
     }
 
     if (filteredContent.length === 0) {
-      toast.error("No content to export");
+      toast.error(t('allContent.noContentToExport'));
       return;
     }
 
     setIsSendingEmail(true);
-    toast.success(`Preparing ${emailFormat.toUpperCase()} export for email...`);
+    toast.success(t('allContent.preparingEmailExport', { format: emailFormat.toUpperCase() }));
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("Please sign in to send emails");
+        toast.error(t('allContent.signInToSendEmail'));
         return;
       }
 
@@ -591,7 +591,7 @@ const AllContent = () => {
 
       // If file is too large, upload to storage and send download link
       if (zipSize > MAX_EMAIL_ATTACHMENT) {
-        toast.success("File is large, uploading to cloud storage...");
+        toast.success(t('allContent.uploadingToCloud'));
 
         // Convert blob to array buffer for upload
         const arrayBuffer = await zipBlob.arrayBuffer();
@@ -606,7 +606,7 @@ const AllContent = () => {
 
         if (uploadError) {
           console.error("Storage upload error:", uploadError);
-          toast.error("Failed to upload file to storage");
+          toast.error(t('allContent.uploadFailed'));
           return;
         }
 
@@ -616,7 +616,7 @@ const AllContent = () => {
           .createSignedUrl(filePath, 60 * 60 * 24 * 7); // 7 days
 
         if (urlError || !signedUrlData) {
-          toast.error("Failed to generate download link");
+          toast.error(t('allContent.generateLinkFailed'));
           return;
         }
 
@@ -644,12 +644,12 @@ const AllContent = () => {
 
       if (error) {
         console.error("Email send error:", error);
-        toast.error(`Failed to send email: ${error.message}`);
+        toast.error(t('allContent.emailSendFailed'));
         return;
       }
 
       console.log("Email sent:", data);
-      toast.success(`Export sent successfully to ${emailForm.recipientEmail}!`);
+      toast.success(t('allContent.emailSentSuccess', { email: emailForm.recipientEmail }));
       setShowEmailDialog(false);
       setEmailForm({
         recipientEmail: "",
@@ -659,7 +659,7 @@ const AllContent = () => {
       });
     } catch (error) {
       console.error('Error sending email:', error);
-      toast.error("Failed to send export email");
+      toast.error(t('allContent.emailExportFailed'));
     } finally {
       setIsSendingEmail(false);
     }
