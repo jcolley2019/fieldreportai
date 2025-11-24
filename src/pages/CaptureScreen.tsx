@@ -565,7 +565,7 @@ const CaptureScreen = () => {
                 <Camera className="h-10 w-10" />
                 <Mic className="h-8 w-8" />
               </div>
-              <p className="text-sm font-medium">
+              <p className="text-base font-bold text-primary drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 {t('captureScreen.takePhotosWithVoice')}
               </p>
             </button>
