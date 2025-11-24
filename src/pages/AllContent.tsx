@@ -867,19 +867,19 @@ const AllContent = () => {
       <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
         <DialogContent className="max-w-md bg-background">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Email Export</DialogTitle>
+            <DialogTitle className="text-foreground">{t('allContent.emailExportTitle')}</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Send the exported content via email. Large files will be sent as download links.
+              {t('allContent.emailExportDescription')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="recipientEmail" className="text-foreground">Recipient Email *</Label>
+              <Label htmlFor="recipientEmail" className="text-foreground">{t('allContent.recipientEmail')}</Label>
               <Input
                 id="recipientEmail"
                 type="email"
-                placeholder="recipient@example.com"
+                placeholder={t('allContent.recipientEmailPlaceholder')}
                 value={emailForm.recipientEmail}
                 onChange={(e) => setEmailForm({ ...emailForm, recipientEmail: e.target.value })}
                 className="bg-card border-border"
@@ -888,11 +888,11 @@ const AllContent = () => {
             </div>
 
             <div>
-              <Label htmlFor="recipientName" className="text-foreground">Recipient Name (Optional)</Label>
+              <Label htmlFor="recipientName" className="text-foreground">{t('allContent.recipientName')}</Label>
               <Input
                 id="recipientName"
                 type="text"
-                placeholder="John Doe"
+                placeholder={t('allContent.recipientNamePlaceholder')}
                 value={emailForm.recipientName}
                 onChange={(e) => setEmailForm({ ...emailForm, recipientName: e.target.value })}
                 className="bg-card border-border"
@@ -907,17 +907,17 @@ const AllContent = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="pdf">PDF</SelectItem>
-                  <SelectItem value="docx">Word Document</SelectItem>
+                  <SelectItem value="docx">{t('allContent.wordDocument')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="subject" className="text-foreground">Subject (Optional)</Label>
+              <Label htmlFor="subject" className="text-foreground">{t('allContent.subject')}</Label>
               <Input
                 id="subject"
                 type="text"
-                placeholder="Field Report Export"
+                placeholder={t('allContent.subjectPlaceholder')}
                 value={emailForm.subject}
                 onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
                 className="bg-card border-border"
@@ -925,10 +925,10 @@ const AllContent = () => {
             </div>
 
             <div>
-              <Label htmlFor="message" className="text-foreground">Message (Optional)</Label>
+              <Label htmlFor="message" className="text-foreground">{t('allContent.message')}</Label>
               <Textarea
                 id="message"
-                placeholder="Add a personal message..."
+                placeholder={t('allContent.messagePlaceholder')}
                 value={emailForm.message}
                 onChange={(e) => setEmailForm({ ...emailForm, message: e.target.value })}
                 className="bg-card border-border min-h-[100px]"
@@ -936,8 +936,8 @@ const AllContent = () => {
             </div>
 
             <div className="text-xs text-muted-foreground">
-              Exporting {filteredContent.length} item{filteredContent.length !== 1 ? 's' : ''}. 
-              Files larger than 25MB will be sent as download links.
+              {t('allContent.exportingItems', { count: filteredContent.length })} 
+              {t('allContent.largeFilesNote')}
             </div>
           </div>
 
@@ -955,7 +955,7 @@ const AllContent = () => {
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Send className="mr-2 h-4 w-4" />
-              {isSendingEmail ? "Sending..." : "Send Email"}
+              {isSendingEmail ? t('allContent.sending') : t('allContent.sendEmail')}
             </Button>
           </DialogFooter>
         </DialogContent>
