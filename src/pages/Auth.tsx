@@ -326,9 +326,18 @@ const Auth = () => {
               </div>
             </div>
 
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              disabled={loading}
+              className="h-12 w-full rounded-lg bg-primary text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              {loading ? t('auth.pleaseWait') : isLogin ? t('auth.logIn') : t('auth.signUp')}
+            </Button>
+
             {/* Forgot Password Link (only show on login) */}
             {isLogin && (
-              <div className="flex justify-end">
+              <div className="flex justify-center -mt-2">
                 <button
                   type="button"
                   className="text-sm font-medium text-primary hover:underline"
@@ -338,15 +347,6 @@ const Auth = () => {
                 </button>
               </div>
             )}
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              disabled={loading}
-              className="h-12 w-full rounded-lg bg-primary text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              {loading ? t('auth.pleaseWait') : isLogin ? t('auth.logIn') : t('auth.signUp')}
-            </Button>
 
             {/* Divider */}
             <div className="relative py-4">
