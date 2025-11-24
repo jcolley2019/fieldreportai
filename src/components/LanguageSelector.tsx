@@ -19,9 +19,9 @@ export const LanguageSelector = () => {
 
   return (
     <div className="flex items-center gap-2">
-      <Languages className="h-4 w-4 text-muted-foreground" />
+      <Languages className="h-5 w-5 text-primary" />
       <Select value={i18n.language} onValueChange={handleLanguageChange}>
-        <SelectTrigger className="w-[140px] bg-background border-border">
+        <SelectTrigger className="w-[140px] h-10 bg-background border-border font-medium">
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="bg-popover border-border z-50">
