@@ -321,19 +321,19 @@ const SavedReports = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Delete Report?</AlertDialogTitle>
+            <AlertDialogTitle className="text-white">{t('savedReports.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              Are you sure you want to delete "{selectedReport?.file_name}"? This action cannot be undone.
+              {t('savedReports.deleteDescription', { fileName: selectedReport?.file_name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t('savedReports.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "Deleting..." : "Delete"}
+              {isDeleting ? t('savedReports.deleting') : t('savedReports.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
