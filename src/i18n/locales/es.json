@@ -544,7 +544,14 @@
     "all": "Todo",
     "reports": "Informes",
     "checklists": "Listas de Verificación",
-    "emptyState": "No hay contenido aún. ¡Crea tu primer proyecto para comenzar!"
+    "emptyState": "No hay contenido aún. ¡Crea tu primer proyecto para comenzar!",
+    "sortRecent": "Más Reciente",
+    "sortName": "Nombre",
+    "sortProject": "Proyecto",
+    "dateAll": "Todo el Tiempo",
+    "dateToday": "Hoy",
+    "dateWeek": "Esta Semana",
+    "dateMonth": "Este Mes"
   },
   "allContent": {
     "title": "Todo el Contenido",
