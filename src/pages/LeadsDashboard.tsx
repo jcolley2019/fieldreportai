@@ -29,18 +29,59 @@ export default function LeadsDashboard() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingAccess, setCheckingAccess] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
   const [dateFrom, setDateFrom] = useState<Date>();
   const [dateTo, setDateTo] = useState<Date>();
 
   useEffect(() => {
-    fetchLeads();
+    checkAdminAccess();
   }, []);
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchLeads();
+    }
+  }, [isAdmin]);
 
   useEffect(() => {
     applyFilters();
   }, [leads, searchQuery, sourceFilter, dateFrom, dateTo]);
+
+  const checkAdminAccess = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in to access this page");
+        setCheckingAccess(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error checking admin access:", error);
+        toast.error("Error checking access permissions");
+      }
+
+      setIsAdmin(!!data);
+      if (!data) {
+        toast.error("Access denied: Admin privileges required");
+      }
+    } catch (error) {
+      console.error("Error checking admin access:", error);
+      toast.error("Error checking access permissions");
+    } finally {
+      setCheckingAccess(false);
+    }
+  };
 
   const fetchLeads = async () => {
     try {
@@ -128,6 +169,35 @@ export default function LeadsDashboard() {
     };
     return colors[source] || "bg-gray-500";
   };
+
+  if (checkingAccess) {
+    return (
+      <div className="min-h-screen bg-background p-8">
+        <div className="max-w-7xl mx-auto">
+          <BackButton />
+          <div className="mt-8 text-center">Checking access permissions...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background p-8">
+        <div className="max-w-7xl mx-auto">
+          <BackButton />
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="text-3xl">Access Denied</CardTitle>
+              <CardDescription>
+                You need admin privileges to access the leads dashboard.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
