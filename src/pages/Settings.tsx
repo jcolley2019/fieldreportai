@@ -408,20 +408,20 @@ const Settings = () => {
       <header className="sticky top-0 z-10 flex items-center justify-center bg-background p-4 pb-2">
         <BackButton className="absolute left-4" />
         <h1 className="text-lg font-bold text-foreground">
-          Settings
+          {t('settings.title')}
         </h1>
       </header>
 
       <main className="flex-grow pb-8">
         {/* Profile Form Section */}
         <div className="bg-background px-4 py-6">
-          <h2 className="mb-6 text-xl font-bold text-foreground">Profile Settings</h2>
+          <h2 className="mb-6 text-xl font-bold text-foreground">{t('settings.profile')}</h2>
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Profile Picture */}
               <div className="space-y-2">
-                <Label className="text-foreground">Profile Picture</Label>
+                <Label className="text-foreground">{t('settings.profilePicture')}</Label>
                 <div className="flex items-center gap-4">
                   <Avatar className="h-20 w-20">
                     <AvatarImage src={avatarUrl || undefined} />
@@ -446,7 +446,7 @@ const Settings = () => {
                       className="border-primary text-foreground hover:bg-primary/10"
                     >
                       <Camera className="mr-2 h-4 w-4" />
-                      {uploading ? "Uploading..." : "Upload Photo"}
+                      {uploading ? t('common.uploading') : t('onboarding.uploadPhoto')}
                     </Button>
                   </div>
                 </div>
@@ -458,11 +458,11 @@ const Settings = () => {
                 name="firstName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground">First Name</FormLabel>
+                    <FormLabel className="text-foreground">{t('settings.firstName')}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Enter your first name"
+                        placeholder={t('settings.firstName')}
                         className="bg-background text-foreground"
                       />
                     </FormControl>
@@ -477,11 +477,11 @@ const Settings = () => {
                 name="lastName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground">Last Name</FormLabel>
+                    <FormLabel className="text-foreground">{t('settings.lastName')}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Enter your last name"
+                        placeholder={t('settings.lastName')}
                         className="bg-background text-foreground"
                       />
                     </FormControl>
@@ -496,7 +496,7 @@ const Settings = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground">Email</FormLabel>
+                    <FormLabel className="text-foreground">{t('auth.emailAddress')}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -515,11 +515,11 @@ const Settings = () => {
                 name="companyName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground">Company Name</FormLabel>
+                    <FormLabel className="text-foreground">{t('settings.companyName')}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Enter your company name"
+                        placeholder={t('settings.companyName')}
                         className="bg-background text-foreground"
                       />
                     </FormControl>
@@ -530,7 +530,7 @@ const Settings = () => {
 
               {/* Company Logo */}
               <div className="space-y-2">
-                <Label className="text-foreground">Company Logo</Label>
+                <Label className="text-foreground">{t('settings.companyLogo')}</Label>
                 <div className="flex items-center gap-4">
                   <Avatar className="h-20 w-20 rounded-lg">
                     <AvatarImage src={companyLogoUrl || undefined} className="object-contain" />
@@ -555,7 +555,7 @@ const Settings = () => {
                       className="border-primary text-foreground hover:bg-primary/10"
                     >
                       <Camera className="mr-2 h-4 w-4" />
-                      {uploading ? "Uploading..." : "Upload Logo"}
+                      {uploading ? t('common.uploading') : t('onboarding.uploadLogo')}
                     </Button>
                   </div>
                 </div>
@@ -626,7 +626,7 @@ const Settings = () => {
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 <Save className="mr-2 h-4 w-4" />
-                Save Profile
+                {t('settings.saveChanges')}
               </Button>
             </form>
           </Form>
@@ -634,7 +634,7 @@ const Settings = () => {
 
         {/* Password Change Section */}
         <div className="bg-background px-4 py-6 border-t border-border">
-          <h2 className="mb-6 text-xl font-bold text-foreground">Change Password</h2>
+          <h2 className="mb-6 text-xl font-bold text-foreground">{t('settings.changePassword')}</h2>
           
           <Form {...passwordForm}>
             <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
@@ -644,12 +644,12 @@ const Settings = () => {
                 name="currentPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground">Current Password</FormLabel>
+                    <FormLabel className="text-foreground">{t('settings.currentPassword')}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         type="password"
-                        placeholder="Enter current password"
+                        placeholder={t('settings.currentPassword')}
                         className="bg-background text-foreground"
                       />
                     </FormControl>
@@ -664,12 +664,12 @@ const Settings = () => {
                 name="newPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground">New Password</FormLabel>
+                    <FormLabel className="text-foreground">{t('settings.newPassword')}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         type="password"
-                        placeholder="Enter new password"
+                        placeholder={t('settings.newPassword')}
                         className="bg-background text-foreground"
                       />
                     </FormControl>
@@ -684,12 +684,12 @@ const Settings = () => {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground">Confirm New Password</FormLabel>
+                    <FormLabel className="text-foreground">{t('settings.confirmPassword')}</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
                         type="password"
-                        placeholder="Confirm new password"
+                        placeholder={t('settings.confirmPassword')}
                         className="bg-background text-foreground"
                       />
                     </FormControl>
@@ -704,7 +704,7 @@ const Settings = () => {
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 <Shield className="mr-2 h-4 w-4" />
-                Update Password
+                {t('settings.updatePassword')}
               </Button>
             </form>
           </Form>
@@ -806,7 +806,7 @@ const Settings = () => {
 
         {/* Two-Factor Authentication Section */}
         <div className="bg-background px-4 py-6 border-t border-border">
-          <h2 className="mb-4 text-xl font-bold text-foreground">Two-Factor Authentication</h2>
+          <h2 className="mb-4 text-xl font-bold text-foreground">{t('settings.twoFactorAuth')}</h2>
           <p className="mb-6 text-sm text-muted-foreground">
             Add an extra layer of security to your account by requiring a verification code from your authenticator app.
           </p>
@@ -828,7 +828,7 @@ const Settings = () => {
               variant={mfaEnabled ? "destructive" : "default"}
               className={mfaEnabled ? "" : "bg-primary text-primary-foreground hover:bg-primary/90"}
             >
-              {mfaEnabled ? "Disable" : "Enable"}
+              {mfaEnabled ? t('settings.disable2FA') : t('settings.enable2FA')}
             </Button>
           </div>
         </div>
@@ -1091,7 +1091,7 @@ const Settings = () => {
             onClick={handleLogout}
             className="w-full py-3 text-center text-base font-medium text-destructive hover:underline"
           >
-            Log Out
+            {t('settings.logOut')}
           </button>
         </div>
       </main>
