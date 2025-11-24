@@ -551,7 +551,8 @@
     "dateAll": "Todo el Tiempo",
     "dateToday": "Hoy",
     "dateWeek": "Esta Semana",
-    "dateMonth": "Este Mes"
+    "dateMonth": "Este Mes",
+    "exportFormat": "Formato de Exportación"
   },
   "allContent": {
     "title": "Todo el Contenido",

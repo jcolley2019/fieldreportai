@@ -900,7 +900,7 @@ const AllContent = () => {
             </div>
 
             <div>
-              <Label htmlFor="format" className="text-foreground">Export Format</Label>
+              <Label htmlFor="format" className="text-foreground">{t('allContent.exportFormat')}</Label>
               <Select value={emailFormat} onValueChange={(value: any) => setEmailFormat(value)}>
                 <SelectTrigger className="bg-card border-border">
                   <SelectValue />
