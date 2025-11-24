@@ -520,7 +520,8 @@
   },
   "savedReports": {
     "title": "Informes Guardados",
-    "searchPlaceholder": "Buscar informes...",
+    "searchPlaceholder": "Buscar informes guardados...",
+    "emptyState": "Aún no hay informes guardados. ¡Los informes que guardes en la nube aparecerán aquí!",
     "loading": "Cargando informes...",
     "noReports": "Aún no hay informes guardados",
     "noMatches": "No se encontraron informes que coincidan con tu búsqueda",
