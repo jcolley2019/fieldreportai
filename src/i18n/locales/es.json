@@ -261,7 +261,7 @@
     "title": "Creemos una Lista de Verificación",
     "project": "Proyecto",
     "job": "Trabajo",
-    "takePhotos": "Toca para Tomar Fotos/Video o para subir desde la galería",
+    "takePhotos": "Toca para Tomar Fotos/Video o para subir desde la galería (Opcional)",
     "recordInstructions": "Presiona Grabar para describir los elementos de la lista",
     "recordDetails": "Toca de nuevo para detener. Puedes grabar varias veces para agregar más detalles.",
     "recordingStatus": "Grabando... toca para detener",

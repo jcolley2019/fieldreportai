@@ -637,7 +637,7 @@ const Checklist = () => {
                 className={`flex h-20 w-20 items-center justify-center rounded-full transition-all ${
                   isRecording 
                     ? 'bg-destructive text-white animate-pulse shadow-lg shadow-destructive/50' 
-                    : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/30'
+                    : 'bg-primary text-white hover:bg-primary/90 hover:scale-110 shadow-xl shadow-primary/50 animate-pulse ring-4 ring-primary/30'
                 }`}
               >
                 <Mic className="h-8 w-8" />
