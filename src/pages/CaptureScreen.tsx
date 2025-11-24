@@ -250,7 +250,7 @@ const CaptureScreen = () => {
     const activeImgs = images.filter(img => !img.deleted);
     
     if (!description && activeImgs.length === 0) {
-      toast.error("Please add some content first");
+      toast.error(t('captureScreen.addContentFirst'));
       return;
     }
 
@@ -508,7 +508,7 @@ const CaptureScreen = () => {
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
                 <FileText className="h-8 w-8 text-primary" />
               </div>
-              <span className="text-sm font-medium text-foreground">Add Note</span>
+              <span className="text-sm font-medium text-foreground">{t('captureScreen.addNote')}</span>
             </button>
             <button 
               onClick={() => navigate("/checklist", { state: { simpleMode: isSimpleMode } })}
@@ -517,7 +517,7 @@ const CaptureScreen = () => {
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
                 <ListChecks className="h-8 w-8 text-primary" />
               </div>
-              <span className="text-sm font-medium text-foreground">Checklist</span>
+              <span className="text-sm font-medium text-foreground">{t('captureScreen.checklist')}</span>
             </button>
           </div>
 
@@ -533,7 +533,7 @@ const CaptureScreen = () => {
                 <Mic className="h-8 w-8" />
               </div>
               <p className="text-sm font-medium">
-                Tap to Take Photos/Video with Voice Recording
+                {t('captureScreen.takePhotosWithVoice')}
               </p>
             </button>
             
@@ -614,7 +614,7 @@ const CaptureScreen = () => {
                 onClick={discardAll}
                 className="text-sm font-medium text-destructive transition-colors hover:text-destructive/80"
               >
-                Discard All
+                {t('captureScreen.discardAll')}
               </button>
             </div>
           )}
@@ -628,7 +628,7 @@ const CaptureScreen = () => {
           disabled={isGenerating}
           className="w-full rounded-xl bg-primary px-4 py-6 text-base font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
         >
-          {isGenerating ? "Generating..." : "Generate Summary"}
+          {isGenerating ? t('captureScreen.generating') : t('captureScreen.generateSummary')}
         </Button>
       </div>
 
@@ -706,15 +706,15 @@ const CaptureScreen = () => {
       <Dialog open={isGenerating} onOpenChange={() => {}}>
         <DialogContent className="sm:max-w-md [&>button]:hidden">
           <DialogHeader>
-            <DialogTitle className="text-center text-xl">Generating Summary</DialogTitle>
+            <DialogTitle className="text-center text-xl">{t('captureScreen.generatingTitle')}</DialogTitle>
             <DialogDescription className="text-center pt-2">
-              Analyzing your photos and notes with AI...
+              {t('captureScreen.analyzingContent')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <Progress value={generationProgress} className="h-2" />
             <p className="text-center text-sm text-muted-foreground">
-              This usually takes 10-20 seconds
+              {t('captureScreen.estimatedTime')}
             </p>
             <div className="flex items-center justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
