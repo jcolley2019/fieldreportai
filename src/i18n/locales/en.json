@@ -185,7 +185,9 @@
   },
   "notes": {
     "title": "Add Note",
+    "contentLabel": "Note Content",
     "placeholder": "Tap the microphone or type your notes here...",
+    "voiceInstruction": "Tap the microphone button to record your notes",
     "quickSave": "Quick Save",
     "print": "Print",
     "copyLink": "Copy Link",
