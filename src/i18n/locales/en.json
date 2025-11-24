@@ -92,6 +92,9 @@
     "checklist": "checklist",
     "checklists": "checklists",
     "deleteConfirm": "Are you sure you want to delete",
+    "failedLoadProjects": "Failed to load projects",
+    "projectDeleted": "Project deleted successfully",
+    "failedDeleteProject": "Failed to delete project",
     "projectModeDialog": {
       "title": "Project Mode",
       "description": "Create comprehensive field reports and checklists linked to a specific project or customer",
