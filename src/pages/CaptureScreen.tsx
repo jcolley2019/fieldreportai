@@ -19,6 +19,7 @@ interface ImageItem {
   url: string;
   file?: File;
   deleted: boolean;
+  caption?: string;
 }
 
 const CaptureScreen = () => {
@@ -234,9 +235,41 @@ const CaptureScreen = () => {
         }
 
         if (data?.text) {
-          // Append transcribed text to description
-          setDescription(prev => prev ? `${prev}\n${data.text}` : data.text);
-          toast.success(t('common.transcriptionSuccess'));
+          // Check if the text contains "photo caption" or "subtítulo de foto"
+          const text = data.text;
+          const lowerText = text.toLowerCase();
+          
+          // Detect caption trigger in English or Spanish
+          const captionTriggerEn = lowerText.indexOf('photo caption');
+          const captionTriggerEs = lowerText.indexOf('subtítulo de foto');
+          
+          if (captionTriggerEn !== -1 || captionTriggerEs !== -1) {
+            // Extract the caption text after the trigger phrase
+            const triggerIndex = captionTriggerEn !== -1 ? captionTriggerEn : captionTriggerEs;
+            const triggerPhrase = captionTriggerEn !== -1 ? 'photo caption' : 'subtítulo de foto';
+            const captionText = text.substring(triggerIndex + triggerPhrase.length).trim();
+            
+            if (captionText && images.length > 0) {
+              // Find the most recent non-deleted image
+              const activeImages = images.filter(img => !img.deleted);
+              if (activeImages.length > 0) {
+                const latestImage = activeImages[activeImages.length - 1];
+                
+                // Update the image with the caption
+                setImages(prev => prev.map(img => 
+                  img.id === latestImage.id 
+                    ? { ...img, caption: captionText }
+                    : img
+                ));
+                
+                toast.success(`Caption added: "${captionText}"`);
+              }
+            }
+          } else {
+            // Regular transcription - append to description
+            setDescription(prev => prev ? `${prev}\n${data.text}` : data.text);
+            toast.success(t('common.transcriptionSuccess'));
+          }
         }
       };
     } catch (error: any) {
@@ -593,6 +626,13 @@ const CaptureScreen = () => {
                           className="h-full w-full object-cover cursor-pointer"
                           onClick={() => setSelectedImageIndex(activeIndex)}
                         />
+                        {image.caption && (
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1.5 py-1 backdrop-blur-sm">
+                            <p className="text-[9px] text-white leading-tight line-clamp-2">
+                              {image.caption}
+                            </p>
+                          </div>
+                        )}
                         <button
                           onClick={() => deleteImage(image.id)}
                           className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70"
