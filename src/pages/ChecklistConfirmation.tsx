@@ -13,6 +13,7 @@ import { saveAs } from 'file-saver';
 import { pdf } from '@react-pdf/renderer';
 import { Page, Text, View, Document as PDFDocument, StyleSheet } from '@react-pdf/renderer';
 import { useState } from "react";
+import { formatDateLong } from '@/lib/dateFormat';
 
 interface ChecklistItem {
   text: string;
@@ -87,7 +88,7 @@ const ChecklistConfirmation = () => {
           <Page size="A4" style={pdfStyles.page}>
             <Text style={pdfStyles.title}>{checklist.title}</Text>
             <Text style={pdfStyles.subtitle}>
-              Generated on {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              Generated on {formatDateLong(new Date())}
             </Text>
             {checklist.items.map((item, index) => (
               <View key={index} style={pdfStyles.itemContainer}>
@@ -141,7 +142,7 @@ const ChecklistConfirmation = () => {
         new Paragraph({
           children: [
             new TextRun({
-              text: `Generated on ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
+              text: `Generated on ${formatDateLong(new Date())}`,
               size: 18,
               color: "999999",
             }),
@@ -329,7 +330,7 @@ const ChecklistConfirmation = () => {
           <Page size="A4" style={pdfStyles.page}>
             <Text style={pdfStyles.title}>{checklist.title}</Text>
             <Text style={pdfStyles.subtitle}>
-              Generated on {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              Generated on {formatDateLong(new Date())}
             </Text>
             {checklist.items.map((item, index) => (
               <View key={index} style={pdfStyles.itemContainer}>

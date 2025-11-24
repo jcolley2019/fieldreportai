@@ -13,6 +13,7 @@ import { pdf } from '@react-pdf/renderer';
 import { Page, Text, View, Document as PDFDocument, StyleSheet } from '@react-pdf/renderer';
 import { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer } from 'docx';
 import { saveAs } from 'file-saver';
+import { formatDate, formatDateLong, formatDateTime } from '@/lib/dateFormat';
 import {
   Dialog,
   DialogContent,
@@ -291,7 +292,7 @@ const Notes = () => {
         return elements;
       };
 
-      const currentDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      const currentDate = formatDateLong(new Date());
 
       const NotesPDF = () => (
         <PDFDocument>
@@ -399,13 +400,7 @@ const Notes = () => {
         return elements;
       };
 
-      const currentDate = new Date().toLocaleString('en-US', { 
-        month: 'long', 
-        day: 'numeric', 
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit'
-      });
+      const currentDate = formatDateTime(new Date());
 
       const docSections = [
         new Paragraph({
@@ -480,7 +475,7 @@ const Notes = () => {
       printWindow.document.write(`
         <html>
           <head>
-            <title>Notes - ${new Date().toLocaleDateString()}</title>
+            <title>Notes - ${formatDate(new Date())}</title>
             <style>
               body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
               h1 { color: #333; }
@@ -488,7 +483,7 @@ const Notes = () => {
             </style>
           </head>
           <body>
-            <h1>Notes - ${new Date().toLocaleDateString()}</h1>
+            <h1>Notes - ${formatDate(new Date())}</h1>
             <pre>${content}</pre>
           </body>
         </html>
@@ -572,7 +567,7 @@ const Notes = () => {
       toast.error("No notes to email");
       return;
     }
-    const subject = encodeURIComponent(`Notes - ${new Date().toLocaleDateString()}`);
+    const subject = encodeURIComponent(`Notes - ${formatDate(new Date())}`);
     const body = encodeURIComponent(content);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };

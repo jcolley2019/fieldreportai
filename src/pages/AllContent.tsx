@@ -28,6 +28,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import JSZip from 'jszip';
 import { pdf } from '@react-pdf/renderer';
+import { formatDate, formatDateLong } from '@/lib/dateFormat';
 import { Document as PDFDocument, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { Document, Paragraph, TextRun, HeadingLevel, Packer } from 'docx';
 import { saveAs } from 'file-saver';
@@ -210,12 +211,8 @@ const AllContent = () => {
     return items;
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+  const formatDateDisplay = (dateString: string) => {
+    return formatDate(dateString);
   };
 
   const handleItemClick = (item: ContentItem) => {
@@ -244,7 +241,7 @@ const AllContent = () => {
         <Page size="A4" style={pdfStyles.page}>
           <Text style={pdfStyles.title}>{report.project_name}</Text>
           <Text style={pdfStyles.subtitle}>
-            Field Report - {new Date(report.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            Field Report - {formatDateLong(report.created_at)}
           </Text>
           
           <View style={pdfStyles.section}>
@@ -290,7 +287,7 @@ const AllContent = () => {
         <Page size="A4" style={pdfStyles.page}>
           <Text style={pdfStyles.title}>{checklist.title}</Text>
           <Text style={pdfStyles.subtitle}>
-            Generated on {new Date(checklist.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            Generated on {formatDateLong(checklist.created_at)}
           </Text>
           {checklist.report && (
             <Text style={pdfStyles.subtitle}>
@@ -326,7 +323,7 @@ const AllContent = () => {
       new Paragraph({
         children: [
           new TextRun({
-            text: `Field Report - ${new Date(report.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
+            text: `Field Report - ${formatDateLong(report.created_at)}`,
             size: 20,
             color: "666666",
           }),
@@ -402,7 +399,7 @@ const AllContent = () => {
       new Paragraph({
         children: [
           new TextRun({
-            text: `Generated on ${new Date(checklist.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
+            text: `Generated on ${formatDateLong(checklist.created_at)}`,
             size: 18,
             color: "999999",
           }),
@@ -850,7 +847,7 @@ const AllContent = () => {
                             )}
                             <div className="flex items-center gap-2 text-xs">
                               <Calendar className="h-3 w-3" />
-                              <span>{formatDate(item.created_at)}</span>
+                              <span>{formatDateDisplay(item.created_at)}</span>
                             </div>
                           </CardDescription>
                         </div>

@@ -24,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { formatDateTime } from '@/lib/dateFormat';
 
 interface SavedReport {
   id: string;
@@ -166,14 +167,8 @@ const SavedReports = () => {
     return `${mb.toFixed(2)} MB`;
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
+  const formatDateDisplay = (dateString: string) => {
+    return formatDateTime(dateString);
   };
 
   // Highlight matching text
@@ -288,7 +283,7 @@ const SavedReports = () => {
                   <div className="space-y-1 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Cloud className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{formatDate(report.created_at)}</span>
+                      <span className="truncate">{formatDateDisplay(report.created_at)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <FileText className="h-4 w-4 flex-shrink-0" />
