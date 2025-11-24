@@ -281,7 +281,7 @@ const Onboarding = () => {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log("Skip button clicked");
+                localStorage.setItem('skipOnboarding', 'true');
                 navigate("/dashboard");
               }}
               className="flex items-center gap-2 opacity-5 hover:opacity-100 transition-opacity duration-300"

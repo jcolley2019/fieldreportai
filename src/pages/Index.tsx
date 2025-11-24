@@ -88,8 +88,9 @@ const Index = () => {
       .single();
 
     const isProfileComplete = profile?.first_name && profile?.last_name && profile?.company_name;
+    const skipOnboarding = localStorage.getItem('skipOnboarding') === 'true';
     
-    if (!isProfileComplete) {
+    if (!isProfileComplete && !skipOnboarding) {
       navigate("/onboarding");
     }
 
