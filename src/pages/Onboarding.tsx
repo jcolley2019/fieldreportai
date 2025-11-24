@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, User, Building2, X } from "lucide-react";
+import { Upload, User, Building2, X, SkipForward } from "lucide-react";
 import { ImageCropDialog } from "@/components/ImageCropDialog";
 
 const Onboarding = () => {
@@ -267,10 +267,24 @@ const Onboarding = () => {
     <div className="dark min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-4">
       <Card className="w-full max-w-2xl bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-2xl text-foreground">Welcome to Field Report AI</CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Let's set up your profile to get started
-          </CardDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="text-2xl text-foreground">Welcome to Field Report AI</CardTitle>
+              <CardDescription className="text-muted-foreground">
+                Let's set up your profile to get started
+              </CardDescription>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center gap-2"
+            >
+              <SkipForward className="w-4 h-4" />
+              Skip
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
