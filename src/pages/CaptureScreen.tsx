@@ -519,53 +519,39 @@ const CaptureScreen = () => {
           </div>
 
 
-          {/* Upload/Camera and Voice Recording Section */}
-          <div className="flex gap-4 items-stretch">
+          {/* Upload/Camera Section with Auto Voice Recording */}
+          <div className="flex flex-col items-center gap-4">
             <button
-              onClick={() => setShowCameraDialog(true)}
-              className="flex flex-1 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-colors hover:bg-primary/30"
+              onClick={handleVoiceRecord}
+              className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-colors hover:bg-primary/30"
             >
-              <Camera className="h-10 w-10" />
+              <div className="flex items-center gap-3">
+                <Camera className="h-10 w-10" />
+                <Mic className="h-8 w-8" />
+              </div>
               <p className="text-sm font-medium">
-                Tap to Take Photos/Video or to upload from gallery
+                Tap to Take Photos/Video with Voice Recording
               </p>
             </button>
             
-            {/* Voice Recording Button */}
-            <button
-              onClick={handleVoiceRecord}
-              className={`flex h-auto w-24 flex-shrink-0 items-center justify-center rounded-2xl transition-all ${
-                isRecording 
-                  ? 'bg-destructive text-white animate-pulse shadow-lg shadow-destructive/50' 
-                  : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/30'
-              }`}
-            >
-              <div className="flex flex-col items-center gap-2">
-                <Mic className="h-8 w-8" />
-                {isRecording && (
-                  <p className="text-xs animate-pulse">Stop</p>
-                )}
-              </div>
-            </button>
+            {/* Hidden file inputs */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => handleImageUpload(e.target.files)}
+            />
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => handleImageUpload(e.target.files)}
+            />
           </div>
-            
-          {/* Hidden file inputs */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={(e) => handleImageUpload(e.target.files)}
-          />
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={(e) => handleImageUpload(e.target.files)}
-          />
 
           {/* Image Gallery */}
           {images.length > 0 && (
