@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { Switch } from "@/components/ui/switch";
@@ -24,6 +25,7 @@ import {
   Copy,
   Check,
   Palette,
+  Languages,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -67,9 +69,11 @@ type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [offlineMode, setOfflineMode] = useState(true);
   const [autoRecord, setAutoRecord] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState(i18n.language);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
   const [letterheadUrl, setLetterheadUrl] = useState<string | null>(null);
@@ -138,6 +142,12 @@ const Settings = () => {
         setCurrentPlan(profile.current_plan);
         setEmailTemplateColor(profile.email_template_color || "#007bff");
         setEmailTemplateMessage(profile.email_template_message || "");
+        
+        // Set language from profile
+        if (profile.preferred_language) {
+          setSelectedLanguage(profile.preferred_language);
+          i18n.changeLanguage(profile.preferred_language);
+        }
       }
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -366,6 +376,27 @@ const Settings = () => {
     } catch (error) {
       console.error("Error saving email template:", error);
       toast.error("Failed to save email template");
+    }
+  };
+
+  const handleLanguageChange = async (language: string) => {
+    if (!userId) return;
+
+    try {
+      setSelectedLanguage(language);
+      i18n.changeLanguage(language);
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ preferred_language: language })
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      toast.success(language === 'en' ? 'Language updated successfully' : 'Idioma actualizado exitosamente');
+    } catch (error) {
+      console.error("Error updating language:", error);
+      toast.error(language === 'en' ? 'Failed to update language' : 'Error al actualizar el idioma');
     }
   };
 
@@ -929,6 +960,41 @@ const Settings = () => {
             <p className="pl-9 text-sm text-muted-foreground">
               Automatically record audio when taking photos or videos.
             </p>
+          </div>
+        </div>
+
+        {/* LANGUAGE Section */}
+        <div className="px-4 pt-6">
+          <h3 className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            {t('settings.language')}
+          </h3>
+
+          {/* Language Selector */}
+          <div className="flex flex-col gap-2 border-b border-border py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Languages className="h-5 w-5 text-foreground" />
+                <span className="text-base font-medium text-foreground">
+                  {t('settings.selectLanguage')}
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-2 pl-9">
+              <Button
+                variant={selectedLanguage === 'en' ? 'default' : 'outline'}
+                onClick={() => handleLanguageChange('en')}
+                className="flex-1"
+              >
+                {t('settings.english')}
+              </Button>
+              <Button
+                variant={selectedLanguage === 'es' ? 'default' : 'outline'}
+                onClick={() => handleLanguageChange('es')}
+                className="flex-1"
+              >
+                {t('settings.spanish')}
+              </Button>
+            </div>
           </div>
         </div>
 
