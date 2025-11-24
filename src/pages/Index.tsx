@@ -154,7 +154,7 @@ const Index = () => {
       setProjects(projectsWithCounts);
     } catch (error) {
       console.error('Error fetching projects:', error);
-      toast.error('Failed to load projects');
+      toast.error(t('dashboard.failedLoadProjects'));
     }
   };
 
@@ -190,11 +190,11 @@ const Index = () => {
 
       if (error) throw error;
 
-      toast.success('Project deleted successfully');
+      toast.success(t('dashboard.projectDeleted'));
       fetchProjects();
     } catch (error) {
       console.error('Error deleting project:', error);
-      toast.error('Failed to delete project');
+      toast.error(t('dashboard.failedDeleteProject'));
     }
   };
 
@@ -247,7 +247,7 @@ const Index = () => {
                 {projects.slice(0, 5).map((project) => (
                   <DropdownMenuItem 
                     key={project.id}
-                    onClick={() => toast.info(`View project: ${project.project_name}`)}
+                    onClick={() => navigate(`/project/${project.id}`)}
                     className="cursor-pointer flex-col items-start gap-1"
                   >
                     <div className="flex items-center gap-2 w-full">
@@ -264,10 +264,6 @@ const Index = () => {
             )}
             
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/leads")} className="cursor-pointer">
-              <Hash className="mr-2 h-4 w-4" />
-              {t('dashboard.leadsDashboard')}
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/all-content")} className="cursor-pointer">
               <Layers className="mr-2 h-4 w-4" />
               {t('dashboard.allContent')}
@@ -408,7 +404,7 @@ const Index = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => toast.info(`View project: ${project.project_name}`)}
+                      onClick={() => navigate(`/project/${project.id}`)}
                       className="text-muted-foreground hover:text-foreground"
                     >
                       <Eye className="h-5 w-5" />
