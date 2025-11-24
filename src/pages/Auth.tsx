@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255),
@@ -226,6 +227,11 @@ const Auth = () => {
   return (
     <div className="dark min-h-screen">
       <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
+        {/* Language Selector - Top Right */}
+        <div className="absolute top-4 right-4">
+          <LanguageSelector />
+        </div>
+
         <div className="w-full max-w-sm">
           {/* Logo */}
           <div className="flex justify-center pb-8">

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Upload, User, Building2, X, SkipForward } from "lucide-react";
 import { ImageCropDialog } from "@/components/ImageCropDialog";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -267,13 +268,18 @@ const Onboarding = () => {
 
   return (
     <div className="dark min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-4">
+      {/* Language Selector - Top Right */}
+      <div className="absolute top-4 right-4">
+        <LanguageSelector />
+      </div>
+
       <Card className="w-full max-w-2xl bg-card border-border">
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-2xl text-foreground">Welcome to Field Report AI</CardTitle>
+              <CardTitle className="text-2xl text-foreground">{t('onboarding.welcome')}</CardTitle>
               <CardDescription className="text-muted-foreground">
-                Let's set up your profile to get started
+                {t('onboarding.setupProfile')}
               </CardDescription>
             </div>
             <Button
