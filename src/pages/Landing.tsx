@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/accordion";
 import logo from "@/assets/field-report-ai-logo.png";
 import { PricingSection } from "@/components/PricingSection";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 const Landing = () => {
   const features = [
@@ -139,6 +140,9 @@ const Landing = () => {
             <a href="#features" className="text-sm text-foreground/80 hover:text-foreground">Features</a>
             <a href="#pricing" className="text-sm text-foreground/80 hover:text-foreground">Pricing</a>
             <a href="#faq" className="text-sm text-foreground/80 hover:text-foreground">FAQ</a>
+            <div className="p-2 rounded-lg bg-accent/50 border border-border/50 backdrop-blur-sm">
+              <LanguageSelector />
+            </div>
             <Link to="/auth">
               <Button variant="secondary" size="sm" className="border-2 border-primary font-bold">Sign In</Button>
             </Link>
