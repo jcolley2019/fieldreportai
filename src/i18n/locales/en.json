@@ -530,7 +530,7 @@
   },
   "allContent": {
     "title": "All Content",
-    "exportPdf": "Export PDF",
+    "export": "Export",
     "exportWord": "Export Word",
     "email": "Email",
     "searchPlaceholder": "Search by project, customer, job number...",
