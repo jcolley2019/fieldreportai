@@ -283,6 +283,7 @@ const Index = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <h1 className="text-lg font-semibold text-foreground flex-1 text-center">Dashboard</h1>
           <div className="flex items-center gap-2">
             <Button
               onClick={() => {
