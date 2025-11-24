@@ -604,8 +604,7 @@ const Checklist = () => {
           <div className="flex flex-col items-center gap-4">
             <button
               onClick={() => setShowCameraDialog(true)}
-              className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-all duration-300 hover:bg-primary/30 hover:scale-[1.02] shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 animate-pulse"
-              style={{ animationDuration: '3s' }}
+              className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-colors hover:bg-primary/30"
             >
               <Camera className="h-10 w-10" />
               <p className="text-sm font-medium">
