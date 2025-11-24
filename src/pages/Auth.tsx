@@ -121,7 +121,7 @@ const Auth = () => {
 
           // Send to Zapier webhook for Google Sheets
           try {
-            const zapierWebhookUrl = "YOUR_ZAPIER_WEBHOOK_URL_HERE";
+            const zapierWebhookUrl = "https://hooks.zapier.com/hooks/catch/25475428/uzgnzrz/";
             await fetch(zapierWebhookUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
