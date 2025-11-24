@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
@@ -36,6 +37,7 @@ interface SavedReport {
 }
 
 const SavedReports = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [reports, setReports] = useState<SavedReport[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -224,7 +226,7 @@ const SavedReports = () => {
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
         <BackButton />
-        <h1 className="text-lg font-bold text-foreground">Saved Reports</h1>
+        <h1 className="text-lg font-bold text-foreground">{t('savedReports.title')}</h1>
         <SettingsButton />
       </header>
 
@@ -235,7 +237,7 @@ const SavedReports = () => {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search saved reports..."
+              placeholder={t('savedReports.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 bg-card border-border text-foreground placeholder:text-muted-foreground"
@@ -258,7 +260,7 @@ const SavedReports = () => {
         {reports.length === 0 ? (
           <div className="rounded-lg bg-card p-8 text-center">
             <Cloud className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <p className="text-muted-foreground">No saved reports yet. Reports you save to cloud will appear here!</p>
+            <p className="text-muted-foreground">{t('savedReports.emptyState')}</p>
           </div>
         ) : filteredReports.length === 0 ? (
           <div className="rounded-lg bg-card p-8 text-center">
