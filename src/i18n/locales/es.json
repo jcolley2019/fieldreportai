@@ -1,4 +1,35 @@
 {
+  "onboarding": {
+    "welcome": "Bienvenido a Field Report AI",
+    "setupProfile": "Configuremos tu perfil para comenzar",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "companyName": "Nombre de la Empresa",
+    "profilePicture": "Foto de Perfil",
+    "companyLogo": "Logo de la Empresa",
+    "uploadPhoto": "Subir Foto",
+    "changePhoto": "Cambiar Foto",
+    "uploadLogo": "Subir Logo",
+    "changeLogo": "Cambiar Logo",
+    "completeSetup": "Completar Configuración",
+    "skipForNow": "Omitir por ahora",
+    "errors": {
+      "fileTooLarge": "Archivo demasiado grande",
+      "avatarSize": "La imagen de perfil debe ser menor de 5MB",
+      "logoSize": "El logo de la empresa debe ser menor de 5MB",
+      "invalidFileType": "Tipo de archivo inválido",
+      "uploadImageFile": "Por favor, sube un archivo de imagen",
+      "firstNameRequired": "El nombre es obligatorio",
+      "lastNameRequired": "El apellido es obligatorio",
+      "companyNameRequired": "El nombre de la empresa es obligatorio",
+      "uploadFailed": "Error al subir",
+      "setupFailed": "Error en la configuración"
+    },
+    "success": {
+      "profileCreated": "¡Perfil creado exitosamente!",
+      "redirecting": "Redirigiendo al panel de control..."
+    }
+  },
   "auth": {
     "welcomeBack": "Bienvenido de Nuevo",
     "createAccount": "Crear Cuenta",
@@ -204,6 +235,11 @@
     "loading": "Cargando...",
     "settings": "Configuración",
     "menu": "Menú",
+    "skip": "Omitir",
+    "uploading": "Subiendo...",
+    "uploadingAvatar": "Subiendo foto de perfil...",
+    "uploadingLogo": "Subiendo logo...",
+    "settingUp": "Configurando...",
     "recordingStarted": "Grabación iniciada - toca de nuevo para detener",
     "processingAudio": "Procesando audio...",
     "microphoneError": "No se pudo acceder al micrófono",
