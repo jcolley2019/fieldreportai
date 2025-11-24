@@ -2,13 +2,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Settings } from "lucide-react";
 
-interface BackButtonProps {
+interface PageHeaderProps {
   className?: string;
   fallbackPath?: string;
-  showSettings?: boolean;
 }
 
-export const BackButton = ({ className = "", fallbackPath = "/dashboard", showSettings = true }: BackButtonProps) => {
+export const PageHeader = ({ className = "", fallbackPath = "/dashboard" }: PageHeaderProps) => {
   const navigate = useNavigate();
 
   return (
@@ -22,17 +21,15 @@ export const BackButton = ({ className = "", fallbackPath = "/dashboard", showSe
         Back
       </Button>
       
-      {showSettings && (
-        <Button
-          onClick={() => navigate("/settings")}
-          size="sm"
-          variant="ghost"
-          className="gap-2 transition-transform duration-200 hover:scale-105"
-        >
-          <Settings className="h-4 w-4" />
-          Settings
-        </Button>
-      )}
+      <Button
+        onClick={() => navigate("/settings")}
+        size="sm"
+        variant="ghost"
+        className="gap-2 transition-transform duration-200 hover:scale-105"
+      >
+        <Settings className="h-4 w-4" />
+        Settings
+      </Button>
     </div>
   );
 };
