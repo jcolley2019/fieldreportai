@@ -215,8 +215,8 @@ const Index = () => {
   return (
     <div className="dark min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 px-4 py-1 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border">
+        <div className="flex items-center justify-between px-4 py-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 hover:bg-secondary rounded-md px-2 py-1 transition-colors">
