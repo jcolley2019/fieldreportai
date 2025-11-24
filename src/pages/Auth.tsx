@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Eye, EyeOff, Fingerprint, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ const authSchema = z.object({
 });
 
 const Auth = () => {
+  const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -54,8 +56,8 @@ const Auth = () => {
         if (error) {
           if (error.message.includes("Invalid login credentials")) {
             toast({
-              title: "Login failed",
-              description: "Invalid email or password. Please try again.",
+              title: t('auth.errors.loginFailed'),
+              description: t('auth.errors.invalidCredentials'),
               variant: "destructive",
             });
           } else {
@@ -76,8 +78,8 @@ const Auth = () => {
           const isProfileComplete = profile?.first_name && profile?.last_name && profile?.company_name;
 
           toast({
-            title: "Success",
-            description: "Logged in successfully!",
+            title: t('auth.success.loggedIn').split('!')[0],
+            description: t('auth.success.loggedIn'),
           });
           
           navigate(isProfileComplete ? "/dashboard" : "/onboarding");
@@ -94,8 +96,8 @@ const Auth = () => {
         if (error) {
           if (error.message.includes("already registered")) {
             toast({
-              title: "Account exists",
-              description: "This email is already registered. Please login instead.",
+              title: t('auth.errors.accountExists'),
+              description: t('auth.errors.emailRegistered'),
               variant: "destructive",
             });
           } else {
@@ -140,8 +142,8 @@ const Auth = () => {
           }
 
           toast({
-            title: "Success",
-            description: "Account created successfully! You can now log in.",
+            title: t('auth.success.accountCreated').split('!')[0],
+            description: t('auth.success.accountCreated'),
           });
           setIsLogin(true);
         }
@@ -149,14 +151,14 @@ const Auth = () => {
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({
-          title: "Validation Error",
+          title: t('auth.errors.validationError'),
           description: error.errors[0].message,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Error",
-          description: "An unexpected error occurred.",
+          title: t('auth.errors.validationError'),
+          description: t('auth.errors.unexpectedError'),
           variant: "destructive",
         });
       }
@@ -216,8 +218,8 @@ const Auth = () => {
 
   const handleBiometricLogin = () => {
     toast({
-      title: "Coming Soon",
-      description: "Biometric authentication will be available soon.",
+      title: t('auth.success.biometricSoon').split('.')[0],
+      description: t('auth.success.biometricSoon'),
     });
   };
 
@@ -234,10 +236,10 @@ const Auth = () => {
 
           {/* Headline */}
           <h1 className="pb-2 text-center text-[32px] font-bold leading-tight tracking-tight text-foreground">
-            {isLogin ? "Welcome Back" : "Create Account"}
+            {isLogin ? t('auth.welcomeBack') : t('auth.createAccount')}
           </h1>
           <p className="pb-8 text-center text-sm text-muted-foreground">
-            {isLogin ? "Log in to continue" : "Sign up to get started"}
+            {isLogin ? t('auth.loginToContinue') : t('auth.signupToGetStarted')}
           </p>
 
           {/* Form */}
@@ -245,12 +247,12 @@ const Auth = () => {
             {/* Email Field */}
             <div className="flex w-full flex-col">
               <Label htmlFor="email" className="pb-2 text-base font-medium text-foreground/90">
-                Email Address
+                {t('auth.emailAddress')}
               </Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder={t('auth.emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-12 rounded-lg border-input bg-input/50 text-base text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
@@ -261,13 +263,13 @@ const Auth = () => {
             {/* Password Field */}
             <div className="flex w-full flex-col">
               <Label htmlFor="password" className="pb-2 text-base font-medium text-foreground/90">
-                Password
+                {t('auth.password')}
               </Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder={t('auth.passwordPlaceholder')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="h-12 rounded-lg border-input bg-input/50 pr-12 text-base text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
@@ -277,7 +279,7 @@ const Auth = () => {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -297,12 +299,12 @@ const Auth = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     toast({
-                      title: "Password Reset",
-                      description: "Password reset functionality coming soon.",
+                      title: t('auth.success.passwordResetSoon').split('.')[0],
+                      description: t('auth.success.passwordResetSoon'),
                     });
                   }}
                 >
-                  Forgot Password?
+                  {t('auth.forgotPassword')}
                 </a>
               </div>
             )}
@@ -313,7 +315,7 @@ const Auth = () => {
               disabled={loading}
               className="h-12 w-full rounded-lg bg-primary text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              {loading ? "Please wait..." : isLogin ? "Log In" : "Sign Up"}
+              {loading ? t('auth.pleaseWait') : isLogin ? t('auth.logIn') : t('auth.signUp')}
             </Button>
 
             {/* Divider */}
@@ -323,7 +325,7 @@ const Auth = () => {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="bg-background px-2 text-muted-foreground">
-                  or continue with
+                  {t('auth.orContinueWith')}
                 </span>
               </div>
             </div>
@@ -353,7 +355,7 @@ const Auth = () => {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Continue with Google
+              {t('auth.continueWithGoogle')}
             </Button>
 
             {/* Biometric Login Button (only show on login) */}
@@ -365,19 +367,19 @@ const Auth = () => {
                 className="h-12 w-full rounded-lg border-input bg-transparent text-base font-medium text-foreground hover:bg-input/30 transition-colors"
               >
                 <Fingerprint className="mr-2 h-5 w-5" />
-                Login with Biometrics
+                {t('auth.loginWithBiometrics')}
               </Button>
             )}
 
             {/* Toggle between login and signup */}
             <div className="text-center text-sm text-muted-foreground">
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              {isLogin ? t('auth.dontHaveAccount') : t('auth.alreadyHaveAccount')}
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
                 className="font-medium text-primary hover:underline"
               >
-                {isLogin ? "Sign Up" : "Log In"}
+                {isLogin ? t('auth.signUp') : t('auth.logIn')}
               </button>
             </div>
           </form>
