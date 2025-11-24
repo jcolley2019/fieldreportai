@@ -545,6 +545,7 @@
     "reports": "Informes",
     "checklists": "Listas de Verificación",
     "emptyState": "No hay contenido aún. ¡Crea tu primer proyecto para comenzar!",
+    "noMatches": "Ningún contenido coincide con tus filtros",
     "sortRecent": "Más Reciente",
     "sortName": "Nombre",
     "sortProject": "Proyecto",

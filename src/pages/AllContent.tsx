@@ -778,7 +778,7 @@ const AllContent = () => {
                   <Filter className="h-12 w-12 text-muted-foreground mb-4" />
                   <p className="text-muted-foreground text-center">
                     {searchQuery || dateFilter !== "all" 
-                      ? "No content matches your filters"
+                      ? t('allContent.noMatches')
                       : t('allContent.emptyState')}
                   </p>
                 </CardContent>
