@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
+import { SettingsButton } from "@/components/SettingsButton";
 import { Building2, Download, Edit2, Save, X, Link2, FileText, Printer, Cloud, Loader2, Check, ChevronDown, Link } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
@@ -734,11 +735,7 @@ const FinalReport = () => {
         <div className="flex flex-col gap-2 p-4 pb-3">
           <div className="flex h-12 items-center justify-between">
             <BackButton />
-            <div className="flex w-auto items-center justify-end">
-              <p className="shrink-0 text-sm font-medium text-muted-foreground">
-                {reportData?.created_at ? formatDate(reportData.created_at) : 'N/A'}
-              </p>
-            </div>
+            <SettingsButton />
           </div>
           <p className="text-2xl font-bold leading-tight tracking-tight text-foreground">
             {reportData?.project_name || 'Report'}

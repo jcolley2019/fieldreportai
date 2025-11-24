@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
+import { SettingsButton } from "@/components/SettingsButton";
 import { ChevronDown, ChevronUp, Pencil, Play, Printer, Download, FolderPlus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -237,11 +238,12 @@ const ReviewSummary = () => {
   return (
     <div className="dark min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center bg-background/80 p-4 backdrop-blur-sm">
+      <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 p-4 backdrop-blur-sm">
         <BackButton />
-        <h1 className="flex-1 pr-10 text-center text-lg font-bold text-foreground">
+        <h1 className="flex-1 text-center text-lg font-bold text-foreground">
           Review Summary
         </h1>
+        <SettingsButton />
       </header>
 
       <main className="flex flex-col pb-32">

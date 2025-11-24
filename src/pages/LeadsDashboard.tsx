@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BackButton } from "@/components/BackButton";
+import { SettingsButton } from "@/components/SettingsButton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -213,7 +214,10 @@ export default function LeadsDashboard() {
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto">
-        <BackButton />
+        <div className="flex items-center justify-between mb-8">
+          <BackButton />
+          <SettingsButton />
+        </div>
 
         <Card className="mt-8">
           <CardHeader>

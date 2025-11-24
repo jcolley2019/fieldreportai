@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
+import { SettingsButton } from "@/components/SettingsButton";
 import { Input } from "@/components/ui/input";
 import { Building2, Hash, User as UserIcon, ListChecks, Search, Filter, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -149,14 +150,17 @@ const ProjectsCustomers = () => {
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
         <BackButton />
         <h1 className="text-lg font-bold text-foreground">Projects & Customers</h1>
-        <Button
-          onClick={() => navigate("/new-project")}
-          size="sm"
-          className="gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Create Project
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => navigate("/new-project")}
+            size="sm"
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Create Project
+          </Button>
+          <SettingsButton />
+        </div>
       </header>
 
       <main className="p-4">
