@@ -140,9 +140,6 @@ const Landing = () => {
             <a href="#features" className="text-sm text-foreground/80 hover:text-foreground">Features</a>
             <a href="#pricing" className="text-sm text-foreground/80 hover:text-foreground">Pricing</a>
             <a href="#faq" className="text-sm text-foreground/80 hover:text-foreground">FAQ</a>
-            <div className="p-2 rounded-lg bg-accent/50 border border-border/50 backdrop-blur-sm">
-              <LanguageSelector />
-            </div>
             <Link to="/auth">
               <Button variant="secondary" size="sm" className="border-2 border-primary font-bold">Sign In</Button>
             </Link>
@@ -187,7 +184,7 @@ const Landing = () => {
               Capture photos, videos, and voice notes—Field Report AI instantly turns them into professional reports and structured checklists.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
               <Link to="/auth">
                 <Button size="lg" className="gap-2 shadow-lg shadow-primary/20">
                   Get Started Free <ArrowRight className="h-4 w-4" />
@@ -196,6 +193,12 @@ const Landing = () => {
               <Button size="lg" variant="secondary" className="gap-2 border-2 border-primary font-bold hover:bg-primary/10">
                 <Play className="h-4 w-4" /> Watch Demo
               </Button>
+            </div>
+            
+            <div className="flex justify-center mb-12">
+              <div className="p-2 rounded-lg bg-accent/50 border border-border/50 backdrop-blur-sm">
+                <LanguageSelector />
+              </div>
             </div>
             
             <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto">
