@@ -59,13 +59,16 @@
       "accountExists": "Account exists",
       "emailRegistered": "This email is already registered. Please login instead.",
       "validationError": "Validation Error",
-      "unexpectedError": "An unexpected error occurred."
+      "unexpectedError": "An unexpected error occurred.",
+      "emailRequired": "Please enter your email address to reset your password."
     },
     "success": {
       "loggedIn": "Logged in successfully!",
       "accountCreated": "Account created successfully! You can now log in.",
       "passwordResetSoon": "Password reset functionality coming soon.",
-      "biometricSoon": "Biometric authentication will be available soon."
+      "biometricSoon": "Biometric authentication will be available soon.",
+      "resetEmailSent": "Password Reset Email Sent",
+      "checkEmail": "Check your email for a password reset link."
     }
   },
   "dashboard": {

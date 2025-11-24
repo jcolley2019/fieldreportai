@@ -224,6 +224,36 @@ const Auth = () => {
     });
   };
 
+  const handlePasswordReset = async () => {
+    if (!email) {
+      toast({
+        title: t('auth.errors.validationError'),
+        description: t('auth.errors.emailRequired'),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth?reset=true`,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: t('auth.success.resetEmailSent'),
+        description: t('auth.success.checkEmail'),
+      });
+    } catch (error: any) {
+      toast({
+        title: t('auth.errors.validationError'),
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="dark min-h-screen">
       <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
@@ -299,19 +329,13 @@ const Auth = () => {
             {/* Forgot Password Link (only show on login) */}
             {isLogin && (
               <div className="flex justify-end">
-                <a
-                  href="#"
+                <button
+                  type="button"
                   className="text-sm font-medium text-primary hover:underline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toast({
-                      title: t('auth.success.passwordResetSoon').split('.')[0],
-                      description: t('auth.success.passwordResetSoon'),
-                    });
-                  }}
+                  onClick={handlePasswordReset}
                 >
                   {t('auth.forgotPassword')}
-                </a>
+                </button>
               </div>
             )}
 

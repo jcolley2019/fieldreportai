@@ -59,13 +59,16 @@
       "accountExists": "La cuenta ya existe",
       "emailRegistered": "Este correo electrónico ya está registrado. Por favor, inicia sesión.",
       "validationError": "Error de Validación",
-      "unexpectedError": "Ocurrió un error inesperado."
+      "unexpectedError": "Ocurrió un error inesperado.",
+      "emailRequired": "Por favor, ingresa tu dirección de correo electrónico para restablecer tu contraseña."
     },
     "success": {
       "loggedIn": "¡Sesión iniciada exitosamente!",
       "accountCreated": "¡Cuenta creada exitosamente! Ahora puedes iniciar sesión.",
       "passwordResetSoon": "La funcionalidad de restablecimiento de contraseña estará disponible pronto.",
-      "biometricSoon": "La autenticación biométrica estará disponible pronto."
+      "biometricSoon": "La autenticación biométrica estará disponible pronto.",
+      "resetEmailSent": "Correo de Restablecimiento de Contraseña Enviado",
+      "checkEmail": "Revisa tu correo electrónico para obtener un enlace de restablecimiento de contraseña."
     }
   },
   "dashboard": {
