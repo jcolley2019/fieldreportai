@@ -1,4 +1,35 @@
 {
+  "onboarding": {
+    "welcome": "Welcome to Field Report AI",
+    "setupProfile": "Let's set up your profile to get started",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "companyName": "Company Name",
+    "profilePicture": "Profile Picture",
+    "companyLogo": "Company Logo",
+    "uploadPhoto": "Upload Photo",
+    "changePhoto": "Change Photo",
+    "uploadLogo": "Upload Logo",
+    "changeLogo": "Change Logo",
+    "completeSetup": "Complete Setup",
+    "skipForNow": "Skip for now",
+    "errors": {
+      "fileTooLarge": "File too large",
+      "avatarSize": "Avatar image must be less than 5MB",
+      "logoSize": "Company logo must be less than 5MB",
+      "invalidFileType": "Invalid file type",
+      "uploadImageFile": "Please upload an image file",
+      "firstNameRequired": "First name is required",
+      "lastNameRequired": "Last name is required",
+      "companyNameRequired": "Company name is required",
+      "uploadFailed": "Upload failed",
+      "setupFailed": "Setup failed"
+    },
+    "success": {
+      "profileCreated": "Profile created successfully!",
+      "redirecting": "Redirecting to dashboard..."
+    }
+  },
   "auth": {
     "welcomeBack": "Welcome Back",
     "createAccount": "Create Account",
@@ -204,6 +235,11 @@
     "loading": "Loading...",
     "settings": "Settings",
     "menu": "Menu",
+    "skip": "Skip",
+    "uploading": "Uploading...",
+    "uploadingAvatar": "Uploading avatar...",
+    "uploadingLogo": "Uploading logo...",
+    "settingUp": "Setting up...",
     "recordingStarted": "Recording started - tap again to stop",
     "processingAudio": "Processing audio...",
     "microphoneError": "Could not access microphone",

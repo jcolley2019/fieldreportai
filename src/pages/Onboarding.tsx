@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { ImageCropDialog } from "@/components/ImageCropDialog";
 const Onboarding = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -52,8 +54,8 @@ const Onboarding = () => {
       if (file.size > 5 * 1024 * 1024) {
         setErrors(prev => ({ ...prev, avatar: "File size must be less than 5MB" }));
         toast({
-          title: "File too large",
-          description: "Avatar image must be less than 5MB",
+          title: t('onboarding.errors.fileTooLarge'),
+          description: t('onboarding.errors.avatarSize'),
           variant: "destructive",
         });
         return;
@@ -63,8 +65,8 @@ const Onboarding = () => {
       if (!file.type.startsWith('image/')) {
         setErrors(prev => ({ ...prev, avatar: "File must be an image" }));
         toast({
-          title: "Invalid file type",
-          description: "Please upload an image file",
+          title: t('onboarding.errors.invalidFileType'),
+          description: t('onboarding.errors.uploadImageFile'),
           variant: "destructive",
         });
         return;
@@ -96,8 +98,8 @@ const Onboarding = () => {
       if (file.size > 5 * 1024 * 1024) {
         setErrors(prev => ({ ...prev, logo: "File size must be less than 5MB" }));
         toast({
-          title: "File too large",
-          description: "Company logo must be less than 5MB",
+          title: t('onboarding.errors.fileTooLarge'),
+          description: t('onboarding.errors.logoSize'),
           variant: "destructive",
         });
         return;
@@ -107,8 +109,8 @@ const Onboarding = () => {
       if (!file.type.startsWith('image/')) {
         setErrors(prev => ({ ...prev, logo: "File must be an image" }));
         toast({
-          title: "Invalid file type",
-          description: "Please upload an image file",
+          title: t('onboarding.errors.invalidFileType'),
+          description: t('onboarding.errors.uploadImageFile'),
           variant: "destructive",
         });
         return;
@@ -233,8 +235,8 @@ const Onboarding = () => {
       if (error) throw error;
 
       toast({
-        title: "Profile complete!",
-        description: "Welcome to Field Report AI",
+        title: t('onboarding.success.profileCreated'),
+        description: t('onboarding.success.redirecting'),
       });
 
       navigate("/dashboard");
@@ -254,7 +256,7 @@ const Onboarding = () => {
       }
 
       toast({
-        title: "Error",
+        title: t('onboarding.errors.setupFailed'),
         description: errorMessage,
         variant: "destructive",
       });
@@ -287,7 +289,7 @@ const Onboarding = () => {
               className="flex items-center gap-2 opacity-5 hover:opacity-100 transition-opacity duration-300"
             >
               <SkipForward className="w-4 h-4" />
-              Skip
+              {t('common.skip')}
             </Button>
           </div>
         </CardHeader>
@@ -295,7 +297,7 @@ const Onboarding = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">First Name *</Label>
+                <Label htmlFor="firstName">{t('onboarding.firstName')} *</Label>
                 <Input
                   id="firstName"
                   value={firstName}
@@ -312,7 +314,7 @@ const Onboarding = () => {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name *</Label>
+                <Label htmlFor="lastName">{t('onboarding.lastName')} *</Label>
                 <Input
                   id="lastName"
                   value={lastName}
@@ -331,7 +333,7 @@ const Onboarding = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="companyName">Company Name *</Label>
+              <Label htmlFor="companyName">{t('onboarding.companyName')} *</Label>
               <Input
                 id="companyName"
                 value={companyName}
@@ -350,7 +352,7 @@ const Onboarding = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label>Profile Picture</Label>
+                <Label>{t('onboarding.profilePicture')}</Label>
                 <div className="flex flex-col items-center gap-3">
                   {avatarPreview ? (
                     <div className="relative">
@@ -378,7 +380,7 @@ const Onboarding = () => {
                     className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
                   >
                     <Upload className="w-4 h-4" />
-                    {uploadingAvatar ? "Uploading..." : avatarPreview ? "Change Photo" : "Upload Photo"}
+                    {uploadingAvatar ? t('common.uploading') : avatarPreview ? t('onboarding.changePhoto') : t('onboarding.uploadPhoto')}
                   </Label>
                   {errors.avatar && (
                     <p className="text-sm text-destructive">{errors.avatar}</p>
@@ -395,7 +397,7 @@ const Onboarding = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Company Logo</Label>
+                <Label>{t('onboarding.companyLogo')}</Label>
                 <div className="flex flex-col items-center gap-3">
                   {logoPreview ? (
                     <div className="relative">
@@ -423,7 +425,7 @@ const Onboarding = () => {
                     className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
                   >
                     <Upload className="w-4 h-4" />
-                    {uploadingLogo ? "Uploading..." : logoPreview ? "Change Logo" : "Upload Logo"}
+                    {uploadingLogo ? t('common.uploading') : logoPreview ? t('onboarding.changeLogo') : t('onboarding.uploadLogo')}
                   </Label>
                   {errors.logo && (
                     <p className="text-sm text-destructive">{errors.logo}</p>
@@ -441,7 +443,7 @@ const Onboarding = () => {
             </div>
 
             <Button type="submit" className="w-full" disabled={loading || uploadingAvatar || uploadingLogo}>
-              {loading ? "Setting up..." : uploadingAvatar ? "Uploading avatar..." : uploadingLogo ? "Uploading logo..." : "Complete Setup"}
+              {loading ? t('common.settingUp') : uploadingAvatar ? t('common.uploadingAvatar') : uploadingLogo ? t('common.uploadingLogo') : t('onboarding.completeSetup')}
             </Button>
           </form>
         </CardContent>
