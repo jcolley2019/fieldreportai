@@ -643,11 +643,11 @@ const Checklist = () => {
                 <Mic className="h-8 w-8" />
               </button>
               {isRecording ? (
-                <p className="text-sm text-muted-foreground animate-pulse">{t('checklist.recordingStatus')}</p>
+                <p className="text-base text-muted-foreground animate-pulse">{t('checklist.recordingStatus')}</p>
               ) : (
                 <div className="text-center">
-                  <p className="text-sm font-medium text-foreground mb-1">{t('checklist.recordInstructions')}</p>
-                  <p className="text-xs text-muted-foreground">{t('checklist.recordDetails')}</p>
+                  <p className="text-base font-semibold text-foreground mb-1">{t('checklist.recordInstructions')}</p>
+                  <p className="text-sm text-muted-foreground">{t('checklist.recordDetails')}</p>
                 </div>
               )}
             </div>
