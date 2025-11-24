@@ -565,13 +565,13 @@ const Settings = () => {
               {(currentPlan === 'premium' || currentPlan === 'enterprise') && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-foreground">Company Letterhead</Label>
+                    <Label className="text-foreground">{t('settings.companyLetterhead')}</Label>
                     <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
-                      {currentPlan === 'premium' ? 'Premium' : 'Enterprise'} Feature
+                      {currentPlan === 'premium' ? t('settings.premiumFeature') : t('settings.enterpriseFeature')}
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Upload your letterhead to use in PDF and Word document exports
+                    {t('settings.letterheadDesc')}
                   </p>
                   <div className="flex items-center gap-4">
                     {letterheadUrl && (
@@ -596,7 +596,7 @@ const Settings = () => {
                         className="border-primary text-foreground hover:bg-primary/10"
                       >
                         <Camera className="mr-2 h-4 w-4" />
-                        {uploading ? "Uploading..." : letterheadUrl ? "Change Letterhead" : "Upload Letterhead"}
+                        {uploading ? t('common.uploading') : letterheadUrl ? t('settings.changeLetterhead') : t('settings.uploadLetterhead')}
                       </Button>
                       {letterheadUrl && (
                         <Button
@@ -608,11 +608,11 @@ const Settings = () => {
                               .from("profiles")
                               .update({ letterhead_url: null })
                               .eq("id", userId);
-                            toast.success("Letterhead removed");
+                            toast.success(t('settings.letterheadRemoved'));
                           }}
                           className="ml-2 text-destructive hover:text-destructive"
                         >
-                          Remove
+                          {t('settings.remove')}
                         </Button>
                       )}
                     </div>
@@ -775,13 +775,13 @@ const Settings = () => {
                         {form.watch("companyName") || "Your Company"}
                       </div>
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Field Report Export</h3>
-                    <p className="text-sm text-gray-600 mb-4">Your export is ready</p>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('settings.emailPreviewTitle')}</h3>
+                    <p className="text-sm text-gray-600 mb-4">{t('settings.emailPreviewDesc')}</p>
                     <button
                       style={{ backgroundColor: emailTemplateColor }}
                       className="text-white px-6 py-2 rounded font-medium text-sm"
                     >
-                      Download Export
+                      {t('settings.emailPreviewButton')}
                     </button>
                     {emailTemplateMessage && (
                       <p className="text-xs text-gray-500 mt-4 pt-4 border-t border-gray-200">
