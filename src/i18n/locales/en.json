@@ -1,4 +1,42 @@
 {
+  "auth": {
+    "welcomeBack": "Welcome Back",
+    "createAccount": "Create Account",
+    "loginToContinue": "Log in to continue",
+    "signupToGetStarted": "Sign up to get started",
+    "emailAddress": "Email Address",
+    "emailPlaceholder": "Enter your email",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "forgotPassword": "Forgot Password?",
+    "logIn": "Log In",
+    "signUp": "Sign Up",
+    "pleaseWait": "Please wait...",
+    "orContinueWith": "or continue with",
+    "continueWithGoogle": "Continue with Google",
+    "loginWithBiometrics": "Login with Biometrics",
+    "dontHaveAccount": "Don't have an account? ",
+    "alreadyHaveAccount": "Already have an account? ",
+    "hidePassword": "Hide password",
+    "showPassword": "Show password",
+    "errors": {
+      "invalidEmail": "Invalid email address",
+      "passwordTooShort": "Password must be at least 8 characters",
+      "passwordTooLong": "Password must be less than 100 characters",
+      "loginFailed": "Login failed",
+      "invalidCredentials": "Invalid email or password. Please try again.",
+      "accountExists": "Account exists",
+      "emailRegistered": "This email is already registered. Please login instead.",
+      "validationError": "Validation Error",
+      "unexpectedError": "An unexpected error occurred."
+    },
+    "success": {
+      "loggedIn": "Logged in successfully!",
+      "accountCreated": "Account created successfully! You can now log in.",
+      "passwordResetSoon": "Password reset functionality coming soon.",
+      "biometricSoon": "Biometric authentication will be available soon."
+    }
+  },
   "dashboard": {
     "title": "Dashboard",
     "menu": "Menu",

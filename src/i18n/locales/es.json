@@ -1,4 +1,42 @@
 {
+  "auth": {
+    "welcomeBack": "Bienvenido de Nuevo",
+    "createAccount": "Crear Cuenta",
+    "loginToContinue": "Inicia sesión para continuar",
+    "signupToGetStarted": "Regístrate para comenzar",
+    "emailAddress": "Dirección de Correo Electrónico",
+    "emailPlaceholder": "Ingresa tu correo electrónico",
+    "password": "Contraseña",
+    "passwordPlaceholder": "Ingresa tu contraseña",
+    "forgotPassword": "¿Olvidaste tu Contraseña?",
+    "logIn": "Iniciar Sesión",
+    "signUp": "Registrarse",
+    "pleaseWait": "Por favor espera...",
+    "orContinueWith": "o continúa con",
+    "continueWithGoogle": "Continuar con Google",
+    "loginWithBiometrics": "Iniciar Sesión con Biometría",
+    "dontHaveAccount": "¿No tienes una cuenta? ",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta? ",
+    "hidePassword": "Ocultar contraseña",
+    "showPassword": "Mostrar contraseña",
+    "errors": {
+      "invalidEmail": "Dirección de correo electrónico inválida",
+      "passwordTooShort": "La contraseña debe tener al menos 8 caracteres",
+      "passwordTooLong": "La contraseña debe tener menos de 100 caracteres",
+      "loginFailed": "Error al iniciar sesión",
+      "invalidCredentials": "Correo electrónico o contraseña incorrectos. Por favor, inténtalo de nuevo.",
+      "accountExists": "La cuenta ya existe",
+      "emailRegistered": "Este correo electrónico ya está registrado. Por favor, inicia sesión.",
+      "validationError": "Error de Validación",
+      "unexpectedError": "Ocurrió un error inesperado."
+    },
+    "success": {
+      "loggedIn": "¡Sesión iniciada exitosamente!",
+      "accountCreated": "¡Cuenta creada exitosamente! Ahora puedes iniciar sesión.",
+      "passwordResetSoon": "La funcionalidad de restablecimiento de contraseña estará disponible pronto.",
+      "biometricSoon": "La autenticación biométrica estará disponible pronto."
+    }
+  },
   "dashboard": {
     "title": "Panel de Control",
     "menu": "Menú",
