@@ -552,7 +552,22 @@
     "dateToday": "Hoy",
     "dateWeek": "Esta Semana",
     "dateMonth": "Este Mes",
-    "exportFormat": "Formato de Exportación"
+    "exportFormat": "Formato de Exportación",
+    "emailExportTitle": "Exportar por Correo Electrónico",
+    "emailExportDescription": "Envía el contenido exportado por correo electrónico. Los archivos grandes se enviarán como enlaces de descarga.",
+    "recipientEmail": "Correo Electrónico del Destinatario *",
+    "recipientEmailPlaceholder": "destinatario@ejemplo.com",
+    "recipientName": "Nombre del Destinatario (Opcional)",
+    "recipientNamePlaceholder": "Juan Pérez",
+    "wordDocument": "Documento de Word",
+    "subject": "Asunto (Opcional)",
+    "subjectPlaceholder": "Exportación de Informe de Campo",
+    "message": "Mensaje (Opcional)",
+    "messagePlaceholder": "Añade un mensaje personal...",
+    "exportingItems": "Exportando {{count}} elemento{{count, plural, one {} other {s}}}.",
+    "largeFilesNote": "Los archivos mayores de 25MB se enviarán como enlaces de descarga.",
+    "sending": "Enviando...",
+    "sendEmail": "Enviar Correo Electrónico"
   },
   "allContent": {
     "title": "Todo el Contenido",
