@@ -348,6 +348,18 @@ const Auth = () => {
               {loading ? t('auth.pleaseWait') : isLogin ? t('auth.logIn') : t('auth.signUp')}
             </Button>
 
+            {/* Toggle between login and signup */}
+            <div className="text-center text-sm text-muted-foreground">
+              {isLogin ? t('auth.dontHaveAccount') : t('auth.alreadyHaveAccount')}
+              <button
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="font-medium text-primary hover:underline"
+              >
+                {isLogin ? t('auth.signUp') : t('auth.logIn')}
+              </button>
+            </div>
+
             {/* Divider */}
             <div className="relative py-4">
               <div className="absolute inset-0 flex items-center">
@@ -400,18 +412,6 @@ const Auth = () => {
                 {t('auth.loginWithBiometrics')}
               </Button>
             )}
-
-            {/* Toggle between login and signup */}
-            <div className="text-center text-sm text-muted-foreground">
-              {isLogin ? t('auth.dontHaveAccount') : t('auth.alreadyHaveAccount')}
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="font-medium text-primary hover:underline"
-              >
-                {isLogin ? t('auth.signUp') : t('auth.logIn')}
-              </button>
-            </div>
           </form>
         </div>
       </div>
