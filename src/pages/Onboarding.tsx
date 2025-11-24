@@ -278,7 +278,12 @@ const Onboarding = () => {
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/dashboard")}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("Skip button clicked");
+                navigate("/dashboard");
+              }}
               className="flex items-center gap-2 opacity-5 hover:opacity-100 transition-opacity duration-300"
             >
               <SkipForward className="w-4 h-4" />
