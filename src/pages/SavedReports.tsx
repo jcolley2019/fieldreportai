@@ -249,9 +249,9 @@ const SavedReports = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="recent">Most Recent</SelectItem>
-              <SelectItem value="name">File Name</SelectItem>
-              <SelectItem value="size">File Size</SelectItem>
+              <SelectItem value="recent">{t('savedReports.sortRecent')}</SelectItem>
+              <SelectItem value="name">{t('savedReports.sortName')}</SelectItem>
+              <SelectItem value="size">{t('savedReports.sortSize')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
