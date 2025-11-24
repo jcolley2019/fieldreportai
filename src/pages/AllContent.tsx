@@ -812,7 +812,7 @@ const AllContent = () => {
                                 ? 'bg-primary/20 text-primary' 
                                 : 'bg-accent/20 text-accent'
                             }`}>
-                              {item.type === 'report' ? 'Report' : 'Checklist'}
+                              {item.type === 'report' ? t('allContent.reportBadge') : t('allContent.checklistBadge')}
                             </span>
                           </div>
                           <CardDescription className="space-y-1">
@@ -843,7 +843,7 @@ const AllContent = () => {
                                 )}
                                 <div className="flex items-center gap-2 text-xs">
                                   <ListChecks className="h-3 w-3" />
-                                  <span>{item.item_count || 0} items</span>
+                                  <span>{item.item_count || 0} {t('allContent.items')}</span>
                                 </div>
                               </>
                             )}
