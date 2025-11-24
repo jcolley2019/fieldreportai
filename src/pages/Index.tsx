@@ -261,6 +261,10 @@ const Index = () => {
             )}
             
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate("/leads")} className="cursor-pointer">
+              <Hash className="mr-2 h-4 w-4" />
+              Leads Dashboard
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/all-content")} className="cursor-pointer">
               <Layers className="mr-2 h-4 w-4" />
               All Content
