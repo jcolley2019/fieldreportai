@@ -679,9 +679,9 @@ const AllContent = () => {
     <div className="dark min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center justify-between px-4 py-1">
           <BackButton fallbackPath="/dashboard" />
-          <h1 className="text-lg font-bold text-foreground">{t('allContent.title')}</h1>
+          <h1 className="text-lg font-semibold text-foreground flex-1 text-center">{t('allContent.title')}</h1>
           <SettingsButton />
         </div>
       </header>

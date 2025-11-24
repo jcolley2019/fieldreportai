@@ -215,95 +215,97 @@ const Index = () => {
   return (
     <div className="dark min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 hover:bg-secondary rounded-md px-2 py-1 transition-colors">
-              <h1 className="text-lg font-bold text-foreground">{t('dashboard.menu')}</h1>
-              <ChevronDown className="h-5 w-5 text-muted-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-64 bg-popover">
-            <DropdownMenuItem onClick={() => navigate("/new-project")} className="cursor-pointer">
-              <Plus className="mr-2 h-4 w-4" />
-              {t('dashboard.newProject')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/projects")} className="cursor-pointer">
-              <FolderOpen className="mr-2 h-4 w-4" />
-              {t('dashboard.viewAllProjects')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })} className="cursor-pointer">
-              <Camera className="mr-2 h-4 w-4" />
-              {t('dashboard.captureScreen')}
-            </DropdownMenuItem>
-            
-            {/* Recent Projects Section */}
-            {projects.length > 0 && (
-              <>
-                <DropdownMenuSeparator />
-                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                  {t('dashboard.recentProjects')}
-                </div>
-                {projects.slice(0, 5).map((project) => (
-                  <DropdownMenuItem 
-                    key={project.id}
-                    onClick={() => navigate(`/project/${project.id}`)}
-                    className="cursor-pointer flex-col items-start gap-1"
-                  >
-                    <div className="flex items-center gap-2 w-full">
-                      <Building2 className="h-4 w-4 flex-shrink-0 text-primary" />
-                      <span className="font-medium truncate">{project.project_name}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground ml-6">
-                      <UserIcon className="h-3 w-3" />
-                      <span className="truncate">{project.customer_name}</span>
-                    </div>
-                  </DropdownMenuItem>
-                ))}
-              </>
-            )}
-            
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/all-content")} className="cursor-pointer">
-              <Layers className="mr-2 h-4 w-4" />
-              {t('dashboard.allContent')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/saved-notes")} className="cursor-pointer">
-              <Mic className="mr-2 h-4 w-4" />
-              {t('dashboard.savedNotes')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/saved-reports")} className="cursor-pointer">
-              <Cloud className="mr-2 h-4 w-4" />
-              {t('dashboard.savedReports')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
-              <SettingsIcon className="mr-2 h-4 w-4" />
-              {t('common.settings')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => {
-              setIsUpgradeClicked(true);
-              setTimeout(() => {
-                setIsUpgradeClicked(false);
-                navigate("/pricing");
-              }, 200);
-            }}
-            size="sm"
-            className={`gap-2 transition-transform duration-200 ${isUpgradeClicked ? "scale-95" : "hover:scale-105"}`}
-          >
-            <Zap className="h-4 w-4" />
-            {t('dashboard.upgradeNow')}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/settings")}
-          >
-            <SettingsIcon className="h-5 w-5 text-foreground" />
-          </Button>
+      <header className="sticky top-0 z-10 bg-background/80 px-4 py-1 backdrop-blur-sm">
+        <div className="flex items-center justify-between">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 hover:bg-secondary rounded-md px-2 py-1 transition-colors">
+                <h1 className="text-lg font-semibold text-foreground">{t('dashboard.menu')}</h1>
+                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-64 bg-popover">
+              <DropdownMenuItem onClick={() => navigate("/new-project")} className="cursor-pointer">
+                <Plus className="mr-2 h-4 w-4" />
+                {t('dashboard.newProject')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/projects")} className="cursor-pointer">
+                <FolderOpen className="mr-2 h-4 w-4" />
+                {t('dashboard.viewAllProjects')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })} className="cursor-pointer">
+                <Camera className="mr-2 h-4 w-4" />
+                {t('dashboard.captureScreen')}
+              </DropdownMenuItem>
+              
+              {/* Recent Projects Section */}
+              {projects.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    {t('dashboard.recentProjects')}
+                  </div>
+                  {projects.slice(0, 5).map((project) => (
+                    <DropdownMenuItem 
+                      key={project.id}
+                      onClick={() => navigate(`/project/${project.id}`)}
+                      className="cursor-pointer flex-col items-start gap-1"
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        <Building2 className="h-4 w-4 flex-shrink-0 text-primary" />
+                        <span className="font-medium truncate">{project.project_name}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground ml-6">
+                        <UserIcon className="h-3 w-3" />
+                        <span className="truncate">{project.customer_name}</span>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
+              
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/all-content")} className="cursor-pointer">
+                <Layers className="mr-2 h-4 w-4" />
+                {t('dashboard.allContent')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/saved-notes")} className="cursor-pointer">
+                <Mic className="mr-2 h-4 w-4" />
+                {t('dashboard.savedNotes')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/saved-reports")} className="cursor-pointer">
+                <Cloud className="mr-2 h-4 w-4" />
+                {t('dashboard.savedReports')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
+                <SettingsIcon className="mr-2 h-4 w-4" />
+                {t('common.settings')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => {
+                setIsUpgradeClicked(true);
+                setTimeout(() => {
+                  setIsUpgradeClicked(false);
+                  navigate("/pricing");
+                }, 200);
+              }}
+              size="sm"
+              className={`gap-2 transition-transform duration-200 ${isUpgradeClicked ? "scale-95" : "hover:scale-105"}`}
+            >
+              <Zap className="h-4 w-4" />
+              {t('dashboard.upgradeNow')}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/settings")}
+            >
+              <SettingsIcon className="h-5 w-5 text-foreground" />
+            </Button>
+          </div>
         </div>
       </header>
 
