@@ -735,9 +735,9 @@ const AllContent = () => {
                 <SelectValue placeholder="Sort by..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="recent">Most Recent</SelectItem>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="project">Project</SelectItem>
+                <SelectItem value="recent">{t('allContent.sortRecent')}</SelectItem>
+                <SelectItem value="name">{t('allContent.sortName')}</SelectItem>
+                <SelectItem value="project">{t('allContent.sortProject')}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -746,10 +746,10 @@ const AllContent = () => {
                 <SelectValue placeholder="Date filter..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Time</SelectItem>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="week">This Week</SelectItem>
-                <SelectItem value="month">This Month</SelectItem>
+                <SelectItem value="all">{t('allContent.dateAll')}</SelectItem>
+                <SelectItem value="today">{t('allContent.dateToday')}</SelectItem>
+                <SelectItem value="week">{t('allContent.dateWeek')}</SelectItem>
+                <SelectItem value="month">{t('allContent.dateMonth')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
