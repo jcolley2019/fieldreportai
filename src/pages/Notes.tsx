@@ -624,10 +624,12 @@ const Notes = () => {
   return (
     <div className="dark min-h-screen bg-background pb-64">
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
-        <BackButton />
-        <h1 className="text-lg font-bold text-foreground">{t('notes.title')}</h1>
-        <SettingsButton />
+      <header className="sticky top-0 z-10 bg-background/80 px-4 py-1 backdrop-blur-sm">
+        <div className="flex items-center justify-between">
+          <BackButton />
+          <h1 className="text-lg font-semibold text-foreground flex-1 text-center">{t('notes.title')}</h1>
+          <SettingsButton />
+        </div>
       </header>
 
       <main className="p-4 pb-32">

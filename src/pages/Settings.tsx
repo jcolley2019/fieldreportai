@@ -405,11 +405,12 @@ const Settings = () => {
   return (
     <div className="dark min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center justify-center bg-background p-4 pb-2">
-        <BackButton className="absolute left-4" />
-        <h1 className="text-lg font-bold text-foreground">
-          {t('settings.title')}
-        </h1>
+      <header className="sticky top-0 z-10 bg-background px-4 py-1">
+        <div className="flex items-center justify-between">
+          <BackButton />
+          <h1 className="text-lg font-semibold text-foreground flex-1 text-center">{t('settings.title')}</h1>
+          <div className="w-10" /> {/* Spacer for alignment */}
+        </div>
       </header>
 
       <main className="flex-grow pb-8">

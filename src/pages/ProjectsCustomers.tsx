@@ -149,19 +149,21 @@ const ProjectsCustomers = () => {
   return (
     <div className="dark min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
-        <BackButton />
-        <h1 className="text-lg font-bold text-foreground">{t('projects.title')}</h1>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => navigate("/new-project")}
-            size="sm"
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            {t('dashboard.createProject')}
-          </Button>
-          <SettingsButton />
+      <header className="sticky top-0 z-10 bg-background/80 px-4 py-1 backdrop-blur-sm">
+        <div className="flex items-center justify-between">
+          <BackButton />
+          <h1 className="text-lg font-semibold text-foreground flex-1 text-center">{t('projects.title')}</h1>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => navigate("/new-project")}
+              size="sm"
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              {t('dashboard.createProject')}
+            </Button>
+            <SettingsButton />
+          </div>
         </div>
       </header>
 

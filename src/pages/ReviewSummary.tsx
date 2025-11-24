@@ -240,12 +240,12 @@ const ReviewSummary = () => {
   return (
     <div className="dark min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 p-4 backdrop-blur-sm">
-        <BackButton />
-        <h1 className="flex-1 text-center text-lg font-bold text-foreground">
-          {t('reviewSummary.title')}
-        </h1>
-        <SettingsButton />
+      <header className="sticky top-0 z-10 bg-background/80 px-4 py-1 backdrop-blur-sm">
+        <div className="flex items-center justify-between">
+          <BackButton />
+          <h1 className="text-lg font-semibold text-foreground flex-1 text-center">{t('reviewSummary.title')}</h1>
+          <SettingsButton />
+        </div>
       </header>
 
       <main className="flex flex-col pb-32">
