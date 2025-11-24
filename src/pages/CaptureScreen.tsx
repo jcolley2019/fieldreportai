@@ -519,11 +519,11 @@ const CaptureScreen = () => {
           </div>
 
 
-          {/* Upload/Camera Section */}
-          <div className="flex flex-col items-center gap-4">
+          {/* Upload/Camera and Voice Recording Section */}
+          <div className="flex gap-4 items-stretch">
             <button
               onClick={() => setShowCameraDialog(true)}
-              className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-colors hover:bg-primary/30"
+              className="flex flex-1 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-colors hover:bg-primary/30"
             >
               <Camera className="h-10 w-10" />
               <p className="text-sm font-medium">
@@ -531,104 +531,104 @@ const CaptureScreen = () => {
               </p>
             </button>
             
-            {/* Hidden file inputs */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={(e) => handleImageUpload(e.target.files)}
-            />
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(e) => handleImageUpload(e.target.files)}
-            />
-
             {/* Voice Recording Button */}
-            <div className="flex flex-col items-center justify-center gap-4 w-full relative z-10">
-              <button
-                onClick={handleVoiceRecord}
-                className={`flex h-20 w-20 items-center justify-center rounded-full transition-all ${
-                  isRecording 
-                    ? 'bg-destructive text-white animate-pulse shadow-lg shadow-destructive/50' 
-                    : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/30'
-                }`}
-              >
+            <button
+              onClick={handleVoiceRecord}
+              className={`flex h-auto w-24 flex-shrink-0 items-center justify-center rounded-2xl transition-all ${
+                isRecording 
+                  ? 'bg-destructive text-white animate-pulse shadow-lg shadow-destructive/50' 
+                  : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/30'
+              }`}
+            >
+              <div className="flex flex-col items-center gap-2">
                 <Mic className="h-8 w-8" />
-              </button>
-              {isRecording && (
-                <p className="text-sm text-muted-foreground animate-pulse">Recording... tap to stop</p>
-              )}
-            </div>
-
-            {/* Image Gallery */}
-            {images.length > 0 && (
-              <div className="w-full">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-foreground">
-                    {images.filter(img => !img.deleted).length} photo{images.filter(img => !img.deleted).length !== 1 ? 's' : ''} captured
-                  </h3>
-                </div>
-                <div className="flex w-full snap-x snap-mandatory scroll-p-4 gap-3 overflow-x-auto pb-2 no-scrollbar">
-                  {images.map((image, index) => {
-                    const activeIndex = activeImages.findIndex(img => img.id === image.id);
-                    return (
-                    <div
-                      key={image.id}
-                      className="relative aspect-square w-20 flex-shrink-0 snap-start overflow-hidden rounded-lg bg-secondary"
-                    >
-                      {image.deleted ? (
-                        <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-lg bg-destructive/80 px-2 text-center text-white">
-                          <Trash2 className="h-5 w-5" />
-                          <p className="text-[10px] font-semibold leading-tight">
-                            Image Deleted
-                          </p>
-                          <button
-                            onClick={() => undoDelete(image.id)}
-                            className="mt-1 rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold backdrop-blur-sm hover:bg-white/30"
-                          >
-                            Undo
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <img
-                            src={image.url}
-                            alt="Captured content"
-                            className="h-full w-full object-cover cursor-pointer"
-                            onClick={() => setSelectedImageIndex(activeIndex)}
-                          />
-                          <button
-                            onClick={() => deleteImage(image.id)}
-                            className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  )})}
-                </div>
+                {isRecording && (
+                  <p className="text-xs animate-pulse">Stop</p>
+                )}
               </div>
-            )}
-
-            {/* Discard All Button */}
-            {(images.length > 0 || description) && (
-              <div className="w-full text-center mt-2">
-                <button
-                  onClick={discardAll}
-                  className="text-sm font-medium text-destructive transition-colors hover:text-destructive/80"
-                >
-                  Discard All
-                </button>
-              </div>
-            )}
+            </button>
           </div>
+            
+          {/* Hidden file inputs */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => handleImageUpload(e.target.files)}
+          />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => handleImageUpload(e.target.files)}
+          />
+
+          {/* Image Gallery */}
+          {images.length > 0 && (
+            <div className="w-full">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-foreground">
+                  {images.filter(img => !img.deleted).length} photo{images.filter(img => !img.deleted).length !== 1 ? 's' : ''} captured
+                </h3>
+              </div>
+              <div className="flex w-full snap-x snap-mandatory scroll-p-4 gap-3 overflow-x-auto pb-2 no-scrollbar">
+                {images.map((image, index) => {
+                  const activeIndex = activeImages.findIndex(img => img.id === image.id);
+                  return (
+                  <div
+                    key={image.id}
+                    className="relative aspect-square w-20 flex-shrink-0 snap-start overflow-hidden rounded-lg bg-secondary"
+                  >
+                    {image.deleted ? (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-lg bg-destructive/80 px-2 text-center text-white">
+                        <Trash2 className="h-5 w-5" />
+                        <p className="text-[10px] font-semibold leading-tight">
+                          Image Deleted
+                        </p>
+                        <button
+                          onClick={() => undoDelete(image.id)}
+                          className="mt-1 rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold backdrop-blur-sm hover:bg-white/30"
+                        >
+                          Undo
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <img
+                          src={image.url}
+                          alt="Captured content"
+                          className="h-full w-full object-cover cursor-pointer"
+                          onClick={() => setSelectedImageIndex(activeIndex)}
+                        />
+                        <button
+                          onClick={() => deleteImage(image.id)}
+                          className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )})}
+              </div>
+            </div>
+          )}
+
+          {/* Discard All Button */}
+          {(images.length > 0 || description) && (
+            <div className="w-full text-center mt-2">
+              <button
+                onClick={discardAll}
+                className="text-sm font-medium text-destructive transition-colors hover:text-destructive/80"
+              >
+                Discard All
+              </button>
+            </div>
+          )}
         </div>
       </main>
 
