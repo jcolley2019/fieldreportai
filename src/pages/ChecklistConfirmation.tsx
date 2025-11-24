@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
@@ -30,6 +31,7 @@ interface ChecklistData {
 const ChecklistConfirmation = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const checklist = location.state?.checklist as ChecklistData | undefined;
   const isSimpleMode = location.state?.simpleMode || false;
   const projectReportId = location.state?.reportId || null;
@@ -67,12 +69,12 @@ const ChecklistConfirmation = () => {
 
   const handleDownloadPDF = async () => {
     if (!checklist) {
-      toast.error("No checklist to download");
+      toast.error(t('checklistConfirmation.noChecklist'));
       return;
     }
 
     try {
-      toast.success("Generating PDF...");
+      toast.success(t('checklistConfirmation.generating'));
 
       const pdfStyles = StyleSheet.create({
         page: { padding: 40, backgroundColor: '#ffffff' },
@@ -88,7 +90,7 @@ const ChecklistConfirmation = () => {
           <Page size="A4" style={pdfStyles.page}>
             <Text style={pdfStyles.title}>{checklist.title}</Text>
             <Text style={pdfStyles.subtitle}>
-              Generated on {formatDateLong(new Date())}
+              {t('checklistConfirmation.generatedOn')} {formatDateLong(new Date())}
             </Text>
             {checklist.items.map((item, index) => (
               <View key={index} style={pdfStyles.itemContainer}>
@@ -114,21 +116,21 @@ const ChecklistConfirmation = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      toast.success("PDF Downloaded!");
+      toast.success(t('checklistConfirmation.pdfDownloaded'));
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast.error("Failed to generate PDF");
+      toast.error(t('checklistConfirmation.failedPDF'));
     }
   };
 
   const handleDownloadWord = async () => {
     if (!checklist) {
-      toast.error("No checklist to download");
+      toast.error(t('checklistConfirmation.noChecklist'));
       return;
     }
 
     try {
-      toast.success("Generating Word Document...");
+      toast.success(t('checklistConfirmation.generatingWord'));
 
       const docSections: any[] = [];
 
@@ -142,7 +144,7 @@ const ChecklistConfirmation = () => {
         new Paragraph({
           children: [
             new TextRun({
-              text: `Generated on ${formatDateLong(new Date())}`,
+              text: `${t('checklistConfirmation.generatedOn')} ${formatDateLong(new Date())}`,
               size: 18,
               color: "999999",
             }),
@@ -186,10 +188,10 @@ const ChecklistConfirmation = () => {
       const blob = await Packer.toBlob(doc);
       saveAs(blob, `${checklist.title}_${new Date().toISOString().split('T')[0]}.docx`);
 
-      toast.success("Word Document Downloaded!");
+      toast.success(t('checklistConfirmation.wordDownloaded'));
     } catch (error) {
       console.error('Error generating Word document:', error);
-      toast.error("Failed to generate Word document");
+      toast.error(t('checklistConfirmation.failedWord'));
     }
   };
 
@@ -220,7 +222,7 @@ const ChecklistConfirmation = () => {
 
   const handleSaveToCloud = async () => {
     if (!checklist) {
-      toast.error("No checklist to save");
+      toast.error(t('checklistConfirmation.noChecklistSave'));
       return;
     }
 
@@ -242,11 +244,11 @@ const ChecklistConfirmation = () => {
       setIsSaving(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error("Please sign in to save to cloud");
+        toast.error(t('checklistConfirmation.signInRequired'));
         return;
       }
 
-      toast.success("Saving to cloud...");
+      toast.success(t('checklistConfirmation.savingToCloud'));
 
       // Step 1: Create a report if we don't have one (Simple Mode standalone)
       let currentReportId = targetReportId;
@@ -330,7 +332,7 @@ const ChecklistConfirmation = () => {
           <Page size="A4" style={pdfStyles.page}>
             <Text style={pdfStyles.title}>{checklist.title}</Text>
             <Text style={pdfStyles.subtitle}>
-              Generated on {formatDateLong(new Date())}
+              {t('checklistConfirmation.generatedOn')} {formatDateLong(new Date())}
             </Text>
             {checklist.items.map((item, index) => (
               <View key={index} style={pdfStyles.itemContainer}>
@@ -385,10 +387,10 @@ const ChecklistConfirmation = () => {
         return;
       }
 
-      toast.success("Checklist saved to cloud successfully!");
+      toast.success(t('checklistConfirmation.savedToCloud'));
     } catch (error) {
       console.error('Error saving to cloud:', error);
-      toast.error("Failed to save to cloud");
+      toast.error(t('checklistConfirmation.failedToSave'));
     } finally {
       setIsSaving(false);
     }
@@ -410,7 +412,7 @@ const ChecklistConfirmation = () => {
       <div className="flex items-center justify-between p-4">
         <BackButton />
         <h2 className="flex-1 text-center text-lg font-bold text-foreground">
-          Confirmation
+          {t('checklistConfirmation.title')}
         </h2>
         <SettingsButton />
       </div>
@@ -421,11 +423,11 @@ const ChecklistConfirmation = () => {
           <Check className="h-12 w-12 text-primary" strokeWidth={3} />
         </div>
         <h2 className="text-center text-[28px] font-bold leading-tight tracking-tight text-foreground mb-2">
-          Checklist created successfully!
+          {t('checklistConfirmation.success')}
         </h2>
         {checklist && (
           <p className="text-center text-muted-foreground">
-            {checklist.items.length} tasks generated with AI
+            {checklist.items.length} {t('checklistConfirmation.tasksGenerated')}
           </p>
         )}
       </div>
@@ -464,20 +466,20 @@ const ChecklistConfirmation = () => {
           onClick={handleViewChecklist}
           className="h-14 w-full bg-primary text-base font-bold text-primary-foreground hover:bg-primary/90"
         >
-          View Checklist
+          {t('checklistConfirmation.viewChecklist')}
         </Button>
         <Button
           onClick={handlePrintChecklist}
           className="h-14 w-full bg-primary text-base font-bold text-primary-foreground hover:bg-primary/90"
         >
-          Print Checklist
+          {t('checklistConfirmation.printChecklist')}
         </Button>
         <Button
           onClick={handleCreateNew}
           variant="outline"
           className="h-14 w-full border-2 border-border bg-transparent text-base font-bold text-foreground hover:bg-secondary"
         >
-          Create New
+          {t('checklistConfirmation.createNew')}
         </Button>
       </div>
 
@@ -510,7 +512,7 @@ const ChecklistConfirmation = () => {
             ) : (
               <Cloud className="h-4 w-4" />
             )}
-            {isSaving ? "Saving..." : showSuccess ? "Quick Save" : "Quick Save"}
+            {isSaving ? t('checklistConfirmation.saving') : showSuccess ? t('checklistConfirmation.quickSave') : t('checklistConfirmation.quickSave')}
           </Button>
         </div>
 
@@ -525,7 +527,7 @@ const ChecklistConfirmation = () => {
               className="gap-2 text-zinc-200 hover:text-white border-zinc-600"
             >
               <Printer className="h-4 w-4" />
-              <span className="hidden md:inline">Print</span>
+              <span className="hidden md:inline">{t('checklistConfirmation.print')}</span>
             </Button>
 
             {/* Divider */}
@@ -535,14 +537,14 @@ const ChecklistConfirmation = () => {
             <Button
               onClick={() => {
                 navigator.clipboard.writeText(window.location.href);
-                toast.success("Link copied to clipboard!");
+                toast.success(t('checklistConfirmation.linkCopied'));
               }}
               variant="ghost"
               size="sm"
               className="gap-2 text-zinc-200 hover:text-white"
             >
               <Link className="h-4 w-4" />
-              <span className="hidden md:inline">Copy Link</span>
+              <span className="hidden md:inline">{t('checklistConfirmation.copyLink')}</span>
             </Button>
 
             {/* Divider */}
@@ -558,18 +560,18 @@ const ChecklistConfirmation = () => {
                   disabled={!checklist}
                 >
                   <Download className="h-4 w-4" />
-                  <span className="hidden sm:inline">Save Options</span>
+                  <span className="hidden sm:inline">{t('checklistConfirmation.saveOptions')}</span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
                 <DropdownMenuItem onClick={handleDownloadPDF} className="gap-2 cursor-pointer">
                   <FileText className="h-4 w-4" />
-                  Save as PDF
+                  {t('checklistConfirmation.savePDF')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleDownloadWord} className="gap-2 cursor-pointer">
                   <Download className="h-4 w-4" />
-                  Save as Word
+                  {t('checklistConfirmation.saveWord')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -581,9 +583,9 @@ const ChecklistConfirmation = () => {
       <Dialog open={showProjectSelector} onOpenChange={setShowProjectSelector}>
         <DialogContent className="max-w-md bg-background">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Link to Project</DialogTitle>
+            <DialogTitle className="text-foreground">{t('checklistConfirmation.linkToProject')}</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Choose an existing project or save as standalone
+              {t('checklistConfirmation.chooseExisting')}
             </DialogDescription>
           </DialogHeader>
           
@@ -598,8 +600,8 @@ const ChecklistConfirmation = () => {
               className="w-full justify-start h-auto p-4"
             >
               <div className="text-left">
-                <div className="font-semibold">Save as Standalone</div>
-                <div className="text-xs text-muted-foreground">Not linked to any project</div>
+                <div className="font-semibold">{t('checklistConfirmation.saveStandalone')}</div>
+                <div className="text-xs text-muted-foreground">{t('checklistConfirmation.notLinked')}</div>
               </div>
             </Button>
 
@@ -609,7 +611,7 @@ const ChecklistConfirmation = () => {
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Create New Project
+              {t('checklistConfirmation.createNewProject')}
             </Button>
 
             {/* Existing Projects */}
@@ -620,7 +622,7 @@ const ChecklistConfirmation = () => {
                     <span className="w-full border-t border-border" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Or select existing</span>
+                    <span className="bg-background px-2 text-muted-foreground">{t('checklistConfirmation.orSelectExisting')}</span>
                   </div>
                 </div>
                 
