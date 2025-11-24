@@ -4,9 +4,9 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight } from "lucide-react";
+import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, X, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import { LiveCameraCapture } from "@/components/LiveCameraCapture";
@@ -28,6 +28,23 @@ interface PreviousChecklist {
   item_count: number;
 }
 
+interface ChecklistPreview {
+  id: string;
+  title: string;
+  created_at: string;
+  report_id: string | null;
+  sections: {
+    category: string;
+    items: {
+      id: string;
+      text: string;
+      priority: string;
+      completed: boolean;
+    }[];
+  }[];
+  imageUrls: string[];
+}
+
 const Checklist = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -44,6 +61,9 @@ const Checklist = () => {
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const [previousChecklists, setPreviousChecklists] = useState<PreviousChecklist[]>([]);
   const [isLoadingChecklists, setIsLoadingChecklists] = useState(true);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [checklistPreview, setChecklistPreview] = useState<ChecklistPreview | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -103,9 +123,10 @@ const Checklist = () => {
     });
   };
 
-  const handleLoadChecklist = async (checklistId: string) => {
+  const handlePreviewChecklist = async (checklistId: string) => {
     try {
-      toast.info(i18n.language === 'es' ? 'Cargando lista...' : 'Loading checklist...');
+      setIsLoadingPreview(true);
+      setShowPreviewDialog(true);
       
       // Fetch the full checklist with all items
       const { data: checklist, error: checklistError } = await supabase
@@ -114,6 +135,7 @@ const Checklist = () => {
           id,
           title,
           report_id,
+          created_at,
           checklist_items (
             id,
             text,
@@ -128,11 +150,13 @@ const Checklist = () => {
       if (checklistError) {
         console.error("Error fetching checklist:", checklistError);
         toast.error(i18n.language === 'es' ? 'Error al cargar la lista' : 'Failed to load checklist');
+        setShowPreviewDialog(false);
         return;
       }
 
       if (!checklist) {
         toast.error(i18n.language === 'es' ? 'Lista no encontrada' : 'Checklist not found');
+        setShowPreviewDialog(false);
         return;
       }
 
@@ -157,12 +181,6 @@ const Checklist = () => {
         }
       }
 
-      // Format the checklist data for the confirmation page
-      const formattedChecklist = {
-        title: checklist.title,
-        sections: [] as any[]
-      };
-
       // Group items by category
       const itemsByCategory: { [key: string]: any[] } = {};
       
@@ -178,31 +196,49 @@ const Checklist = () => {
             completed: item.completed
           });
         });
-
-        // Convert to sections format
-        formattedChecklist.sections = Object.entries(itemsByCategory).map(([category, items]) => ({
-          category,
-          items
-        }));
       }
 
-      toast.success(i18n.language === 'es' ? '¡Lista cargada!' : 'Checklist loaded!');
+      // Convert to sections format
+      const sections = Object.entries(itemsByCategory).map(([category, items]) => ({
+        category,
+        items
+      }));
 
-      // Navigate to checklist confirmation page with the loaded data
-      navigate("/checklist-confirmation", { 
-        state: { 
-          checklist: formattedChecklist,
-          images: imageUrls,
-          simpleMode: isSimpleMode,
-          reportId: checklist.report_id,
-          checklistId: checklist.id,
-          isExisting: true // Flag to indicate this is a loaded checklist
-        } 
+      setChecklistPreview({
+        id: checklist.id,
+        title: checklist.title,
+        created_at: checklist.created_at,
+        report_id: checklist.report_id,
+        sections,
+        imageUrls
       });
     } catch (error) {
-      console.error("Error loading checklist:", error);
-      toast.error(i18n.language === 'es' ? 'Error al cargar la lista' : 'Failed to load checklist');
+      console.error("Error loading checklist preview:", error);
+      toast.error(i18n.language === 'es' ? 'Error al cargar la vista previa' : 'Failed to load preview');
+      setShowPreviewDialog(false);
+    } finally {
+      setIsLoadingPreview(false);
     }
+  };
+
+  const handleNavigateToConfirmation = () => {
+    if (!checklistPreview) return;
+
+    const formattedChecklist = {
+      title: checklistPreview.title,
+      sections: checklistPreview.sections
+    };
+
+    navigate("/checklist-confirmation", { 
+      state: { 
+        checklist: formattedChecklist,
+        images: checklistPreview.imageUrls,
+        simpleMode: isSimpleMode,
+        reportId: checklistPreview.report_id,
+        checklistId: checklistPreview.id,
+        isExisting: true
+      } 
+    });
   };
 
   const handleImageUpload = (files: FileList | null) => {
@@ -622,7 +658,7 @@ const Checklist = () => {
                   previousChecklists.map((checklist) => (
                     <div 
                       key={checklist.id}
-                      onClick={() => handleLoadChecklist(checklist.id)}
+                      onClick={() => handlePreviewChecklist(checklist.id)}
                       className="rounded-lg border border-border bg-secondary p-4 hover:bg-secondary/80 transition-colors cursor-pointer"
                     >
                       <h4 className="font-medium text-foreground mb-2">{checklist.title}</h4>
@@ -776,6 +812,109 @@ const Checklist = () => {
               </>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Checklist Preview Dialog */}
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              {isLoadingPreview 
+                ? (i18n.language === 'es' ? 'Cargando...' : 'Loading...') 
+                : checklistPreview?.title}
+            </DialogTitle>
+            {checklistPreview && (
+              <DialogDescription>
+                {formatRelativeDate(checklistPreview.created_at)}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+
+          {isLoadingPreview ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            </div>
+          ) : checklistPreview ? (
+            <div className="space-y-4">
+              {/* Checklist Items Preview */}
+              <div className="space-y-4">
+                {checklistPreview.sections.map((section, sectionIndex) => (
+                  <div key={sectionIndex} className="space-y-2">
+                    <h3 className="text-lg font-semibold text-primary capitalize">
+                      {section.category}
+                    </h3>
+                    <div className="space-y-2">
+                      {section.items.map((item, itemIndex) => (
+                        <div
+                          key={itemIndex}
+                          className="flex items-start gap-3 rounded-lg bg-secondary p-3"
+                        >
+                          <div className={`mt-0.5 h-4 w-4 rounded border-2 flex-shrink-0 ${
+                            item.completed 
+                              ? 'bg-primary border-primary' 
+                              : 'border-muted-foreground'
+                          }`}>
+                            {item.completed && (
+                              <svg className="h-full w-full text-white" viewBox="0 0 12 12" fill="none">
+                                <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm ${item.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                              {item.text}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1 capitalize">
+                              {item.priority} {i18n.language === 'es' ? 'prioridad' : 'priority'}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Images Preview */}
+              {checklistPreview.imageUrls.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {i18n.language === 'es' ? 'Imágenes' : 'Images'} ({checklistPreview.imageUrls.length})
+                  </h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    {checklistPreview.imageUrls.slice(0, 6).map((url, index) => (
+                      <img
+                        key={index}
+                        src={url}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t border-border">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPreviewDialog(false)}
+                  className="flex-1"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  {i18n.language === 'es' ? 'Cerrar' : 'Close'}
+                </Button>
+                <Button
+                  onClick={handleNavigateToConfirmation}
+                  className="flex-1 bg-primary hover:bg-primary/90"
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  {i18n.language === 'es' ? 'Ver Completo' : 'View Full'}
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </DialogContent>
       </Dialog>
     </div>
