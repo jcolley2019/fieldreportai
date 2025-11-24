@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
@@ -6,10 +7,12 @@ import { Check, Share2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDate } from '@/lib/dateFormat';
 
 const Confirmation = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t, i18n } = useTranslation();
   const reportId = location.state?.reportId;
   const savedReportData = location.state?.reportData;
 
@@ -67,18 +70,13 @@ const Confirmation = () => {
     // TODO: Implement actual download functionality
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
   return (
     <div className="dark min-h-screen bg-background">
       {/* Header */}
       <div className="flex items-center justify-between p-4">
         <BackButton />
         <h2 className="flex-1 text-center text-lg font-bold text-foreground">
-          Confirmation
+          {t('confirmation.title')}
         </h2>
         <SettingsButton />
       </div>
@@ -89,7 +87,7 @@ const Confirmation = () => {
           <Check className="h-12 w-12 text-primary" strokeWidth={3} />
         </div>
         <h2 className="text-center text-[28px] font-bold leading-tight tracking-tight text-foreground">
-          Report Created!
+          {t('confirmation.reportCreated')}
         </h2>
       </div>
 
@@ -99,7 +97,7 @@ const Confirmation = () => {
           onClick={handleViewReport}
           className="h-14 w-full bg-primary text-base font-bold text-primary-foreground hover:bg-primary/90"
         >
-          View Report
+          {t('confirmation.viewReport')}
         </Button>
       </div>
 
@@ -108,7 +106,7 @@ const Confirmation = () => {
       {recentReports.length > 0 && (
         <div className="px-4 pt-8 pb-8">
           <h3 className="mb-4 text-lg font-bold text-muted-foreground">
-            Recent Reports
+            {t('confirmation.recentReports')}
           </h3>
           <div className="space-y-3">
             {recentReports.map((report) => (
@@ -121,10 +119,10 @@ const Confirmation = () => {
                     {report.project_name}
                   </h4>
                   <p className="text-sm text-muted-foreground">
-                    {report.customer_name} • Job #{report.job_number}
+                    {report.customer_name} • {t('confirmation.job')} #{report.job_number}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Created: {formatDate(report.created_at)}
+                    {t('confirmation.created')}: {formatDate(new Date(report.created_at))}
                   </p>
                 </div>
                 <div className="flex gap-4">
