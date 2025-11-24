@@ -132,6 +132,7 @@ const Auth = () => {
                 type: "user_signup",
                 timestamp: new Date().toISOString(),
                 plan: "trial",
+                sequence: "trial",
               }),
             });
           } catch (zapierError) {
