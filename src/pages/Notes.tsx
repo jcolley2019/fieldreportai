@@ -340,12 +340,12 @@ const Notes = () => {
   const handleDownloadWord = async () => {
     const content = organizedNotes || noteText;
     if (!content) {
-      toast.error("No notes to download");
+      toast.error(t('notes.noContent'));
       return;
     }
 
     try {
-      toast.success("Generating Word Document...");
+      toast.success(t('notes.generating', { defaultValue: 'Generating' }));
 
       // Parse content into structured sections
       const parseContentForWord = (text: string) => {
@@ -446,10 +446,10 @@ const Notes = () => {
       const blob = await Packer.toBlob(doc);
       saveAs(blob, `notes-${new Date().toISOString().split('T')[0]}.docx`);
 
-      toast.success("Word Document Downloaded!");
+      toast.success(t('notes.downloadSuccess'));
     } catch (error) {
       console.error('Error generating Word document:', error);
-      toast.error("Failed to generate Word document");
+      toast.error(t('notes.wordError', { defaultValue: 'Failed to generate Word document' }));
     }
   };
 
@@ -564,7 +564,7 @@ const Notes = () => {
   const handleEmail = () => {
     const content = organizedNotes || noteText;
     if (!content) {
-      toast.error("No notes to email");
+      toast.error(t('notes.noContent'));
       return;
     }
     const subject = encodeURIComponent(`Notes - ${formatDate(new Date())}`);
@@ -603,7 +603,7 @@ const Notes = () => {
 
   const handleAssignToProject = async () => {
     if (!selectedProjectId) {
-      toast.error("Please select a project");
+      toast.error(t('notes.saveDialog.selectProjectError', { defaultValue: 'Please select a project' }));
       return;
     }
     
@@ -626,7 +626,7 @@ const Notes = () => {
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
         <BackButton />
-        <h1 className="text-lg font-bold text-foreground">Add Note</h1>
+        <h1 className="text-lg font-bold text-foreground">{t('notes.title')}</h1>
         <SettingsButton />
       </header>
 
@@ -634,12 +634,12 @@ const Notes = () => {
         {/* Note Text Area */}
         <div className="mb-6">
           <label className="mb-2 block text-sm font-medium text-foreground">
-            Note Content
+            {t('notes.contentLabel', { defaultValue: 'Note Content' })}
           </label>
           <Textarea
             value={noteText}
             onChange={(e) => setNoteText(e.target.value)}
-            placeholder="Type your notes here or use voice recording..."
+            placeholder={t('notes.placeholder')}
             className="min-h-[300px] resize-none bg-card text-foreground"
           />
         </div>
@@ -647,7 +647,7 @@ const Notes = () => {
         {/* Voice Recording Instructions */}
         <div className="mb-4 text-center">
           <p className="text-sm text-muted-foreground">
-            Tap the microphone button to record your notes
+            {t('notes.voiceInstruction', { defaultValue: 'Tap the microphone button to record your notes' })}
           </p>
         </div>
 
@@ -664,7 +664,7 @@ const Notes = () => {
             <Mic className="h-8 w-8" />
           </button>
           {isRecording && (
-            <p className="text-sm text-muted-foreground animate-pulse">Recording... tap to stop</p>
+            <p className="text-sm text-muted-foreground animate-pulse">{t('common.recordingStopped')}</p>
           )}
         </div>
       </main>
@@ -690,7 +690,7 @@ const Notes = () => {
             ) : (
               <Save className="h-4 w-4" />
             )}
-            {isSaving ? "Saving..." : showSuccess ? "Saved!" : "Quick Save"}
+            {isSaving ? t('notes.saving', { defaultValue: 'Saving...' }) : showSuccess ? t('notes.saved', { defaultValue: 'Saved!' }) : t('notes.quickSave')}
           </Button>
         </div>
 
@@ -705,7 +705,7 @@ const Notes = () => {
               className="gap-2 text-zinc-200 hover:text-white"
             >
               <Link className="h-4 w-4" />
-              <span className="hidden md:inline">Copy Link</span>
+              <span className="hidden md:inline">{t('notes.copyLink')}</span>
             </Button>
 
             {/* Divider */}
@@ -720,7 +720,7 @@ const Notes = () => {
               disabled={!noteText && !organizedNotes}
             >
               <Printer className="h-4 w-4" />
-              <span className="hidden md:inline">Print</span>
+              <span className="hidden md:inline">{t('notes.print')}</span>
             </Button>
 
             {/* Divider */}
@@ -736,22 +736,22 @@ const Notes = () => {
                   disabled={!noteText && !organizedNotes}
                 >
                   <Download className="h-4 w-4" />
-                  <span className="hidden sm:inline">Save Options</span>
+                  <span className="hidden sm:inline">{t('notes.saveOptions')}</span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
                 <DropdownMenuItem onClick={handleDownloadPDF} className="gap-2 cursor-pointer">
                   <FileText className="h-4 w-4" />
-                  Save as PDF
+                  {t('notes.savePDF')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleDownloadWord} className="gap-2 cursor-pointer">
                   <Download className="h-4 w-4" />
-                  Save as Word
+                  {t('notes.saveWord')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSaveToCloud} className="gap-2 cursor-pointer" disabled={isSaving}>
                   <Cloud className="h-4 w-4" />
-                  Save to Cloud
+                  {t('notes.saveToCloud')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
