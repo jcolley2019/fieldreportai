@@ -695,7 +695,7 @@ const AllContent = () => {
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Download className="mr-2 h-4 w-4" />
-            {t('allContent.exportPdf')}
+            {t('allContent.export')}
           </Button>
           <Button
             onClick={() => handleExportAll('docx')}
