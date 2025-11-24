@@ -4,7 +4,16 @@ import en from './locales/en.json';
 import es from './locales/es.json';
 import { supabase } from '@/integrations/supabase/client';
 
-// Initialize with default language
+// Detect browser language
+const detectBrowserLanguage = (): string => {
+  const browserLang = navigator.language.split('-')[0]; // Get 'en' from 'en-US'
+  const supportedLanguages = ['en', 'es'];
+  return supportedLanguages.includes(browserLang) ? browserLang : 'en';
+};
+
+// Initialize with browser language detection
+const initialLanguage = detectBrowserLanguage();
+
 i18n
   .use(initReactI18next)
   .init({
@@ -12,7 +21,7 @@ i18n
       en: { translation: en },
       es: { translation: es }
     },
-    lng: 'en', // default language
+    lng: initialLanguage, // Use detected browser language
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false
@@ -28,14 +37,17 @@ const loadUserLanguage = async () => {
         .from('profiles')
         .select('preferred_language')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
       
+      // Only override if user has explicitly set a language preference
       if (profile?.preferred_language) {
         i18n.changeLanguage(profile.preferred_language);
       }
+      // Otherwise, keep the browser-detected language
     }
   } catch (error) {
     console.error('Error loading user language:', error);
+    // Keep browser-detected language on error
   }
 };
 
