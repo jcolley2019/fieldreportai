@@ -22,6 +22,7 @@ import ReviewSummary from "./pages/ReviewSummary";
 import Settings from "./pages/Settings";
 import SavedReports from "./pages/SavedReports";
 import AllContent from "./pages/AllContent";
+import LeadsDashboard from "./pages/LeadsDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const App = () => (
           <Route path="/review-summary" element={<ReviewSummary />} />
           <Route path="/saved-reports" element={<SavedReports />} />
           <Route path="/all-content" element={<AllContent />} />
+          <Route path="/leads" element={<LeadsDashboard />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
