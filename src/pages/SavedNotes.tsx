@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
@@ -41,6 +42,7 @@ interface Note {
 
 const SavedNotes = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [notes, setNotes] = useState<Note[]>([]);
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -87,7 +89,7 @@ const SavedNotes = () => {
 
       if (error) {
         console.error("Error fetching notes:", error);
-        toast.error("Failed to load notes");
+        toast.error(t('savedNotes.loadFailed'));
         return;
       }
 
@@ -99,7 +101,7 @@ const SavedNotes = () => {
       setNotes(formattedNotes);
     } catch (error) {
       console.error("Error fetching notes:", error);
-      toast.error("Failed to load notes");
+      toast.error(t('savedNotes.loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -169,12 +171,12 @@ const SavedNotes = () => {
 
       if (error) throw error;
 
-      toast.success("Note updated successfully!");
+      toast.success(t('savedNotes.noteUpdated'));
       setEditingNote(null);
       fetchNotes();
     } catch (error) {
       console.error("Error updating note:", error);
-      toast.error("Failed to update note");
+      toast.error(t('savedNotes.updateFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -190,11 +192,11 @@ const SavedNotes = () => {
       if (error) {
         console.error("Error organizing note:", error);
         if (error.message?.includes('429') || error.message?.includes('rate limit')) {
-          toast.error("Rate limit exceeded. Please try again in a moment.");
+          toast.error(t('savedNotes.rateLimitError'));
         } else if (error.message?.includes('402') || error.message?.includes('credits')) {
-          toast.error("AI credits depleted. Please add credits to continue.");
+          toast.error(t('savedNotes.creditsError'));
         } else {
-          toast.error("Failed to organize note");
+          toast.error(t('savedNotes.organizeFailed'));
         }
         return;
       }
@@ -207,12 +209,12 @@ const SavedNotes = () => {
 
         if (updateError) throw updateError;
 
-        toast.success("Note organized successfully!");
+        toast.success(t('savedNotes.noteOrganized'));
         fetchNotes();
       }
     } catch (error) {
       console.error("Error organizing note:", error);
-      toast.error("Failed to organize note");
+      toast.error(t('savedNotes.organizeFailed'));
     } finally {
       setIsOrganizing(false);
     }
@@ -229,12 +231,12 @@ const SavedNotes = () => {
 
       if (error) throw error;
 
-      toast.success("Note deleted successfully!");
+      toast.success(t('savedNotes.noteDeleted'));
       setDeleteNoteId(null);
       fetchNotes();
     } catch (error) {
       console.error("Error deleting note:", error);
-      toast.error("Failed to delete note");
+      toast.error(t('savedNotes.deleteFailed'));
     }
   };
 
@@ -254,7 +256,7 @@ const SavedNotes = () => {
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm border-b border-border">
         <BackButton />
-        <h1 className="text-lg font-bold text-foreground">Saved Notes</h1>
+        <h1 className="text-lg font-bold text-foreground">{t('savedNotes.title')}</h1>
         <SettingsButton />
       </header>
 
@@ -266,7 +268,7 @@ const SavedNotes = () => {
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search notes..."
+              placeholder={t('savedNotes.searchPlaceholder')}
               className="pl-9 bg-card"
             />
           </div>
@@ -275,11 +277,11 @@ const SavedNotes = () => {
             {/* Project Filter */}
             <Select value={selectedProject} onValueChange={setSelectedProject}>
               <SelectTrigger className="bg-card">
-                <SelectValue placeholder="Filter by project" />
+                <SelectValue placeholder={t('savedNotes.filterByProject')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Projects</SelectItem>
-                <SelectItem value="standalone">Standalone Notes</SelectItem>
+                <SelectItem value="all">{t('savedNotes.allProjects')}</SelectItem>
+                <SelectItem value="standalone">{t('savedNotes.standaloneNotes')}</SelectItem>
                 {uniqueProjects.map(project => (
                   <SelectItem key={project} value={project}>{project}</SelectItem>
                 ))}
@@ -289,12 +291,12 @@ const SavedNotes = () => {
             {/* AI-Organized Filter */}
             <Select value={aiOrganizedFilter} onValueChange={setAiOrganizedFilter}>
               <SelectTrigger className="bg-card">
-                <SelectValue placeholder="Filter by AI status" />
+                <SelectValue placeholder={t('savedNotes.filterByAI')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Notes</SelectItem>
-                <SelectItem value="organized">AI Organized</SelectItem>
-                <SelectItem value="not-organized">Not Organized</SelectItem>
+                <SelectItem value="all">{t('savedNotes.allNotes')}</SelectItem>
+                <SelectItem value="organized">{t('savedNotes.aiOrganized')}</SelectItem>
+                <SelectItem value="not-organized">{t('savedNotes.notOrganized')}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -303,7 +305,7 @@ const SavedNotes = () => {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="flex-1 bg-card justify-start text-left font-normal">
-                    {dateFrom ? format(dateFrom, "MMM d, yyyy") : "From date"}
+                    {dateFrom ? format(dateFrom, "MMM d, yyyy") : t('savedNotes.fromDate')}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -318,7 +320,7 @@ const SavedNotes = () => {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="flex-1 bg-card justify-start text-left font-normal">
-                    {dateTo ? format(dateTo, "MMM d, yyyy") : "To date"}
+                    {dateTo ? format(dateTo, "MMM d, yyyy") : t('savedNotes.toDate')}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -347,7 +349,7 @@ const SavedNotes = () => {
               className="w-full"
             >
               <X className="mr-2 h-4 w-4" />
-              Clear Filters
+              {t('savedNotes.clearFilters')}
             </Button>
           )}
         </div>
@@ -355,11 +357,11 @@ const SavedNotes = () => {
         {/* Notes List */}
         {isLoading ? (
           <div className="text-center text-muted-foreground py-8">
-            Loading notes...
+            {t('savedNotes.loading')}
           </div>
         ) : filteredNotes.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
-            {searchQuery ? "No notes found matching your search" : "No saved notes yet"}
+            {searchQuery ? t('savedNotes.noNotesFound') : t('savedNotes.noSavedNotes')}
           </div>
         ) : (
           <div className="space-y-4">
@@ -387,7 +389,7 @@ const SavedNotes = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleEdit(note)}
-                      title="Edit note"
+                      title={t('savedNotes.editNote')}
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
@@ -397,7 +399,7 @@ const SavedNotes = () => {
                         size="icon"
                         onClick={() => handleOrganizeWithAI(note)}
                         disabled={isOrganizing}
-                        title="Organize with AI"
+                        title={t('savedNotes.organizeWithAI')}
                       >
                         <Sparkles className="h-4 w-4" />
                       </Button>
@@ -406,7 +408,7 @@ const SavedNotes = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => setDeleteNoteId(note.id)}
-                      title="Delete note"
+                      title={t('savedNotes.deleteNote')}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -424,7 +426,7 @@ const SavedNotes = () => {
                   <div className="pt-2 border-t border-border">
                     <span className="text-xs text-primary flex items-center gap-1">
                       <Sparkles className="h-3 w-3" />
-                      AI Organized
+                      {t('savedNotes.aiOrganized')}
                     </span>
                   </div>
                 )}
@@ -438,9 +440,9 @@ const SavedNotes = () => {
       <Dialog open={!!editingNote} onOpenChange={() => setEditingNote(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Note</DialogTitle>
+            <DialogTitle>{t('savedNotes.editDialogTitle')}</DialogTitle>
             <DialogDescription>
-              Make changes to your note below
+              {t('savedNotes.editDialogDescription')}
             </DialogDescription>
           </DialogHeader>
           
@@ -449,7 +451,7 @@ const SavedNotes = () => {
               value={editedText}
               onChange={(e) => setEditedText(e.target.value)}
               className="min-h-[300px] resize-none bg-card"
-              placeholder="Enter your note..."
+              placeholder={t('savedNotes.enterNote')}
             />
 
             <div className="flex gap-2 justify-end">
@@ -458,14 +460,14 @@ const SavedNotes = () => {
                 onClick={() => setEditingNote(null)}
               >
                 <X className="mr-2 h-4 w-4" />
-                Cancel
+                {t('savedNotes.cancel')}
               </Button>
               <Button
                 onClick={handleSaveEdit}
                 disabled={isSaving}
               >
                 <Save className="mr-2 h-4 w-4" />
-                {isSaving ? "Saving..." : "Save Changes"}
+                {isSaving ? t('savedNotes.saving') : t('savedNotes.saveChanges')}
               </Button>
             </div>
           </div>
@@ -476,15 +478,15 @@ const SavedNotes = () => {
       <AlertDialog open={!!deleteNoteId} onOpenChange={() => setDeleteNoteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Note</AlertDialogTitle>
+            <AlertDialogTitle>{t('savedNotes.deleteDialogTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this note? This action cannot be undone.
+              {t('savedNotes.deleteDialogDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('savedNotes.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+              {t('savedNotes.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
