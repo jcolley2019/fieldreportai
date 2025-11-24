@@ -261,7 +261,7 @@
     "title": "Lets Create a Checklist",
     "project": "Project",
     "job": "Job",
-    "takePhotos": "Tap to Take Photos/Video or to upload from gallery",
+    "takePhotos": "Tap to Take Photos/Video or to upload from gallery (Optional)",
     "recordInstructions": "Press Record to describe checklist items",
     "recordDetails": "Tap again to stop. You can record multiple times to add more details.",
     "recordingStatus": "Recording... tap to stop",
