@@ -302,6 +302,45 @@ const Checklist = () => {
     toast.success(t('checklist.allDiscarded'));
   };
 
+  const handleVoiceRecord = async () => {
+    if (!isRecording) {
+      // Start recording
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        const chunks: Blob[] = [];
+
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            chunks.push(e.data);
+          }
+        };
+
+        recorder.onstop = async () => {
+          const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+          await transcribeAudio(audioBlob);
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        recorder.start();
+        setMediaRecorder(recorder);
+        setAudioChunks(chunks);
+        setIsRecording(true);
+        toast.success(t('checklist.recordingStarted'));
+      } catch (error) {
+        console.error("Error accessing microphone:", error);
+        toast.error(t('checklist.microphoneError'));
+      }
+    } else {
+      // Stop recording
+      if (mediaRecorder) {
+        mediaRecorder.stop();
+        setMediaRecorder(null);
+        setIsRecording(false);
+        toast.success(t('checklist.processingAudio'));
+      }
+    }
+  };
 
   const transcribeAudio = async (audioBlob: Blob) => {
     try {
@@ -563,12 +602,14 @@ const Checklist = () => {
         <div className="flex flex-col gap-y-6">
           {/* Upload/Camera Section */}
           <div className="flex flex-col items-center gap-4">
-            {/* Main Capture Button */}
             <button
               onClick={() => setShowCameraDialog(true)}
               className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-all hover:bg-primary/30 shadow-xl shadow-primary/50 animate-pulse ring-4 ring-primary/30"
             >
-              <Camera className="h-16 w-16" />
+              <div className="flex items-center gap-3">
+                <Camera className="h-16 w-16" />
+                <Mic className="h-14 w-14" />
+              </div>
               <p className="text-base font-bold text-foreground drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 {t('checklist.takePhotos')}
               </p>
@@ -591,9 +632,30 @@ const Checklist = () => {
               className="hidden"
               onChange={(e) => handleImageUpload(e.target.files)}
             />
-          </div>
 
-          {/* Previous Checklists Section */}
+            {/* Voice Recording Button */}
+            <div className="flex flex-col items-center justify-center gap-4 w-full">
+              <button
+                onClick={handleVoiceRecord}
+                className={`flex h-20 w-20 items-center justify-center rounded-full transition-all ${
+                  isRecording 
+                    ? 'bg-destructive text-white animate-pulse shadow-lg shadow-destructive/50' 
+                    : 'bg-primary text-white hover:bg-primary/90 hover:scale-110 shadow-xl shadow-primary/50 animate-pulse ring-4 ring-primary/30'
+                }`}
+              >
+                <Mic className="h-8 w-8" />
+              </button>
+              {isRecording ? (
+                <p className="text-base text-muted-foreground animate-pulse">{t('checklist.recordingStatus')}</p>
+              ) : (
+                <div className="text-center">
+                  <p className="text-base font-semibold text-foreground mb-1">{t('checklist.recordInstructions')}</p>
+                  <p className="text-sm text-muted-foreground">{t('checklist.recordDetails')}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Previous Checklists Section */}
             <div className="w-full mt-8">
               <h3 className="text-lg font-semibold text-foreground mb-4">{t('checklist.previousChecklists')}</h3>
               <div className="space-y-3">
@@ -715,6 +777,7 @@ const Checklist = () => {
         open={showLiveCamera}
         onOpenChange={setShowLiveCamera}
         onCapture={handleLiveCameraCapture}
+        isRecording={false}
       />
 
       {/* Full-size Image Viewer */}
