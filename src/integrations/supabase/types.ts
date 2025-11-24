@@ -302,6 +302,7 @@ export type Database = {
           id: string
           last_name: string | null
           letterhead_url: string | null
+          preferred_language: string | null
           trial_start_date: string | null
           updated_at: string
         }
@@ -318,6 +319,7 @@ export type Database = {
           id: string
           last_name?: string | null
           letterhead_url?: string | null
+          preferred_language?: string | null
           trial_start_date?: string | null
           updated_at?: string
         }
@@ -334,6 +336,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           letterhead_url?: string | null
+          preferred_language?: string | null
           trial_start_date?: string | null
           updated_at?: string
         }

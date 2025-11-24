@@ -1,0 +1,50 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "simpleMode": "Simple Mode",
+    "projectMode": "Project Mode",
+    "upgradeNow": "Upgrade Now",
+    "trialDaysRemaining": "days remaining in trial"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile Settings",
+    "language": "Language",
+    "selectLanguage": "Select Language",
+    "english": "English",
+    "spanish": "Spanish",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "companyName": "Company Name",
+    "profilePicture": "Profile Picture",
+    "companyLogo": "Company Logo",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "updatePassword": "Update Password",
+    "twoFactorAuth": "Two-Factor Authentication",
+    "enable2FA": "Enable 2FA",
+    "disable2FA": "Disable 2FA",
+    "saveChanges": "Save Changes",
+    "logOut": "Log Out"
+  },
+  "captureScreen": {
+    "title": "Capture Screen",
+    "takePhotos": "Tap to Take Photos/Video",
+    "notes": "Notes",
+    "checklist": "Checklist",
+    "recording": "Recording",
+    "paused": "Paused"
+  },
+  "common": {
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "continue": "Continue",
+    "loading": "Loading..."
+  }
+}

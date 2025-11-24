@@ -1,0 +1,50 @@
+{
+  "dashboard": {
+    "title": "Panel de Control",
+    "simpleMode": "Modo Simple",
+    "projectMode": "Modo Proyecto",
+    "upgradeNow": "Actualizar Ahora",
+    "trialDaysRemaining": "días restantes en el período de prueba"
+  },
+  "settings": {
+    "title": "Configuración",
+    "profile": "Configuración de Perfil",
+    "language": "Idioma",
+    "selectLanguage": "Seleccionar Idioma",
+    "english": "Inglés",
+    "spanish": "Español",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "companyName": "Nombre de la Empresa",
+    "profilePicture": "Foto de Perfil",
+    "companyLogo": "Logo de la Empresa",
+    "changePassword": "Cambiar Contraseña",
+    "currentPassword": "Contraseña Actual",
+    "newPassword": "Nueva Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "updatePassword": "Actualizar Contraseña",
+    "twoFactorAuth": "Autenticación de Dos Factores",
+    "enable2FA": "Activar 2FA",
+    "disable2FA": "Desactivar 2FA",
+    "saveChanges": "Guardar Cambios",
+    "logOut": "Cerrar Sesión"
+  },
+  "captureScreen": {
+    "title": "Pantalla de Captura",
+    "takePhotos": "Toca para Tomar Fotos/Video",
+    "notes": "Notas",
+    "checklist": "Lista de Verificación",
+    "recording": "Grabando",
+    "paused": "Pausado"
+  },
+  "common": {
+    "back": "Atrás",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "continue": "Continuar",
+    "loading": "Cargando..."
+  }
+}
