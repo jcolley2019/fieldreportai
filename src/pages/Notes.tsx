@@ -634,7 +634,7 @@ const Notes = () => {
         {/* Note Text Area */}
         <div className="mb-6">
           <label className="mb-2 block text-sm font-medium text-foreground">
-            {t('notes.contentLabel', { defaultValue: 'Note Content' })}
+            {t('notes.contentLabel')}
           </label>
           <Textarea
             value={noteText}
@@ -647,7 +647,7 @@ const Notes = () => {
         {/* Voice Recording Instructions */}
         <div className="mb-4 text-center">
           <p className="text-sm text-muted-foreground">
-            {t('notes.voiceInstruction', { defaultValue: 'Tap the microphone button to record your notes' })}
+            {t('notes.voiceInstruction')}
           </p>
         </div>
 
