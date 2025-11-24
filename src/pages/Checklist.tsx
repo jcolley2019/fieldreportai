@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
@@ -21,6 +22,7 @@ interface ImageItem {
 const Checklist = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const isSimpleMode = location.state?.simpleMode || false;
   const [images, setImages] = useState<ImageItem[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
@@ -364,7 +366,7 @@ const Checklist = () => {
       <header className="sticky top-0 z-10 bg-background/80 px-4 py-3 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <BackButton />
-          <h1 className="text-lg font-semibold text-foreground">Lets Create a Checklist</h1>
+          <h1 className="text-lg font-semibold text-foreground">{t('checklist.title')}</h1>
           <SettingsButton />
         </div>
       </header>
@@ -373,10 +375,10 @@ const Checklist = () => {
         {/* Project Info Pills */}
         <div className="flex flex-wrap gap-2 pb-4">
           <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
-            <p className="text-xs font-medium text-muted-foreground">Project: Alpha Site</p>
+            <p className="text-xs font-medium text-muted-foreground">{t('checklist.project')}: Alpha Site</p>
           </div>
           <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
-            <p className="text-xs font-medium text-muted-foreground">Job: 23-001</p>
+            <p className="text-xs font-medium text-muted-foreground">{t('checklist.job')}: 23-001</p>
           </div>
         </div>
 
@@ -389,7 +391,7 @@ const Checklist = () => {
             >
               <Camera className="h-10 w-10" />
               <p className="text-sm font-medium">
-                Tap to Take Photos/Video or to upload from gallery
+                {t('checklist.takePhotos')}
               </p>
             </button>
             

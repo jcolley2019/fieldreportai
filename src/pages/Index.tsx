@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ interface Project {
 }
 
 const Index = () => {
+  const { t } = useTranslation();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -200,7 +202,7 @@ const Index = () => {
     return (
       <div className="dark min-h-screen">
         <div className="flex min-h-screen items-center justify-center bg-background">
-          <div className="text-foreground">Loading...</div>
+          <div className="text-foreground">{t('common.loading')}</div>
         </div>
       </div>
     );
@@ -217,22 +219,22 @@ const Index = () => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 hover:bg-secondary rounded-md px-2 py-1 transition-colors">
-              <h1 className="text-lg font-bold text-foreground">Menu</h1>
+              <h1 className="text-lg font-bold text-foreground">{t('dashboard.menu')}</h1>
               <ChevronDown className="h-5 w-5 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-64 bg-popover">
             <DropdownMenuItem onClick={() => navigate("/new-project")} className="cursor-pointer">
               <Plus className="mr-2 h-4 w-4" />
-              New Project
+              {t('dashboard.newProject')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/projects")} className="cursor-pointer">
               <FolderOpen className="mr-2 h-4 w-4" />
-              View All Projects
+              {t('dashboard.viewAllProjects')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })} className="cursor-pointer">
               <Camera className="mr-2 h-4 w-4" />
-              Capture Screen
+              {t('dashboard.captureScreen')}
             </DropdownMenuItem>
             
             {/* Recent Projects Section */}
@@ -240,7 +242,7 @@ const Index = () => {
               <>
                 <DropdownMenuSeparator />
                 <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                  Recent Projects
+                  {t('dashboard.recentProjects')}
                 </div>
                 {projects.slice(0, 5).map((project) => (
                   <DropdownMenuItem 
@@ -264,23 +266,23 @@ const Index = () => {
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate("/leads")} className="cursor-pointer">
               <Hash className="mr-2 h-4 w-4" />
-              Leads Dashboard
+              {t('dashboard.leadsDashboard')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/all-content")} className="cursor-pointer">
               <Layers className="mr-2 h-4 w-4" />
-              All Content
+              {t('dashboard.allContent')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/saved-notes")} className="cursor-pointer">
               <Mic className="mr-2 h-4 w-4" />
-              Saved Notes
+              {t('dashboard.savedNotes')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/saved-reports")} className="cursor-pointer">
               <Cloud className="mr-2 h-4 w-4" />
-              Saved Reports
+              {t('dashboard.savedReports')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer">
               <SettingsIcon className="mr-2 h-4 w-4" />
-              Settings
+              {t('common.settings')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -297,7 +299,7 @@ const Index = () => {
             className={`gap-2 transition-transform duration-200 ${isUpgradeClicked ? "scale-95" : "hover:scale-105"}`}
           >
             <Zap className="h-4 w-4" />
-            Upgrade Now
+            {t('dashboard.upgradeNow')}
           </Button>
           <Button
             variant="ghost"
@@ -320,7 +322,7 @@ const Index = () => {
         
         {/* Mode Selection Section */}
         <section className="mb-8">
-          <h2 className="mb-4 text-2xl font-semibold text-foreground">Choose Your Workflow</h2>
+          <h2 className="mb-4 text-2xl font-semibold text-foreground">{t('dashboard.chooseWorkflow')}</h2>
           <div className="grid grid-cols-2 gap-4">
             <button 
               onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })}
@@ -330,8 +332,8 @@ const Index = () => {
                 <Zap className="h-10 w-10 text-primary" />
               </div>
               <div className="text-center">
-                <h3 className="text-lg font-semibold text-foreground mb-1">Simple Mode</h3>
-                <p className="text-sm text-muted-foreground">Create quick standalone reports</p>
+                <h3 className="text-lg font-semibold text-foreground mb-1">{t('dashboard.simpleMode')}</h3>
+                <p className="text-sm text-muted-foreground">{t('dashboard.quickReports')}</p>
               </div>
             </button>
             <button 
@@ -342,8 +344,8 @@ const Index = () => {
                 <FolderOpen className="h-10 w-10 text-primary" />
               </div>
               <div className="text-center">
-                <h3 className="text-lg font-semibold text-foreground mb-1">Project Mode</h3>
-                <p className="text-sm text-muted-foreground">Manage projects and customers</p>
+                <h3 className="text-lg font-semibold text-foreground mb-1">{t('dashboard.projectMode')}</h3>
+                <p className="text-sm text-muted-foreground">{t('dashboard.manageProjects')}</p>
               </div>
             </button>
           </div>
@@ -352,7 +354,7 @@ const Index = () => {
         {/* Recent Projects Section */}
         <section id="projects-section">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-semibold text-foreground">Recent Projects</h2>
+            <h2 className="text-2xl font-semibold text-foreground">{t('dashboard.recentProjects')}</h2>
             {projects.length > 5 && (
               <Button
                 variant="outline"
@@ -360,7 +362,7 @@ const Index = () => {
                 onClick={() => navigate("/projects")}
                 className="gap-2"
               >
-                View All
+                {t('dashboard.viewAll')}
                 <ChevronRight className="h-4 w-4" />
               </Button>
             )}
@@ -369,10 +371,10 @@ const Index = () => {
           {projects.length === 0 ? (
             <div className="rounded-lg bg-card p-8 text-center">
               <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-              <p className="text-muted-foreground mb-4">No projects yet. Create your first project to get started!</p>
+              <p className="text-muted-foreground mb-4">{t('dashboard.noProjects')}</p>
               <Button onClick={() => navigate("/new-project")}>
                 <Plus className="mr-2 h-4 w-4" />
-                Create Project
+                {t('dashboard.createProject')}
               </Button>
             </div>
           ) : (
@@ -398,7 +400,7 @@ const Index = () => {
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <ListChecks className="h-4 w-4 flex-shrink-0" />
-                        <span>{project.checklist_count} checklist{project.checklist_count !== 1 ? 's' : ''}</span>
+                        <span>{project.checklist_count} {project.checklist_count !== 1 ? t('dashboard.checklists') : t('dashboard.checklist')}</span>
                       </div>
                     </div>
                   </div>
@@ -415,7 +417,7 @@ const Index = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => {
-                        if (confirm(`Are you sure you want to delete "${project.project_name}"?`)) {
+                        if (confirm(`${t('dashboard.deleteConfirm')} "${project.project_name}"?`)) {
                           handleDeleteProject(project.id);
                         }
                       }}
@@ -435,21 +437,21 @@ const Index = () => {
       <Dialog open={showProjectDialog} onOpenChange={setShowProjectDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Project Mode</DialogTitle>
+            <DialogTitle className="text-foreground">{t('dashboard.projectModeDialog.title')}</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Create comprehensive field reports and checklists linked to a specific project or customer
+              {t('dashboard.projectModeDialog.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             {/* Instructions */}
             <div className="rounded-lg bg-primary/10 border border-primary/20 p-4">
-              <h4 className="font-semibold text-foreground mb-2">How It Works:</h4>
+              <h4 className="font-semibold text-foreground mb-2">{t('dashboard.projectModeDialog.howItWorks')}</h4>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Create or select a project to organize your reports</li>
-                <li>• Add photos, notes, and checklists to the project</li>
-                <li>• All data is saved and linked to the project</li>
-                <li>• Generate comprehensive reports anytime</li>
+                <li>• {t('dashboard.projectModeDialog.step1')}</li>
+                <li>• {t('dashboard.projectModeDialog.step2')}</li>
+                <li>• {t('dashboard.projectModeDialog.step3')}</li>
+                <li>• {t('dashboard.projectModeDialog.step4')}</li>
               </ul>
             </div>
 
@@ -462,7 +464,7 @@ const Index = () => {
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12"
             >
               <Plus className="mr-2 h-5 w-5" />
-              Create New Project/Customer
+              {t('dashboard.projectModeDialog.createNew')}
             </Button>
 
             {/* Existing Projects */}
@@ -474,7 +476,7 @@ const Index = () => {
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
                     <span className="bg-background px-2 text-muted-foreground">
-                      Or select existing
+                      {t('dashboard.projectModeDialog.selectExisting')}
                     </span>
                   </div>
                 </div>
@@ -511,7 +513,7 @@ const Index = () => {
               <div className="text-center py-8">
                 <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  No projects yet. Create your first project to get started!
+                  {t('dashboard.noProjects')}
                 </p>
               </div>
             )}

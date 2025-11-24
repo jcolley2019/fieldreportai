@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -46,6 +47,7 @@ type ReportFormData = z.infer<typeof reportSchema>;
 
 const NewProject = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   
@@ -174,7 +176,7 @@ const NewProject = () => {
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 px-4 py-3 backdrop-blur-sm">
         <BackButton />
-        <h1 className="text-lg font-bold text-foreground">New Project/Customer</h1>
+        <h1 className="text-lg font-bold text-foreground">{t('newProject.title')}</h1>
         <SettingsButton />
       </header>
 
@@ -188,17 +190,17 @@ const NewProject = () => {
                 <FormItem>
                   <FormLabel className="text-foreground flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-primary" />
-                    Project Name *
+                    {t('newProject.projectName')} *
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter project name"
+                      placeholder={t('newProject.projectNamePlaceholder')}
                       className="bg-background text-foreground"
                       {...field}
                     />
                   </FormControl>
                   <FormDescription className="text-muted-foreground">
-                    Maximum 100 characters
+                    {t('newProject.maxCharacters')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -212,17 +214,17 @@ const NewProject = () => {
                 <FormItem>
                   <FormLabel className="text-foreground flex items-center gap-2">
                     <Hash className="h-4 w-4 text-primary" />
-                    Job Number *
+                    {t('newProject.jobNumber')} *
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter job number (e.g., JOB-2025-001)"
+                      placeholder={t('newProject.jobNumberPlaceholder')}
                       className="bg-background text-foreground"
                       {...field}
                     />
                   </FormControl>
                   <FormDescription className="text-muted-foreground">
-                    Letters, numbers, hyphens, and underscores only (max 50 chars)
+                    {t('newProject.jobNumberFormat')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -236,17 +238,17 @@ const NewProject = () => {
                 <FormItem>
                   <FormLabel className="text-foreground flex items-center gap-2">
                     <User className="h-4 w-4 text-primary" />
-                    Customer Name *
+                    {t('newProject.customerName')} *
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter customer name"
+                      placeholder={t('newProject.customerNamePlaceholder')}
                       className="bg-background text-foreground"
                       {...field}
                     />
                   </FormControl>
                   <FormDescription className="text-muted-foreground">
-                    Maximum 100 characters
+                    {t('newProject.maxCharacters')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -260,18 +262,18 @@ const NewProject = () => {
                 <FormItem>
                   <FormLabel className="text-foreground flex items-center gap-2">
                     <FileText className="h-4 w-4 text-primary" />
-                    Job Description *
+                    {t('newProject.jobDescription')} *
                   </FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Enter job description"
+                      placeholder={t('newProject.jobDescriptionPlaceholder')}
                       className="min-h-[120px] bg-background text-foreground resize-none"
                       maxLength={500}
                       {...field}
                     />
                   </FormControl>
                   <FormDescription className="text-muted-foreground">
-                    {field.value.length}/500 characters
+                    {field.value.length}/500 {t('newProject.descriptionLength')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -280,10 +282,9 @@ const NewProject = () => {
 
             {/* Voice Input Instructions and Button */}
             <div className="rounded-xl border-2 border-primary bg-primary/20 p-8 shadow-lg">
-              <h3 className="text-2xl font-bold text-foreground mb-4 text-center">Quick Voice Input</h3>
+              <h3 className="text-2xl font-bold text-foreground mb-4 text-center">{t('newProject.voiceInputTitle')}</h3>
               <p className="text-lg text-foreground font-medium mb-6 text-center leading-relaxed">
-                Tap the microphone to dictate your Project Name, Customer Name, Job Number, and Job Description. 
-                This information will be included in your Field Reports and Checklists.
+                {t('newProject.voiceInputInstructions')}
               </p>
               
               <div className="flex flex-col items-center justify-center gap-4">
@@ -306,13 +307,13 @@ const NewProject = () => {
                   )}
                 </button>
                 {isRecording && (
-                  <p className="text-lg text-destructive font-bold animate-pulse">Recording... tap to stop</p>
+                  <p className="text-lg text-destructive font-bold animate-pulse">{t('newProject.recordingStatus')}</p>
                 )}
                 {isProcessing && (
-                  <p className="text-lg text-primary font-bold">Processing audio...</p>
+                  <p className="text-lg text-primary font-bold">{t('newProject.processingAudio')}</p>
                 )}
                 {!isRecording && !isProcessing && (
-                  <p className="text-lg text-foreground font-bold">Tap to fill form with voice</p>
+                  <p className="text-lg text-foreground font-bold">{t('newProject.tapToFill')}</p>
                 )}
               </div>
             </div>
@@ -323,18 +324,18 @@ const NewProject = () => {
                 type="submit"
                 className="w-full bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90"
               >
-                Continue
+                {t('common.continue')}
               </Button>
               <Button
                 type="button"
                 variant="secondary"
                 onClick={() => {
                   form.reset();
-                  toast.success("Form cleared");
+                  toast.success(t('common.formCleared'));
                 }}
                 className="w-full py-6 text-base border-2 border-primary font-bold hover:bg-primary/10"
               >
-                Clear Form
+                {t('newProject.clearForm')}
               </Button>
             </div>
           </form>
