@@ -573,7 +573,7 @@ const Checklist = () => {
       <header className="sticky top-0 z-10 bg-background/80 px-4 py-3 backdrop-blur-sm">
         <div className="flex items-center justify-between">
           <BackButton />
-          <h1 className="text-lg font-semibold text-foreground flex-1 text-center">{t('checklist.title')}</h1>
+          <div className="w-10" /> {/* Spacer for alignment */}
           <SettingsButton />
         </div>
       </header>
@@ -620,8 +620,10 @@ const Checklist = () => {
               onChange={(e) => handleImageUpload(e.target.files)}
             />
 
-            {/* Voice Recording Button */}
+            {/* Title and Voice Recording Section */}
             <div className="flex flex-col items-center justify-center gap-4 w-full">
+              <h1 className="text-2xl font-semibold text-foreground text-center">{t('checklist.title')}</h1>
+              
               <button
                 onClick={handleVoiceRecord}
                 className={`flex h-20 w-20 items-center justify-center rounded-full transition-all ${
