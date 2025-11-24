@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
@@ -37,6 +38,7 @@ interface Checklist {
 const FinalReport = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t, i18n } = useTranslation();
   const reportId = location.state?.reportId;
   const [reportData, setReportData] = useState<any>(location.state?.reportData || null);
   const [media, setMedia] = useState<MediaItem[]>([]);
@@ -52,7 +54,7 @@ const FinalReport = () => {
       if (!reportId) {
         console.error("No reportId found in location state");
         toast({
-          title: "No report found",
+          title: t('finalReport.noReportFound'),
           variant: "destructive",
         });
         setIsLoading(false);
@@ -71,7 +73,7 @@ const FinalReport = () => {
         if (reportError || !report) {
           console.error("Failed to load report:", reportError);
           toast({
-            title: "Failed to load report",
+            title: t('finalReport.failedToLoad'),
             variant: "destructive",
           });
           setIsLoading(false);
@@ -117,7 +119,7 @@ const FinalReport = () => {
       } catch (error) {
         console.error('Error loading report data:', error);
         toast({
-          title: "Failed to load report",
+          title: t('finalReport.failedToLoad'),
           variant: "destructive",
         });
       } finally {
@@ -131,8 +133,8 @@ const FinalReport = () => {
   const handleDownloadPDF = async () => {
     if (!reportData) {
       toast({
-        title: "No report to download",
-        description: "Please load a report first.",
+        title: t('finalReport.noReportToDownload'),
+        description: t('finalReport.pleaseLoadFirst'),
         variant: "destructive",
       });
       return;
@@ -140,8 +142,8 @@ const FinalReport = () => {
 
     try {
       toast({
-        title: "Generating PDF...",
-        description: "Your report is being prepared as a PDF file.",
+        title: t('finalReport.generatingPDF'),
+        description: t('finalReport.preparingPDF'),
       });
 
       const mediaUrlsMap = new Map<string, string>();
@@ -171,14 +173,14 @@ const FinalReport = () => {
       URL.revokeObjectURL(url);
 
       toast({
-        title: "PDF Downloaded!",
-        description: "Your report has been saved as a PDF file.",
+        title: t('finalReport.pdfDownloaded'),
+        description: t('finalReport.savedAsPDF'),
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast({
-        title: "Failed to generate PDF",
-        description: "Please try again.",
+        title: t('finalReport.failedPDF'),
+        description: t('finalReport.tryAgain'),
         variant: "destructive",
       });
     }
@@ -187,8 +189,8 @@ const FinalReport = () => {
   const handleDownloadWord = async () => {
     if (!reportData) {
       toast({
-        title: "No report to download",
-        description: "Please load a report first.",
+        title: t('finalReport.noReportToDownload'),
+        description: t('finalReport.pleaseLoadFirst'),
         variant: "destructive",
       });
       return;
@@ -196,8 +198,8 @@ const FinalReport = () => {
 
     try {
       toast({
-        title: "Generating Word Document...",
-        description: "Your report is being prepared as a Word document.",
+        title: t('finalReport.generatingWord'),
+        description: t('finalReport.preparingWord'),
       });
 
       // Parse report sections
@@ -499,14 +501,14 @@ const FinalReport = () => {
       saveAs(blob, `${reportData.project_name}_${new Date().toISOString().split('T')[0]}.docx`);
 
       toast({
-        title: "Word Document Downloaded!",
-        description: "Your report has been saved as a Word document.",
+        title: t('finalReport.wordDownloaded'),
+        description: t('finalReport.savedAsWord'),
       });
     } catch (error) {
       console.error('Error generating Word document:', error);
       toast({
-        title: "Failed to generate Word document",
-        description: "Please try again.",
+        title: t('finalReport.failedWord'),
+        description: t('finalReport.tryAgain'),
         variant: "destructive",
       });
     }
@@ -517,13 +519,13 @@ const FinalReport = () => {
       const url = window.location.href;
       await navigator.clipboard.writeText(url);
       toast({
-        title: "Link copied!",
-        description: "Report link has been copied to clipboard.",
+        title: t('finalReport.linkCopied'),
+        description: t('finalReport.linkCopiedDesc'),
       });
     } catch (err) {
       toast({
-        title: "Failed to copy link",
-        description: "Please try again.",
+        title: t('finalReport.failedCopyLink'),
+        description: t('finalReport.tryAgain'),
         variant: "destructive",
       });
     }
@@ -543,16 +545,16 @@ const FinalReport = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast({
-          title: "Authentication required",
-          description: "Please sign in to save reports to cloud",
+          title: t('finalReport.authRequired'),
+          description: t('finalReport.signInToSave'),
           variant: "destructive",
         });
         return;
       }
 
       toast({
-        title: "Saving to cloud...",
-        description: "Your report is being uploaded",
+        title: t('finalReport.savingToCloud'),
+        description: t('finalReport.uploadingReport'),
       });
 
       // Generate PDF blob
@@ -582,7 +584,7 @@ const FinalReport = () => {
       if (uploadError) {
         console.error("Storage upload error:", uploadError);
         toast({
-          title: "Upload failed",
+          title: t('finalReport.uploadFailed'),
           description: uploadError.message,
           variant: "destructive",
         });
@@ -604,7 +606,7 @@ const FinalReport = () => {
       if (dbError) {
         console.error("Database insert error:", dbError);
         toast({
-          title: "Save failed",
+          title: t('finalReport.saveFailed'),
           description: dbError.message,
           variant: "destructive",
         });
@@ -612,15 +614,15 @@ const FinalReport = () => {
       }
 
       toast({
-        title: "Report saved to cloud!",
-        description: "Your report has been securely saved and can be accessed anytime",
+        title: t('finalReport.savedToCloud'),
+        description: t('finalReport.savedSecurely'),
       });
       
     } catch (error) {
       console.error("Error saving to cloud:", error);
       toast({
-        title: "Save failed",
-        description: "An unexpected error occurred",
+        title: t('finalReport.saveFailed'),
+        description: t('finalReport.unexpectedError'),
         variant: "destructive",
       });
     } finally {
@@ -631,43 +633,38 @@ const FinalReport = () => {
   const handleShare = () => {
     if (!reportData) {
       toast({
-        title: "No report to share",
-        description: "Please load a report first.",
+        title: t('finalReport.noReportToShare'),
+        description: t('finalReport.pleaseLoadFirst'),
         variant: "destructive",
       });
       return;
     }
 
     toast({
-      title: "Sharing report...",
-      description: "Opening share options.",
+      title: t('finalReport.sharingReport'),
+      description: t('finalReport.openingShare'),
     });
   };
 
   const handleForward = () => {
     if (!reportData) {
       toast({
-        title: "No report to forward",
-        description: "Please load a report first.",
+        title: t('finalReport.noReportToForward'),
+        description: t('finalReport.pleaseLoadFirst'),
         variant: "destructive",
       });
       return;
     }
 
     toast({
-      title: "Forwarding report...",
-      description: "Preparing to forward this report.",
+      title: t('finalReport.forwardingReport'),
+      description: t('finalReport.preparingForward'),
     });
   };
 
   const getMediaUrl = (filePath: string) => {
     const { data } = supabase.storage.from('media').getPublicUrl(filePath);
     return data.publicUrl;
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const handleEditSection = (sectionKey: string, content: string) => {
@@ -716,12 +713,12 @@ const FinalReport = () => {
       setEditingSection(null);
       setEditedContent({});
       toast({
-        title: "Section updated successfully",
+        title: t('finalReport.sectionUpdated'),
       });
     } catch (error) {
       console.error('Error updating section:', error);
       toast({
-        title: "Failed to update section",
+        title: t('finalReport.failedToUpdate'),
         variant: "destructive",
       });
     } finally {
@@ -739,10 +736,10 @@ const FinalReport = () => {
             <SettingsButton />
           </div>
           <p className="text-2xl font-bold leading-tight tracking-tight text-foreground">
-            {reportData?.project_name || 'Report'}
+            {reportData?.project_name || t('finalReport.report')}
           </p>
           <p className="text-sm text-muted-foreground">
-            {reportData?.customer_name || 'N/A'} • Job #{reportData?.job_number || 'N/A'}
+            {reportData?.customer_name || 'N/A'} • {t('finalReport.job')} #{reportData?.job_number || 'N/A'}
           </p>
         </div>
       </header>
@@ -754,19 +751,19 @@ const FinalReport = () => {
       ) : !reportData ? (
         <div className="flex flex-col items-center justify-center p-8 text-center min-h-[400px]">
           <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-          <h2 className="text-xl font-bold text-foreground mb-2">No Report Found</h2>
+          <h2 className="text-xl font-bold text-foreground mb-2">{t('finalReport.noReportFound')}</h2>
           <p className="text-muted-foreground mb-4">
-            The report could not be loaded. Please try again or go back to the dashboard.
+            {t('finalReport.couldNotLoad')}
           </p>
           <Button onClick={() => navigate("/dashboard")}>
-            Back to Dashboard
+            {t('finalReport.backToDashboard')}
           </Button>
         </div>
       ) : (
         <main className="flex-grow">
           <div className="pt-6">
             <h1 className="px-4 pb-3 text-left text-[32px] font-bold leading-tight tracking-tight text-foreground">
-              Report Summary
+              {t('finalReport.reportSummary')}
             </h1>
 
             {/* Display formatted report summary */}
@@ -784,7 +781,7 @@ const FinalReport = () => {
                       {summaryMatch && (
                         <div className="rounded-lg bg-card p-4">
                           <div className="flex items-center justify-between mb-2">
-                            <h2 className="text-lg font-bold text-foreground">Summary</h2>
+                            <h2 className="text-lg font-bold text-foreground">{t('finalReport.summary')}</h2>
                             {editingSection !== 'summary' && (
                               <Button
                                 variant="ghost"
@@ -808,7 +805,7 @@ const FinalReport = () => {
                                   disabled={isSaving}
                                 >
                                   <Save className="h-4 w-4 mr-1" />
-                                  {isSaving ? 'Saving...' : 'Save'}
+                                  {isSaving ? t('finalReport.saving') : t('finalReport.save')}
                                 </Button>
                                 <Button
                                   size="sm"
@@ -817,7 +814,7 @@ const FinalReport = () => {
                                   disabled={isSaving}
                                 >
                                   <X className="h-4 w-4 mr-1" />
-                                  Cancel
+                                  {t('finalReport.cancel')}
                                 </Button>
                               </div>
                             </div>
@@ -833,7 +830,7 @@ const FinalReport = () => {
                       {keyPointsMatch && (
                         <div className="rounded-lg bg-card p-4">
                           <div className="flex items-center justify-between mb-2">
-                            <h2 className="text-lg font-bold text-foreground">Key Points</h2>
+                            <h2 className="text-lg font-bold text-foreground">{t('finalReport.keyPoints')}</h2>
                             {editingSection !== 'keypoints' && (
                               <Button
                                 variant="ghost"
@@ -857,7 +854,7 @@ const FinalReport = () => {
                                   disabled={isSaving}
                                 >
                                   <Save className="h-4 w-4 mr-1" />
-                                  {isSaving ? 'Saving...' : 'Save'}
+                                  {isSaving ? t('finalReport.saving') : t('finalReport.save')}
                                 </Button>
                                 <Button
                                   size="sm"
@@ -866,7 +863,7 @@ const FinalReport = () => {
                                   disabled={isSaving}
                                 >
                                   <X className="h-4 w-4 mr-1" />
-                                  Cancel
+                                  {t('finalReport.cancel')}
                                 </Button>
                               </div>
                             </div>
@@ -882,7 +879,7 @@ const FinalReport = () => {
                       {actionItemsMatch && (
                         <div className="rounded-lg bg-card p-4">
                           <div className="flex items-center justify-between mb-2">
-                            <h2 className="text-lg font-bold text-foreground">Action Items</h2>
+                            <h2 className="text-lg font-bold text-foreground">{t('finalReport.actionItems')}</h2>
                             {editingSection !== 'actions' && (
                               <Button
                                 variant="ghost"
@@ -906,7 +903,7 @@ const FinalReport = () => {
                                   disabled={isSaving}
                                 >
                                   <Save className="h-4 w-4 mr-1" />
-                                  {isSaving ? 'Saving...' : 'Save'}
+                                  {isSaving ? t('finalReport.saving') : t('finalReport.save')}
                                 </Button>
                                 <Button
                                   size="sm"
@@ -915,7 +912,7 @@ const FinalReport = () => {
                                   disabled={isSaving}
                                 >
                                   <X className="h-4 w-4 mr-1" />
-                                  Cancel
+                                  {t('finalReport.cancel')}
                                 </Button>
                               </div>
                             </div>
@@ -945,7 +942,7 @@ const FinalReport = () => {
             {media.length > 0 && (
               <div className="px-4 pb-8">
                 <h2 className="pb-4 text-2xl font-bold text-foreground">
-                  Photos & Media ({media.length})
+                  {t('finalReport.photosMedia')} ({media.length})
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
                   {media.slice(0, 6).map((item) => (
@@ -958,7 +955,7 @@ const FinalReport = () => {
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
-                          <p className="text-sm text-muted-foreground">Video</p>
+                          <p className="text-sm text-muted-foreground">{t('finalReport.video')}</p>
                         </div>
                       )}
                     </div>
@@ -966,7 +963,7 @@ const FinalReport = () => {
                 </div>
                 {media.length > 6 && (
                   <p className="mt-3 text-sm text-muted-foreground">
-                    + {media.length - 6} more photo{media.length - 6 !== 1 ? 's' : ''}
+                    + {media.length - 6} {t('finalReport.morePhotos')}
                   </p>
                 )}
               </div>
@@ -1016,21 +1013,21 @@ const FinalReport = () => {
             {/* Project Details Section */}
             <div className="px-4 pb-8">
               <h2 className="pb-2 text-2xl font-bold text-foreground">
-                Project Information
+                {t('finalReport.projectInfo')}
               </h2>
               <div className="space-y-2 rounded-lg bg-card p-4">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Customer:</span>
+                  <span className="text-muted-foreground">{t('finalReport.customer')}:</span>
                   <span className="font-medium text-foreground">{reportData?.customer_name}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Job Number:</span>
+                  <span className="text-muted-foreground">{t('finalReport.jobNumber')}:</span>
                   <span className="font-medium text-foreground">{reportData?.job_number}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Created:</span>
+                  <span className="text-muted-foreground">{t('finalReport.created')}:</span>
                   <span className="font-medium text-foreground">
-                    {reportData?.created_at ? formatDate(reportData.created_at) : 'N/A'}
+                    {reportData?.created_at ? formatDate(new Date(reportData.created_at)) : 'N/A'}
                   </span>
                 </div>
               </div>
@@ -1042,7 +1039,7 @@ const FinalReport = () => {
                 <div className="rounded-lg bg-card p-8 text-center">
                   <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
                   <p className="text-muted-foreground">
-                    No photos or checklists have been added to this report yet.
+                    {t('finalReport.noPhotosChecklists')}
                   </p>
                 </div>
               </div>
@@ -1051,11 +1048,11 @@ const FinalReport = () => {
             {/* Cloud Storage Options */}
             <div className="px-4 pb-8">
               <h3 className="mb-4 text-base font-medium text-muted-foreground">
-                Also send to
+                {t('finalReport.alsoSendTo')}
               </h3>
               <div className="grid grid-cols-3 gap-4">
                 <button
-                  onClick={() => toast({ title: "Sending to Google Drive..." })}
+                  onClick={() => toast({ title: t('finalReport.sendingToGoogleDrive') })}
                   className="flex flex-col items-center gap-3 rounded-xl bg-card p-4 transition-colors hover:bg-secondary"
                 >
                   <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-3xl">
@@ -1066,7 +1063,7 @@ const FinalReport = () => {
                   </span>
                 </button>
                 <button
-                  onClick={() => toast({ title: "Sending to OneDrive..." })}
+                  onClick={() => toast({ title: t('finalReport.sendingToOneDrive') })}
                   className="flex flex-col items-center gap-3 rounded-xl bg-card p-4 transition-colors hover:bg-secondary"
                 >
                   <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-3xl">
@@ -1077,7 +1074,7 @@ const FinalReport = () => {
                   </span>
                 </button>
                 <button
-                  onClick={() => toast({ title: "Sending to Dropbox..." })}
+                  onClick={() => toast({ title: t('finalReport.sendingToDropbox') })}
                   className="flex flex-col items-center gap-3 rounded-xl bg-card p-4 transition-colors hover:bg-secondary"
                 >
                   <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-3xl">
@@ -1122,7 +1119,7 @@ const FinalReport = () => {
             ) : (
               <Cloud className="h-4 w-4" />
             )}
-            {isSaving ? "Saving..." : showSuccess ? "Quick Save" : "Quick Save"}
+            {isSaving ? t('finalReport.saving') : showSuccess ? t('finalReport.quickSave') : t('finalReport.quickSave')}
           </Button>
         </div>
 
@@ -1138,7 +1135,7 @@ const FinalReport = () => {
               disabled={!reportData}
             >
               <Printer className="h-4 w-4" />
-              <span className="hidden md:inline">Print</span>
+              <span className="hidden md:inline">{t('finalReport.print')}</span>
             </Button>
 
             {/* Divider */}
@@ -1152,7 +1149,7 @@ const FinalReport = () => {
               className="gap-2 text-zinc-200 hover:text-white"
             >
               <Link className="h-4 w-4" />
-              <span className="hidden md:inline">Copy Link</span>
+              <span className="hidden md:inline">{t('finalReport.copyLink')}</span>
             </Button>
 
             {/* Divider */}
@@ -1168,18 +1165,18 @@ const FinalReport = () => {
                   disabled={!reportData}
                 >
                   <Download className="h-4 w-4" />
-                  <span className="hidden sm:inline">Save Options</span>
+                  <span className="hidden sm:inline">{t('finalReport.saveOptions')}</span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
                 <DropdownMenuItem onClick={handleDownloadPDF} className="gap-2 cursor-pointer">
                   <FileText className="h-4 w-4" />
-                  Save as PDF
+                  {t('finalReport.saveAsPDF')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleDownloadWord} className="gap-2 cursor-pointer">
                   <Download className="h-4 w-4" />
-                  Save as Word
+                  {t('finalReport.saveAsWord')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
