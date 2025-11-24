@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
@@ -29,6 +30,7 @@ interface SummarySection {
 const ReviewSummary = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const isSimpleMode = location.state?.simpleMode || false;
   const projectReportId = location.state?.reportId || null;
   const summaryText = location.state?.summary || "";
@@ -46,7 +48,7 @@ const ReviewSummary = () => {
     if (summaryMatch) {
       sections.push({
         id: "summary",
-        title: "Summary",
+        title: t('reviewSummary.summary'),
         content: summaryMatch[1].trim(),
         isOpen: true
       });
@@ -57,7 +59,7 @@ const ReviewSummary = () => {
     if (keyPointsMatch) {
       sections.push({
         id: "keypoints",
-        title: "Key Points",
+        title: t('reviewSummary.keyPoints'),
         content: keyPointsMatch[1].trim(),
         isOpen: true
       });
@@ -68,7 +70,7 @@ const ReviewSummary = () => {
     if (actionItemsMatch) {
       sections.push({
         id: "actions",
-        title: "Action Items",
+        title: t('reviewSummary.actionItems'),
         content: actionItemsMatch[1].trim(),
         isOpen: true
       });
@@ -76,7 +78,7 @@ const ReviewSummary = () => {
     
     return sections.length > 0 ? sections : [{
       id: "general",
-      title: "Report Summary",
+      title: t('reviewSummary.reportSummary'),
       content: text,
       isOpen: true
     }];
@@ -94,7 +96,7 @@ const ReviewSummary = () => {
   };
 
   const handleRegenerateSummary = () => {
-    toast.success("Regenerating summary...");
+    toast.success(t('reviewSummary.regenerating'));
   };
 
   const fetchProjects = async () => {
@@ -121,7 +123,7 @@ const ReviewSummary = () => {
       await fetchProjects();
       setShowProjectSelector(true);
     } else {
-      toast.info("This report is already linked to a project");
+      toast.info(t('reviewSummary.alreadyLinked'));
     }
   };
 
@@ -141,7 +143,7 @@ const ReviewSummary = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        toast.error("You must be logged in to save reports");
+        toast.error(t('reviewSummary.mustBeLoggedIn'));
         return;
       }
 
@@ -151,8 +153,8 @@ const ReviewSummary = () => {
       if (!currentReportId) {
         const reportData = {
           user_id: user.id,
-          project_name: "Simple Mode Report",
-          customer_name: "Standalone Report",
+          project_name: t('reviewSummary.simpleModeReport'),
+          customer_name: t('reviewSummary.standaloneReport'),
           job_number: `SM-${Date.now()}`,
           job_description: summaryText
         };
@@ -165,7 +167,7 @@ const ReviewSummary = () => {
 
         if (reportError) {
           console.error("Error saving report:", reportError);
-          toast.error("Failed to save report");
+          toast.error(t('reviewSummary.saveFailed'));
           return;
         }
 
@@ -179,7 +181,7 @@ const ReviewSummary = () => {
 
         if (updateError) {
           console.error("Error updating report:", updateError);
-          toast.error("Failed to update report");
+          toast.error(t('reviewSummary.failedToUpdate'));
           return;
         }
       }
@@ -203,11 +205,11 @@ const ReviewSummary = () => {
         }
       }
 
-      toast.success("Report saved successfully!");
+      toast.success(t('reviewSummary.reportSaved'));
       navigate("/confirmation", { state: { reportId: currentReportId } });
     } catch (error) {
       console.error("Error:", error);
-      toast.error("An error occurred while saving");
+      toast.error(t('reviewSummary.errorOccurred'));
     }
   };
 
@@ -228,11 +230,11 @@ const ReviewSummary = () => {
   };
 
   const handlePrint = () => {
-    toast.success("Preparing to print...");
+    toast.success(t('reviewSummary.preparingToPrint'));
   };
 
   const handleSaveAsPDF = () => {
-    toast.success("Saving as PDF...");
+    toast.success(t('reviewSummary.savingAsPDF'));
   };
 
   return (
@@ -241,7 +243,7 @@ const ReviewSummary = () => {
       <header className="sticky top-0 z-10 flex items-center justify-between bg-background/80 p-4 backdrop-blur-sm">
         <BackButton />
         <h1 className="flex-1 text-center text-lg font-bold text-foreground">
-          Review Summary
+          {t('reviewSummary.title')}
         </h1>
         <SettingsButton />
       </header>
@@ -273,7 +275,7 @@ const ReviewSummary = () => {
                       {section.content}
                     </p>
                     <button
-                      onClick={() => toast.success("Edit mode activated")}
+                      onClick={() => toast.success(t('reviewSummary.editModeActivated'))}
                       className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
                     >
                       <Pencil className="h-4 w-4" />
@@ -289,7 +291,7 @@ const ReviewSummary = () => {
         {capturedImages.length > 0 && (
           <div className="px-4 py-6">
             <h2 className="mb-4 text-xl font-bold text-foreground">
-              Included Media ({capturedImages.length} {capturedImages.length === 1 ? 'photo' : 'photos'})
+              {t('reviewSummary.includedMedia')} ({capturedImages.length} {capturedImages.length === 1 ? t('reviewSummary.photo') : t('reviewSummary.photos')})
             </h2>
             <div className="grid grid-cols-2 gap-4">
               {capturedImages.map((image: any, index: number) => (
@@ -306,10 +308,10 @@ const ReviewSummary = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">
-                      Photo {index + 1}
+                      {t('reviewSummary.photo')} {index + 1}
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      Field photo
+                      {t('reviewSummary.fieldPhoto')}
                     </p>
                   </div>
                 </div>
@@ -326,7 +328,7 @@ const ReviewSummary = () => {
           variant="secondary"
           className="w-full py-6 text-base font-semibold"
         >
-          Regenerate Summary
+          {t('reviewSummary.regenerate')}
         </Button>
         
         {isSimpleMode ? (
@@ -338,7 +340,7 @@ const ReviewSummary = () => {
                 className="flex flex-col gap-2 py-6"
               >
                 <Printer className="h-5 w-5" />
-                <span className="text-xs">Print</span>
+                <span className="text-xs">{t('reviewSummary.print')}</span>
               </Button>
               <Button
                 onClick={handleSaveAsPDF}
@@ -346,7 +348,7 @@ const ReviewSummary = () => {
                 className="flex flex-col gap-2 py-6"
               >
                 <Download className="h-5 w-5" />
-                <span className="text-xs">Save PDF</span>
+                <span className="text-xs">{t('reviewSummary.savePDF')}</span>
               </Button>
               <Button
                 onClick={handleLinkToProject}
@@ -354,7 +356,7 @@ const ReviewSummary = () => {
                 className="flex flex-col gap-2 py-6"
               >
                 <FolderPlus className="h-5 w-5" />
-                <span className="text-xs">Link</span>
+                <span className="text-xs">{t('reviewSummary.link')}</span>
               </Button>
             </div>
             <Button
@@ -362,7 +364,7 @@ const ReviewSummary = () => {
               disabled={isSaving}
               className="w-full bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
-              {isSaving ? "Saving..." : "Finalize Report"}
+              {isSaving ? t('reviewSummary.saving') : t('reviewSummary.finalize')}
             </Button>
           </>
         ) : (
@@ -371,7 +373,7 @@ const ReviewSummary = () => {
             disabled={isSaving}
             className="w-full bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
-            {isSaving ? "Saving..." : "Continue to Report"}
+            {isSaving ? t('reviewSummary.saving') : t('reviewSummary.continueToReport')}
           </Button>
         )}
       </div>
@@ -380,9 +382,9 @@ const ReviewSummary = () => {
       <Dialog open={showProjectSelector} onOpenChange={setShowProjectSelector}>
         <DialogContent className="max-w-md bg-background">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Link to Project</DialogTitle>
+            <DialogTitle className="text-foreground">{t('reviewSummary.linkToProject')}</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Choose an existing project or save as standalone
+              {t('reviewSummary.chooseOrSave')}
             </DialogDescription>
           </DialogHeader>
           
@@ -397,8 +399,8 @@ const ReviewSummary = () => {
               className="w-full justify-start h-auto p-4"
             >
               <div className="text-left">
-                <div className="font-semibold">Save as Standalone</div>
-                <div className="text-xs text-muted-foreground">Not linked to any project</div>
+                <div className="font-semibold">{t('reviewSummary.saveStandalone')}</div>
+                <div className="text-xs text-muted-foreground">{t('reviewSummary.notLinked')}</div>
               </div>
             </Button>
 
@@ -408,7 +410,7 @@ const ReviewSummary = () => {
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Create New Project
+              {t('reviewSummary.createNewProject')}
             </Button>
 
             {/* Existing Projects */}
@@ -419,7 +421,7 @@ const ReviewSummary = () => {
                     <span className="w-full border-t border-border" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Or select existing</span>
+                    <span className="bg-background px-2 text-muted-foreground">{t('reviewSummary.orSelectExisting')}</span>
                   </div>
                 </div>
                 
