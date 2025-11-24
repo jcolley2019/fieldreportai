@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import { LiveCameraCapture } from "@/components/LiveCameraCapture";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDistanceToNow } from "date-fns";
+import { enUS, es } from "date-fns/locale";
 
 interface ImageItem {
   id: string;
@@ -19,10 +21,17 @@ interface ImageItem {
   deleted: boolean;
 }
 
+interface PreviousChecklist {
+  id: string;
+  title: string;
+  created_at: string;
+  item_count: number;
+}
+
 const Checklist = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isSimpleMode = location.state?.simpleMode || false;
   const [images, setImages] = useState<ImageItem[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
@@ -33,8 +42,66 @@ const Checklist = () => {
   const [showLiveCamera, setShowLiveCamera] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [previousChecklists, setPreviousChecklists] = useState<PreviousChecklist[]>([]);
+  const [isLoadingChecklists, setIsLoadingChecklists] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch previous checklists on mount
+  useEffect(() => {
+    fetchPreviousChecklists();
+  }, []);
+
+  const fetchPreviousChecklists = async () => {
+    try {
+      setIsLoadingChecklists(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return;
+
+      // Fetch last 5 checklists with item count
+      const { data: checklists, error } = await supabase
+        .from('checklists')
+        .select(`
+          id,
+          title,
+          created_at,
+          checklist_items(count)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error("Error fetching checklists:", error);
+        return;
+      }
+
+      // Format the data
+      const formattedChecklists: PreviousChecklist[] = checklists?.map(checklist => ({
+        id: checklist.id,
+        title: checklist.title,
+        created_at: checklist.created_at,
+        item_count: Array.isArray(checklist.checklist_items) 
+          ? checklist.checklist_items.length 
+          : (checklist.checklist_items as any)?.count || 0
+      })) || [];
+
+      setPreviousChecklists(formattedChecklists);
+    } catch (error) {
+      console.error("Error fetching checklists:", error);
+    } finally {
+      setIsLoadingChecklists(false);
+    }
+  };
+
+  const formatRelativeDate = (dateString: string) => {
+    const locale = i18n.language === 'es' ? es : enUS;
+    return formatDistanceToNow(new Date(dateString), { 
+      addSuffix: true,
+      locale 
+    });
+  };
 
   const handleImageUpload = (files: FileList | null) => {
     if (!files) return;
@@ -439,15 +506,29 @@ const Checklist = () => {
             <div className="w-full mt-8">
               <h3 className="text-lg font-semibold text-foreground mb-4">{t('checklist.previousChecklists')}</h3>
               <div className="space-y-3">
-                {/* Placeholder for previous checklists - will be populated with actual data */}
-                <div className="rounded-lg border border-border bg-secondary p-4 hover:bg-secondary/80 transition-colors cursor-pointer">
-                  <h4 className="font-medium text-foreground mb-2">Sample Checklist 1</h4>
-                  <p className="text-sm text-muted-foreground">Created 2 hours ago • 5 items</p>
-                </div>
-                <div className="rounded-lg border border-border bg-secondary p-4 hover:bg-secondary/80 transition-colors cursor-pointer">
-                  <h4 className="font-medium text-foreground mb-2">Sample Checklist 2</h4>
-                  <p className="text-sm text-muted-foreground">Created yesterday • 8 items</p>
-                </div>
+                {isLoadingChecklists ? (
+                  <div className="text-center text-muted-foreground py-4">
+                    {t('common.loading')}
+                  </div>
+                ) : previousChecklists.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-4 text-sm">
+                    {i18n.language === 'es' 
+                      ? 'No hay listas anteriores aún' 
+                      : 'No previous checklists yet'}
+                  </div>
+                ) : (
+                  previousChecklists.map((checklist) => (
+                    <div 
+                      key={checklist.id}
+                      className="rounded-lg border border-border bg-secondary p-4 hover:bg-secondary/80 transition-colors cursor-pointer"
+                    >
+                      <h4 className="font-medium text-foreground mb-2">{checklist.title}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {formatRelativeDate(checklist.created_at)} • {checklist.item_count} {checklist.item_count === 1 ? (i18n.language === 'es' ? 'ítem' : 'item') : (i18n.language === 'es' ? 'ítems' : 'items')}
+                      </p>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
