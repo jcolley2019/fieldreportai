@@ -8,6 +8,7 @@ import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListCh
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatDate } from '@/lib/dateFormat';
 
 interface ProjectData {
   id: string;
@@ -168,12 +169,8 @@ const ProjectDetail = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+  const formatDateDisplay = (dateString: string) => {
+    return formatDate(dateString);
   };
 
   const getMediaUrl = (filePath: string) => {
@@ -231,7 +228,7 @@ const ProjectDetail = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    <span>Created {formatDate(project.created_at)}</span>
+                    <span>Created {formatDateDisplay(project.created_at)}</span>
                   </div>
                 </CardDescription>
               </div>
@@ -296,7 +293,7 @@ const ProjectDetail = () => {
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                    <p className="mt-1 text-xs text-muted-foreground">{formatDate(item.created_at)}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{formatDateDisplay(item.created_at)}</p>
                   </div>
                 ))}
               </div>
@@ -319,7 +316,7 @@ const ProjectDetail = () => {
                     <div className="flex items-start justify-between">
                       <div>
                         <CardTitle className="text-foreground">{checklist.title}</CardTitle>
-                        <CardDescription>{formatDate(checklist.created_at)}</CardDescription>
+                        <CardDescription>{formatDateDisplay(checklist.created_at)}</CardDescription>
                       </div>
                       <Button
                         variant="ghost"
@@ -387,7 +384,7 @@ const ProjectDetail = () => {
                         <div>
                           <p className="font-medium text-foreground">{doc.file_name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {formatDate(doc.created_at)}
+                            {formatDateDisplay(doc.created_at)}
                             {doc.file_size && ` • ${(doc.file_size / 1024).toFixed(1)} KB`}
                           </p>
                         </div>

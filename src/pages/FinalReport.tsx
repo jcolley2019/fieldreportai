@@ -12,6 +12,7 @@ import { pdf } from '@react-pdf/renderer';
 import { ReportPDF } from '@/components/ReportPDF';
 import { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer, Table, TableCell, TableRow, WidthType, BorderStyle, ImageRun } from 'docx';
 import { saveAs } from 'file-saver';
+import { formatDate, formatDateLong } from '@/lib/dateFormat';
 
 interface MediaItem {
   id: string;

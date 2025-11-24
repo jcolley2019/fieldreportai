@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import { LiveCameraCapture } from "@/components/LiveCameraCapture";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDate } from '@/lib/dateFormat';
 
 interface ImageItem {
   id: string;
@@ -474,7 +475,7 @@ const CaptureScreen = () => {
           </div>
           <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
             <p className="text-xs font-medium text-muted-foreground">
-              {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              {formatDate(new Date())}
             </p>
           </div>
         </div>
