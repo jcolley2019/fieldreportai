@@ -716,17 +716,17 @@ const Settings = () => {
             <div className="mb-6">
               <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                 <Palette className="h-5 w-5" />
-                Email Template Branding
+                {t('settings.emailBranding')}
               </h2>
               <p className="text-sm text-muted-foreground mt-2">
-                Customize the appearance of emails sent from your account with your company branding.
+                {t('settings.emailBrandingDesc')}
               </p>
             </div>
             
             <div className="space-y-6">
               {/* Brand Color */}
               <div className="space-y-2">
-                <Label className="text-foreground">Brand Color</Label>
+                <Label className="text-foreground">{t('settings.brandColor')}</Label>
                 <div className="flex gap-2 items-center">
                   <Input
                     type="color"
@@ -743,28 +743,28 @@ const Settings = () => {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  This color will be used for buttons and accents in your emails
+                  {t('settings.brandColorDesc')}
                 </p>
               </div>
 
               {/* Custom Message */}
               <div className="space-y-2">
-                <Label className="text-foreground">Custom Footer Message</Label>
+                <Label className="text-foreground">{t('settings.customFooter')}</Label>
                 <Input
                   value={emailTemplateMessage}
                   onChange={(e) => setEmailTemplateMessage(e.target.value)}
-                  placeholder="Thank you for using our services"
+                  placeholder={t('settings.customFooterPlaceholder')}
                   className="bg-background text-foreground"
                   maxLength={200}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Optional message to include at the bottom of your emails ({emailTemplateMessage.length}/200 characters)
+                  {t('settings.customFooterDesc')} ({emailTemplateMessage.length}/200 {t('newProject.descriptionLength')})
                 </p>
               </div>
 
               {/* Preview */}
               <div className="space-y-2">
-                <Label className="text-foreground">Email Preview</Label>
+                <Label className="text-foreground">{t('settings.emailPreview')}</Label>
                 <div className="border border-border rounded-lg p-4 bg-muted/20">
                   <div className="bg-white p-6 rounded shadow-sm max-w-md mx-auto">
                     <div className="flex items-center gap-3 mb-4">
@@ -798,7 +798,7 @@ const Settings = () => {
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 <Save className="mr-2 h-4 w-4" />
-                Save Email Template
+                {t('settings.saveEmailTemplate')}
               </Button>
             </div>
           </div>
@@ -808,7 +808,7 @@ const Settings = () => {
         <div className="bg-background px-4 py-6 border-t border-border">
           <h2 className="mb-4 text-xl font-bold text-foreground">{t('settings.twoFactorAuth')}</h2>
           <p className="mb-6 text-sm text-muted-foreground">
-            Add an extra layer of security to your account by requiring a verification code from your authenticator app.
+            {t('settings.twoFactorDesc')}
           </p>
           
           <div className="flex items-center justify-between">
@@ -816,10 +816,10 @@ const Settings = () => {
               <Smartphone className="h-5 w-5 text-foreground" />
               <div>
                 <p className="text-base font-medium text-foreground">
-                  {mfaEnabled ? "2FA Enabled" : "2FA Disabled"}
+                  {mfaEnabled ? t('settings.twoFactorEnabled') : t('settings.twoFactorDisabled')}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {mfaEnabled ? "Your account is protected" : "Enhance your account security"}
+                  {mfaEnabled ? t('settings.accountProtected') : t('settings.enhanceSecurity')}
                 </p>
               </div>
             </div>
@@ -837,9 +837,9 @@ const Settings = () => {
         <Dialog open={showMfaDialog} onOpenChange={setShowMfaDialog}>
           <DialogContent className="bg-background">
             <DialogHeader>
-              <DialogTitle className="text-foreground">Set Up Two-Factor Authentication</DialogTitle>
+              <DialogTitle className="text-foreground">{t('settings.setup2FA')}</DialogTitle>
               <DialogDescription className="text-muted-foreground">
-                Scan the QR code with your authenticator app or enter the secret key manually.
+                {t('settings.setup2FADesc')}
               </DialogDescription>
             </DialogHeader>
             
@@ -854,7 +854,7 @@ const Settings = () => {
               {/* Secret Key */}
               {mfaSecret && (
                 <div className="space-y-2">
-                  <Label className="text-foreground">Secret Key</Label>
+                  <Label className="text-foreground">{t('settings.secretKey')}</Label>
                   <div className="flex gap-2">
                     <Input
                       value={mfaSecret}
@@ -876,23 +876,23 @@ const Settings = () => {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Use this key if you can't scan the QR code
+                    {t('settings.secretKeyDesc')}
                   </p>
                 </div>
               )}
 
               {/* Verification Code Input */}
               <div className="space-y-2">
-                <Label className="text-foreground">Verification Code</Label>
+                <Label className="text-foreground">{t('settings.verificationCode')}</Label>
                 <Input
                   value={verifyCode}
                   onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="Enter 6-digit code"
+                  placeholder={t('settings.verificationCodePlaceholder')}
                   className="bg-background text-foreground"
                   maxLength={6}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Enter the 6-digit code from your authenticator app
+                  {t('settings.verificationCodeDesc')}
                 </p>
               </div>
 
@@ -902,7 +902,7 @@ const Settings = () => {
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 disabled={verifyCode.length !== 6}
               >
-                Verify and Enable 2FA
+                {t('settings.verifyEnable2FA')}
               </Button>
             </div>
           </DialogContent>
@@ -913,18 +913,17 @@ const Settings = () => {
           <div className="flex items-start justify-between gap-4">
             <div className="flex flex-col gap-1">
               <h2 className="text-lg font-bold text-foreground">
-                Manage Cloud Connections
+                {t('settings.cloudConnections')}
               </h2>
               <p className="text-sm text-muted-foreground">
-                Link or unlink your cloud storage accounts to sync your data
-                automatically.
+                {t('settings.cloudConnectionsDesc')}
               </p>
             </div>
             <Button
               onClick={handleManageCloud}
               className="shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              Manage
+              {t('settings.manage')}
             </Button>
           </div>
         </div>
@@ -932,7 +931,7 @@ const Settings = () => {
         {/* DATA & CAPTURE Section */}
         <div className="px-4 pt-4">
           <h3 className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Data & Capture
+            {t('settings.dataCapture')}
           </h3>
 
           {/* Offline Mode Toggle */}
@@ -940,7 +939,7 @@ const Settings = () => {
             <div className="flex items-center gap-4">
               <CloudOff className="h-5 w-5 text-foreground" />
               <span className="text-base font-medium text-foreground">
-                Offline Mode
+                {t('settings.offlineMode')}
               </span>
             </div>
             <Switch checked={offlineMode} onCheckedChange={setOfflineMode} />
@@ -986,7 +985,7 @@ const Settings = () => {
         {/* GENERAL Section */}
         <div className="px-4 pt-6">
           <h3 className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            General
+            {t('settings.general')}
           </h3>
 
           {/* Notifications */}
@@ -994,7 +993,7 @@ const Settings = () => {
             <div className="flex items-center gap-4">
               <Bell className="h-5 w-5 text-foreground" />
               <span className="text-base font-medium text-foreground">
-                Notifications
+                {t('settings.notifications')}
               </span>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -1005,7 +1004,7 @@ const Settings = () => {
             <div className="flex items-center gap-4">
               <Moon className="h-5 w-5 text-foreground" />
               <span className="text-base font-medium text-foreground">
-                Appearance
+                {t('settings.appearance')}
               </span>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -1015,7 +1014,7 @@ const Settings = () => {
         {/* SUPPORT & FEEDBACK Section */}
         <div className="px-4 pt-6">
           <h3 className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Support & Feedback
+            {t('settings.supportFeedback')}
           </h3>
 
           {/* Help Center */}
@@ -1023,7 +1022,7 @@ const Settings = () => {
             <div className="flex items-center gap-4">
               <HelpCircle className="h-5 w-5 text-foreground" />
               <span className="text-base font-medium text-foreground">
-                Help Center
+                {t('settings.helpCenter')}
               </span>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -1034,7 +1033,7 @@ const Settings = () => {
             <div className="flex items-center gap-4">
               <MessageSquare className="h-5 w-5 text-foreground" />
               <span className="text-base font-medium text-foreground">
-                Send Feedback
+                {t('settings.sendFeedback')}
               </span>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -1044,7 +1043,7 @@ const Settings = () => {
         {/* ABOUT Section */}
         <div className="px-4 pt-6">
           <h3 className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            About
+            {t('settings.about')}
           </h3>
 
           {/* About Fieldwork */}
@@ -1052,7 +1051,7 @@ const Settings = () => {
             <div className="flex items-center gap-4">
               <Info className="h-5 w-5 text-foreground" />
               <span className="text-base font-medium text-foreground">
-                About Fieldwork
+                {t('settings.aboutFieldwork')}
               </span>
             </div>
             <span className="text-sm text-muted-foreground">v2.1.0</span>
@@ -1063,7 +1062,7 @@ const Settings = () => {
             <div className="flex items-center gap-4">
               <Shield className="h-5 w-5 text-foreground" />
               <span className="text-base font-medium text-foreground">
-                Privacy Policy
+                {t('settings.privacyPolicy')}
               </span>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
