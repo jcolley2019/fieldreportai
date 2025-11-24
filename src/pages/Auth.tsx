@@ -351,10 +351,11 @@ const Auth = () => {
             {/* Toggle between login and signup */}
             <div className="text-center text-sm text-muted-foreground">
               {isLogin ? t('auth.dontHaveAccount') : t('auth.alreadyHaveAccount')}
+              {' '}
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
-                className="font-medium text-primary hover:underline"
+                className="font-semibold text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
               >
                 {isLogin ? t('auth.signUp') : t('auth.logIn')}
               </button>
