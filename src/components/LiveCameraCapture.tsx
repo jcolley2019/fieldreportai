@@ -192,24 +192,24 @@ export const LiveCameraCapture = ({
           </div>
 
           {/* Camera controls */}
-          <div className="bg-black/90 backdrop-blur-sm p-6 flex items-center justify-center gap-6">
+          <div className="bg-black/90 backdrop-blur-sm p-4 flex items-center justify-between gap-3 w-full max-w-[600px] mx-auto">
             {/* Audio pause/resume button (if recording) */}
             {isRecording && onPauseRecording && (
               <Button
                 onClick={onPauseRecording}
-                size="lg"
+                size="sm"
                 variant="outline"
-                className="rounded-full h-14 px-6 gap-2 bg-white/10 hover:bg-white/20 text-white border-white/20"
+                className="rounded-full h-12 px-4 gap-2 bg-white/10 hover:bg-white/20 text-white border-white/20 text-sm flex-shrink-0"
               >
                 {isPaused ? (
                   <>
-                    <Play className="h-5 w-5" />
-                    Resume Audio
+                    <Play className="h-4 w-4" />
+                    <span className="hidden sm:inline">Resume</span>
                   </>
                 ) : (
                   <>
-                    <Pause className="h-5 w-5" />
-                    Pause Audio
+                    <Pause className="h-4 w-4" />
+                    <span className="hidden sm:inline">Pause</span>
                   </>
                 )}
               </Button>
@@ -218,10 +218,10 @@ export const LiveCameraCapture = ({
             {capturedImages.length > 0 && (
               <Button
                 onClick={handleDone}
-                size="lg"
-                className="rounded-full bg-primary hover:bg-primary/90 h-14 px-8 gap-2"
+                size="sm"
+                className="rounded-full bg-primary hover:bg-primary/90 h-12 px-5 gap-2 text-sm flex-shrink-0"
               >
-                <Check className="h-5 w-5" />
+                <Check className="h-4 w-4" />
                 Done ({capturedImages.length})
               </Button>
             )}
@@ -229,15 +229,15 @@ export const LiveCameraCapture = ({
             <button
               onClick={capturePhoto}
               disabled={!isReady}
-              className="flex h-20 w-20 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:bg-white/90 transition-all shadow-lg"
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:bg-white/90 transition-all shadow-lg flex-shrink-0"
             >
-              <div className="h-16 w-16 rounded-full border-4 border-black/20 bg-white flex items-center justify-center">
-                <Camera className="h-8 w-8 text-black" />
+              <div className="h-12 w-12 rounded-full border-4 border-black/20 bg-white flex items-center justify-center">
+                <Camera className="h-6 w-6 text-black" />
               </div>
             </button>
 
             {capturedImages.length === 0 && !isRecording && (
-              <div className="w-14"></div>
+              <div className="w-12"></div>
             )}
           </div>
         </div>
