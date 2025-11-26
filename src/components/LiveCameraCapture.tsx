@@ -182,7 +182,6 @@ export const LiveCameraCapture = ({
                   : 'bg-green-500 text-white shadow-green-500/50'
               }`}>
                 <div className={`h-3 w-3 rounded-full bg-white ${isPaused ? '' : 'animate-pulse'}`}></div>
-                <span>{isPaused ? 'Paused' : 'Recording'}</span>
                 <span className="font-mono">{formatDuration(recordingDuration)}</span>
               </div>
             )}
