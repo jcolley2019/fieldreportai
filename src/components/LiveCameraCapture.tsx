@@ -200,14 +200,14 @@ export const LiveCameraCapture = ({
             {isRecording && onPauseRecording && (
               <Button
                 onClick={onPauseRecording}
-                size="sm"
+                size="lg"
                 variant="outline"
-                className="rounded-full h-12 w-12 p-0 bg-white/10 hover:bg-white/20 text-white border-white/20 flex-shrink-0"
+                className="rounded-full h-20 w-20 p-0 bg-white/10 hover:bg-white/20 text-white border-white/20 flex-shrink-0"
               >
                 {isPaused ? (
-                  <Mic className="h-5 w-5" />
+                  <Mic className="h-10 w-10" />
                 ) : (
-                  <MicOff className="h-5 w-5" />
+                  <MicOff className="h-10 w-10" />
                 )}
               </Button>
             )}
@@ -215,10 +215,10 @@ export const LiveCameraCapture = ({
             {capturedImages.length > 0 && (
               <Button
                 onClick={handleDone}
-                size="sm"
-                className="rounded-full bg-primary hover:bg-primary/90 h-12 px-5 gap-2 text-sm flex-shrink-0"
+                size="lg"
+                className="rounded-full bg-primary hover:bg-primary/90 h-16 px-8 gap-2 text-base flex-shrink-0"
               >
-                <Check className="h-4 w-4" />
+                <Check className="h-6 w-6" />
                 Done ({capturedImages.length})
               </Button>
             )}
@@ -226,15 +226,13 @@ export const LiveCameraCapture = ({
             <button
               onClick={capturePhoto}
               disabled={!isReady}
-              className="flex h-16 w-16 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:bg-white/90 transition-all shadow-lg flex-shrink-0"
+              className="flex h-24 w-24 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:bg-white/90 transition-all shadow-lg flex-shrink-0"
             >
-              <div className="h-12 w-12 rounded-full border-4 border-black/20 bg-white flex items-center justify-center">
-                <Camera className="h-6 w-6 text-black" />
-              </div>
+              <Camera className="h-12 w-12 text-black" />
             </button>
 
             {capturedImages.length === 0 && !isRecording && (
-              <div className="w-12"></div>
+              <div className="w-20"></div>
             )}
           </div>
         </div>
