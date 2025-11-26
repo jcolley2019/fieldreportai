@@ -128,7 +128,6 @@ export const LiveCameraCapture = ({
           type: "image/jpeg",
         });
         setCapturedImages((prev) => [...prev, file]);
-        toast.success(`Photo captured (${capturedImages.length + 1})`);
       }
     }, "image/jpeg", 0.95);
   };
@@ -136,7 +135,6 @@ export const LiveCameraCapture = ({
   const handleDone = () => {
     if (capturedImages.length > 0) {
       onCapture(capturedImages);
-      toast.success(`${capturedImages.length} photo${capturedImages.length > 1 ? 's' : ''} added`);
     }
     
     // If recording is active, stop it

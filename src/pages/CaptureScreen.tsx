@@ -149,8 +149,6 @@ const CaptureScreen = () => {
             recorderMimeType: recorder.mimeType
           });
           
-          toast.info(`Recorded: ${audioBlob.type} (${(audioBlob.size / 1024).toFixed(1)}KB)`);
-          
           await transcribeAudio(audioBlob);
           stream.getTracks().forEach(track => track.stop());
         };
@@ -160,7 +158,6 @@ const CaptureScreen = () => {
         setAudioChunks(chunks);
         setIsRecording(true);
         setShowLiveCamera(true);
-        toast.success(t('common.recordingStarted'));
       } catch (error) {
         console.error("Error accessing microphone:", error);
         toast.error(t('common.microphoneError'));
@@ -171,7 +168,6 @@ const CaptureScreen = () => {
         mediaRecorder.stop();
         setMediaRecorder(null);
         setIsRecording(false);
-        toast.success(t('common.processingAudio'));
       }
     }
   };
@@ -194,7 +190,6 @@ const CaptureScreen = () => {
       setMediaRecorder(null);
       setIsRecording(false);
       setShowLiveCamera(false);
-      toast.success(t('common.processingAudio'));
     }
   };
 
