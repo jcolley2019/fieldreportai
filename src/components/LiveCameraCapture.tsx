@@ -176,8 +176,12 @@ export const LiveCameraCapture = ({
 
             {/* Recording indicator */}
             {isRecording && (
-              <div className="absolute top-4 left-4 flex items-center gap-3 bg-destructive text-white px-6 py-3 rounded-full text-lg font-bold backdrop-blur-sm shadow-lg shadow-destructive/50 animate-in fade-in">
-                <div className={`h-4 w-4 rounded-full bg-white ${isPaused ? '' : 'animate-pulse'}`}></div>
+              <div className={`absolute top-4 left-4 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm shadow-lg animate-in fade-in ${
+                isPaused 
+                  ? 'bg-destructive text-white shadow-destructive/50' 
+                  : 'bg-green-500 text-white shadow-green-500/50'
+              }`}>
+                <div className={`h-3 w-3 rounded-full bg-white ${isPaused ? '' : 'animate-pulse'}`}></div>
                 <span>{isPaused ? 'Paused' : 'Recording'}</span>
                 <span className="font-mono">{formatDuration(recordingDuration)}</span>
               </div>
