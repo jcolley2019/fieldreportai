@@ -33,6 +33,7 @@ const CaptureScreen = () => {
   const [imageScale, setImageScale] = useState(1);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [showCameraDialog, setShowCameraDialog] = useState(false);
@@ -157,6 +158,7 @@ const CaptureScreen = () => {
         setMediaRecorder(recorder);
         setAudioChunks(chunks);
         setIsRecording(true);
+        setIsPaused(false);
         setShowLiveCamera(true);
       } catch (error) {
         console.error("Error accessing microphone:", error);
@@ -168,6 +170,7 @@ const CaptureScreen = () => {
         mediaRecorder.stop();
         setMediaRecorder(null);
         setIsRecording(false);
+        setIsPaused(false);
       }
     }
   };
@@ -176,10 +179,10 @@ const CaptureScreen = () => {
     if (mediaRecorder && isRecording) {
       if (mediaRecorder.state === 'recording') {
         mediaRecorder.pause();
-        toast.info(t('common.recordingPaused'));
+        setIsPaused(true);
       } else if (mediaRecorder.state === 'paused') {
         mediaRecorder.resume();
-        toast.info(t('common.recordingResumed'));
+        setIsPaused(false);
       }
     }
   };
@@ -189,6 +192,7 @@ const CaptureScreen = () => {
       mediaRecorder.stop();
       setMediaRecorder(null);
       setIsRecording(false);
+      setIsPaused(false);
       setShowLiveCamera(false);
     }
   };
@@ -682,7 +686,7 @@ const CaptureScreen = () => {
         onOpenChange={setShowLiveCamera}
         onCapture={handleLiveCameraCapture}
         isRecording={isRecording}
-        isPaused={mediaRecorder?.state === 'paused'}
+        isPaused={isPaused}
         onPauseRecording={handlePauseRecording}
         onStopRecording={handleStopRecording}
       />
