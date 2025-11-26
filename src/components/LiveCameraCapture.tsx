@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, X, Check, Pause, Play } from "lucide-react";
+import { Camera, X, Check, Mic, MicOff } from "lucide-react";
 import { toast } from "sonner";
 
 interface LiveCameraCaptureProps {
@@ -202,18 +202,12 @@ export const LiveCameraCapture = ({
                 onClick={onPauseRecording}
                 size="sm"
                 variant="outline"
-                className="rounded-full h-12 px-4 gap-2 bg-white/10 hover:bg-white/20 text-white border-white/20 text-sm flex-shrink-0"
+                className="rounded-full h-12 w-12 p-0 bg-white/10 hover:bg-white/20 text-white border-white/20 flex-shrink-0"
               >
                 {isPaused ? (
-                  <>
-                    <Play className="h-4 w-4" />
-                    <span className="hidden sm:inline">Resume</span>
-                  </>
+                  <Mic className="h-5 w-5" />
                 ) : (
-                  <>
-                    <Pause className="h-4 w-4" />
-                    <span className="hidden sm:inline">Pause</span>
-                  </>
+                  <MicOff className="h-5 w-5" />
                 )}
               </Button>
             )}
