@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, X, Check, Mic, MicOff } from "lucide-react";
+import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image } from "lucide-react";
 import { toast } from "sonner";
 
 interface LiveCameraCaptureProps {
@@ -29,6 +29,7 @@ export const LiveCameraCapture = ({
   const [capturedImages, setCapturedImages] = useState<File[]>([]);
   const [isReady, setIsReady] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export const LiveCameraCapture = ({
     return () => {
       stopCamera();
     };
-  }, [open]);
+  }, [open, facingMode]);
 
   // Timer effect for recording duration
   useEffect(() => {
@@ -78,7 +79,7 @@ export const LiveCameraCapture = ({
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: { facingMode: facingMode },
         audio: false,
       });
 
@@ -103,6 +104,13 @@ export const LiveCameraCapture = ({
       streamRef.current = null;
     }
     setIsReady(false);
+  };
+
+  const toggleCamera = async () => {
+    stopCamera();
+    setFacingMode((prev) => (prev === "environment" ? "user" : "environment"));
+    // Restart camera with new facing mode
+    setTimeout(() => startCamera(), 100);
   };
 
   const capturePhoto = () => {
@@ -160,80 +168,96 @@ export const LiveCameraCapture = ({
             />
             <canvas ref={canvasRef} className="hidden" />
             
-            {/* Close button */}
-            <button
-              onClick={() => {
-                if (isRecording && onStopRecording) {
-                  onStopRecording();
-                } else {
-                  onOpenChange(false);
-                }
-              }}
-              className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
-            >
-              <X className="h-6 w-6" />
-            </button>
+            {/* Top Controls */}
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4">
+              {/* Close button */}
+              <button
+                onClick={() => {
+                  if (isRecording && onStopRecording) {
+                    onStopRecording();
+                  } else {
+                    onOpenChange(false);
+                  }
+                }}
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+              >
+                <X className="h-6 w-6" />
+              </button>
 
-            {/* Recording indicator */}
-            {isRecording && (
-              <div className={`absolute top-4 left-4 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm shadow-lg animate-in fade-in ${
-                isPaused 
-                  ? 'bg-destructive text-white shadow-destructive/50' 
-                  : 'bg-green-500 text-white shadow-green-500/50'
-              }`}>
-                <div className={`h-3 w-3 rounded-full bg-white ${isPaused ? '' : 'animate-pulse'}`}></div>
-                <span className="font-mono">{formatDuration(recordingDuration)}</span>
-              </div>
-            )}
+              {/* Recording indicator */}
+              {isRecording && (
+                <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm shadow-lg ${
+                  isPaused 
+                    ? 'bg-destructive text-white shadow-destructive/50' 
+                    : 'bg-green-500 text-white shadow-green-500/50'
+                }`}>
+                  <div className={`h-3 w-3 rounded-full bg-white ${isPaused ? '' : 'animate-pulse'}`}></div>
+                  <span className="font-mono">{formatDuration(recordingDuration)}</span>
+                </div>
+              )}
 
-            {/* Photo counter */}
-            {capturedImages.length > 0 && !isRecording && (
-              <div className="absolute top-4 left-4 bg-primary/90 text-white px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm">
-                {capturedImages.length} photo{capturedImages.length > 1 ? 's' : ''}
-              </div>
-            )}
+              {/* Camera flip button */}
+              <button
+                onClick={toggleCamera}
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+              >
+                <SwitchCamera className="h-6 w-6" />
+              </button>
+            </div>
           </div>
 
-          {/* Camera controls */}
-          <div className="bg-black/90 backdrop-blur-sm p-4 flex items-center justify-between gap-3 w-full max-w-[600px] mx-auto">
-            {/* Audio pause/resume button (if recording) */}
-            {isRecording && onPauseRecording && (
-              <Button
-                onClick={onPauseRecording}
-                size="lg"
-                variant="outline"
-                className="rounded-full h-20 w-20 p-0 bg-white/10 hover:bg-white/20 text-white border-white/20 flex-shrink-0"
-              >
-                {isPaused ? (
-                  <Mic className="h-10 w-10" />
-                ) : (
-                  <MicOff className="h-10 w-10" />
-                )}
-              </Button>
-            )}
-
-            {capturedImages.length > 0 && (
-              <Button
+          {/* Bottom Controls */}
+          <div className="bg-black/95 backdrop-blur-sm p-6">
+            <div className="flex items-center justify-between max-w-[600px] mx-auto">
+              {/* Gallery preview thumbnail */}
+              <button
                 onClick={handleDone}
-                size="lg"
-                className="rounded-full bg-primary hover:bg-primary/90 h-16 px-8 gap-2 text-base flex-shrink-0"
+                disabled={capturedImages.length === 0}
+                className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all disabled:opacity-50 overflow-hidden border-2 border-white/20"
               >
-                <Check className="h-6 w-6" />
-                Done ({capturedImages.length})
-              </Button>
-            )}
-            
-            <button
-              onClick={capturePhoto}
-              disabled={!isReady}
-              className="flex h-24 w-24 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:bg-white/90 transition-all shadow-lg flex-shrink-0"
-            >
-              <Camera className="h-12 w-12 text-black" />
-            </button>
+                {capturedImages.length > 0 ? (
+                  <div className="relative w-full h-full">
+                    <img 
+                      src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} 
+                      alt="Last captured"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <span className="text-white text-xs font-bold">{capturedImages.length}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <Image className="h-6 w-6 text-white/50" />
+                )}
+              </button>
 
-            {capturedImages.length === 0 && !isRecording && (
-              <div className="w-20"></div>
-            )}
+              {/* Capture button */}
+              <button
+                onClick={capturePhoto}
+                disabled={!isReady}
+                className="flex h-20 w-20 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-2xl"
+              >
+                <div className="h-16 w-16 rounded-full border-4 border-black/10 bg-white flex items-center justify-center">
+                  <Camera className="h-10 w-10 text-black" />
+                </div>
+              </button>
+
+              {/* Audio control button */}
+              {isRecording && onPauseRecording ? (
+                <button
+                  onClick={onPauseRecording}
+                  className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all border-2 border-white/20"
+                >
+                  {isPaused ? (
+                    <Mic className="h-8 w-8 text-white" />
+                  ) : (
+                    <MicOff className="h-8 w-8 text-white" />
+                  )}
+                </button>
+              ) : (
+                <div className="w-16"></div>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>
