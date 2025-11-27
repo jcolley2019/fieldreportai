@@ -35,10 +35,8 @@ export const LiveCameraCapture = ({
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [pinchDistance, setPinchDistance] = useState<number | null>(null);
-  const [isStable, setIsStable] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const motionValuesRef = useRef<number[]>([]);
 
   useEffect(() => {
     if (open) {
@@ -52,45 +50,6 @@ export const LiveCameraCapture = ({
       stopCamera();
     };
   }, [open, facingMode]);
-
-  // Motion detection for stability indicator
-  useEffect(() => {
-    if (!open) return;
-
-    const handleMotion = (event: DeviceMotionEvent) => {
-      const acceleration = event.accelerationIncludingGravity;
-      if (!acceleration) return;
-
-      // Calculate total acceleration
-      const totalAcceleration = Math.sqrt(
-        (acceleration.x || 0) ** 2 +
-        (acceleration.y || 0) ** 2 +
-        (acceleration.z || 0) ** 2
-      );
-
-      // Keep last 10 readings
-      motionValuesRef.current.push(totalAcceleration);
-      if (motionValuesRef.current.length > 10) {
-        motionValuesRef.current.shift();
-      }
-
-      // Calculate variance to detect stability
-      if (motionValuesRef.current.length >= 5) {
-        const avg = motionValuesRef.current.reduce((a, b) => a + b, 0) / motionValuesRef.current.length;
-        const variance = motionValuesRef.current.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / motionValuesRef.current.length;
-        
-        // Low variance means stable
-        setIsStable(variance < 2);
-      }
-    };
-
-    window.addEventListener('devicemotion', handleMotion);
-    
-    return () => {
-      window.removeEventListener('devicemotion', handleMotion);
-      motionValuesRef.current = [];
-    };
-  }, [open]);
 
   // Timer effect for recording duration
   useEffect(() => {
@@ -347,18 +306,6 @@ export const LiveCameraCapture = ({
                 <div className="absolute top-2/3 left-0 right-0 h-[1px] bg-white/30" />
               </div>
             )}
-
-            {/* Stability Indicator */}
-            <div className="absolute top-20 left-1/2 transform -translate-x-1/2 pointer-events-none">
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-sm transition-all ${
-                isStable 
-                  ? 'bg-green-500/90 text-white' 
-                  : 'bg-orange-500/90 text-white'
-              }`}>
-                <div className={`h-2 w-2 rounded-full ${isStable ? 'bg-white' : 'bg-white animate-pulse'}`} />
-                <span className="text-xs font-semibold">{isStable ? 'STEADY' : 'HOLD STILL'}</span>
-              </div>
-            </div>
             
             {/* Top Controls */}
             <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4">
