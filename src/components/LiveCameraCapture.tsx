@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff } from "lucide-react";
+import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff, Grid3x3 } from "lucide-react";
 import { toast } from "sonner";
 
 interface LiveCameraCaptureProps {
@@ -33,6 +33,7 @@ export const LiveCameraCapture = ({
   const [zoomLevel, setZoomLevel] = useState(1);
   const [focusPoint, setFocusPoint] = useState<{ x: number; y: number } | null>(null);
   const [flashEnabled, setFlashEnabled] = useState(false);
+  const [gridEnabled, setGridEnabled] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -249,6 +250,18 @@ export const LiveCameraCapture = ({
                 <div className="absolute inset-0 border border-yellow-400/50 rounded-sm scale-110" />
               </div>
             )}
+
+            {/* Grid Overlay (Rule of Thirds) */}
+            {gridEnabled && (
+              <div className="absolute inset-0 pointer-events-none">
+                {/* Vertical lines */}
+                <div className="absolute left-1/3 top-0 bottom-0 w-[1px] bg-white/30" />
+                <div className="absolute left-2/3 top-0 bottom-0 w-[1px] bg-white/30" />
+                {/* Horizontal lines */}
+                <div className="absolute top-1/3 left-0 right-0 h-[1px] bg-white/30" />
+                <div className="absolute top-2/3 left-0 right-0 h-[1px] bg-white/30" />
+              </div>
+            )}
             
             {/* Top Controls */}
             <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4">
@@ -282,6 +295,18 @@ export const LiveCameraCapture = ({
                   ) : (
                     <ZapOff className="h-6 w-6" />
                   )}
+                </button>
+
+                {/* Grid toggle button */}
+                <button
+                  onClick={() => setGridEnabled(!gridEnabled)}
+                  className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
+                    gridEnabled
+                      ? 'bg-yellow-500 text-black hover:bg-yellow-600'
+                      : 'bg-black/50 text-white hover:bg-black/70'
+                  }`}
+                >
+                  <Grid3x3 className="h-6 w-6" />
                 </button>
               </div>
 
