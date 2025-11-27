@@ -336,8 +336,8 @@ export const LiveCameraCapture = ({
               playsInline
               muted
               className="w-full h-full object-cover cursor-crosshair"
-              style={{ transform: `scale(${zoomLevel})` }}
-              onClick={handleTapToFocus}
+              style={{ transform: `scale(${Math.max(1, zoomLevel)})` }}
+               onClick={handleTapToFocus}
               onTouchStart={(e) => {
                 if (e.touches.length === 2) {
                   handlePinchStart(e);
