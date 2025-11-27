@@ -119,6 +119,31 @@ export const LiveCameraCapture = ({
     setTimeout(() => startCamera(), 100);
   };
 
+  const applyZoom = async (zoom: number) => {
+    if (!streamRef.current) return;
+
+    try {
+      const videoTrack = streamRef.current.getVideoTracks()[0];
+      const capabilities = videoTrack.getCapabilities() as any;
+
+      if (!capabilities.zoom) {
+        // If zoom is not supported, fall back to CSS transform
+        setZoomLevel(zoom);
+        return;
+      }
+
+      await videoTrack.applyConstraints({
+        advanced: [{ zoom } as any]
+      });
+      
+      setZoomLevel(zoom);
+    } catch (error) {
+      console.error("Error applying zoom:", error);
+      // Fall back to CSS transform if constraint fails
+      setZoomLevel(zoom);
+    }
+  };
+
   const handleTapToFocus = async (e: React.MouseEvent<HTMLVideoElement> | React.TouchEvent<HTMLVideoElement>) => {
     if (!videoRef.current || !streamRef.current) return;
 
@@ -206,7 +231,7 @@ export const LiveCameraCapture = ({
       // Clamp between 0.5x and 8x
       newZoom = Math.max(0.5, Math.min(8, newZoom));
       
-      setZoomLevel(newZoom);
+      applyZoom(newZoom);
       setPinchDistance(currentDistance);
     }
   };
@@ -382,7 +407,7 @@ export const LiveCameraCapture = ({
               {[0.5, 1, 2, 4, 8].map((zoom) => (
                 <button
                   key={zoom}
-                  onClick={() => setZoomLevel(zoom)}
+                  onClick={() => applyZoom(zoom)}
                   className={`px-3 py-1 rounded-full text-sm font-semibold transition-all ${
                     zoomLevel === zoom
                       ? 'bg-yellow-500 text-black'
