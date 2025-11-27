@@ -34,6 +34,7 @@ export const LiveCameraCapture = ({
   const [focusPoint, setFocusPoint] = useState<{ x: number; y: number } | null>(null);
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [gridEnabled, setGridEnabled] = useState(false);
+  const [pinchDistance, setPinchDistance] = useState<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -179,6 +180,41 @@ export const LiveCameraCapture = ({
     }
   };
 
+  const getDistance = (touch1: React.Touch, touch2: React.Touch) => {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const handlePinchStart = (e: React.TouchEvent<HTMLVideoElement>) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const distance = getDistance(e.touches[0], e.touches[1]);
+      setPinchDistance(distance);
+    }
+  };
+
+  const handlePinchMove = (e: React.TouchEvent<HTMLVideoElement>) => {
+    if (e.touches.length === 2 && pinchDistance !== null) {
+      e.preventDefault();
+      const currentDistance = getDistance(e.touches[0], e.touches[1]);
+      const scale = currentDistance / pinchDistance;
+      
+      // Calculate new zoom level
+      let newZoom = zoomLevel * scale;
+      
+      // Clamp between 0.5x and 8x
+      newZoom = Math.max(0.5, Math.min(8, newZoom));
+      
+      setZoomLevel(newZoom);
+      setPinchDistance(currentDistance);
+    }
+  };
+
+  const handlePinchEnd = () => {
+    setPinchDistance(null);
+  };
+
   const capturePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
 
@@ -233,7 +269,15 @@ export const LiveCameraCapture = ({
               className="w-full h-full object-cover cursor-crosshair"
               style={{ transform: `scale(${zoomLevel})` }}
               onClick={handleTapToFocus}
-              onTouchStart={handleTapToFocus}
+              onTouchStart={(e) => {
+                if (e.touches.length === 2) {
+                  handlePinchStart(e);
+                } else {
+                  handleTapToFocus(e);
+                }
+              }}
+              onTouchMove={handlePinchMove}
+              onTouchEnd={handlePinchEnd}
             />
             <canvas ref={canvasRef} className="hidden" />
             
