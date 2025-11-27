@@ -31,7 +31,9 @@ export const LiveCameraCapture = ({
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [focusPoint, setFocusPoint] = useState<{ x: number; y: number } | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -114,6 +116,43 @@ export const LiveCameraCapture = ({
     setTimeout(() => startCamera(), 100);
   };
 
+  const handleTapToFocus = async (e: React.MouseEvent<HTMLVideoElement> | React.TouchEvent<HTMLVideoElement>) => {
+    if (!videoRef.current || !streamRef.current) return;
+
+    const video = videoRef.current;
+    const rect = video.getBoundingClientRect();
+    
+    // Get tap coordinates
+    let clientX: number, clientY: number;
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+
+    // Calculate relative position (0-1 range)
+    const x = ((clientX - rect.left) / rect.width) * 100;
+    const y = ((clientY - rect.top) / rect.height) * 100;
+
+    // Show focus indicator
+    setFocusPoint({ x, y });
+
+    // Clear existing timeout
+    if (focusTimeoutRef.current) {
+      clearTimeout(focusTimeoutRef.current);
+    }
+
+    // Hide focus indicator after animation
+    focusTimeoutRef.current = setTimeout(() => {
+      setFocusPoint(null);
+    }, 1500);
+
+    // Visual feedback for tap-to-focus
+    // Actual focus adjustment happens automatically via camera's autofocus
+  };
+
   const capturePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
 
@@ -165,10 +204,26 @@ export const LiveCameraCapture = ({
               autoPlay
               playsInline
               muted
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover cursor-crosshair"
               style={{ transform: `scale(${zoomLevel})` }}
+              onClick={handleTapToFocus}
+              onTouchStart={handleTapToFocus}
             />
             <canvas ref={canvasRef} className="hidden" />
+            
+            {/* Focus Indicator */}
+            {focusPoint && (
+              <div
+                className="absolute w-20 h-20 border-2 border-yellow-400 rounded-sm pointer-events-none animate-[focus-pulse_0.3s_ease-out]"
+                style={{
+                  left: `${focusPoint.x}%`,
+                  top: `${focusPoint.y}%`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                <div className="absolute inset-0 border border-yellow-400/50 rounded-sm scale-110" />
+              </div>
+            )}
             
             {/* Top Controls */}
             <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4">
