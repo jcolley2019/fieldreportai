@@ -191,11 +191,11 @@ export const LiveCameraCapture = ({
     }
 
     // Calculate relative position (0-1 range)
-    const x = ((clientX - rect.left) / rect.width) * 100;
-    const y = ((clientY - rect.top) / rect.height) * 100;
+    const x = ((clientX - rect.left) / rect.width);
+    const y = ((clientY - rect.top) / rect.height);
 
     // Show focus indicator
-    setFocusPoint({ x, y });
+    setFocusPoint({ x: x * 100, y: y * 100 });
 
     // Clear existing timeout
     if (focusTimeoutRef.current) {
@@ -207,8 +207,23 @@ export const LiveCameraCapture = ({
       setFocusPoint(null);
     }, 1500);
 
-    // Visual feedback for tap-to-focus
-    // Actual focus adjustment happens automatically via camera's autofocus
+    // Apply focus constraints
+    try {
+      const videoTrack = streamRef.current.getVideoTracks()[0];
+      const capabilities = videoTrack.getCapabilities() as any;
+
+      // Try to apply point of interest for focus
+      if (capabilities.focusMode) {
+        await videoTrack.applyConstraints({
+          advanced: [{
+            focusMode: 'single-shot',
+            pointsOfInterest: [{ x, y }]
+          } as any]
+        });
+      }
+    } catch (error) {
+      console.log("Manual focus not supported on this device");
+    }
   };
 
   const toggleFlash = async () => {
