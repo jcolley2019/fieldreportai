@@ -36,6 +36,8 @@ export const LiveCameraCapture = ({
   const [gridEnabled, setGridEnabled] = useState(false);
   const [pinchDistance, setPinchDistance] = useState<number | null>(null);
   const [supportedZoomLevels, setSupportedZoomLevels] = useState<number[]>([0.5, 1, 2, 4, 8]);
+  const [minZoomCapability, setMinZoomCapability] = useState(0.5);
+  const [maxZoomCapability, setMaxZoomCapability] = useState(8);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -105,6 +107,10 @@ export const LiveCameraCapture = ({
             const minZoom = capabilities.zoom.min ?? 1;
             const maxZoom = capabilities.zoom.max ?? 8;
             
+            // Store device zoom capabilities for pinch-to-zoom
+            setMinZoomCapability(minZoom);
+            setMaxZoomCapability(maxZoom);
+            
             // Filter available zoom levels based on device capabilities
             const allZoomLevels = [0.5, 1, 2, 4, 8];
             const supported = allZoomLevels.filter(level => level >= minZoom && level <= maxZoom);
@@ -112,6 +118,8 @@ export const LiveCameraCapture = ({
           } else {
             // If zoom not supported, only show 1x
             setSupportedZoomLevels([1]);
+            setMinZoomCapability(1);
+            setMaxZoomCapability(1);
           }
         };
       }
@@ -273,8 +281,8 @@ export const LiveCameraCapture = ({
       // Calculate new zoom level
       let newZoom = zoomLevel * scale;
       
-      // Clamp between 0.5x and 8x
-      newZoom = Math.max(0.5, Math.min(8, newZoom));
+      // Clamp between device's min and max zoom capabilities
+      newZoom = Math.max(minZoomCapability, Math.min(maxZoomCapability, newZoom));
       
       applyZoom(newZoom);
       setPinchDistance(currentDistance);
