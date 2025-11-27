@@ -32,7 +32,7 @@ export const LiveCameraCapture = ({
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const [zoomLevel, setZoomLevel] = useState(1);
   const [focusPoint, setFocusPoint] = useState<{ x: number; y: number } | null>(null);
-  const [flashEnabled, setFlashEnabled] = useState(false);
+  const [flashMode, setFlashMode] = useState<'off' | 'auto' | 'on'>('off');
   const [gridEnabled, setGridEnabled] = useState(false);
   const [pinchDistance, setPinchDistance] = useState<number | null>(null);
   const [supportedZoomLevels, setSupportedZoomLevels] = useState<number[]>([0.5, 1, 2, 4, 8]);
@@ -246,12 +246,16 @@ export const LiveCameraCapture = ({
         return;
       }
 
-      const newFlashState = !flashEnabled;
+      // Cycle through: off → auto → on → off
+      const nextMode = flashMode === 'off' ? 'auto' : flashMode === 'auto' ? 'on' : 'off';
+      
+      // Only enable torch when mode is 'on', auto and off keep it disabled
+      const torchEnabled = nextMode === 'on';
       await videoTrack.applyConstraints({
-        advanced: [{ torch: newFlashState } as any]
+        advanced: [{ torch: torchEnabled } as any]
       });
       
-      setFlashEnabled(newFlashState);
+      setFlashMode(nextMode);
     } catch (error) {
       console.error("Error toggling flash:", error);
       toast.error("Could not toggle flash");
@@ -417,16 +421,23 @@ export const LiveCameraCapture = ({
                 {/* Flash toggle button */}
                 <button
                   onClick={toggleFlash}
-                  className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
-                    flashEnabled
+                  className={`relative flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
+                    flashMode === 'on'
                       ? 'bg-yellow-500 text-black hover:bg-yellow-600'
+                      : flashMode === 'auto'
+                      ? 'bg-yellow-500/70 text-black hover:bg-yellow-500/90'
                       : 'bg-black/50 text-white/50 hover:bg-black/70 hover:text-white'
                   }`}
                 >
-                  {flashEnabled ? (
-                    <Zap className="h-6 w-6" fill="currentColor" />
-                  ) : (
+                  {flashMode === 'off' ? (
                     <ZapOff className="h-6 w-6" />
+                  ) : flashMode === 'auto' ? (
+                    <>
+                      <Zap className="h-6 w-6" />
+                      <span className="absolute bottom-0 right-0 text-[10px] font-bold bg-black text-white rounded-full w-4 h-4 flex items-center justify-center">A</span>
+                    </>
+                  ) : (
+                    <Zap className="h-6 w-6" fill="currentColor" />
                   )}
                 </button>
 
