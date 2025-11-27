@@ -389,7 +389,7 @@ export const LiveCameraCapture = ({
             <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4">
               {/* Left controls */}
               <div className="flex items-center gap-2">
-                {/* Close button */}
+                {/* Close/Done button */}
                 <button
                   onClick={() => {
                     if (isRecording && onStopRecording) {
@@ -401,9 +401,17 @@ export const LiveCameraCapture = ({
                       onOpenChange(false);
                     }
                   }}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+                  className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
+                    capturedImages.length > 0
+                      ? 'bg-green-500 text-white hover:bg-green-600'
+                      : 'bg-black/50 text-white hover:bg-black/70'
+                  }`}
                 >
-                  <X className="h-6 w-6" />
+                  {capturedImages.length > 0 ? (
+                    <Check className="h-6 w-6" />
+                  ) : (
+                    <X className="h-6 w-6" />
+                  )}
                 </button>
 
                 {/* Flash toggle button */}
