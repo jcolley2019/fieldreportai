@@ -126,61 +126,29 @@ export const LiveCameraCapture = ({
       const videoTrack = streamRef.current.getVideoTracks()[0];
       const capabilities = videoTrack.getCapabilities() as any;
 
-      // For zoom < 1 (wide angle), try to switch to a wide-angle camera
-      if (zoom < 1) {
-        try {
-          // Try to get devices with wide-angle capability
-          const devices = await navigator.mediaDevices.enumerateDevices();
-          const videoDevices = devices.filter(device => device.kind === 'videoinput');
-          
-          // Look for a wide-angle camera (usually labeled as "back" or "wide")
-          const wideCamera = videoDevices.find(device => 
-            device.label.toLowerCase().includes('wide') || 
-            device.label.toLowerCase().includes('ultra')
-          );
-
-          if (wideCamera) {
-            stopCamera();
-            const stream = await navigator.mediaDevices.getUserMedia({
-              video: { 
-                deviceId: { exact: wideCamera.deviceId },
-                facingMode: facingMode 
-              },
-              audio: false,
-            });
-
-            if (videoRef.current) {
-              videoRef.current.srcObject = stream;
-              streamRef.current = stream;
-              await videoRef.current.play();
-              setZoomLevel(zoom);
-              return;
-            }
-          }
-        } catch (error) {
-          console.log("Wide-angle camera not available, using CSS zoom");
-        }
-        
-        // Fallback to CSS transform for wide angle
-        setZoomLevel(zoom);
-        return;
-      }
-
-      // For zoom >= 1, use native zoom constraints
+      // Prefer native camera zoom when available
       if (capabilities.zoom) {
-        const minZoom = capabilities.zoom.min || 1;
-        const maxZoom = capabilities.zoom.max || 8;
+        const minZoom = capabilities.zoom.min ?? 1;
+        const maxZoom = capabilities.zoom.max ?? 8;
         const clampedZoom = Math.max(minZoom, Math.min(maxZoom, zoom));
 
         await videoTrack.applyConstraints({
-          advanced: [{ zoom: clampedZoom } as any]
+          advanced: [{ zoom: clampedZoom } as any],
         });
-        
-        setZoomLevel(zoom);
-      } else {
-        // Fall back to CSS transform if zoom not supported
-        setZoomLevel(zoom);
+
+        setZoomLevel(clampedZoom);
+        return;
       }
+
+      // If native zoom isn't supported, gracefully handle 0.5x
+      if (zoom < 1) {
+        toast.error("0.5x zoom is not supported on this device");
+        setZoomLevel(1);
+        return;
+      }
+
+      // Fallback: use CSS transform-based zoom
+      setZoomLevel(zoom);
     } catch (error) {
       console.error("Error applying zoom:", error);
       // Fall back to CSS transform if constraint fails
