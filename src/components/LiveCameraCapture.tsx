@@ -35,6 +35,7 @@ export const LiveCameraCapture = ({
   const [flashEnabled, setFlashEnabled] = useState(false);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [pinchDistance, setPinchDistance] = useState<number | null>(null);
+  const [supportedZoomLevels, setSupportedZoomLevels] = useState<number[]>([0.5, 1, 2, 4, 8]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -92,9 +93,26 @@ export const LiveCameraCapture = ({
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
-        videoRef.current.onloadedmetadata = () => {
+        videoRef.current.onloadedmetadata = async () => {
           videoRef.current?.play();
           setIsReady(true);
+          
+          // Detect supported zoom levels
+          const videoTrack = stream.getVideoTracks()[0];
+          const capabilities = videoTrack.getCapabilities() as any;
+          
+          if (capabilities.zoom) {
+            const minZoom = capabilities.zoom.min ?? 1;
+            const maxZoom = capabilities.zoom.max ?? 8;
+            
+            // Filter available zoom levels based on device capabilities
+            const allZoomLevels = [0.5, 1, 2, 4, 8];
+            const supported = allZoomLevels.filter(level => level >= minZoom && level <= maxZoom);
+            setSupportedZoomLevels(supported);
+          } else {
+            // If zoom not supported, only show 1x
+            setSupportedZoomLevels([1]);
+          }
         };
       }
     } catch (error) {
@@ -414,23 +432,25 @@ export const LiveCameraCapture = ({
           </div>
 
           {/* Zoom Controls */}
-          <div className="absolute bottom-32 left-0 right-0 flex items-center justify-center">
-            <div className="flex items-center gap-4 px-6 py-2 rounded-full bg-black/50 backdrop-blur-sm">
-              {[0.5, 1, 2, 4, 8].map((zoom) => (
-                <button
-                  key={zoom}
-                  onClick={() => applyZoom(zoom)}
-                  className={`px-3 py-1 rounded-full text-sm font-semibold transition-all ${
-                    zoomLevel === zoom
-                      ? 'bg-yellow-500 text-black'
-                      : 'text-white hover:text-yellow-500'
-                  }`}
-                >
-                  {zoom}x
-                </button>
-              ))}
+          {supportedZoomLevels.length > 1 && (
+            <div className="absolute bottom-32 left-0 right-0 flex items-center justify-center">
+              <div className="flex items-center gap-4 px-6 py-2 rounded-full bg-black/50 backdrop-blur-sm">
+                {supportedZoomLevels.map((zoom) => (
+                  <button
+                    key={zoom}
+                    onClick={() => applyZoom(zoom)}
+                    className={`px-3 py-1 rounded-full text-sm font-semibold transition-all ${
+                      zoomLevel === zoom
+                        ? 'bg-yellow-500 text-black'
+                        : 'text-white hover:text-yellow-500'
+                    }`}
+                  >
+                    {zoom}x
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Bottom Controls */}
           <div className="bg-black/95 backdrop-blur-sm p-6">
