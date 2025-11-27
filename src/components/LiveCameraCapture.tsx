@@ -30,6 +30,7 @@ export const LiveCameraCapture = ({
   const [isReady, setIsReady] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
+  const [zoomLevel, setZoomLevel] = useState(1);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -165,6 +166,7 @@ export const LiveCameraCapture = ({
               playsInline
               muted
               className="w-full h-full object-cover"
+              style={{ transform: `scale(${zoomLevel})` }}
             />
             <canvas ref={canvasRef} className="hidden" />
             
@@ -203,6 +205,25 @@ export const LiveCameraCapture = ({
               >
                 <SwitchCamera className="h-6 w-6" />
               </button>
+            </div>
+          </div>
+
+          {/* Zoom Controls */}
+          <div className="absolute bottom-32 left-0 right-0 flex items-center justify-center">
+            <div className="flex items-center gap-4 px-6 py-2 rounded-full bg-black/50 backdrop-blur-sm">
+              {[0.5, 1, 2, 4, 8].map((zoom) => (
+                <button
+                  key={zoom}
+                  onClick={() => setZoomLevel(zoom)}
+                  className={`px-3 py-1 rounded-full text-sm font-semibold transition-all ${
+                    zoomLevel === zoom
+                      ? 'bg-yellow-500 text-black'
+                      : 'text-white hover:text-yellow-500'
+                  }`}
+                >
+                  {zoom}x
+                </button>
+              ))}
             </div>
           </div>
 
