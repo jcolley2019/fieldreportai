@@ -401,14 +401,14 @@ export const LiveCameraCapture = ({
                       onOpenChange(false);
                     }
                   }}
-                  className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
+                  className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-all duration-300 ${
                     capturedImages.length > 0
-                      ? 'bg-green-500 text-white hover:bg-green-600'
+                      ? 'bg-green-500 text-white hover:bg-green-600 animate-scale-in'
                       : 'bg-black/50 text-white hover:bg-black/70'
                   }`}
                 >
                   {capturedImages.length > 0 ? (
-                    <Check className="h-6 w-6" />
+                    <Check className="h-6 w-6 animate-scale-in" />
                   ) : (
                     <X className="h-6 w-6" />
                   )}
