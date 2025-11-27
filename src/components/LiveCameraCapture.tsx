@@ -420,7 +420,7 @@ export const LiveCameraCapture = ({
                   className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
                     flashEnabled
                       ? 'bg-yellow-500 text-black hover:bg-yellow-600'
-                      : 'bg-black/50 text-white hover:bg-black/70'
+                      : 'bg-black/50 text-white/50 hover:bg-black/70 hover:text-white'
                   }`}
                 >
                   {flashEnabled ? (
