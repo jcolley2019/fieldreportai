@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image } from "lucide-react";
+import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff } from "lucide-react";
 import { toast } from "sonner";
 
 interface LiveCameraCaptureProps {
@@ -32,6 +32,7 @@ export const LiveCameraCapture = ({
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const [zoomLevel, setZoomLevel] = useState(1);
   const [focusPoint, setFocusPoint] = useState<{ x: number; y: number } | null>(null);
+  const [flashEnabled, setFlashEnabled] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -153,6 +154,30 @@ export const LiveCameraCapture = ({
     // Actual focus adjustment happens automatically via camera's autofocus
   };
 
+  const toggleFlash = async () => {
+    if (!streamRef.current) return;
+
+    try {
+      const videoTrack = streamRef.current.getVideoTracks()[0];
+      const capabilities = videoTrack.getCapabilities() as any;
+
+      if (!capabilities.torch) {
+        toast.error("Flash not supported on this device");
+        return;
+      }
+
+      const newFlashState = !flashEnabled;
+      await videoTrack.applyConstraints({
+        advanced: [{ torch: newFlashState } as any]
+      });
+      
+      setFlashEnabled(newFlashState);
+    } catch (error) {
+      console.error("Error toggling flash:", error);
+      toast.error("Could not toggle flash");
+    }
+  };
+
   const capturePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
 
@@ -227,19 +252,38 @@ export const LiveCameraCapture = ({
             
             {/* Top Controls */}
             <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4">
-              {/* Close button */}
-              <button
-                onClick={() => {
-                  if (isRecording && onStopRecording) {
-                    onStopRecording();
-                  } else {
-                    onOpenChange(false);
-                  }
-                }}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
-              >
-                <X className="h-6 w-6" />
-              </button>
+              {/* Left controls */}
+              <div className="flex items-center gap-2">
+                {/* Close button */}
+                <button
+                  onClick={() => {
+                    if (isRecording && onStopRecording) {
+                      onStopRecording();
+                    } else {
+                      onOpenChange(false);
+                    }
+                  }}
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+
+                {/* Flash toggle button */}
+                <button
+                  onClick={toggleFlash}
+                  className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
+                    flashEnabled
+                      ? 'bg-yellow-500 text-black hover:bg-yellow-600'
+                      : 'bg-black/50 text-white hover:bg-black/70'
+                  }`}
+                >
+                  {flashEnabled ? (
+                    <Zap className="h-6 w-6" fill="currentColor" />
+                  ) : (
+                    <ZapOff className="h-6 w-6" />
+                  )}
+                </button>
+              </div>
 
               {/* Recording indicator */}
               {isRecording && (
