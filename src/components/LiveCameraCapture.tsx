@@ -356,10 +356,8 @@ export const LiveCameraCapture = ({
   const handleDone = () => {
     if (capturedImages.length > 0) {
       onCapture(capturedImages);
-    }
-    
-    // If recording is active, stop it
-    if (isRecording && onStopRecording) {
+      onOpenChange(false);
+    } else if (isRecording && onStopRecording) {
       onStopRecording();
     } else {
       onOpenChange(false);
@@ -425,11 +423,11 @@ export const LiveCameraCapture = ({
                 {/* Close/Done button */}
                 <button
                   onClick={() => {
-                    if (isRecording && onStopRecording) {
-                      onStopRecording();
-                    } else if (capturedImages.length > 0) {
-                      // If images were captured, save them before closing
+                    if (capturedImages.length > 0) {
+                      // Save images before closing
                       handleDone();
+                    } else if (isRecording && onStopRecording) {
+                      onStopRecording();
                     } else {
                       onOpenChange(false);
                     }
@@ -440,11 +438,7 @@ export const LiveCameraCapture = ({
                       : 'bg-black/50 text-white hover:bg-black/70'
                   }`}
                 >
-                  {capturedImages.length > 0 ? (
-                    <Check className="h-6 w-6 animate-scale-in" />
-                  ) : (
-                    <X className="h-6 w-6" />
-                  )}
+                  <X className="h-6 w-6" />
                 </button>
 
                 {/* Flash toggle button */}
