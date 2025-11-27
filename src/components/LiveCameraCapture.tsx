@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff, Grid3x3 } from "lucide-react";
+import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff, Grid3x3, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 interface LiveCameraCaptureProps {
@@ -33,6 +33,7 @@ export const LiveCameraCapture = ({
   const [zoomLevel, setZoomLevel] = useState(1);
   const [focusPoint, setFocusPoint] = useState<{ x: number; y: number } | null>(null);
   const [flashMode, setFlashMode] = useState<'off' | 'auto' | 'on'>('off');
+  const [hdrEnabled, setHdrEnabled] = useState(false);
   const [gridEnabled, setGridEnabled] = useState(false);
   const [pinchDistance, setPinchDistance] = useState<number | null>(null);
   const [supportedZoomLevels, setSupportedZoomLevels] = useState<number[]>([0.5, 1, 2, 4, 8]);
@@ -262,6 +263,34 @@ export const LiveCameraCapture = ({
     }
   };
 
+  const toggleHDR = async () => {
+    if (!streamRef.current) return;
+
+    try {
+      const videoTrack = streamRef.current.getVideoTracks()[0];
+      const capabilities = videoTrack.getCapabilities() as any;
+
+      // Check if HDR is supported
+      if (!capabilities.dynamicRange || !capabilities.dynamicRange.includes('high')) {
+        toast.error("HDR not supported on this device");
+        return;
+      }
+
+      const newHdrState = !hdrEnabled;
+      
+      await videoTrack.applyConstraints({
+        advanced: [{ 
+          dynamicRange: newHdrState ? 'high' : 'standard'
+        } as any]
+      });
+      
+      setHdrEnabled(newHdrState);
+    } catch (error) {
+      console.error("Error toggling HDR:", error);
+      toast.error("Could not toggle HDR");
+    }
+  };
+
   const getDistance = (touch1: React.Touch, touch2: React.Touch) => {
     const dx = touch1.clientX - touch2.clientX;
     const dy = touch1.clientY - touch2.clientY;
@@ -439,6 +468,18 @@ export const LiveCameraCapture = ({
                   ) : (
                     <Zap className="h-6 w-6" fill="currentColor" />
                   )}
+                </button>
+
+                {/* HDR toggle button */}
+                <button
+                  onClick={toggleHDR}
+                  className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
+                    hdrEnabled
+                      ? 'bg-purple-500 text-white hover:bg-purple-600'
+                      : 'bg-black/50 text-white/50 hover:bg-black/70 hover:text-white'
+                  }`}
+                >
+                  <Sparkles className="h-6 w-6" />
                 </button>
 
                 {/* Grid toggle button */}
