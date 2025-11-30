@@ -307,17 +307,19 @@ const ReviewSummary = () => {
                   <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
                     <img 
                       src={image.url} 
-                      alt={`Captured photo ${index + 1}`}
+                      alt={image.caption || `Captured photo ${index + 1}`}
                       className="h-full w-full object-cover"
                     />
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">
-                      {t('reviewSummary.photo')} {index + 1}
+                      {image.caption || `${t('reviewSummary.photo')} ${index + 1}`}
                     </h3>
-                    <p className="text-xs text-muted-foreground">
-                      {t('reviewSummary.fieldPhoto')}
-                    </p>
+                    {!image.caption && (
+                      <p className="text-xs text-muted-foreground">
+                        {t('reviewSummary.fieldPhoto')}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}
