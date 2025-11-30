@@ -9,8 +9,7 @@ import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Sparkles, Trash2, Clock, Flag, CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { Plus, Sparkles, Trash2, Clock, Flag, CheckCircle2, Circle, Loader2, Mic, MicOff } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -38,6 +37,11 @@ const Tasks = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newTask, setNewTask] = useState<{ title: string; description: string; priority: 'low' | 'medium' | 'high' }>({ title: '', description: '', priority: 'medium' });
   const [filter, setFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all');
+  
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
 
   useEffect(() => {
     fetchTasks();
@@ -111,12 +115,12 @@ const Tasks = () => {
     }
   };
 
-  const handleSuggestTasks = async () => {
+  const handleSuggestTasks = async (transcribedText?: string) => {
     setIsSuggestingTasks(true);
     try {
       const { data, error } = await supabase.functions.invoke('suggest-tasks', {
         body: { 
-          context: 'Field work project management',
+          context: transcribedText || 'Field work project management',
           projectName: reportId ? 'Current Project' : 'General Tasks'
         }
       });
@@ -159,6 +163,103 @@ const Tasks = () => {
       }
     } finally {
       setIsSuggestingTasks(false);
+    }
+  };
+
+  const handleVoiceRecord = async () => {
+    if (!isRecording) {
+      // Start recording
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        const mimeTypes = [
+          'audio/webm',
+          'audio/webm;codecs=opus',
+          'audio/mp4',
+          'audio/mpeg',
+          'audio/wav'
+        ];
+        
+        let selectedMimeType = '';
+        for (const mimeType of mimeTypes) {
+          if (MediaRecorder.isTypeSupported(mimeType)) {
+            selectedMimeType = mimeType;
+            break;
+          }
+        }
+        
+        const recorderOptions = selectedMimeType ? { mimeType: selectedMimeType } : {};
+        const recorder = new MediaRecorder(stream, recorderOptions);
+        const chunks: Blob[] = [];
+
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) {
+            chunks.push(e.data);
+          }
+        };
+
+        recorder.onstop = async () => {
+          const audioBlob = new Blob(chunks, { type: recorder.mimeType });
+          stream.getTracks().forEach(track => track.stop());
+          await transcribeAndCreateTasks(audioBlob);
+        };
+
+        recorder.start();
+        setMediaRecorder(recorder);
+        setIsRecording(true);
+        toast.success(t('tasks.recordingStarted'));
+      } catch (error) {
+        console.error("Error accessing microphone:", error);
+        toast.error(t('tasks.microphoneError'));
+      }
+    } else {
+      // Stop recording
+      if (mediaRecorder) {
+        mediaRecorder.stop();
+        setMediaRecorder(null);
+        setIsRecording(false);
+        toast.success(t('tasks.processingVoice'));
+      }
+    }
+  };
+
+  const transcribeAndCreateTasks = async (audioBlob: Blob) => {
+    setIsProcessingVoice(true);
+    try {
+      // Convert blob to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(audioBlob);
+      
+      reader.onloadend = async () => {
+        const base64Audio = reader.result as string;
+        const base64Data = base64Audio.split(',')[1];
+
+        // First, transcribe the audio
+        const { data: transcriptionData, error: transcriptionError } = await supabase.functions.invoke('transcribe-audio', {
+          body: { audio: base64Data }
+        });
+
+        if (transcriptionError) {
+          console.error("Transcription error:", transcriptionError);
+          toast.error(t('tasks.transcriptionFailed'));
+          setIsProcessingVoice(false);
+          return;
+        }
+
+        if (transcriptionData?.text) {
+          toast.success(t('tasks.voiceTranscribed'));
+          // Use the transcribed text to generate task suggestions
+          await handleSuggestTasks(transcriptionData.text);
+        } else {
+          toast.error(t('tasks.noVoiceDetected'));
+        }
+        
+        setIsProcessingVoice(false);
+      };
+    } catch (error) {
+      console.error("Error transcribing audio:", error);
+      toast.error(t('tasks.transcriptionFailed'));
+      setIsProcessingVoice(false);
     }
   };
 
@@ -222,6 +323,8 @@ const Tasks = () => {
     }
   };
 
+  const isVoiceProcessing = isRecording || isProcessingVoice || isSuggestingTasks;
+
   return (
     <div className="dark min-h-screen bg-background">
       <GlassNavbar fixed={false}>
@@ -237,6 +340,42 @@ const Tasks = () => {
       </GlassNavbar>
 
       <main className="flex-1 px-4 pt-4 pb-24 animate-fade-in">
+        {/* Voice Input Section */}
+        <div className="mb-6">
+          <button
+            onClick={handleVoiceRecord}
+            disabled={isProcessingVoice || isSuggestingTasks}
+            className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl p-6 text-center transition-all ${
+              isRecording 
+                ? 'bg-destructive/20 ring-4 ring-destructive/30 animate-pulse' 
+                : 'bg-primary/20 hover:bg-primary/30 shadow-xl shadow-primary/50 ring-4 ring-primary/30'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              {isRecording ? (
+                <MicOff className="h-12 w-12 text-destructive" />
+              ) : isProcessingVoice || isSuggestingTasks ? (
+                <Loader2 className="h-12 w-12 text-primary animate-spin" />
+              ) : (
+                <Mic className="h-12 w-12 text-primary" />
+              )}
+            </div>
+            <p className="text-sm font-bold text-foreground">
+              {isRecording 
+                ? t('tasks.tapToStop')
+                : isProcessingVoice 
+                ? t('tasks.processingVoice')
+                : isSuggestingTasks
+                ? t('tasks.creatingTasks')
+                : t('tasks.tapToRecord')
+              }
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {t('tasks.voiceHint')}
+            </p>
+          </button>
+        </div>
+
         {/* Action Buttons */}
         <div className="flex gap-3 mb-6">
           <Button
@@ -247,7 +386,7 @@ const Tasks = () => {
             {t('tasks.addTask')}
           </Button>
           <Button
-            onClick={handleSuggestTasks}
+            onClick={() => handleSuggestTasks()}
             disabled={isSuggestingTasks}
             variant="secondary"
             className="flex-1 gap-2"
