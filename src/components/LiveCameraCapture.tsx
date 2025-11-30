@@ -30,7 +30,15 @@ export const LiveCameraCapture = ({
   const [capturedImages, setCapturedImages] = useState<File[]>([]);
   const [isReady, setIsReady] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
+  
+  // Detect if device is desktop/laptop (no touch or large screen without touch)
+  const isDesktop = typeof window !== 'undefined' && (
+    !('ontouchstart' in window) || 
+    (window.matchMedia('(min-width: 1024px)').matches && !navigator.maxTouchPoints)
+  );
+  
+  // Default to front camera on desktop/laptop, back camera on mobile
+  const [facingMode, setFacingMode] = useState<"user" | "environment">(isDesktop ? "user" : "environment");
   const [zoomLevel, setZoomLevel] = useState(1);
   const [focusPoint, setFocusPoint] = useState<{ x: number; y: number } | null>(null);
   const [flashMode, setFlashMode] = useState<'off' | 'auto' | 'on'>('off');
