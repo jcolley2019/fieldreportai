@@ -438,19 +438,19 @@ export const LiveCameraCapture = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className={`p-0 overflow-hidden bg-black border-none transition-all duration-300 ${
+        className={`!flex !flex-col p-0 overflow-hidden bg-black border-none transition-all duration-300 [&>button]:hidden ${
           isFullscreen 
             ? 'max-w-none w-screen h-screen rounded-none' 
-            : 'max-w-[95vw] h-[95vh]'
+            : 'max-w-[95vw] sm:max-w-[95vw] h-[95vh] max-h-[95vh]'
         }`}
         aria-describedby={undefined}
       >
         <VisuallyHidden>
           <DialogTitle>Camera Capture</DialogTitle>
         </VisuallyHidden>
-        <div className="relative w-full h-full flex flex-col">
+        <div className="relative w-full h-full flex flex-col flex-1 min-h-0">
           {/* Camera viewfinder */}
-          <div className="relative flex-1 min-h-0 flex items-center justify-center bg-black overflow-hidden">
+          <div className="relative flex-1 min-h-0 flex items-center justify-center bg-black overflow-hidden" style={{ minHeight: '200px' }}>
             <video
               ref={videoRef}
               autoPlay
