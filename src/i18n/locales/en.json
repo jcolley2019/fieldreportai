@@ -239,7 +239,17 @@
     "suggestionsAdded": "Added {{count}} suggested tasks",
     "noSuggestions": "No suggestions available",
     "rateLimitError": "Rate limit exceeded. Please try again later.",
-    "creditsError": "AI usage limit reached. Please add credits."
+    "creditsError": "AI usage limit reached. Please add credits.",
+    "tapToRecord": "Tap to Record Tasks",
+    "tapToStop": "Tap to Stop Recording",
+    "voiceHint": "Speak your tasks and AI will create them for you",
+    "recordingStarted": "Recording started...",
+    "processingVoice": "Processing voice...",
+    "creatingTasks": "Creating tasks...",
+    "voiceTranscribed": "Voice transcribed successfully",
+    "transcriptionFailed": "Failed to transcribe voice",
+    "noVoiceDetected": "No voice detected",
+    "microphoneError": "Could not access microphone"
   },
   "newProject": {
     "title": "New Project/Customer",

@@ -21,15 +21,19 @@ serve(async (req) => {
 
     console.log("Generating task suggestions for project:", projectName);
 
-    const systemPrompt = `You are a helpful project management assistant that suggests actionable tasks. 
-When given project context, suggest 3-5 practical tasks that would help progress the project.
-Each task should be specific, actionable, and have a clear priority level.`;
+    const systemPrompt = `You are a helpful project management assistant that extracts and suggests actionable tasks. 
+When given context (which may be transcribed speech), identify and extract specific tasks mentioned.
+Each task should be specific, actionable, and have a clear priority level based on urgency words used.
+If the context sounds like a spoken task list, extract each task mentioned.
+If the context is more general, suggest 3-5 practical tasks that would help progress the work.`;
 
-    const userPrompt = `Based on this project context, suggest actionable tasks:
+    const userPrompt = `Based on this context, extract or suggest actionable tasks:
 Project Name: ${projectName || 'General'}
 Context: ${context || 'No specific context provided'}
 
-Generate practical, specific tasks that would help with this project.`;
+If this sounds like someone dictating tasks, extract each task they mentioned.
+Otherwise, generate practical, specific tasks that would help with this project.
+Assign priority based on urgency indicators (words like "urgent", "asap", "important" = high; "when possible", "later" = low; otherwise = medium).`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

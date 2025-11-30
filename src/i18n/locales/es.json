@@ -239,7 +239,17 @@
     "suggestionsAdded": "Se agregaron {{count}} tareas sugeridas",
     "noSuggestions": "No hay sugerencias disponibles",
     "rateLimitError": "Límite de solicitudes excedido. Por favor intenta más tarde.",
-    "creditsError": "Límite de uso de IA alcanzado. Por favor agrega créditos."
+    "creditsError": "Límite de uso de IA alcanzado. Por favor agrega créditos.",
+    "tapToRecord": "Toca para Grabar Tareas",
+    "tapToStop": "Toca para Detener Grabación",
+    "voiceHint": "Habla tus tareas y la IA las creará por ti",
+    "recordingStarted": "Grabación iniciada...",
+    "processingVoice": "Procesando voz...",
+    "creatingTasks": "Creando tareas...",
+    "voiceTranscribed": "Voz transcrita exitosamente",
+    "transcriptionFailed": "Error al transcribir la voz",
+    "noVoiceDetected": "No se detectó voz",
+    "microphoneError": "No se pudo acceder al micrófono"
   },
   "newProject": {
     "title": "Nuevo Proyecto/Cliente",
