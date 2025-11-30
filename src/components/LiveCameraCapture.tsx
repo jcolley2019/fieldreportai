@@ -675,27 +675,28 @@ export const LiveCameraCapture = ({
           <div className="shrink-0 bg-black/95 backdrop-blur-sm p-6">
             <div className="flex items-center justify-between max-w-[600px] mx-auto">
               {/* Gallery preview thumbnail */}
-              <div className="flex flex-col items-center gap-1">
+              <div className="relative flex flex-col items-center gap-1">
                 <button
                   onClick={handleDone}
                   disabled={capturedImages.length === 0}
                   className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all disabled:opacity-50 overflow-hidden border-2 border-white/20"
                 >
                   {capturedImages.length > 0 ? (
-                    <div className="relative w-full h-full">
-                      <img 
-                        src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} 
-                        alt="Last captured"
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                        <span className="text-white text-xs font-bold">{capturedImages.length}</span>
-                      </div>
-                    </div>
+                    <img 
+                      src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} 
+                      alt="Last captured"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <Image className="h-6 w-6 text-white/50" />
                   )}
                 </button>
+                {/* Photo count badge */}
+                {capturedImages.length > 0 && (
+                  <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
+                    {capturedImages.length}
+                  </div>
+                )}
                 {capturedImages.length > 0 && (
                   <span className="text-white text-xs font-semibold">Done</span>
                 )}
