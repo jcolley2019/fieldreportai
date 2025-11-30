@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
+import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { FileText, ListChecks, StickyNote, Search, Filter, Calendar, Building2, Hash, User as UserIcon, Download, Mail, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -677,14 +678,18 @@ const AllContent = () => {
 
   return (
     <div className="dark min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between px-4 py-1">
+      {/* Glass Navbar */}
+      <GlassNavbar fixed={false}>
+        <NavbarLeft>
           <BackButton fallbackPath="/dashboard" />
-          <h1 className="text-lg font-semibold text-foreground flex-1 text-center">{t('allContent.title')}</h1>
+        </NavbarLeft>
+        <NavbarCenter>
+          <NavbarTitle>{t('allContent.title')}</NavbarTitle>
+        </NavbarCenter>
+        <NavbarRight>
           <SettingsButton />
-        </div>
-      </header>
+        </NavbarRight>
+      </GlassNavbar>
 
       <main className="p-4 pb-20">
         {/* Export Actions Bar */}

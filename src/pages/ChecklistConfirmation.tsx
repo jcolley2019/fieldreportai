@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
+import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { Check, CheckCircle2, FileText, Cloud, Printer, Link2, Download, Plus, Loader2, ChevronDown, Link } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
@@ -408,14 +409,18 @@ const ChecklistConfirmation = () => {
 
   return (
     <div className="dark min-h-screen bg-background pb-[400px]">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4">
-        <BackButton />
-        <h2 className="flex-1 text-center text-lg font-bold text-foreground">
-          {t('checklistConfirmation.title')}
-        </h2>
-        <SettingsButton />
-      </div>
+      {/* Glass Navbar */}
+      <GlassNavbar fixed={false}>
+        <NavbarLeft>
+          <BackButton />
+        </NavbarLeft>
+        <NavbarCenter>
+          <NavbarTitle>{t('checklistConfirmation.title')}</NavbarTitle>
+        </NavbarCenter>
+        <NavbarRight>
+          <SettingsButton />
+        </NavbarRight>
+      </GlassNavbar>
 
       {/* Success Icon and Message */}
       <div className="flex flex-col items-center justify-center px-4 pt-12">

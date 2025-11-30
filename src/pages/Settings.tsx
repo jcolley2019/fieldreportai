@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import {
   User,
   ChevronRight,
@@ -404,14 +405,18 @@ const Settings = () => {
 
   return (
     <div className="dark min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background px-4 py-1 border-b border-border">
-        <div className="flex items-center justify-between">
+      {/* Glass Navbar */}
+      <GlassNavbar fixed={false}>
+        <NavbarLeft>
           <BackButton />
-          <h1 className="text-lg font-semibold text-foreground flex-1 text-center">{t('settings.title')}</h1>
-          <div className="w-10" /> {/* Spacer for alignment */}
-        </div>
-      </header>
+        </NavbarLeft>
+        <NavbarCenter>
+          <NavbarTitle>{t('settings.title')}</NavbarTitle>
+        </NavbarCenter>
+        <NavbarRight>
+          <div className="w-10" />
+        </NavbarRight>
+      </GlassNavbar>
 
       <main className="flex-grow pb-8">
         {/* Profile Form Section */}

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { Input } from "@/components/ui/input";
+import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { Building2, Hash, User as UserIcon, ListChecks, Search, Filter, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -148,24 +149,26 @@ const ProjectsCustomers = () => {
 
   return (
     <div className="dark min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 px-4 py-1 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between">
+      {/* Glass Navbar */}
+      <GlassNavbar fixed={false}>
+        <NavbarLeft>
           <BackButton />
-          <h1 className="text-lg font-semibold text-foreground flex-1 text-center">{t('projects.title')}</h1>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => navigate("/new-project")}
-              size="sm"
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              {t('dashboard.createProject')}
-            </Button>
-            <SettingsButton />
-          </div>
-        </div>
-      </header>
+        </NavbarLeft>
+        <NavbarCenter>
+          <NavbarTitle>{t('projects.title')}</NavbarTitle>
+        </NavbarCenter>
+        <NavbarRight>
+          <Button
+            onClick={() => navigate("/new-project")}
+            size="sm"
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            {t('dashboard.createProject')}
+          </Button>
+          <SettingsButton />
+        </NavbarRight>
+      </GlassNavbar>
 
       <main className="p-4">
         {/* Search and Filter - Always visible */}

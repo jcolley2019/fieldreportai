@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
+import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { Building2, Download, Edit2, Save, X, Link2, FileText, Printer, Cloud, Loader2, Check, ChevronDown, Link } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
@@ -728,21 +729,18 @@ const FinalReport = () => {
 
   return (
     <div className="dark min-h-screen bg-background pb-64">
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-10 w-full border-b border-border bg-background/80 backdrop-blur-sm">
-        <div className="flex flex-col gap-2 p-4 pb-3">
-          <div className="flex h-12 items-center justify-between">
-            <BackButton />
-            <SettingsButton />
-          </div>
-          <p className="text-2xl font-bold leading-tight tracking-tight text-foreground">
-            {reportData?.project_name || t('finalReport.report')}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {reportData?.customer_name || 'N/A'} • {t('finalReport.job')} #{reportData?.job_number || 'N/A'}
-          </p>
-        </div>
-      </header>
+      {/* Glass Navbar */}
+      <GlassNavbar fixed={false}>
+        <NavbarLeft>
+          <BackButton />
+        </NavbarLeft>
+        <NavbarCenter>
+          <NavbarTitle>{reportData?.project_name || t('finalReport.report')}</NavbarTitle>
+        </NavbarCenter>
+        <NavbarRight>
+          <SettingsButton />
+        </NavbarRight>
+      </GlassNavbar>
 
       {isLoading ? (
         <div className="flex items-center justify-center min-h-[400px]">
