@@ -6,6 +6,7 @@ import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { toast } from "sonner";
 import { Download, Trash2, FileText, Cloud, Search, Filter } from "lucide-react";
 import {
@@ -223,14 +224,18 @@ const SavedReports = () => {
 
   return (
     <div className="dark min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 px-4 py-1 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between">
+      {/* Glass Navbar */}
+      <GlassNavbar fixed={false}>
+        <NavbarLeft>
           <BackButton />
-          <h1 className="text-lg font-semibold text-foreground flex-1 text-center">{t('savedReports.title')}</h1>
+        </NavbarLeft>
+        <NavbarCenter>
+          <NavbarTitle>{t('savedReports.title')}</NavbarTitle>
+        </NavbarCenter>
+        <NavbarRight>
           <SettingsButton />
-        </div>
-      </header>
+        </NavbarRight>
+      </GlassNavbar>
 
       <main className="p-4">
         {/* Search and Filter - Always visible */}

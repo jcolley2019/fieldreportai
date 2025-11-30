@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
+import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, X, ExternalLink } from "lucide-react";
@@ -569,14 +570,18 @@ const Checklist = () => {
 
   return (
     <div className="dark min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 px-4 py-1 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between">
+      {/* Glass Navbar */}
+      <GlassNavbar fixed={false}>
+        <NavbarLeft>
           <BackButton />
-          <h1 className="text-lg font-semibold text-foreground flex-1 text-center">{t('checklist.title')}</h1>
+        </NavbarLeft>
+        <NavbarCenter>
+          <NavbarTitle>{t('checklist.title')}</NavbarTitle>
+        </NavbarCenter>
+        <NavbarRight>
           <SettingsButton />
-        </div>
-      </header>
+        </NavbarRight>
+      </GlassNavbar>
 
       <main className="flex-1 px-4 pt-4 pb-36">
         {/* Project Info Pills - Only show if there's project data */}
