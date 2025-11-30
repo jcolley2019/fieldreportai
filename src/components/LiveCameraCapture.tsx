@@ -168,8 +168,16 @@ export const LiveCameraCapture = ({
         await enumerateDevices();
         
         videoRef.current.onloadedmetadata = async () => {
-          videoRef.current?.play();
-          setIsReady(true);
+          console.log('Video onloadedmetadata fired');
+          try {
+            await videoRef.current?.play();
+            console.log('Video play() succeeded, setting isReady to true');
+            setIsReady(true);
+          } catch (playError) {
+            console.error('Video play() failed:', playError);
+            // Still set ready even if autoplay fails - user can still capture
+            setIsReady(true);
+          }
           
           // Detect supported zoom levels
           const videoTrack = stream.getVideoTracks()[0];
@@ -187,11 +195,13 @@ export const LiveCameraCapture = ({
             const allZoomLevels = [0.5, 1, 2, 4, 8];
             const supported = allZoomLevels.filter(level => level >= minZoom && level <= maxZoom);
             setSupportedZoomLevels(supported);
+            console.log('Supported zoom levels:', supported);
           } else {
             // If zoom not supported, only show 1x
             setSupportedZoomLevels([1]);
             setMinZoomCapability(1);
             setMaxZoomCapability(1);
+            console.log('Zoom not supported on this device');
           }
         };
       }
