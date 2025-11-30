@@ -7,7 +7,7 @@ import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, X, ExternalLink } from "lucide-react";
+import { Camera, Mic, MicOff, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, X, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import { LiveCameraCapture } from "@/components/LiveCameraCapture";
@@ -625,26 +625,33 @@ const Checklist = () => {
               onChange={(e) => handleImageUpload(e.target.files)}
             />
 
-            {/* Voice Recording Section */}
-            <div className="flex flex-col items-center justify-center gap-4 w-full">
+            {/* Voice Input Section */}
+            <div className="w-full">
               <button
                 onClick={handleVoiceRecord}
-                className={`flex h-20 w-20 items-center justify-center rounded-full transition-all ${
+                className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl p-6 text-center transition-all ${
                   isRecording 
-                    ? 'bg-destructive text-white animate-pulse shadow-lg shadow-destructive/50' 
-                    : 'bg-primary text-white hover:bg-primary/90 hover:scale-110 shadow-xl shadow-primary/50 animate-pulse ring-4 ring-primary/30'
+                    ? 'bg-destructive/20 ring-4 ring-destructive/30 animate-pulse' 
+                    : 'bg-primary/20 hover:bg-primary/30 shadow-xl shadow-primary/50 ring-4 ring-primary/30'
                 }`}
               >
-                <Mic className="h-8 w-8" />
-              </button>
-              {isRecording ? (
-                <p className="text-base text-muted-foreground animate-pulse">{t('checklist.recordingStatus')}</p>
-              ) : (
-                <div className="text-center">
-                  <p className="text-base font-semibold text-foreground mb-1">{t('checklist.recordInstructions')}</p>
-                  <p className="text-sm text-muted-foreground">{t('checklist.recordDetails')}</p>
+                <div className="flex items-center gap-3">
+                  {isRecording ? (
+                    <MicOff className="h-12 w-12 text-destructive" />
+                  ) : (
+                    <Mic className="h-12 w-12 text-primary" />
+                  )}
                 </div>
-              )}
+                <p className="text-sm font-bold text-foreground">
+                  {isRecording 
+                    ? t('checklist.tapToStop')
+                    : t('checklist.tapToRecord')
+                  }
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {t('checklist.voiceHint')}
+                </p>
+              </button>
             </div>
 
             {/* Previous Checklists Section */}
