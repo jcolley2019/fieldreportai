@@ -329,7 +329,7 @@ const Tasks = () => {
     <div className="dark min-h-screen bg-background">
       <GlassNavbar fixed={false}>
         <NavbarLeft>
-          <BackButton />
+          <BackButton fallbackPath="/capture-screen" />
         </NavbarLeft>
         <NavbarCenter>
           <NavbarTitle>{t('tasks.title')}</NavbarTitle>
