@@ -548,7 +548,7 @@ const CaptureScreen = () => {
               <span className="text-xs font-medium text-foreground">{t('captureScreen.addNote')}</span>
             </button>
             <button 
-              onClick={() => {/* TODO: Navigate to tasks */}}
+              onClick={() => navigate("/tasks", { state: { simpleMode: isSimpleMode } })}
               className="flex flex-col items-center gap-3 rounded-lg bg-card p-4 transition-colors hover:bg-secondary"
             >
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
