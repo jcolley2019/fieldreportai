@@ -398,13 +398,32 @@ export const LiveCameraCapture = ({
   };
 
   const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    console.log('capturePhoto called, isReady:', isReady);
+    
+    if (!videoRef.current || !canvasRef.current) {
+      console.error('Video or canvas ref is null', { video: !!videoRef.current, canvas: !!canvasRef.current });
+      toast.error('Camera not ready. Please try again.');
+      return;
+    }
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const context = canvas.getContext("2d");
 
-    if (!context) return;
+    if (!context) {
+      console.error('Could not get canvas 2d context');
+      toast.error('Could not capture photo. Please try again.');
+      return;
+    }
+
+    // Check if video has valid dimensions
+    console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+    
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      console.error('Video dimensions are 0, camera may not be streaming');
+      toast.error('Camera not ready. Please wait for camera to initialize.');
+      return;
+    }
 
     // Set canvas size to match video
     canvas.width = video.videoWidth;
@@ -420,6 +439,10 @@ export const LiveCameraCapture = ({
           type: "image/jpeg",
         });
         setCapturedImages((prev) => [...prev, file]);
+        console.log('Photo captured successfully, total:', capturedImages.length + 1);
+      } else {
+        console.error('canvas.toBlob returned null');
+        toast.error('Could not save photo. Please try again.');
       }
     }, "image/jpeg", 0.95);
   };
