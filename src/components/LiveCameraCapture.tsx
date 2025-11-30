@@ -366,10 +366,10 @@ export const LiveCameraCapture = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden bg-black border-none">
+      <DialogContent className="max-w-[95vw] h-[95vh] p-0 overflow-hidden bg-black border-none">
         <div className="relative w-full h-full flex flex-col">
           {/* Camera viewfinder */}
-          <div className="relative flex-1 flex items-center justify-center bg-black">
+          <div className="relative flex-1 min-h-0 flex items-center justify-center bg-black overflow-hidden">
             <video
               ref={videoRef}
               autoPlay
@@ -513,7 +513,7 @@ export const LiveCameraCapture = ({
 
           {/* Zoom Controls */}
           {supportedZoomLevels.length > 1 && (
-            <div className="absolute bottom-32 left-0 right-0 flex items-center justify-center">
+            <div className="shrink-0 flex items-center justify-center py-3 bg-black/80">
               <div className="flex items-center gap-4 px-6 py-2 rounded-full bg-black/50 backdrop-blur-sm">
                 {supportedZoomLevels.map((zoom) => (
                   <button
@@ -533,7 +533,7 @@ export const LiveCameraCapture = ({
           )}
 
           {/* Bottom Controls */}
-          <div className="bg-black/95 backdrop-blur-sm p-6">
+          <div className="shrink-0 bg-black/95 backdrop-blur-sm p-6">
             <div className="flex items-center justify-between max-w-[600px] mx-auto">
               {/* Gallery preview thumbnail */}
               <div className="flex flex-col items-center gap-1">
