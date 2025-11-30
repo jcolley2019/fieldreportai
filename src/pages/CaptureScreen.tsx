@@ -8,7 +8,7 @@ import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, ListChecks } from "lucide-react";
+import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, ListChecks, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import { LiveCameraCapture } from "@/components/LiveCameraCapture";
@@ -537,24 +537,33 @@ const CaptureScreen = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             <button 
               onClick={() => navigate("/notes", { state: { simpleMode: isSimpleMode } })}
-              className="flex flex-col items-center gap-3 rounded-lg bg-card p-6 transition-colors hover:bg-secondary"
+              className="flex flex-col items-center gap-3 rounded-lg bg-card p-4 transition-colors hover:bg-secondary"
             >
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                <FileText className="h-8 w-8 text-primary" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                <FileText className="h-7 w-7 text-primary" />
               </div>
-              <span className="text-sm font-medium text-foreground">{t('captureScreen.addNote')}</span>
+              <span className="text-xs font-medium text-foreground">{t('captureScreen.addNote')}</span>
+            </button>
+            <button 
+              onClick={() => {/* TODO: Navigate to tasks */}}
+              className="flex flex-col items-center gap-3 rounded-lg bg-card p-4 transition-colors hover:bg-secondary"
+            >
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                <ClipboardList className="h-7 w-7 text-primary" />
+              </div>
+              <span className="text-xs font-medium text-foreground">{t('captureScreen.tasks')}</span>
             </button>
             <button 
               onClick={() => navigate("/checklist", { state: { simpleMode: isSimpleMode } })}
-              className="flex flex-col items-center gap-3 rounded-lg bg-card p-6 transition-colors hover:bg-secondary"
+              className="flex flex-col items-center gap-3 rounded-lg bg-card p-4 transition-colors hover:bg-secondary"
             >
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                <ListChecks className="h-8 w-8 text-primary" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                <ListChecks className="h-7 w-7 text-primary" />
               </div>
-              <span className="text-sm font-medium text-foreground">{t('captureScreen.checklist')}</span>
+              <span className="text-xs font-medium text-foreground">{t('captureScreen.checklist')}</span>
             </button>
           </div>
 
