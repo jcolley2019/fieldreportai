@@ -14,3 +14,6 @@ verify_jwt = true
 
 [functions.suggest-tasks]
 verify_jwt = false
+
+[functions.label-photo]
+verify_jwt = false

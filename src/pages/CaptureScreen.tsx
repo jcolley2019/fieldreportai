@@ -8,7 +8,8 @@ import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, ListChecks, ClipboardList } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, ListChecks, ClipboardList, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import { LiveCameraCapture } from "@/components/LiveCameraCapture";
@@ -41,8 +42,46 @@ const CaptureScreen = () => {
   const [showLiveCamera, setShowLiveCamera] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [editingCaptionId, setEditingCaptionId] = useState<string | null>(null);
+  const [editingCaptionText, setEditingCaptionText] = useState("");
+  const [isLabelingImage, setIsLabelingImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  // Generate AI label for a photo
+  const generateAILabel = async (imageId: string, file: File) => {
+    setIsLabelingImage(imageId);
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      
+      reader.onloadend = async () => {
+        const base64Data = reader.result as string;
+        
+        const { data, error } = await supabase.functions.invoke('label-photo', {
+          body: { imageBase64: base64Data }
+        });
+
+        if (error) {
+          console.error("Label generation error:", error);
+          // Silently fail - don't show error to user, they can add manually
+          setIsLabelingImage(null);
+          return;
+        }
+
+        if (data?.label) {
+          setImages(prev => prev.map(img =>
+            img.id === imageId ? { ...img, caption: data.label } : img
+          ));
+        }
+        setIsLabelingImage(null);
+      };
+    } catch (error) {
+      console.error("Error generating label:", error);
+      setIsLabelingImage(null);
+    }
+  };
 
   const handleImageUpload = (files: FileList | null) => {
     if (!files) return;
@@ -55,6 +94,14 @@ const CaptureScreen = () => {
     }));
 
     setImages(prev => [...prev, ...newImages]);
+    
+    // Generate AI labels for uploaded images
+    newImages.forEach(img => {
+      if (img.file) {
+        generateAILabel(img.id, img.file);
+      }
+    });
+    
     toast.success(`${files.length} ${files.length > 1 ? t('common.imagesAdded') : t('common.imageAdded')}`);
   };
 
@@ -82,6 +129,30 @@ const CaptureScreen = () => {
     }));
 
     setImages(prev => [...prev, ...newImages]);
+    
+    // Generate AI labels for captured images
+    newImages.forEach(img => {
+      if (img.file) {
+        generateAILabel(img.id, img.file);
+      }
+    });
+  };
+
+  const handleEditCaption = (imageId: string) => {
+    const image = images.find(img => img.id === imageId);
+    setEditingCaptionId(imageId);
+    setEditingCaptionText(image?.caption || "");
+  };
+
+  const handleSaveCaption = () => {
+    if (editingCaptionId) {
+      setImages(prev => prev.map(img =>
+        img.id === editingCaptionId ? { ...img, caption: editingCaptionText } : img
+      ));
+      setEditingCaptionId(null);
+      setEditingCaptionText("");
+      toast.success(t('captureScreen.captionSaved'));
+    }
   };
 
   const deleteImage = (id: string) => {
@@ -344,13 +415,13 @@ const CaptureScreen = () => {
       
       // Small delay to show completion
       setTimeout(() => {
-        // Navigate with the generated summary and media
+        // Navigate with the generated summary and media (including captions)
         navigate("/review-summary", { 
           state: { 
             simpleMode: isSimpleMode,
             summary: data.summary,
             description,
-            images: activeImgs.map(img => ({ url: img.url, id: img.id }))
+            images: activeImgs.map(img => ({ url: img.url, id: img.id, caption: img.caption }))
           } 
         });
       }, 300);
@@ -639,6 +710,13 @@ const CaptureScreen = () => {
                           className="h-full w-full object-cover cursor-pointer"
                           onClick={() => setSelectedImageIndex(activeIndex)}
                         />
+                        {/* AI Labeling indicator */}
+                        {isLabelingImage === image.id && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                            <Loader2 className="h-5 w-5 text-white animate-spin" />
+                          </div>
+                        )}
+                        {/* Caption display */}
                         {image.caption && (
                           <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1.5 py-1 backdrop-blur-sm">
                             <p className="text-[9px] text-white leading-tight line-clamp-2">
@@ -646,6 +724,16 @@ const CaptureScreen = () => {
                             </p>
                           </div>
                         )}
+                        {/* Edit caption button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditCaption(image.id);
+                          }}
+                          className="absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
                         <button
                           onClick={() => deleteImage(image.id)}
                           className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70"
@@ -771,6 +859,41 @@ const CaptureScreen = () => {
             </p>
             <div className="flex items-center justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Caption Edit Dialog */}
+      <Dialog open={editingCaptionId !== null} onOpenChange={() => setEditingCaptionId(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('captureScreen.editCaption')}</DialogTitle>
+            <DialogDescription>
+              {t('captureScreen.editCaptionDescription')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <Input
+              value={editingCaptionText}
+              onChange={(e) => setEditingCaptionText(e.target.value)}
+              placeholder={t('captureScreen.captionPlaceholder')}
+              className="w-full"
+            />
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setEditingCaptionId(null)}
+                className="flex-1"
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                onClick={handleSaveCaption}
+                className="flex-1"
+              >
+                {t('common.save')}
+              </Button>
             </div>
           </div>
         </DialogContent>
