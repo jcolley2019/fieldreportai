@@ -8,6 +8,7 @@ import { User } from "@supabase/supabase-js";
 import { FileText, Camera, Mic, Share2, Eye, ChevronDown, ChevronRight, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Circle, Cloud, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { TrialBanner } from "@/components/TrialBanner";
+import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import {
   Select,
   SelectContent,
@@ -214,17 +215,17 @@ const Index = () => {
 
   return (
     <div className="dark min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between px-4 py-1">
+      {/* Glass Navbar */}
+      <GlassNavbar fixed={false}>
+        <NavbarLeft>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 hover:bg-secondary rounded-md px-2 py-1 transition-colors">
-                <h1 className="text-lg font-semibold text-foreground">{t('dashboard.menu')}</h1>
-                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              <button className="flex items-center gap-2 hover:bg-muted/40 rounded-xl px-3 py-2 transition-all duration-200">
+                <h1 className="text-base font-medium text-foreground">{t('dashboard.menu')}</h1>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-64 bg-popover">
+            <DropdownMenuContent align="start" className="w-64">
               <DropdownMenuItem onClick={() => navigate("/new-project")} className="cursor-pointer">
                 <Plus className="mr-2 h-4 w-4" />
                 {t('dashboard.newProject')}
@@ -242,7 +243,7 @@ const Index = () => {
               {projects.length > 0 && (
                 <>
                   <DropdownMenuSeparator />
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                  <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     {t('dashboard.recentProjects')}
                   </div>
                   {projects.slice(0, 5).map((project) => (
@@ -283,34 +284,39 @@ const Index = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <h1 className="text-lg font-semibold text-foreground flex-1 text-center">Dashboard</h1>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => {
-                setIsUpgradeClicked(true);
-                setTimeout(() => {
-                  setIsUpgradeClicked(false);
-                  navigate("/pricing");
-                }, 200);
-              }}
-              size="sm"
-              className={`gap-2 transition-transform duration-200 ${isUpgradeClicked ? "scale-95" : "hover:scale-105"}`}
-            >
-              <Zap className="h-4 w-4" />
-              {t('dashboard.upgradeNow')}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/settings")}
-            >
-              <SettingsIcon className="h-5 w-5 text-foreground" />
-            </Button>
-          </div>
-        </div>
-      </header>
+        </NavbarLeft>
+        
+        <NavbarCenter>
+          <NavbarTitle>Dashboard</NavbarTitle>
+        </NavbarCenter>
+        
+        <NavbarRight>
+          <Button
+            onClick={() => {
+              setIsUpgradeClicked(true);
+              setTimeout(() => {
+                setIsUpgradeClicked(false);
+                navigate("/pricing");
+              }, 200);
+            }}
+            size="sm"
+            className={`gap-2 transition-all duration-200 ${isUpgradeClicked ? "scale-95" : "hover:scale-105 hover:shadow-glow-blue"}`}
+          >
+            <Zap className="h-4 w-4" />
+            {t('dashboard.upgradeNow')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/settings")}
+            className="rounded-xl hover:bg-muted/40"
+          >
+            <SettingsIcon className="h-5 w-5 text-foreground" />
+          </Button>
+        </NavbarRight>
+      </GlassNavbar>
 
-      <main className="p-4">
+      <main className="p-4 pt-6">
         {/* Trial Banner */}
         {trialStartDate && showTrialBanner && (
           <TrialBanner 
@@ -321,14 +327,14 @@ const Index = () => {
         
         {/* Mode Selection Section */}
         <section className="mb-8">
-          <h2 className="mb-4 text-2xl font-semibold text-foreground">{t('dashboard.chooseWorkflow')}</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <h2 className="mb-6 text-2xl font-semibold text-foreground">{t('dashboard.chooseWorkflow')}</h2>
+          <div className="grid grid-cols-2 gap-5">
             <button 
               onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })}
-              className="flex flex-col items-center gap-4 rounded-lg bg-card p-8 transition-colors hover:bg-secondary"
+              className="glass-card flex flex-col items-center gap-5 p-8 hover-lift group"
             >
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-                <Zap className="h-10 w-10 text-primary" />
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25 group-hover:shadow-glow-blue">
+                <Zap className="h-10 w-10 text-primary transition-transform duration-300 group-hover:scale-110" />
               </div>
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-foreground mb-1">{t('dashboard.simpleMode')}</h3>
@@ -337,10 +343,10 @@ const Index = () => {
             </button>
             <button 
               onClick={() => setShowProjectDialog(true)}
-              className="flex flex-col items-center gap-4 rounded-lg bg-card p-8 transition-colors hover:bg-secondary"
+              className="glass-card flex flex-col items-center gap-5 p-8 hover-lift group"
             >
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-                <FolderOpen className="h-10 w-10 text-primary" />
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25 group-hover:shadow-glow-blue">
+                <FolderOpen className="h-10 w-10 text-primary transition-transform duration-300 group-hover:scale-110" />
               </div>
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-foreground mb-1">{t('dashboard.projectMode')}</h3>
@@ -368,7 +374,7 @@ const Index = () => {
           </div>
           
           {projects.length === 0 ? (
-            <div className="rounded-lg bg-card p-8 text-center">
+            <div className="glass-card p-8 text-center">
               <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
               <p className="text-muted-foreground mb-4">{t('dashboard.noProjects')}</p>
               <Button onClick={() => navigate("/new-project")}>
@@ -381,9 +387,10 @@ const Index = () => {
               {filteredProjects.slice(0, 5).map((project) => (
                 <div
                   key={project.id}
-                  className="flex items-start gap-4 rounded-lg bg-card p-4 hover:bg-secondary/50 transition-colors"
+                  className="glass-card flex items-start gap-4 p-4 hover-lift cursor-pointer group"
+                  onClick={() => navigate(`/project/${project.id}`)}
                 >
-                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
                     <Building2 className="h-7 w-7 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -407,20 +414,24 @@ const Index = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => navigate(`/project/${project.id}`)}
-                      className="text-muted-foreground hover:text-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/project/${project.id}`);
+                      }}
+                      className="rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/40"
                     >
                       <Eye className="h-5 w-5" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (confirm(`${t('dashboard.deleteConfirm')} "${project.project_name}"?`)) {
                           handleDeleteProject(project.id);
                         }
                       }}
-                      className="text-muted-foreground hover:text-destructive"
+                      className="rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     >
                       <Trash2 className="h-5 w-5" />
                     </Button>
