@@ -87,7 +87,7 @@ const Confirmation = () => {
       </GlassNavbar>
 
       {/* Success Icon and Message */}
-      <div className="flex flex-col items-center justify-center px-4 pt-12">
+      <div className="flex flex-col items-center justify-center px-4 pt-12 animate-fade-in">
         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/20">
           <Check className="h-12 w-12 text-primary" strokeWidth={3} />
         </div>

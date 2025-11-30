@@ -256,7 +256,7 @@ const Auth = () => {
 
   return (
     <div className="dark min-h-screen">
-      <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
+      <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 animate-fade-in">
         {/* Language Selector - Top Right */}
         <div className="absolute top-4 right-4 p-2 rounded-lg bg-accent/50 border border-border/50 backdrop-blur-sm">
           <LanguageSelector />

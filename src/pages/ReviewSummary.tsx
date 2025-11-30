@@ -253,7 +253,7 @@ const ReviewSummary = () => {
         </NavbarRight>
       </GlassNavbar>
 
-      <main className="flex flex-col pb-32">
+      <main className="flex flex-col pb-32 animate-fade-in">
         {/* Accordions for Project Phases */}
         <div className="flex flex-col gap-3 p-4">
           {sections.map((section) => (

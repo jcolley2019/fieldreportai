@@ -237,7 +237,7 @@ const SavedReports = () => {
         </NavbarRight>
       </GlassNavbar>
 
-      <main className="p-4">
+      <main className="p-4 animate-fade-in">
         {/* Search and Filter - Always visible */}
         <div className="mb-4 flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">

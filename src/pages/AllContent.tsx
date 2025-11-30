@@ -691,7 +691,7 @@ const AllContent = () => {
         </NavbarRight>
       </GlassNavbar>
 
-      <main className="p-4 pb-20">
+      <main className="p-4 pb-20 animate-fade-in">
         {/* Export Actions Bar */}
         <div className="mb-4 grid grid-cols-3 gap-3">
           <Button

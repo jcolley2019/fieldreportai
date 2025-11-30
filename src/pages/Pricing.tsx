@@ -46,7 +46,7 @@ const Pricing = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-4 pb-0 bg-transparent">
+      <section className="pt-4 pb-0 bg-transparent animate-fade-in">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-2 text-white">
             Choose Your Perfect Plan
