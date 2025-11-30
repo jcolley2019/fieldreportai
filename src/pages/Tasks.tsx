@@ -340,42 +340,6 @@ const Tasks = () => {
       </GlassNavbar>
 
       <main className="flex-1 px-4 pt-4 pb-24 animate-fade-in">
-        {/* Voice Input Section */}
-        <div className="mb-6">
-          <button
-            onClick={handleVoiceRecord}
-            disabled={isProcessingVoice || isSuggestingTasks}
-            className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl p-6 text-center transition-all ${
-              isRecording 
-                ? 'bg-destructive/20 ring-4 ring-destructive/30 animate-pulse' 
-                : 'bg-primary/20 hover:bg-primary/30 shadow-xl shadow-primary/50 ring-4 ring-primary/30'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              {isRecording ? (
-                <MicOff className="h-12 w-12 text-destructive" />
-              ) : isProcessingVoice || isSuggestingTasks ? (
-                <Loader2 className="h-12 w-12 text-primary animate-spin" />
-              ) : (
-                <Mic className="h-12 w-12 text-primary" />
-              )}
-            </div>
-            <p className="text-sm font-bold text-foreground">
-              {isRecording 
-                ? t('tasks.tapToStop')
-                : isProcessingVoice 
-                ? t('tasks.processingVoice')
-                : isSuggestingTasks
-                ? t('tasks.creatingTasks')
-                : t('tasks.tapToRecord')
-              }
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {t('tasks.voiceHint')}
-            </p>
-          </button>
-        </div>
-
         {/* Action Buttons */}
         <div className="flex gap-3 mb-6">
           <Button
@@ -415,6 +379,42 @@ const Tasks = () => {
               {t(`tasks.filter${f.charAt(0).toUpperCase() + f.slice(1).replace('_', '')}`)}
             </button>
           ))}
+        </div>
+
+        {/* Voice Input Section */}
+        <div className="mb-6">
+          <button
+            onClick={handleVoiceRecord}
+            disabled={isProcessingVoice || isSuggestingTasks}
+            className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl p-6 text-center transition-all ${
+              isRecording 
+                ? 'bg-destructive/20 ring-4 ring-destructive/30 animate-pulse' 
+                : 'bg-primary/20 hover:bg-primary/30 shadow-xl shadow-primary/50 ring-4 ring-primary/30'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              {isRecording ? (
+                <MicOff className="h-12 w-12 text-destructive" />
+              ) : isProcessingVoice || isSuggestingTasks ? (
+                <Loader2 className="h-12 w-12 text-primary animate-spin" />
+              ) : (
+                <Mic className="h-12 w-12 text-primary" />
+              )}
+            </div>
+            <p className="text-sm font-bold text-foreground">
+              {isRecording 
+                ? t('tasks.tapToStop')
+                : isProcessingVoice 
+                ? t('tasks.processingVoice')
+                : isSuggestingTasks
+                ? t('tasks.creatingTasks')
+                : t('tasks.tapToRecord')
+              }
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {t('tasks.voiceHint')}
+            </p>
+          </button>
         </div>
 
         {/* Tasks List */}
