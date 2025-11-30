@@ -570,17 +570,31 @@ export const LiveCameraCapture = ({
                 </button>
               </div>
 
-              {/* Recording indicator */}
-              {isRecording && (
-                <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm shadow-lg ${
-                  isPaused 
-                    ? 'bg-destructive text-white shadow-destructive/50' 
-                    : 'bg-green-500 text-white shadow-green-500/50'
-                }`}>
-                  <div className={`h-3 w-3 rounded-full bg-white ${isPaused ? '' : 'animate-pulse'}`}></div>
-                  <span className="font-mono">{formatDuration(recordingDuration)}</span>
-                </div>
-              )}
+              {/* Center: Recording indicator or Camera name */}
+              <div className="flex flex-col items-center gap-1">
+                {isRecording ? (
+                  <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm shadow-lg ${
+                    isPaused 
+                      ? 'bg-destructive text-white shadow-destructive/50' 
+                      : 'bg-green-500 text-white shadow-green-500/50'
+                  }`}>
+                    <div className={`h-3 w-3 rounded-full bg-white ${isPaused ? '' : 'animate-pulse'}`}></div>
+                    <span className="font-mono">{formatDuration(recordingDuration)}</span>
+                  </div>
+                ) : (
+                  /* Active camera name */
+                  videoDevices.length > 0 && (
+                    <div className="px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white/80 text-xs font-medium max-w-[200px] truncate">
+                      {(() => {
+                        const activeDevice = videoDevices.find(d => d.deviceId === selectedDeviceId);
+                        if (activeDevice?.label) return activeDevice.label;
+                        if (videoDevices.length === 1 && videoDevices[0].label) return videoDevices[0].label;
+                        return facingMode === 'user' ? 'Front Camera' : 'Back Camera';
+                      })()}
+                    </div>
+                  )
+                )}
+              </div>
 
               {/* Camera flip button */}
               <div className="flex items-center gap-2">
