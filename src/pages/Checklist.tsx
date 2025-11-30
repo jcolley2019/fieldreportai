@@ -573,7 +573,7 @@ const Checklist = () => {
       {/* Glass Navbar */}
       <GlassNavbar fixed={false}>
         <NavbarLeft>
-          <BackButton />
+          <BackButton fallbackPath="/capture-screen" />
         </NavbarLeft>
         <NavbarCenter>
           <NavbarTitle>{t('checklist.title')}</NavbarTitle>

@@ -627,7 +627,7 @@ const Notes = () => {
       {/* Glass Navbar */}
       <GlassNavbar fixed={false}>
         <NavbarLeft>
-          <BackButton />
+          <BackButton fallbackPath="/capture-screen" />
         </NavbarLeft>
         <NavbarCenter>
           <NavbarTitle>{t('notes.title')}</NavbarTitle>
