@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff, Grid3x3, Sparkles } from "lucide-react";
+import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff, Grid3x3, Sparkles, Maximize2, Minimize2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface LiveCameraCaptureProps {
@@ -35,6 +35,7 @@ export const LiveCameraCapture = ({
   const [flashMode, setFlashMode] = useState<'off' | 'auto' | 'on'>('off');
   const [hdrEnabled, setHdrEnabled] = useState(false);
   const [gridEnabled, setGridEnabled] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [pinchDistance, setPinchDistance] = useState<number | null>(null);
   const [supportedZoomLevels, setSupportedZoomLevels] = useState<number[]>([0.5, 1, 2, 4, 8]);
   const [minZoomCapability, setMinZoomCapability] = useState(0.5);
@@ -366,7 +367,11 @@ export const LiveCameraCapture = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] h-[95vh] p-0 overflow-hidden bg-black border-none">
+      <DialogContent className={`p-0 overflow-hidden bg-black border-none transition-all duration-300 ${
+        isFullscreen 
+          ? 'max-w-none w-screen h-screen rounded-none' 
+          : 'max-w-[95vw] h-[95vh]'
+      }`}>
         <div className="relative w-full h-full flex flex-col">
           {/* Camera viewfinder */}
           <div className="relative flex-1 min-h-0 flex items-center justify-center bg-black overflow-hidden">
@@ -502,12 +507,25 @@ export const LiveCameraCapture = ({
               )}
 
               {/* Camera flip button */}
-              <button
-                onClick={toggleCamera}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
-              >
-                <SwitchCamera className="h-6 w-6" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+                  title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+                >
+                  {isFullscreen ? (
+                    <Minimize2 className="h-6 w-6" />
+                  ) : (
+                    <Maximize2 className="h-6 w-6" />
+                  )}
+                </button>
+                <button
+                  onClick={toggleCamera}
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+                >
+                  <SwitchCamera className="h-6 w-6" />
+                </button>
+              </div>
             </div>
           </div>
 
