@@ -418,7 +418,7 @@ const Settings = () => {
         </NavbarRight>
       </GlassNavbar>
 
-      <main className="flex-grow pb-8">
+      <main className="flex-grow pb-8 animate-fade-in">
         {/* Profile Form Section */}
         <div className="bg-background px-4 py-6">
           <h2 className="mb-6 text-xl font-bold text-foreground">{t('settings.profile')}</h2>

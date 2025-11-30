@@ -214,7 +214,7 @@ const ProjectDetail = () => {
         </NavbarRight>
       </GlassNavbar>
 
-      <main className="p-4 pb-20">
+      <main className="p-4 pb-20 animate-fade-in">
         {/* Project Info Card */}
         <Card className="mb-6 bg-card border-border">
           <CardHeader>

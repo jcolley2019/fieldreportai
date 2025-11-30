@@ -504,7 +504,7 @@ const CaptureScreen = () => {
         </NavbarRight>
       </GlassNavbar>
 
-      <main className="flex-1 px-4 pt-4 pb-36">
+      <main className="flex-1 px-4 pt-4 pb-36 animate-fade-in">
         {/* Project Info Pills */}
         <div className="flex flex-wrap gap-2 pb-4">
           <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">

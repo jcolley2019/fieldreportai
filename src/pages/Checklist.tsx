@@ -583,7 +583,7 @@ const Checklist = () => {
         </NavbarRight>
       </GlassNavbar>
 
-      <main className="flex-1 px-4 pt-4 pb-36">
+      <main className="flex-1 px-4 pt-4 pb-36 animate-fade-in">
         {/* Project Info Pills - Only show if there's project data */}
         {(projectName || jobNumber) && (
           <div className="flex flex-wrap gap-2 pb-4">

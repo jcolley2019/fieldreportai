@@ -150,7 +150,7 @@ const Landing = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 md:py-32 bg-gradient-to-b from-background via-background to-primary/5 relative overflow-hidden">
+      <section className="py-20 md:py-32 bg-gradient-to-b from-background via-background to-primary/5 relative overflow-hidden animate-fade-in">
         {/* Decorative Background Elements */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-20 left-10 w-64 h-64 bg-primary rounded-full blur-3xl"></div>

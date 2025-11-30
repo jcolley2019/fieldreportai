@@ -758,7 +758,7 @@ const FinalReport = () => {
           </Button>
         </div>
       ) : (
-        <main className="flex-grow">
+        <main className="flex-grow animate-fade-in">
           <div className="pt-6">
             <h1 className="px-4 pb-3 text-left text-[32px] font-bold leading-tight tracking-tight text-foreground">
               {t('finalReport.reportSummary')}

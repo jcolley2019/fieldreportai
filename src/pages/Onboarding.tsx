@@ -273,7 +273,7 @@ const Onboarding = () => {
         <LanguageSelector />
       </div>
 
-      <Card className="w-full max-w-2xl bg-card border-border">
+      <Card className="w-full max-w-2xl bg-card border-border animate-fade-in">
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>

@@ -187,7 +187,7 @@ const NewProject = () => {
         </NavbarRight>
       </GlassNavbar>
 
-      <main className="flex min-h-screen flex-col px-4 pb-8 pt-4">
+      <main className="flex min-h-screen flex-col px-4 pb-8 pt-4 animate-fade-in">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField

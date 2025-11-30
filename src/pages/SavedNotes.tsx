@@ -267,7 +267,7 @@ const SavedNotes = () => {
         </NavbarRight>
       </GlassNavbar>
 
-      <main className="p-4">
+      <main className="p-4 animate-fade-in">
         {/* Search and Filters */}
         <div className="mb-6 space-y-4">
           <div className="relative">

@@ -316,7 +316,7 @@ const Index = () => {
         </NavbarRight>
       </GlassNavbar>
 
-      <main className="p-4 pt-6">
+      <main className="p-4 pt-6 animate-fade-in">
         {/* Trial Banner */}
         {trialStartDate && showTrialBanner && (
           <TrialBanner 

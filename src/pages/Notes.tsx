@@ -637,7 +637,7 @@ const Notes = () => {
         </NavbarRight>
       </GlassNavbar>
 
-      <main className="p-4 pb-32">
+      <main className="p-4 pb-32 animate-fade-in">
         {/* Note Text Area */}
         <div className="mb-6">
           <label className="mb-2 block text-sm font-medium text-foreground">
