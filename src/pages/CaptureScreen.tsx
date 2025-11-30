@@ -545,7 +545,7 @@ const CaptureScreen = () => {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
                 <FileText className="h-7 w-7 text-primary" />
               </div>
-              <span className="text-xs font-medium text-foreground">{t('captureScreen.addNote')}</span>
+              <span className="text-sm font-semibold text-foreground">{t('captureScreen.addNote')}</span>
             </button>
             <button 
               onClick={() => navigate("/tasks", { state: { simpleMode: isSimpleMode } })}
@@ -554,7 +554,7 @@ const CaptureScreen = () => {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
                 <ClipboardList className="h-7 w-7 text-primary" />
               </div>
-              <span className="text-xs font-medium text-foreground">{t('captureScreen.tasks')}</span>
+              <span className="text-sm font-semibold text-foreground">{t('captureScreen.tasks')}</span>
             </button>
             <button 
               onClick={() => navigate("/checklist", { state: { simpleMode: isSimpleMode } })}
@@ -563,7 +563,7 @@ const CaptureScreen = () => {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
                 <ListChecks className="h-7 w-7 text-primary" />
               </div>
-              <span className="text-xs font-medium text-foreground">{t('captureScreen.checklist')}</span>
+              <span className="text-sm font-semibold text-foreground">{t('captureScreen.checklist')}</span>
             </button>
           </div>
 
