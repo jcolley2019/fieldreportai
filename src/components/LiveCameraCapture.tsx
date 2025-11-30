@@ -2,8 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
-import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff, Grid3x3, Sparkles, Maximize2, Minimize2 } from "lucide-react";
+import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff, Grid3x3, Sparkles, Maximize2, Minimize2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface LiveCameraCaptureProps {
   open: boolean;
@@ -49,12 +55,30 @@ export const LiveCameraCapture = ({
   const [supportedZoomLevels, setSupportedZoomLevels] = useState<number[]>([0.5, 1, 2, 4, 8]);
   const [minZoomCapability, setMinZoomCapability] = useState(0.5);
   const [maxZoomCapability, setMaxZoomCapability] = useState(8);
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const focusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Enumerate available video devices
+  const enumerateDevices = async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter(device => device.kind === 'videoinput');
+      console.log('Available cameras:', cameras.map(c => ({ id: c.deviceId, label: c.label })));
+      setVideoDevices(cameras);
+      return cameras;
+    } catch (error) {
+      console.error('Error enumerating devices:', error);
+      return [];
+    }
+  };
+
   useEffect(() => {
     if (open) {
-      startCamera();
+      enumerateDevices().then(() => {
+        startCamera();
+      });
     } else {
       stopCamera();
       setCapturedImages([]);
@@ -96,36 +120,53 @@ export const LiveCameraCapture = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const startCamera = async () => {
+  const startCamera = async (deviceId?: string) => {
     try {
-      // First, try to get a list of available video devices
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      console.log('Available video devices:', videoDevices.length);
+      // Stop any existing stream first
+      stopCamera();
       
-      // On laptops with only a front camera, "environment" mode may fail
-      // Try the preferred facingMode first, fallback to any camera
       let stream: MediaStream | null = null;
       
-      try {
+      // If a specific device ID is provided, use it
+      if (deviceId) {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: facingMode },
+          video: { deviceId: { exact: deviceId } },
           audio: false,
         });
-        console.log('Camera started with facingMode:', facingMode);
-      } catch (facingModeError) {
-        console.warn('Failed with facingMode, trying fallback:', facingModeError);
-        // Fallback: just request any available camera
+        console.log('Camera started with deviceId:', deviceId);
+        setSelectedDeviceId(deviceId);
+      } else if (selectedDeviceId) {
+        // Use previously selected device
         stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
+          video: { deviceId: { exact: selectedDeviceId } },
           audio: false,
         });
-        console.log('Camera started with fallback (any camera)');
+        console.log('Camera started with selectedDeviceId:', selectedDeviceId);
+      } else {
+        // Try facingMode first, fallback to any camera
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: facingMode },
+            audio: false,
+          });
+          console.log('Camera started with facingMode:', facingMode);
+        } catch (facingModeError) {
+          console.warn('Failed with facingMode, trying fallback:', facingModeError);
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false,
+          });
+          console.log('Camera started with fallback (any camera)');
+        }
       }
 
       if (videoRef.current && stream) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
+        
+        // Re-enumerate devices to get labels (only available after permission granted)
+        await enumerateDevices();
+        
         videoRef.current.onloadedmetadata = async () => {
           videoRef.current?.play();
           setIsReady(true);
@@ -554,12 +595,43 @@ export const LiveCameraCapture = ({
                     <Maximize2 className="h-6 w-6" />
                   )}
                 </button>
-                <button
-                  onClick={toggleCamera}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
-                >
-                  <SwitchCamera className="h-6 w-6" />
-                </button>
+                
+                {/* Camera selector dropdown - show when multiple cameras available */}
+                {videoDevices.length > 1 ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="flex h-12 items-center gap-1 px-3 rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+                      >
+                        <SwitchCamera className="h-5 w-5" />
+                        <ChevronDown className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      align="end" 
+                      className="z-50 bg-background border border-border shadow-lg"
+                    >
+                      {videoDevices.map((device, index) => (
+                        <DropdownMenuItem
+                          key={device.deviceId}
+                          onClick={() => startCamera(device.deviceId)}
+                          className={`cursor-pointer ${
+                            selectedDeviceId === device.deviceId ? 'bg-primary/20' : ''
+                          }`}
+                        >
+                          {device.label || `Camera ${index + 1}`}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <button
+                    onClick={toggleCamera}
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+                  >
+                    <SwitchCamera className="h-6 w-6" />
+                  </button>
+                )}
               </div>
             </div>
           </div>
