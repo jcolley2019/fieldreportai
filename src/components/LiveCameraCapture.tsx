@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
 import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff, Grid3x3, Sparkles, Maximize2, Minimize2 } from "lucide-react";
 import { toast } from "sonner";
@@ -89,12 +90,32 @@ export const LiveCameraCapture = ({
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facingMode },
-        audio: false,
-      });
+      // First, try to get a list of available video devices
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      console.log('Available video devices:', videoDevices.length);
+      
+      // On laptops with only a front camera, "environment" mode may fail
+      // Try the preferred facingMode first, fallback to any camera
+      let stream: MediaStream | null = null;
+      
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facingMode },
+          audio: false,
+        });
+        console.log('Camera started with facingMode:', facingMode);
+      } catch (facingModeError) {
+        console.warn('Failed with facingMode, trying fallback:', facingModeError);
+        // Fallback: just request any available camera
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+        console.log('Camera started with fallback (any camera)');
+      }
 
-      if (videoRef.current) {
+      if (videoRef.current && stream) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
         videoRef.current.onloadedmetadata = async () => {
@@ -127,8 +148,8 @@ export const LiveCameraCapture = ({
       }
     } catch (error) {
       console.error("Error accessing camera:", error);
-      toast.error("Could not access camera");
-      onOpenChange(false);
+      toast.error("Could not access camera. Please check permissions.");
+      // Don't auto-close - let user see the error and manually close
     }
   };
 
@@ -367,11 +388,17 @@ export const LiveCameraCapture = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`p-0 overflow-hidden bg-black border-none transition-all duration-300 ${
-        isFullscreen 
-          ? 'max-w-none w-screen h-screen rounded-none' 
-          : 'max-w-[95vw] h-[95vh]'
-      }`}>
+      <DialogContent 
+        className={`p-0 overflow-hidden bg-black border-none transition-all duration-300 ${
+          isFullscreen 
+            ? 'max-w-none w-screen h-screen rounded-none' 
+            : 'max-w-[95vw] h-[95vh]'
+        }`}
+        aria-describedby={undefined}
+      >
+        <VisuallyHidden>
+          <DialogTitle>Camera Capture</DialogTitle>
+        </VisuallyHidden>
         <div className="relative w-full h-full flex flex-col">
           {/* Camera viewfinder */}
           <div className="relative flex-1 min-h-0 flex items-center justify-center bg-black overflow-hidden">
