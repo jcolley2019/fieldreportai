@@ -6,16 +6,148 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+type ReportType = 'daily' | 'weekly' | 'site_survey';
+
+const getSystemPrompt = (reportType: ReportType, includedDailyReports?: string[]): string => {
+  const baseInstructions = "You are a professional field report assistant. Analyze the provided field notes and images to create a clear, structured report.";
+  
+  if (reportType === 'daily') {
+    return `${baseInstructions}
+
+Format your response EXACTLY as follows for a DAILY REPORT:
+
+DATE & WEATHER:
+[Date and weather conditions if mentioned, otherwise state "Not specified"]
+
+WORK COMPLETED TODAY:
+• [Specific task or activity completed]
+• [Another task completed]
+• [Add more as needed]
+
+MATERIALS USED:
+• [Material and quantity if mentioned]
+• [Add more as needed, or "None specified" if not mentioned]
+
+PERSONNEL ON SITE:
+[Number and roles if mentioned, otherwise "Not specified"]
+
+ISSUES/DELAYS:
+• [Any problems encountered]
+• [Add more as needed, or "None reported" if no issues]
+
+TOMORROW'S PLAN:
+• [Planned activities for next day]
+• [Add more as needed]
+
+NOTES:
+[Any additional observations or comments]
+
+Keep the tone professional and concise. Focus on observable facts and specific details.`;
+  }
+  
+  if (reportType === 'weekly') {
+    const dailyContext = includedDailyReports?.length 
+      ? `\n\nYou have been provided with ${includedDailyReports.length} daily report(s) to summarize. Synthesize this information into a cohesive weekly overview.`
+      : '';
+    
+    return `${baseInstructions}${dailyContext}
+
+Format your response EXACTLY as follows for a WEEKLY REPORT:
+
+WEEK OVERVIEW:
+[2-3 sentence summary of the week's progress and overall status]
+
+KEY ACCOMPLISHMENTS:
+• [Major milestone or achievement 1]
+• [Major milestone or achievement 2]
+• [Add more as needed]
+
+PROGRESS BY AREA:
+[Break down progress by work area or phase]
+• Area 1: [Status and progress]
+• Area 2: [Status and progress]
+• [Add more as needed]
+
+CHALLENGES & RESOLUTIONS:
+• [Challenge faced]: [How it was resolved or current status]
+• [Add more as needed, or "No significant challenges" if none]
+
+RESOURCE UTILIZATION:
+• Personnel: [Summary of workforce]
+• Materials: [Summary of materials used]
+• Equipment: [Summary of equipment if mentioned]
+
+SCHEDULE STATUS:
+[On track / Behind / Ahead] - [Brief explanation]
+
+NEXT WEEK'S PRIORITIES:
+1. [Priority task 1]
+2. [Priority task 2]
+3. [Add more as needed]
+
+SAFETY & COMPLIANCE:
+[Any safety incidents or compliance notes, or "No incidents reported"]
+
+Keep the tone professional and comprehensive. Provide a clear picture of the week's activities.`;
+  }
+  
+  // Site Survey
+  return `${baseInstructions}
+
+Format your response EXACTLY as follows for a SITE SURVEY:
+
+SITE INFORMATION:
+• Location: [Site location/address if mentioned]
+• Date of Survey: [Date if mentioned]
+• Surveyor: [Name if mentioned]
+
+SITE CONDITIONS:
+• Terrain: [Description of ground conditions, slope, etc.]
+• Access: [Description of site access points and conditions]
+• Utilities: [Available utilities or infrastructure]
+• Existing Structures: [Any existing buildings or structures]
+
+ENVIRONMENTAL OBSERVATIONS:
+• Vegetation: [Description of plant life, trees, etc.]
+• Drainage: [Water flow, drainage patterns]
+• Soil Conditions: [Visible soil characteristics]
+• Weather Impact: [Signs of weather-related issues]
+
+MEASUREMENTS & DIMENSIONS:
+[Key measurements if provided, or "See attached photos for reference"]
+
+POTENTIAL CONCERNS:
+• [Concern 1 and potential impact]
+• [Concern 2 and potential impact]
+• [Add more as needed, or "No significant concerns identified"]
+
+RECOMMENDATIONS:
+• [Recommendation 1]
+• [Recommendation 2]
+• [Add more as needed]
+
+REQUIRED FOLLOW-UP:
+• [Follow-up action needed]
+• [Add more as needed]
+
+PHOTO DOCUMENTATION:
+[Brief description of what the photos capture]
+
+Keep the tone professional and thorough. Document all relevant site characteristics.`;
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { description, imageDataUrls } = await req.json();
+    const { description, imageDataUrls, reportType = 'daily', includedDailyReports } = await req.json();
     console.log("Generating report summary", { 
       descriptionLength: description?.length,
       imageCount: imageDataUrls?.length,
+      reportType,
+      includedDailyReportsCount: includedDailyReports?.length,
       timestamp: new Date().toISOString() 
     });
 
@@ -26,6 +158,14 @@ serve(async (req) => {
 
     // Build messages array with text and images
     const content: any[] = [];
+    
+    // Add included daily reports content for weekly reports
+    if (reportType === 'weekly' && includedDailyReports?.length) {
+      content.push({
+        type: "text",
+        text: `Previous Daily Reports to summarize:\n\n${includedDailyReports.map((report: string, index: number) => `--- Daily Report ${index + 1} ---\n${report}`).join('\n\n')}`
+      });
+    }
     
     if (description && description.trim()) {
       content.push({
@@ -47,25 +187,7 @@ serve(async (req) => {
       throw new Error("No content provided for summary generation");
     }
 
-    const systemPrompt = `You are a professional field report assistant. Analyze the provided field notes and images to create a clear, structured report.
-
-Format your response EXACTLY as follows:
-
-SUMMARY:
-[2-3 sentence overview of the field observations]
-
-KEY POINTS:
-• [Main observation 1]
-• [Main observation 2]
-• [Main observation 3]
-• [Add more as needed]
-
-ACTION ITEMS:
-• [Action item 1]
-• [Action item 2]
-• [Add more as needed]
-
-Keep the tone professional and concise. Focus on observable facts and actionable insights.`;
+    const systemPrompt = getSystemPrompt(reportType as ReportType, includedDailyReports);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -79,7 +201,7 @@ Keep the tone professional and concise. Focus on observable facts and actionable
           { role: 'system', content: systemPrompt },
           { role: 'user', content }
         ],
-        max_tokens: 1500,
+        max_tokens: 2000,
       }),
     });
 
@@ -105,7 +227,7 @@ Keep the tone professional and concise. Focus on observable facts and actionable
     }
 
     const data = await response.json();
-    console.log("Summary generated successfully", { timestamp: new Date().toISOString() });
+    console.log("Summary generated successfully", { reportType, timestamp: new Date().toISOString() });
 
     const summaryText = data.choices?.[0]?.message?.content;
     if (!summaryText) {

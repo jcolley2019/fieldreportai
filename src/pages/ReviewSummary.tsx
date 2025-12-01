@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { ChevronDown, ChevronUp, Pencil, Play, Printer, Download, FolderPlus, Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Printer, Download, FolderPlus, Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ReportTypeSelector, ReportType, WeeklySourceMode } from "@/components/ReportTypeSelector";
 
 interface SummarySection {
   id: string;
@@ -28,17 +29,33 @@ interface SummarySection {
   isOpen: boolean;
 }
 
+interface DailyReport {
+  id: string;
+  project_name: string;
+  created_at: string;
+  job_description: string;
+}
+
 const ReviewSummary = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
   const isSimpleMode = location.state?.simpleMode || false;
   const projectReportId = location.state?.reportId || null;
-  const summaryText = location.state?.summary || "";
+  const initialSummary = location.state?.summary || "";
   const capturedImages = location.state?.images || [];
   const [showProjectSelector, setShowProjectSelector] = useState(false);
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  
+  // Report type state
+  const [reportType, setReportType] = useState<ReportType>('daily');
+  const [weeklySourceMode, setWeeklySourceMode] = useState<WeeklySourceMode>('auto');
+  const [availableDailyReports, setAvailableDailyReports] = useState<DailyReport[]>([]);
+  const [selectedDailyReportIds, setSelectedDailyReportIds] = useState<string[]>([]);
+  const [isLoadingDailyReports, setIsLoadingDailyReports] = useState(false);
+  const [summaryText, setSummaryText] = useState(initialSummary);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   
   // Parse the AI-generated summary into sections
   const parseSummary = (text: string) => {
@@ -88,6 +105,54 @@ const ReviewSummary = () => {
   const [sections, setSections] = useState<SummarySection[]>(() => parseSummary(summaryText));
   const [isSaving, setIsSaving] = useState(false);
 
+  // Fetch daily reports when weekly mode is selected
+  useEffect(() => {
+    if (reportType === 'weekly') {
+      fetchDailyReports();
+    }
+  }, [reportType]);
+
+  // Auto-select daily reports when auto mode is selected
+  useEffect(() => {
+    if (weeklySourceMode === 'auto' && availableDailyReports.length > 0) {
+      setSelectedDailyReportIds(availableDailyReports.map(r => r.id));
+    } else if (weeklySourceMode === 'fresh') {
+      setSelectedDailyReportIds([]);
+    }
+  }, [weeklySourceMode, availableDailyReports]);
+
+  const fetchDailyReports = async () => {
+    setIsLoadingDailyReports(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get daily reports from the current week
+      const startOfWeek = new Date();
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      const { data, error } = await supabase
+        .from('reports')
+        .select('id, project_name, created_at, job_description')
+        .eq('user_id', user.id)
+        .eq('report_type', 'daily')
+        .gte('created_at', startOfWeek.toISOString())
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setAvailableDailyReports(data);
+        if (weeklySourceMode === 'auto') {
+          setSelectedDailyReportIds(data.map(r => r.id));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching daily reports:', error);
+    } finally {
+      setIsLoadingDailyReports(false);
+    }
+  };
+
   const toggleSection = (id: string) => {
     setSections((prev) =>
       prev.map((section) =>
@@ -96,8 +161,42 @@ const ReviewSummary = () => {
     );
   };
 
-  const handleRegenerateSummary = () => {
-    toast.success(t('reviewSummary.regenerating'));
+  const handleRegenerateSummary = async () => {
+    setIsRegenerating(true);
+    try {
+      // Get included daily reports content for weekly mode
+      let includedDailyReports: string[] = [];
+      if (reportType === 'weekly' && weeklySourceMode !== 'fresh' && selectedDailyReportIds.length > 0) {
+        includedDailyReports = availableDailyReports
+          .filter(r => selectedDailyReportIds.includes(r.id))
+          .map(r => r.job_description);
+      }
+
+      // Get image data URLs for the AI
+      const imageDataUrls = capturedImages.map((img: any) => img.url);
+
+      const { data, error } = await supabase.functions.invoke('generate-report-summary', {
+        body: {
+          description: initialSummary,
+          imageDataUrls,
+          reportType,
+          includedDailyReports: includedDailyReports.length > 0 ? includedDailyReports : undefined
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.summary) {
+        setSummaryText(data.summary);
+        setSections(parseSummary(data.summary));
+        toast.success(t('reviewSummary.regenerated', 'Report regenerated!'));
+      }
+    } catch (error) {
+      console.error('Error regenerating summary:', error);
+      toast.error(t('reviewSummary.regenerateFailed', 'Failed to regenerate report'));
+    } finally {
+      setIsRegenerating(false);
+    }
   };
 
   const fetchProjects = async () => {
@@ -157,7 +256,8 @@ const ReviewSummary = () => {
           project_name: t('reviewSummary.simpleModeReport'),
           customer_name: t('reviewSummary.standaloneReport'),
           job_number: `SM-${Date.now()}`,
-          job_description: summaryText
+          job_description: summaryText,
+          report_type: reportType
         };
 
         const { data: report, error: reportError } = await supabase
@@ -174,10 +274,10 @@ const ReviewSummary = () => {
 
         currentReportId = report.id;
       } else {
-        // Update existing project report with summary
+        // Update existing project report with summary and report type
         const { error: updateError } = await supabase
           .from('reports')
-          .update({ job_description: summaryText })
+          .update({ job_description: summaryText, report_type: reportType })
           .eq('id', currentReportId);
 
         if (updateError) {
@@ -254,8 +354,22 @@ const ReviewSummary = () => {
       </GlassNavbar>
 
       <main className="flex flex-col pb-32 animate-fade-in">
+        {/* Report Type Selector */}
+        <div className="p-4">
+          <ReportTypeSelector
+            selectedType={reportType}
+            onTypeChange={setReportType}
+            weeklySourceMode={weeklySourceMode}
+            onWeeklySourceModeChange={setWeeklySourceMode}
+            availableDailyReports={availableDailyReports}
+            selectedDailyReportIds={selectedDailyReportIds}
+            onDailyReportSelectionChange={setSelectedDailyReportIds}
+            isLoadingDailyReports={isLoadingDailyReports}
+          />
+        </div>
+
         {/* Accordions for Project Phases */}
-        <div className="flex flex-col gap-3 p-4">
+        <div className="flex flex-col gap-3 p-4 pt-0">
           {sections.map((section) => (
             <Collapsible
               key={section.id}
@@ -333,9 +447,17 @@ const ReviewSummary = () => {
         <Button
           onClick={handleRegenerateSummary}
           variant="secondary"
+          disabled={isRegenerating}
           className="w-full py-6 text-base font-semibold"
         >
-          {t('reviewSummary.regenerate')}
+          {isRegenerating ? (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              {t('reviewSummary.regenerating', 'Regenerating...')}
+            </>
+          ) : (
+            t('reviewSummary.regenerate')
+          )}
         </Button>
         
         {isSimpleMode ? (
