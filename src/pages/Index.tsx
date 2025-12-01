@@ -308,9 +308,9 @@ const Index = () => {
             variant="ghost"
             size="icon"
             onClick={() => navigate("/settings")}
-            className="rounded-xl hover:bg-muted/40"
+            className="rounded-xl hover:bg-muted/40 h-10 w-10"
           >
-            <SettingsIcon className="h-5 w-5 text-foreground" />
+            <SettingsIcon className="h-6 w-6 text-foreground" />
           </Button>
         </NavbarRight>
       </GlassNavbar>
