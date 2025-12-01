@@ -215,7 +215,10 @@
     "editCaption": "Editar Etiqueta de Foto",
     "editCaptionDescription": "Agrega o edita la etiqueta para esta foto. Las etiquetas aparecen debajo de las fotos en los informes.",
     "captionPlaceholder": "Ingresa la etiqueta de la foto...",
-    "captionSaved": "Etiqueta de foto guardada"
+    "captionSaved": "Etiqueta de foto guardada",
+    "upgradeToPremium": "Actualiza a Premium para más tiempo de grabación",
+    "recordingLimitWarning": "La grabación se detendrá en 30 segundos",
+    "recordingLimitReached": "Límite de grabación alcanzado"
   },
   "tasks": {
     "title": "Tareas",

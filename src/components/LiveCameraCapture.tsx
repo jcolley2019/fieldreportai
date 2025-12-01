@@ -19,6 +19,8 @@ interface LiveCameraCaptureProps {
   isPaused?: boolean;
   onPauseRecording?: () => void;
   onStopRecording?: () => void;
+  maxRecordingSeconds?: number;
+  onRecordingLimitReached?: () => void;
 }
 
 export const LiveCameraCapture = ({
@@ -29,6 +31,8 @@ export const LiveCameraCapture = ({
   isPaused = false,
   onPauseRecording,
   onStopRecording,
+  maxRecordingSeconds = 300, // Default 5 minutes
+  onRecordingLimitReached,
 }: LiveCameraCaptureProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -88,11 +92,32 @@ export const LiveCameraCapture = ({
     };
   }, [open, facingMode]);
 
-  // Timer effect for recording duration
+  // Timer effect for recording duration with limit enforcement
   useEffect(() => {
     if (isRecording && !isPaused) {
       timerRef.current = setInterval(() => {
-        setRecordingDuration((prev) => prev + 1);
+        setRecordingDuration((prev) => {
+          const newDuration = prev + 1;
+          
+          // Warning at 30 seconds before limit
+          if (newDuration === maxRecordingSeconds - 30) {
+            toast.warning(`Recording will stop in 30 seconds (${Math.floor(maxRecordingSeconds / 60)}-minute limit)`);
+          }
+          
+          // Stop recording when limit is reached
+          if (newDuration >= maxRecordingSeconds) {
+            toast.info(`Recording limit reached (${Math.floor(maxRecordingSeconds / 60)} minutes). Upgrade to Premium for longer recordings.`);
+            if (onStopRecording) {
+              onStopRecording();
+            }
+            if (onRecordingLimitReached) {
+              onRecordingLimitReached();
+            }
+            return maxRecordingSeconds;
+          }
+          
+          return newDuration;
+        });
       }, 1000);
     } else {
       if (timerRef.current) {
@@ -111,7 +136,7 @@ export const LiveCameraCapture = ({
         clearInterval(timerRef.current);
       }
     };
-  }, [isRecording, isPaused]);
+  }, [isRecording, isPaused, maxRecordingSeconds, onStopRecording, onRecordingLimitReached]);
 
   const formatDuration = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
