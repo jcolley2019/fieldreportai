@@ -595,6 +595,7 @@
   "savedReports": {
     "title": "Informes Guardados",
     "searchPlaceholder": "Buscar informes guardados...",
+    "filterAll": "Todos los Tipos",
     "emptyState": "Aún no hay informes guardados. ¡Los informes que guardes en la nube aparecerán aquí!",
     "sortRecent": "Más Reciente",
     "sortName": "Nombre del Archivo",
