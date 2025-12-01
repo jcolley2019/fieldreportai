@@ -12,14 +12,15 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
-// Price ID to plan mapping
+// Price ID to plan mapping (TEST MODE price IDs)
+// NOTE: Update these to live price IDs for production
 const PRICE_TO_PLAN: Record<string, string> = {
-  // Monthly prices
-  "price_1SZP0N2cM0XKZQKCwlByTPau": "pro",
-  "price_1SZP3L2cM0XKZQKCUpYyo0OK": "premium",
-  // Annual prices
-  "price_1SZP6j2cM0XKZQKCbGlkXO8F": "pro",
-  "price_1SZP8V2cM0XKZQKCOgD96dW0": "premium",
+  // Monthly prices (Test Mode)
+  "price_1SZOPAGsHdNVicmjmTZxpwwf": "pro",
+  "price_1SZOQpGsHdNVicmj0K3ZiwBr": "premium",
+  // Annual prices (Test Mode)
+  "price_1SZPVwGsHdNVicmjY7uO3cE6": "pro",
+  "price_1SZPYOGsHdNVicmj7sUaJd38": "premium",
 };
 
 serve(async (req) => {
