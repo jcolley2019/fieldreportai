@@ -161,13 +161,13 @@ export const LiveCameraCapture = ({
       }
 
       if (videoRef.current && stream) {
-        videoRef.current.srcObject = stream;
         streamRef.current = stream;
         
         // Re-enumerate devices to get labels (only available after permission granted)
         await enumerateDevices();
         
-        videoRef.current.onloadedmetadata = async () => {
+        // Set up metadata handler BEFORE assigning srcObject to avoid race condition
+        const handleMetadataLoaded = async () => {
           console.log('Video onloadedmetadata fired');
           try {
             await videoRef.current?.play();
@@ -204,6 +204,18 @@ export const LiveCameraCapture = ({
             console.log('Zoom not supported on this device');
           }
         };
+        
+        // Attach handler BEFORE setting srcObject
+        videoRef.current.onloadedmetadata = handleMetadataLoaded;
+        
+        // Now set the stream - this triggers metadata loading
+        videoRef.current.srcObject = stream;
+        
+        // Fallback: if metadata already loaded (readyState >= 1), call handler directly
+        if (videoRef.current.readyState >= 1) {
+          console.log('Video metadata already loaded, calling handler directly');
+          handleMetadataLoaded();
+        }
       }
     } catch (error) {
       console.error("Error accessing camera:", error);
