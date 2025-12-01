@@ -215,10 +215,6 @@ const Onboarding = () => {
       if (avatarFile) {
         try {
           avatarUrl = await uploadFile(avatarFile, "avatars", user.id, setUploadingAvatar);
-          toast({
-            title: "Avatar uploaded",
-            description: "Profile picture uploaded successfully",
-          });
         } catch (error: any) {
           throw new Error(`Avatar upload failed: ${error.message}`);
         }
@@ -228,10 +224,6 @@ const Onboarding = () => {
       if (logoFile) {
         try {
           logoUrl = await uploadFile(logoFile, "company-logos", user.id, setUploadingLogo);
-          toast({
-            title: "Logo uploaded",
-            description: "Company logo uploaded successfully",
-          });
         } catch (error: any) {
           throw new Error(`Logo upload failed: ${error.message}`);
         }
@@ -252,11 +244,7 @@ const Onboarding = () => {
 
       if (error) throw error;
 
-      toast({
-        title: t('onboarding.success.profileCreated'),
-        description: t('onboarding.success.redirecting'),
-      });
-
+      // Navigate directly without toast for smoother flow
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Onboarding error:", error);
@@ -326,11 +314,7 @@ const Onboarding = () => {
 
       if (error) throw error;
 
-      toast({
-        title: t('onboarding.progressSaved'),
-        description: t('onboarding.continueSetup'),
-      });
-
+      // Navigate directly without toast for smoother flow
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Save progress error:", error);
