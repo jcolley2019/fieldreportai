@@ -95,14 +95,14 @@ interface PricingSectionProps {
 
 export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = true, billingPeriod: externalBillingPeriod }) => {
   const [internalBillingPeriod, setInternalBillingPeriod] = useState<"monthly" | "annual">("monthly");
-  const [loading, setLoading] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [showEnterpriseDialog, setShowEnterpriseDialog] = useState(false);
   const navigate = useNavigate();
 
   const billingPeriod = externalBillingPeriod ?? internalBillingPeriod;
 
   const handleStartTrial = async () => {
-    setLoading(true);
+    setLoadingPlan('trial');
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -140,12 +140,12 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
       console.error('Error activating trial:', error);
       toast.error("Failed to activate trial. Please try again.");
     } finally {
-      setLoading(false);
+      setLoadingPlan(null);
     }
   };
 
   const handleStartPlan = async (planKey: 'pro' | 'premium') => {
-    setLoading(true);
+    setLoadingPlan(planKey);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -171,7 +171,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
       console.error('Error starting checkout:', error);
       toast.error("Failed to start checkout. Please try again.");
     } finally {
-      setLoading(false);
+      setLoadingPlan(null);
     }
   };
 
@@ -261,9 +261,9 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
                       className="w-full" 
                       variant={plan.popular ? "default" : "outline"}
                       onClick={handleStartTrial}
-                      disabled={loading}
+                      disabled={loadingPlan === 'trial'}
                     >
-                      {loading ? "Activating..." : plan.cta}
+                      {loadingPlan === 'trial' ? "Activating..." : plan.cta}
                     </Button>
                   ) : plan.name === "Enterprise" ? (
                     <Button 
@@ -278,9 +278,9 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
                       className="w-full" 
                       variant={plan.popular ? "default" : "outline"}
                       onClick={() => handleStartPlan(plan.name.toLowerCase() as 'pro' | 'premium')}
-                      disabled={loading}
+                      disabled={loadingPlan === plan.name.toLowerCase()}
                     >
-                      {loading ? "Processing..." : plan.cta}
+                      {loadingPlan === plan.name.toLowerCase() ? "Processing..." : plan.cta}
                     </Button>
                   )}
                 </CardContent>
