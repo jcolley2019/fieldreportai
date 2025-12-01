@@ -623,13 +623,30 @@ export const LiveCameraCapture = ({
               {/* Center: Recording indicator or Camera name */}
               <div className="flex flex-col items-center gap-1">
                 {isRecording ? (
-                  <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm shadow-lg ${
-                    isPaused 
-                      ? 'bg-destructive text-white shadow-destructive/50' 
-                      : 'bg-green-500 text-white shadow-green-500/50'
-                  }`}>
-                    <div className={`h-3 w-3 rounded-full bg-white ${isPaused ? '' : 'animate-pulse'}`}></div>
-                    <span className="font-mono">{formatDuration(recordingDuration)}</span>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm shadow-lg ${
+                      isPaused 
+                        ? 'bg-destructive text-white shadow-destructive/50' 
+                        : 'bg-green-500 text-white shadow-green-500/50'
+                    }`}>
+                      <div className={`h-3 w-3 rounded-full bg-white ${isPaused ? '' : 'animate-pulse'}`}></div>
+                      <span className="font-mono">
+                        {formatDuration(recordingDuration)} / {formatDuration(maxRecordingSeconds)}
+                      </span>
+                    </div>
+                    {/* Progress bar showing remaining time */}
+                    <div className="w-32 h-1.5 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
+                      <div 
+                        className={`h-full transition-all duration-1000 ease-linear rounded-full ${
+                          recordingDuration / maxRecordingSeconds > 0.9 
+                            ? 'bg-destructive' 
+                            : recordingDuration / maxRecordingSeconds > 0.7 
+                            ? 'bg-yellow-500' 
+                            : 'bg-green-500'
+                        }`}
+                        style={{ width: `${(recordingDuration / maxRecordingSeconds) * 100}%` }}
+                      />
+                    </div>
                   </div>
                 ) : (
                   /* Active camera name */
