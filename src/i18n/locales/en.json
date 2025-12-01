@@ -306,6 +306,7 @@
     "copyLink": "Copy Link",
     "clear": "Clear",
     "noteCleared": "Note cleared",
+    "noteRestored": "Note restored",
     "saveOptions": "Save Options",
     "savePDF": "Save as PDF",
     "saveWord": "Save as Word",
@@ -684,6 +685,7 @@
     "loadFailed": "Failed to load",
     "recordingStopped": "Recording... tap to stop",
     "recordingPaused": "Recording paused",
-    "recordingResumed": "Recording resumed"
+    "recordingResumed": "Recording resumed",
+    "undo": "Undo"
   }
 }

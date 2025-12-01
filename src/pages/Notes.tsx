@@ -40,6 +40,7 @@ const Notes = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projectReportId);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [lastClearedContent, setLastClearedContent] = useState<{ noteText: string; organizedNotes: string } | null>(null);
 
   useEffect(() => {
     if (showOptionsDialog && isSimpleMode && !projectReportId) {
@@ -469,9 +470,26 @@ const Notes = () => {
       toast.error(t('notes.noContent'));
       return;
     }
+    
+    // Store content for undo
+    const clearedContent = { noteText, organizedNotes };
+    setLastClearedContent(clearedContent);
+    
     setNoteText("");
     setOrganizedNotes("");
-    toast.success(t('notes.noteCleared', { defaultValue: 'Note cleared' }));
+    
+    toast.success(t('notes.noteCleared', { defaultValue: 'Note cleared' }), {
+      action: {
+        label: t('common.undo', { defaultValue: 'Undo' }),
+        onClick: () => {
+          setNoteText(clearedContent.noteText);
+          setOrganizedNotes(clearedContent.organizedNotes);
+          setLastClearedContent(null);
+          toast.success(t('notes.noteRestored', { defaultValue: 'Note restored' }));
+        },
+      },
+      duration: 5000,
+    });
   };
 
   const handlePrint = () => {
