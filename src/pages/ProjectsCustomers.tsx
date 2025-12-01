@@ -212,7 +212,7 @@ const ProjectsCustomers = () => {
               {filteredProjects.map((project) => (
                 <div
                   key={project.id}
-                  onClick={() => navigate(`/projects/${project.id}`)}
+                  onClick={() => navigate(`/project/${project.id}`)}
                   className="flex items-start gap-4 rounded-lg bg-card p-4 hover:bg-secondary/50 transition-colors cursor-pointer"
                 >
                   <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
