@@ -82,9 +82,24 @@ serve(async (req) => {
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      const priceId = subscription.items.data[0].price.id;
-      plan = PRICE_TO_PLAN[priceId] || "pro";
+      logStep("Processing subscription", { 
+        subscriptionId: subscription.id,
+        current_period_end: subscription.current_period_end,
+        items: subscription.items?.data?.length 
+      });
+      
+      // Safely convert subscription end date
+      if (subscription.current_period_end) {
+        const endTimestamp = typeof subscription.current_period_end === 'number' 
+          ? subscription.current_period_end * 1000 
+          : Date.parse(subscription.current_period_end);
+        if (!isNaN(endTimestamp)) {
+          subscriptionEnd = new Date(endTimestamp).toISOString();
+        }
+      }
+      
+      const priceId = subscription.items?.data?.[0]?.price?.id;
+      plan = priceId ? (PRICE_TO_PLAN[priceId] || "pro") : "pro";
       logStep("Active subscription found", { 
         subscriptionId: subscription.id, 
         priceId,
