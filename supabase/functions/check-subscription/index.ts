@@ -85,17 +85,36 @@ serve(async (req) => {
       logStep("Processing subscription", { 
         subscriptionId: subscription.id,
         current_period_end: subscription.current_period_end,
+        current_period_end_type: typeof subscription.current_period_end,
         items: subscription.items?.data?.length 
       });
       
-      // Safely convert subscription end date
-      if (subscription.current_period_end) {
-        const endTimestamp = typeof subscription.current_period_end === 'number' 
-          ? subscription.current_period_end * 1000 
-          : Date.parse(subscription.current_period_end);
-        if (!isNaN(endTimestamp)) {
-          subscriptionEnd = new Date(endTimestamp).toISOString();
+      // Safely convert subscription end date with try-catch
+      try {
+        if (subscription.current_period_end != null) {
+          const rawValue = subscription.current_period_end;
+          let endTimestamp: number;
+          
+          if (typeof rawValue === 'number') {
+            endTimestamp = rawValue * 1000;
+          } else if (typeof rawValue === 'string') {
+            endTimestamp = Date.parse(rawValue);
+          } else {
+            endTimestamp = NaN;
+          }
+          
+          if (!isNaN(endTimestamp) && isFinite(endTimestamp)) {
+            const dateObj = new Date(endTimestamp);
+            if (dateObj instanceof Date && !isNaN(dateObj.getTime())) {
+              subscriptionEnd = dateObj.toISOString();
+            }
+          }
         }
+      } catch (dateError) {
+        logStep("Warning: Failed to parse subscription end date", { 
+          error: dateError instanceof Error ? dateError.message : String(dateError),
+          rawValue: subscription.current_period_end 
+        });
       }
       
       const priceId = subscription.items?.data?.[0]?.price?.id;
