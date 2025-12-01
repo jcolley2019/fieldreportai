@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { EnterpriseSalesDialog } from "./EnterpriseSalesDialog";
+import { STRIPE_PRICES } from "@/lib/stripe";
 
 const pricingPlans = [
   {
@@ -143,6 +144,37 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
     }
   };
 
+  const handleStartPlan = async (planKey: 'pro' | 'premium') => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+
+      const priceId = STRIPE_PRICES[planKey].priceId;
+      
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { priceId },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (error) {
+      console.error('Error starting checkout:', error);
+      toast.error("Failed to start checkout. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section id="pricing" className="pt-0 pb-8 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -242,11 +274,14 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
                       {plan.cta}
                     </Button>
                   ) : (
-                    <Link to="/auth">
-                      <Button className="w-full" variant={plan.popular ? "default" : "outline"}>
-                        {plan.cta}
-                      </Button>
-                    </Link>
+                    <Button 
+                      className="w-full" 
+                      variant={plan.popular ? "default" : "outline"}
+                      onClick={() => handleStartPlan(plan.name.toLowerCase() as 'pro' | 'premium')}
+                      disabled={loading}
+                    >
+                      {loading ? "Processing..." : plan.cta}
+                    </Button>
                   )}
                 </CardContent>
               </Card>

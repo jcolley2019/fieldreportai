@@ -101,6 +101,7 @@
     "failedLoadProjects": "Failed to load projects",
     "projectDeleted": "Project deleted successfully",
     "failedDeleteProject": "Failed to delete project",
+    "subscriptionSuccess": "Subscription activated successfully!",
     "projectModeDialog": {
       "title": "Project Mode",
       "description": "Create comprehensive field reports and checklists linked to a specific project or customer",
