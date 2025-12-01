@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { toast } from "sonner";
-import { Download, Trash2, FileText, Cloud, Search, Filter, Calendar, CalendarDays, MapPin } from "lucide-react";
+import { Download, Trash2, FileText, Cloud, Search, Filter, Calendar, CalendarDays, MapPin, Mail, Send, Loader2, X, CheckSquare, Square } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -27,7 +27,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { formatDateTime } from '@/lib/dateFormat';
+import JSZip from 'jszip';
 
 interface SavedReport {
   id: string;
@@ -50,6 +55,15 @@ const SavedReports = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<SavedReport | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Selection and email state
+  const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [recipientName, setRecipientName] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   useEffect(() => {
     loadSavedReports();
@@ -264,6 +278,112 @@ const SavedReports = () => {
       }
     });
 
+  const toggleReportSelection = (reportId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newSelected = new Set(selectedReports);
+    if (newSelected.has(reportId)) {
+      newSelected.delete(reportId);
+    } else {
+      newSelected.add(reportId);
+    }
+    setSelectedReports(newSelected);
+    if (newSelected.size === 0) {
+      setSelectionMode(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedReports.size === filteredReports.length) {
+      setSelectedReports(new Set());
+      setSelectionMode(false);
+    } else {
+      setSelectedReports(new Set(filteredReports.map(r => r.id)));
+    }
+  };
+
+  const cancelSelection = () => {
+    setSelectedReports(new Set());
+    setSelectionMode(false);
+  };
+
+  const handleBulkEmail = async () => {
+    if (!recipientEmail || selectedReports.size === 0) {
+      toast.error('Please enter a recipient email');
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name, first_name, last_name, company_name')
+        .eq('id', user.id)
+        .single();
+
+      const senderName = profile?.display_name || 
+        `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 
+        'Field Report User';
+
+      // Download selected reports and create ZIP
+      const selectedReportsData = reports.filter(r => selectedReports.has(r.id));
+      const zip = new JSZip();
+
+      for (const report of selectedReportsData) {
+        const { data, error } = await supabase.storage
+          .from('documents')
+          .download(report.file_path);
+
+        if (!error && data) {
+          zip.file(report.file_name, data);
+        }
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      
+      // Convert to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve) => {
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+      });
+      reader.readAsDataURL(zipBlob);
+      const base64Data = await base64Promise;
+
+      // Send email
+      const { error } = await supabase.functions.invoke('send-export-email', {
+        body: {
+          recipientEmail,
+          recipientName: recipientName || undefined,
+          senderName,
+          subject: `Saved Reports (${selectedReports.size} reports)`,
+          message: emailMessage || undefined,
+          fileData: base64Data,
+          fileName: `Saved_Reports_${new Date().toISOString().split('T')[0]}.zip`,
+          fileSize: zipBlob.size,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success(`Email sent with ${selectedReports.size} reports`);
+      setEmailDialogOpen(false);
+      setRecipientEmail("");
+      setRecipientName("");
+      setEmailMessage("");
+      cancelSelection();
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast.error('Failed to send email');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="dark min-h-screen bg-background">
@@ -290,6 +410,52 @@ const SavedReports = () => {
       </GlassNavbar>
 
       <main className="p-4 animate-fade-in">
+        {/* Bulk Actions Bar */}
+        {selectionMode && selectedReports.size > 0 && (
+          <div className="mb-4 flex items-center justify-between rounded-lg bg-primary/10 p-3 border border-primary/20">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={cancelSelection}
+                className="gap-1"
+              >
+                <X className="h-4 w-4" />
+                Cancel
+              </Button>
+              <span className="text-sm text-foreground">
+                {selectedReports.size} selected
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleSelectAll}
+                className="gap-1"
+              >
+                {selectedReports.size === filteredReports.length ? (
+                  <>
+                    <Square className="h-4 w-4" />
+                    Deselect All
+                  </>
+                ) : (
+                  <>
+                    <CheckSquare className="h-4 w-4" />
+                    Select All
+                  </>
+                )}
+              </Button>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => setEmailDialogOpen(true)}
+              className="gap-2"
+            >
+              <Mail className="h-4 w-4" />
+              Email Selected
+            </Button>
+          </div>
+        )}
+
         {/* Search and Filter - Always visible */}
         <div className="mb-4 flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
@@ -302,28 +468,41 @@ const SavedReports = () => {
               className="pl-9 bg-card border-border text-foreground placeholder:text-muted-foreground"
             />
           </div>
-          <Select value={filterType} onValueChange={(value: "all" | "daily" | "weekly" | "site_survey") => setFilterType(value)}>
-            <SelectTrigger className="w-full sm:w-[160px] bg-card border-border text-foreground">
-              <SelectValue placeholder={t('savedReports.filterAll')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('savedReports.filterAll')}</SelectItem>
-              <SelectItem value="daily">{t('reportType.daily')}</SelectItem>
-              <SelectItem value="weekly">{t('reportType.weekly')}</SelectItem>
-              <SelectItem value="site_survey">{t('reportType.siteSurvey')}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={sortBy} onValueChange={(value: "recent" | "name" | "size") => setSortBy(value)}>
-            <SelectTrigger className="w-full sm:w-[140px] bg-card border-border text-foreground">
-              <Filter className="mr-2 h-4 w-4" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="recent">{t('savedReports.sortRecent')}</SelectItem>
-              <SelectItem value="name">{t('savedReports.sortName')}</SelectItem>
-              <SelectItem value="size">{t('savedReports.sortSize')}</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            {!selectionMode && reports.length > 0 && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSelectionMode(true)}
+                className="flex-shrink-0"
+                title="Select reports"
+              >
+                <CheckSquare className="h-4 w-4" />
+              </Button>
+            )}
+            <Select value={filterType} onValueChange={(value: "all" | "daily" | "weekly" | "site_survey") => setFilterType(value)}>
+              <SelectTrigger className="w-full sm:w-[160px] bg-card border-border text-foreground">
+                <SelectValue placeholder={t('savedReports.filterAll')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('savedReports.filterAll')}</SelectItem>
+                <SelectItem value="daily">{t('reportType.daily')}</SelectItem>
+                <SelectItem value="weekly">{t('reportType.weekly')}</SelectItem>
+                <SelectItem value="site_survey">{t('reportType.siteSurvey')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={(value: "recent" | "name" | "size") => setSortBy(value)}>
+              <SelectTrigger className="w-full sm:w-[140px] bg-card border-border text-foreground">
+                <Filter className="mr-2 h-4 w-4" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">{t('savedReports.sortRecent')}</SelectItem>
+                <SelectItem value="name">{t('savedReports.sortName')}</SelectItem>
+                <SelectItem value="size">{t('savedReports.sortSize')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         
         {/* Reports List */}
@@ -346,9 +525,20 @@ const SavedReports = () => {
               return (
                 <div
                   key={report.id}
-                  className="flex items-start gap-4 rounded-lg bg-card p-4 hover:bg-secondary/50 transition-colors cursor-pointer"
-                  onClick={() => handleDownload(report, { stopPropagation: () => {} } as React.MouseEvent)}
+                  onClick={() => selectionMode ? toggleReportSelection(report.id, { stopPropagation: () => {} } as React.MouseEvent) : handleDownload(report, { stopPropagation: () => {} } as React.MouseEvent)}
+                  className={`flex items-start gap-4 rounded-lg bg-card p-4 hover:bg-secondary/50 transition-colors cursor-pointer ${selectedReports.has(report.id) ? 'ring-2 ring-primary bg-primary/5' : ''}`}
                 >
+                  {selectionMode && (
+                    <div 
+                      className="flex-shrink-0 pt-1"
+                      onClick={(e) => toggleReportSelection(report.id, e)}
+                    >
+                      <Checkbox
+                        checked={selectedReports.has(report.id)}
+                        className="h-5 w-5"
+                      />
+                    </div>
+                  )}
                   <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
                     <FileText className="h-7 w-7 text-primary" />
                   </div>
@@ -378,29 +568,97 @@ const SavedReports = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2 flex-shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleDownload(report, e)}
-                      className="text-primary hover:text-primary hover:bg-primary/10"
-                    >
-                      <Download className="h-5 w-5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleDeleteClick(report, e)}
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </Button>
-                  </div>
+                  {!selectionMode && (
+                    <div className="flex gap-2 flex-shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleDownload(report, e)}
+                        className="text-primary hover:text-primary hover:bg-primary/10"
+                      >
+                        <Download className="h-5 w-5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleDeleteClick(report, e)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         )}
+
+        {/* Email Dialog */}
+        <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Share Reports via Email</DialogTitle>
+              <DialogDescription>
+                Send {selectedReports.size} report{selectedReports.size !== 1 ? 's' : ''} as a ZIP file attachment
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="bulkRecipientEmail">Recipient Email *</Label>
+                <Input
+                  id="bulkRecipientEmail"
+                  type="email"
+                  placeholder="email@example.com"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bulkRecipientName">Recipient Name (optional)</Label>
+                <Input
+                  id="bulkRecipientName"
+                  type="text"
+                  placeholder="John Doe"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bulkEmailMessage">Message (optional)</Label>
+                <Textarea
+                  id="bulkEmailMessage"
+                  placeholder="Add a personal message..."
+                  value={emailMessage}
+                  onChange={(e) => setEmailMessage(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleBulkEmail} 
+                disabled={sendingEmail || !recipientEmail}
+                className="gap-2"
+              >
+                {sendingEmail ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    Send Email
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
 
       {/* Delete Confirmation Dialog */}
