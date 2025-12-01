@@ -48,7 +48,8 @@ serve(async (req) => {
       logStep("Existing customer found", { customerId });
     }
 
-    const origin = req.headers.get("origin") || "https://field-report-ai.lovable.app";
+    const origin = req.headers.get("origin") || "https://72d0b820-01c5-474d-bd77-17065efabad1.lovableproject.com";
+    logStep("Using origin", { origin });
     
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -60,7 +61,7 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${origin}/dashboard?checkout=success`,
+      success_url: `${origin}/?checkout=success`,
       cancel_url: `${origin}/pricing?checkout=cancelled`,
       metadata: {
         user_id: user.id,
