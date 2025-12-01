@@ -178,7 +178,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
           </div>
         )}
 
-        <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-4 gap-8 max-w-7xl mx-auto">
           {pricingPlans.map((plan, index) => {
             const displayPrice = billingPeriod === "monthly" ? plan.monthlyPrice : plan.annualPrice;
             return (
