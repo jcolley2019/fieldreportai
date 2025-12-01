@@ -114,6 +114,7 @@ interface ReportPDFProps {
     job_number: string;
     job_description: string;
     created_at: string;
+    report_type?: string;
   };
   media?: Array<{ id: string; file_path: string; file_type: string }>;
   checklists?: Array<{
@@ -129,6 +130,19 @@ interface ReportPDFProps {
   }>;
   mediaUrls?: Map<string, string>;
 }
+
+const getReportTypeLabel = (reportType?: string) => {
+  switch (reportType) {
+    case 'daily':
+      return 'Daily Report';
+    case 'weekly':
+      return 'Weekly Report';
+    case 'site_survey':
+      return 'Site Survey';
+    default:
+      return 'Daily Report';
+  }
+};
 
 export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls }: ReportPDFProps) => {
   const formatDate = (dateString: string) => {
@@ -164,7 +178,7 @@ export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls }
         <View style={styles.header}>
           <Text style={styles.title}>{reportData.project_name}</Text>
           <Text style={styles.subtitle}>
-            {reportData.customer_name} • Job #{reportData.job_number}
+            {getReportTypeLabel(reportData.report_type)} • Job #{reportData.job_number}
           </Text>
           <Text style={styles.date}>
             Generated on {formatDate(reportData.created_at)}
