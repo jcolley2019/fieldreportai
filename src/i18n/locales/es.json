@@ -631,6 +631,7 @@
     "dateToday": "Hoy",
     "dateWeek": "Esta Semana",
     "dateMonth": "Este Mes",
+    "reportTypeAll": "Todos los Tipos",
     "exportFormat": "Formato de Exportación",
     "emailExportTitle": "Exportar por Correo Electrónico",
     "emailExportDescription": "Envía el contenido exportado por correo electrónico. Los archivos grandes se enviarán como enlaces de descarga.",
