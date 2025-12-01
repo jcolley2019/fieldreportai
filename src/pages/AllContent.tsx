@@ -239,6 +239,19 @@ const AllContent = () => {
 
   const filteredContent = getFilteredAndSortedContent();
 
+  const getReportTypeLabel = (reportType?: string | null) => {
+    switch (reportType) {
+      case 'daily':
+        return 'Daily Report';
+      case 'weekly':
+        return 'Weekly Report';
+      case 'site_survey':
+        return 'Site Survey';
+      default:
+        return 'Daily Report';
+    }
+  };
+
   const generateReportPDF = async (report: Report) => {
     const pdfStyles = StyleSheet.create({
       page: { padding: 40, backgroundColor: '#ffffff' },
@@ -254,7 +267,7 @@ const AllContent = () => {
         <Page size="A4" style={pdfStyles.page}>
           <Text style={pdfStyles.title}>{report.project_name}</Text>
           <Text style={pdfStyles.subtitle}>
-            Field Report - {formatDateLong(report.created_at)}
+            {getReportTypeLabel(report.report_type)} - {formatDateLong(report.created_at)}
           </Text>
           
           <View style={pdfStyles.section}>
@@ -336,7 +349,7 @@ const AllContent = () => {
       new Paragraph({
         children: [
           new TextRun({
-            text: `Field Report - ${formatDateLong(report.created_at)}`,
+            text: `${getReportTypeLabel(report.report_type)} - ${formatDateLong(report.created_at)}`,
             size: 20,
             color: "666666",
           }),
