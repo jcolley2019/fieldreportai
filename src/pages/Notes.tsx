@@ -6,7 +6,7 @@ import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { Textarea } from "@/components/ui/textarea";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Mic, MicOff, Save, Download, Mail, Printer, FileText, Plus, Link2, Cloud, ChevronDown, Link, Loader2, Check } from "lucide-react";
+import { Mic, MicOff, Save, Download, Mail, Printer, FileText, Plus, Link2, Cloud, ChevronDown, Link, Loader2, Check, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -464,6 +464,16 @@ const Notes = () => {
     }
   };
 
+  const handleClearNote = () => {
+    if (!noteText && !organizedNotes) {
+      toast.error(t('notes.noContent'));
+      return;
+    }
+    setNoteText("");
+    setOrganizedNotes("");
+    toast.success(t('notes.noteCleared', { defaultValue: 'Note cleared' }));
+  };
+
   const handlePrint = () => {
     const content = organizedNotes || noteText;
     if (!content) {
@@ -709,6 +719,21 @@ const Notes = () => {
         {/* Secondary Actions Bar (Centered) */}
         <div className="border-t border-zinc-800 px-4 py-4">
           <div className="flex items-center justify-center gap-2 md:gap-3">
+            {/* Clear Note */}
+            <Button
+              onClick={handleClearNote}
+              variant="ghost"
+              size="sm"
+              className="gap-2 text-zinc-400 hover:text-red-400 hover:bg-red-400/10"
+              disabled={!noteText && !organizedNotes}
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="hidden md:inline">{t('notes.clear', { defaultValue: 'Clear' })}</span>
+            </Button>
+
+            {/* Divider */}
+            <div className="hidden md:block h-8 w-px bg-zinc-700" />
+
             {/* Tertiary Action - Copy Link */}
             <Button
               onClick={handleCopyLink}

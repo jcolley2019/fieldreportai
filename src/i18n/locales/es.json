@@ -304,6 +304,8 @@
     "quickSave": "Guardado Rápido",
     "print": "Imprimir",
     "copyLink": "Copiar Enlace",
+    "clear": "Borrar",
+    "noteCleared": "Nota borrada",
     "saveOptions": "Opciones de Guardado",
     "savePDF": "Guardar como PDF",
     "saveWord": "Guardar como Word",
