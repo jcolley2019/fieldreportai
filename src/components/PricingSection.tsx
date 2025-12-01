@@ -154,7 +154,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
         return;
       }
 
-      const priceId = STRIPE_PRICES[planKey].priceId;
+      const priceId = STRIPE_PRICES[planKey][billingPeriod].priceId;
       
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { priceId },
