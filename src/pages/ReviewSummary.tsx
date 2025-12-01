@@ -287,22 +287,59 @@ const ReviewSummary = () => {
         }
       }
 
-      // Save captured images to media table
+      // Upload captured images to storage and save to media table
       if (capturedImages.length > 0) {
-        const mediaEntries = capturedImages.map((image: any) => ({
-          user_id: user.id,
-          report_id: currentReportId,
-          file_path: image.path || image.url,
-          file_type: 'image',
-          mime_type: 'image/jpeg'
-        }));
-
-        const { error: mediaError } = await supabase
-          .from('media')
-          .insert(mediaEntries);
-
-        if (mediaError) {
-          console.error("Error saving media:", mediaError);
+        for (const image of capturedImages) {
+          try {
+            let storagePath = '';
+            
+            // If we have base64 data, convert to blob and upload
+            if (image.base64 && image.base64.startsWith('data:')) {
+              // Convert base64 to blob
+              const response = await fetch(image.base64);
+              const blob = await response.blob();
+              
+              const fileExt = image.base64.includes('image/png') ? 'png' : 'jpg';
+              const fileName = `${user.id}/${currentReportId}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+              
+              const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('media')
+                .upload(fileName, blob, {
+                  contentType: blob.type || 'image/jpeg',
+                  upsert: false
+                });
+              
+              if (uploadError) {
+                console.error("Error uploading image:", uploadError);
+                continue;
+              }
+              
+              storagePath = uploadData.path;
+            } else if (image.url && !image.url.startsWith('blob:')) {
+              // If it's already a valid URL (not blob), use it
+              storagePath = image.url;
+            } else {
+              console.warn("Skipping image without valid data:", image.id);
+              continue;
+            }
+            
+            // Save to media table
+            const { error: mediaError } = await supabase
+              .from('media')
+              .insert({
+                user_id: user.id,
+                report_id: currentReportId,
+                file_path: storagePath,
+                file_type: 'image',
+                mime_type: 'image/jpeg'
+              });
+            
+            if (mediaError) {
+              console.error("Error saving media record:", mediaError);
+            }
+          } catch (err) {
+            console.error("Error processing image:", err);
+          }
         }
       }
 
