@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2, Printer, Download } from "lucide-react";
+import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2, Printer, Download, Mail, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,10 @@ import { ReportPDF } from '@/components/ReportPDF';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { saveAs } from 'file-saver';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ProjectData {
   id: string;
@@ -64,6 +68,13 @@ const ProjectDetail = () => {
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [checklists, setChecklists] = useState<ChecklistData[]>([]);
   const [documents, setDocuments] = useState<DocumentData[]>([]);
+  
+  // Email sharing state
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [recipientName, setRecipientName] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   useEffect(() => {
     if (projectId) {
@@ -335,6 +346,88 @@ const ProjectDetail = () => {
     }
   };
 
+  const handleSendEmail = async () => {
+    if (!project || !recipientEmail) {
+      toast.error('Please enter a recipient email');
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Get user profile for sender name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name, first_name, last_name, company_name')
+        .eq('id', user.id)
+        .single();
+
+      const senderName = profile?.display_name || 
+        `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 
+        'Field Report User';
+
+      // Generate PDF
+      const mediaUrlsMap = new Map<string, string>();
+      media.forEach(item => {
+        const url = mediaUrls[item.id];
+        if (url) mediaUrlsMap.set(item.id, url);
+      });
+
+      const blob = await pdf(
+        <ReportPDF 
+          reportData={{
+            ...project,
+            report_type: (project as any).report_type
+          }}
+          media={media}
+          checklists={checklists}
+          mediaUrls={mediaUrlsMap}
+        />
+      ).toBlob();
+
+      // Convert blob to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve) => {
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+      });
+      reader.readAsDataURL(blob);
+      const base64Data = await base64Promise;
+
+      // Send email via edge function
+      const { data, error } = await supabase.functions.invoke('send-export-email', {
+        body: {
+          recipientEmail,
+          recipientName: recipientName || undefined,
+          senderName,
+          subject: `Project Details: ${project.project_name}`,
+          message: emailMessage || undefined,
+          fileData: base64Data,
+          fileName: `${project.project_name.replace(/\s+/g, '_')}_Report.pdf`,
+          fileSize: blob.size,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success('Email sent successfully');
+      setEmailDialogOpen(false);
+      setRecipientEmail("");
+      setRecipientName("");
+      setEmailMessage("");
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast.error('Failed to send email');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="dark min-h-screen bg-background">
@@ -433,6 +526,76 @@ const ProjectDetail = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex-1 gap-2">
+                <Mail className="h-4 w-4" />
+                Email
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Share via Email</DialogTitle>
+                <DialogDescription>
+                  Send project details as a PDF attachment
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="recipientEmail">Recipient Email *</Label>
+                  <Input
+                    id="recipientEmail"
+                    type="email"
+                    placeholder="email@example.com"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="recipientName">Recipient Name (optional)</Label>
+                  <Input
+                    id="recipientName"
+                    type="text"
+                    placeholder="John Doe"
+                    value={recipientName}
+                    onChange={(e) => setRecipientName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emailMessage">Message (optional)</Label>
+                  <Textarea
+                    id="emailMessage"
+                    placeholder="Add a personal message..."
+                    value={emailMessage}
+                    onChange={(e) => setEmailMessage(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSendEmail} 
+                  disabled={sendingEmail || !recipientEmail}
+                  className="gap-2"
+                >
+                  {sendingEmail ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      Send Email
+                    </>
+                  )}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Content Tabs */}
