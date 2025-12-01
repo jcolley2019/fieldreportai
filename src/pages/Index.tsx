@@ -300,9 +300,9 @@ const Index = () => {
               }, 200);
             }}
             size="sm"
-            className={`gap-2 transition-all duration-200 ${isUpgradeClicked ? "scale-95" : "hover:scale-105 hover:shadow-glow-blue"}`}
+            className={`gap-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold shadow-lg transition-all duration-300 ${isUpgradeClicked ? "scale-95" : "hover:scale-105 hover:shadow-[0_0_20px_hsl(var(--primary)/0.5)] hover:from-primary/90 hover:to-primary"}`}
           >
-            <Zap className="h-4 w-4" />
+            <Zap className="h-4 w-4 fill-current" />
             {t('dashboard.upgradeNow')}
           </Button>
           <Button
