@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { FileText, Camera, Mic, Share2, Eye, ChevronDown, ChevronRight, Settings
 import { toast } from "sonner";
 import { TrialBanner } from "@/components/TrialBanner";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import {
   Select,
   SelectContent,
@@ -43,6 +44,7 @@ interface Project {
 
 const Index = () => {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -54,6 +56,18 @@ const Index = () => {
   const [isUpgradeClicked, setIsUpgradeClicked] = useState(false);
   const [isProjectsSectionVisible, setIsProjectsSectionVisible] = useState(false);
   const navigate = useNavigate();
+  const { refreshPlan, currentPlan, features } = usePlanFeatures();
+
+  // Handle checkout success
+  useEffect(() => {
+    const checkoutStatus = searchParams.get('checkout');
+    if (checkoutStatus === 'success') {
+      toast.success(t('dashboard.subscriptionSuccess') || 'Subscription activated successfully!');
+      refreshPlan();
+      // Remove the query param
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams, refreshPlan, t]);
 
   useEffect(() => {
     // Set up auth state listener

@@ -101,6 +101,7 @@
     "failedLoadProjects": "Error al cargar proyectos",
     "projectDeleted": "Proyecto eliminado exitosamente",
     "failedDeleteProject": "Error al eliminar proyecto",
+    "subscriptionSuccess": "¡Suscripción activada exitosamente!",
     "projectModeDialog": {
       "title": "Modo Proyecto",
       "description": "Crear informes de campo completos y listas de verificación vinculadas a un proyecto o cliente específico",
