@@ -56,6 +56,7 @@ const ProjectDetail = () => {
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<ProjectData | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
+  const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [checklists, setChecklists] = useState<ChecklistData[]>([]);
   const [documents, setDocuments] = useState<DocumentData[]>([]);
 
@@ -88,6 +89,18 @@ const ProjectDetail = () => {
 
       if (!mediaError && mediaData) {
         setMedia(mediaData);
+        
+        // Generate signed URLs for private bucket
+        const urls: Record<string, string> = {};
+        for (const item of mediaData) {
+          const { data: signedUrlData } = await supabase.storage
+            .from('media')
+            .createSignedUrl(item.file_path, 3600); // 1 hour expiry
+          if (signedUrlData?.signedUrl) {
+            urls[item.id] = signedUrlData.signedUrl;
+          }
+        }
+        setMediaUrls(urls);
       }
 
       // Fetch checklists with items
@@ -174,9 +187,8 @@ const ProjectDetail = () => {
     return formatDate(dateString);
   };
 
-  const getMediaUrl = (filePath: string) => {
-    const { data } = supabase.storage.from('media').getPublicUrl(filePath);
-    return data.publicUrl;
+  const getMediaUrl = (mediaId: string) => {
+    return mediaUrls[mediaId] || '';
   };
 
   if (loading) {
@@ -282,9 +294,12 @@ const ProjectDetail = () => {
                     <div className="aspect-square overflow-hidden rounded-lg bg-secondary">
                       {item.file_type === 'image' ? (
                         <img
-                          src={getMediaUrl(item.file_path)}
+                          src={getMediaUrl(item.id)}
                           alt="Project media"
                           className="h-full w-full object-cover"
+                          onError={(e) => {
+                            console.error('Image load error for:', item.file_path);
+                          }}
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center">
