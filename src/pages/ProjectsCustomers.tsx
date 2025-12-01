@@ -7,7 +7,7 @@ import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { Input } from "@/components/ui/input";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Building2, Hash, User as UserIcon, ListChecks, Search, Filter, Plus, Trash2 } from "lucide-react";
+import { Building2, Hash, User as UserIcon, ListChecks, Search, Filter, Plus, Trash2, Mail, Send, Loader2, X, CheckSquare, Square } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -16,6 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { pdf } from '@react-pdf/renderer';
+import { ReportPDF } from '@/components/ReportPDF';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 interface Project {
   id: string;
@@ -34,6 +42,15 @@ const ProjectsCustomers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"recent" | "name" | "customer">("recent");
   const [loading, setLoading] = useState(true);
+  
+  // Selection and email state
+  const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [recipientName, setRecipientName] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -137,6 +154,147 @@ const ProjectsCustomers = () => {
       }
     });
 
+  const toggleProjectSelection = (projectId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newSelected = new Set(selectedProjects);
+    if (newSelected.has(projectId)) {
+      newSelected.delete(projectId);
+    } else {
+      newSelected.add(projectId);
+    }
+    setSelectedProjects(newSelected);
+    if (newSelected.size === 0) {
+      setSelectionMode(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedProjects.size === filteredProjects.length) {
+      setSelectedProjects(new Set());
+      setSelectionMode(false);
+    } else {
+      setSelectedProjects(new Set(filteredProjects.map(p => p.id)));
+    }
+  };
+
+  const cancelSelection = () => {
+    setSelectedProjects(new Set());
+    setSelectionMode(false);
+  };
+
+  const handleBulkEmail = async () => {
+    if (!recipientEmail || selectedProjects.size === 0) {
+      toast.error('Please enter a recipient email');
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name, first_name, last_name, company_name')
+        .eq('id', user.id)
+        .single();
+
+      const senderName = profile?.display_name || 
+        `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 
+        'Field Report User';
+
+      // Generate PDFs for all selected projects
+      const selectedProjectsData = projects.filter(p => selectedProjects.has(p.id));
+      const zip = new JSZip();
+
+      for (const project of selectedProjectsData) {
+        // Fetch media and checklists for each project
+        const { data: mediaData } = await supabase
+          .from('media')
+          .select('*')
+          .eq('report_id', project.id);
+
+        const { data: checklistsData } = await supabase
+          .from('checklists')
+          .select('*')
+          .eq('report_id', project.id);
+
+        const checklistsWithItems = await Promise.all(
+          (checklistsData || []).map(async (checklist) => {
+            const { data: itemsData } = await supabase
+              .from('checklist_items')
+              .select('*')
+              .eq('checklist_id', checklist.id);
+            return { ...checklist, items: itemsData || [] };
+          })
+        );
+
+        // Generate signed URLs for media
+        const mediaUrlsMap = new Map<string, string>();
+        for (const item of (mediaData || [])) {
+          const { data: signedUrlData } = await supabase.storage
+            .from('media')
+            .createSignedUrl(item.file_path, 3600);
+          if (signedUrlData?.signedUrl) {
+            mediaUrlsMap.set(item.id, signedUrlData.signedUrl);
+          }
+        }
+
+        const blob = await pdf(
+          <ReportPDF 
+            reportData={project}
+            media={mediaData || []}
+            checklists={checklistsWithItems}
+            mediaUrls={mediaUrlsMap}
+          />
+        ).toBlob();
+
+        zip.file(`${project.project_name.replace(/\s+/g, '_')}_Report.pdf`, blob);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      
+      // Convert to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve) => {
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+      });
+      reader.readAsDataURL(zipBlob);
+      const base64Data = await base64Promise;
+
+      // Send email
+      const { error } = await supabase.functions.invoke('send-export-email', {
+        body: {
+          recipientEmail,
+          recipientName: recipientName || undefined,
+          senderName,
+          subject: `Project Reports (${selectedProjects.size} projects)`,
+          message: emailMessage || undefined,
+          fileData: base64Data,
+          fileName: `Project_Reports_${new Date().toISOString().split('T')[0]}.zip`,
+          fileSize: zipBlob.size,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success(`Email sent with ${selectedProjects.size} project reports`);
+      setEmailDialogOpen(false);
+      setRecipientEmail("");
+      setRecipientName("");
+      setEmailMessage("");
+      cancelSelection();
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast.error('Failed to send email');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="dark min-h-screen bg-background">
@@ -171,6 +329,52 @@ const ProjectsCustomers = () => {
       </GlassNavbar>
 
       <main className="p-4 animate-fade-in">
+        {/* Bulk Actions Bar */}
+        {selectionMode && selectedProjects.size > 0 && (
+          <div className="mb-4 flex items-center justify-between rounded-lg bg-primary/10 p-3 border border-primary/20">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={cancelSelection}
+                className="gap-1"
+              >
+                <X className="h-4 w-4" />
+                Cancel
+              </Button>
+              <span className="text-sm text-foreground">
+                {selectedProjects.size} selected
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleSelectAll}
+                className="gap-1"
+              >
+                {selectedProjects.size === filteredProjects.length ? (
+                  <>
+                    <Square className="h-4 w-4" />
+                    Deselect All
+                  </>
+                ) : (
+                  <>
+                    <CheckSquare className="h-4 w-4" />
+                    Select All
+                  </>
+                )}
+              </Button>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => setEmailDialogOpen(true)}
+              className="gap-2"
+            >
+              <Mail className="h-4 w-4" />
+              Email Selected
+            </Button>
+          </div>
+        )}
+
         {/* Search and Filter - Always visible */}
         <div className="mb-4 flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
@@ -183,17 +387,30 @@ const ProjectsCustomers = () => {
               className="pl-9 bg-card border-border text-foreground placeholder:text-muted-foreground"
             />
           </div>
-          <Select value={sortBy} onValueChange={(value: "recent" | "name" | "customer") => setSortBy(value)}>
-            <SelectTrigger className="w-full sm:w-[180px] bg-card border-border text-foreground">
-              <Filter className="mr-2 h-4 w-4" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="recent">{t('projects.sortRecent')}</SelectItem>
-              <SelectItem value="name">{t('projects.sortName')}</SelectItem>
-              <SelectItem value="customer">{t('projects.sortCustomer')}</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            {!selectionMode && projects.length > 0 && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSelectionMode(true)}
+                className="flex-shrink-0"
+                title="Select projects"
+              >
+                <CheckSquare className="h-4 w-4" />
+              </Button>
+            )}
+            <Select value={sortBy} onValueChange={(value: "recent" | "name" | "customer") => setSortBy(value)}>
+              <SelectTrigger className="w-full sm:w-[180px] bg-card border-border text-foreground">
+                <Filter className="mr-2 h-4 w-4" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">{t('projects.sortRecent')}</SelectItem>
+                <SelectItem value="name">{t('projects.sortName')}</SelectItem>
+                <SelectItem value="customer">{t('projects.sortCustomer')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         
         {/* Projects List */}
@@ -212,9 +429,20 @@ const ProjectsCustomers = () => {
               {filteredProjects.map((project) => (
                 <div
                   key={project.id}
-                  onClick={() => navigate(`/project/${project.id}`)}
-                  className="flex items-start gap-4 rounded-lg bg-card p-4 hover:bg-secondary/50 transition-colors cursor-pointer"
+                  onClick={() => selectionMode ? toggleProjectSelection(project.id, { stopPropagation: () => {} } as React.MouseEvent) : navigate(`/project/${project.id}`)}
+                  className={`flex items-start gap-4 rounded-lg bg-card p-4 hover:bg-secondary/50 transition-colors cursor-pointer ${selectedProjects.has(project.id) ? 'ring-2 ring-primary bg-primary/5' : ''}`}
                 >
+                  {selectionMode && (
+                    <div 
+                      className="flex-shrink-0 pt-1"
+                      onClick={(e) => toggleProjectSelection(project.id, e)}
+                    >
+                      <Checkbox
+                        checked={selectedProjects.has(project.id)}
+                        className="h-5 w-5"
+                      />
+                    </div>
+                  )}
                   <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
                     <Building2 className="h-7 w-7 text-primary" />
                   </div>
@@ -237,21 +465,89 @@ const ProjectsCustomers = () => {
                       </div>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteProject(project.id, project.project_name);
-                    }}
-                    className="flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </Button>
+                  {!selectionMode && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteProject(project.id, project.project_name);
+                      }}
+                      className="flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
         )}
+
+        {/* Email Dialog */}
+        <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Share Projects via Email</DialogTitle>
+              <DialogDescription>
+                Send {selectedProjects.size} project{selectedProjects.size !== 1 ? 's' : ''} as a ZIP file attachment
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="bulkRecipientEmail">Recipient Email *</Label>
+                <Input
+                  id="bulkRecipientEmail"
+                  type="email"
+                  placeholder="email@example.com"
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bulkRecipientName">Recipient Name (optional)</Label>
+                <Input
+                  id="bulkRecipientName"
+                  type="text"
+                  placeholder="John Doe"
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bulkEmailMessage">Message (optional)</Label>
+                <Textarea
+                  id="bulkEmailMessage"
+                  placeholder="Add a personal message..."
+                  value={emailMessage}
+                  onChange={(e) => setEmailMessage(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleBulkEmail} 
+                disabled={sendingEmail || !recipientEmail}
+                className="gap-2"
+              >
+                {sendingEmail ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    Send Email
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
