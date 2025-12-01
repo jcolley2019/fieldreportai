@@ -292,7 +292,7 @@ const Onboarding = () => {
                 localStorage.setItem('skipOnboarding', 'true');
                 navigate("/dashboard");
               }}
-              className="flex items-center gap-2 opacity-5 hover:opacity-100 transition-opacity duration-300"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <SkipForward className="w-4 h-4" />
               {t('common.skip')}
