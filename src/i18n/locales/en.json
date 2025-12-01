@@ -304,6 +304,8 @@
     "quickSave": "Quick Save",
     "print": "Print",
     "copyLink": "Copy Link",
+    "clear": "Clear",
+    "noteCleared": "Note cleared",
     "saveOptions": "Save Options",
     "savePDF": "Save as PDF",
     "saveWord": "Save as Word",
