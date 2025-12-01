@@ -306,6 +306,7 @@
     "copyLink": "Copiar Enlace",
     "clear": "Borrar",
     "noteCleared": "Nota borrada",
+    "noteRestored": "Nota restaurada",
     "saveOptions": "Opciones de Guardado",
     "savePDF": "Guardar como PDF",
     "saveWord": "Guardar como Word",
@@ -688,6 +689,7 @@
     "loadFailed": "Error al cargar",
     "recordingStopped": "Grabando... toca para detener",
     "recordingPaused": "Grabación pausada",
-    "recordingResumed": "Grabación reanudada"
+    "recordingResumed": "Grabación reanudada",
+    "undo": "Deshacer"
   }
 }
