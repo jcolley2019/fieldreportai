@@ -42,6 +42,7 @@ interface Report {
   job_number: string;
   job_description: string;
   created_at: string;
+  report_type?: string | null;
   type: 'report';
 }
 
@@ -71,6 +72,7 @@ const AllContent = () => {
   const [sortBy, setSortBy] = useState<"recent" | "name" | "project">("recent");
   const [activeTab, setActiveTab] = useState<"all" | "reports" | "checklists">("all");
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all");
+  const [reportTypeFilter, setReportTypeFilter] = useState<"all" | "daily" | "weekly" | "site_survey">("all");
   const [isExporting, setIsExporting] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [emailForm, setEmailForm] = useState({
@@ -193,6 +195,14 @@ const AllContent = () => {
 
     // Apply date filter
     items = items.filter(item => filterByDate(item.created_at));
+
+    // Apply report type filter (only affects reports)
+    if (reportTypeFilter !== "all") {
+      items = items.filter(item => {
+        if (item.type === 'checklist') return true; // Don't filter checklists by report type
+        return item.report_type === reportTypeFilter;
+      });
+    }
 
     // Apply sorting
     items.sort((a, b) => {
@@ -734,7 +744,7 @@ const AllContent = () => {
           </div>
 
           {/* Filter Controls */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
               <SelectTrigger className="bg-card border-border">
                 <SelectValue placeholder="Sort by..." />
@@ -755,6 +765,18 @@ const AllContent = () => {
                 <SelectItem value="today">{t('allContent.dateToday')}</SelectItem>
                 <SelectItem value="week">{t('allContent.dateWeek')}</SelectItem>
                 <SelectItem value="month">{t('allContent.dateMonth')}</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={reportTypeFilter} onValueChange={(value: any) => setReportTypeFilter(value)}>
+              <SelectTrigger className="bg-card border-border">
+                <SelectValue placeholder={t('allContent.reportTypeAll')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('allContent.reportTypeAll')}</SelectItem>
+                <SelectItem value="daily">{t('reportType.daily')}</SelectItem>
+                <SelectItem value="weekly">{t('reportType.weekly')}</SelectItem>
+                <SelectItem value="site_survey">{t('reportType.siteSurvey')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
