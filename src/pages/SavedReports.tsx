@@ -45,6 +45,7 @@ const SavedReports = () => {
   const [reports, setReports] = useState<SavedReport[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"recent" | "name" | "size">("recent");
+  const [filterType, setFilterType] = useState<"all" | "daily" | "weekly" | "site_survey">("all");
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<SavedReport | null>(null);
@@ -247,7 +248,9 @@ const SavedReports = () => {
   const filteredReports = reports
     .filter((report) => {
       const searchLower = searchQuery.toLowerCase();
-      return report.file_name.toLowerCase().includes(searchLower);
+      const matchesSearch = report.file_name.toLowerCase().includes(searchLower);
+      const matchesType = filterType === "all" || report.report_type === filterType;
+      return matchesSearch && matchesType;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -299,8 +302,19 @@ const SavedReports = () => {
               className="pl-9 bg-card border-border text-foreground placeholder:text-muted-foreground"
             />
           </div>
+          <Select value={filterType} onValueChange={(value: "all" | "daily" | "weekly" | "site_survey") => setFilterType(value)}>
+            <SelectTrigger className="w-full sm:w-[160px] bg-card border-border text-foreground">
+              <SelectValue placeholder={t('savedReports.filterAll')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('savedReports.filterAll')}</SelectItem>
+              <SelectItem value="daily">{t('reportType.daily')}</SelectItem>
+              <SelectItem value="weekly">{t('reportType.weekly')}</SelectItem>
+              <SelectItem value="site_survey">{t('reportType.siteSurvey')}</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={sortBy} onValueChange={(value: "recent" | "name" | "size") => setSortBy(value)}>
-            <SelectTrigger className="w-full sm:w-[180px] bg-card border-border text-foreground">
+            <SelectTrigger className="w-full sm:w-[140px] bg-card border-border text-foreground">
               <Filter className="mr-2 h-4 w-4" />
               <SelectValue />
             </SelectTrigger>

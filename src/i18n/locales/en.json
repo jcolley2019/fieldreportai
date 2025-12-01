@@ -595,6 +595,7 @@
   "savedReports": {
     "title": "Saved Reports",
     "searchPlaceholder": "Search reports...",
+    "filterAll": "All Types",
     "loading": "Loading reports...",
     "noReports": "No saved reports yet",
     "noMatches": "No reports found matching your search",
