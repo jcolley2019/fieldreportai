@@ -372,20 +372,25 @@ const CaptureScreen = () => {
     }, 500);
 
     try {
-      // Convert blob URLs to base64
-      const imageDataPromises = activeImgs.map(async (img) => {
-        if (!img.file) return null;
-        
-        return new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(img.file);
-        });
-      });
+      // Convert files to base64 for both AI processing and navigation state
+      const imageWithBase64 = await Promise.all(
+        activeImgs.map(async (img) => {
+          if (!img.file) return { ...img, base64: null };
+          
+          const base64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(img.file);
+          });
+          
+          return { ...img, base64 };
+        })
+      );
 
-      const imageDataUrls = await Promise.all(imageDataPromises);
-      const validImageDataUrls = imageDataUrls.filter(url => url !== null) as string[];
+      const validImageDataUrls = imageWithBase64
+        .map(img => img.base64)
+        .filter(url => url !== null) as string[];
 
       const { data, error } = await supabase.functions.invoke('generate-report-summary', {
         body: { 
@@ -417,13 +422,18 @@ const CaptureScreen = () => {
       
       // Small delay to show completion
       setTimeout(() => {
-        // Navigate with the generated summary and media (including captions)
+        // Navigate with the generated summary and media (including captions and base64 data)
         navigate("/review-summary", { 
           state: { 
             simpleMode: isSimpleMode,
             summary: data.summary,
             description,
-            images: activeImgs.map(img => ({ url: img.url, id: img.id, caption: img.caption }))
+            images: imageWithBase64.map(img => ({ 
+              url: img.url, 
+              id: img.id, 
+              caption: img.caption, 
+              base64: img.base64 
+            }))
           } 
         });
       }, 300);
