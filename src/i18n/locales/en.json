@@ -536,7 +536,9 @@
     "reportSummary": "Report Summary",
     "editSummary": "Edit Summary",
     "regenerate": "Regenerate Summary",
-    "regenerating": "Regenerating summary...",
+    "regenerating": "Regenerating...",
+    "regenerated": "Report regenerated!",
+    "regenerateFailed": "Failed to regenerate report",
     "print": "Print",
     "export": "Export",
     "finalize": "Finalize Report",
@@ -687,5 +689,24 @@
     "recordingPaused": "Recording paused",
     "recordingResumed": "Recording resumed",
     "undo": "Undo"
+  },
+  "reportType": {
+    "selectType": "Report Type",
+    "daily": "Daily Report",
+    "dailyDesc": "Document daily activities and progress",
+    "weekly": "Weekly Report",
+    "weeklyDesc": "Summarize weekly progress and milestones",
+    "siteSurvey": "Site Survey",
+    "siteSurveyDesc": "Document site conditions and assessments",
+    "weeklySource": "Include Daily Reports",
+    "autoDetect": "Auto-detect",
+    "autoDetectDesc": "Include daily reports from this week",
+    "manualSelect": "Manual selection",
+    "manualSelectDesc": "Choose which daily reports to include",
+    "freshStart": "Start fresh",
+    "freshStartDesc": "Create weekly report from current content only",
+    "selectDailyReports": "Select Daily Reports",
+    "noDailyReports": "No daily reports available",
+    "autoDetectInfo": "{{count}} daily report(s) from this week will be included"
   }
 }

@@ -349,7 +349,9 @@ export type Database = {
           id: string
           job_description: string
           job_number: string
+          parent_report_id: string | null
           project_name: string
+          report_type: string | null
           updated_at: string
           user_id: string
         }
@@ -359,7 +361,9 @@ export type Database = {
           id?: string
           job_description: string
           job_number: string
+          parent_report_id?: string | null
           project_name: string
+          report_type?: string | null
           updated_at?: string
           user_id: string
         }
@@ -369,11 +373,21 @@ export type Database = {
           id?: string
           job_description?: string
           job_number?: string
+          parent_report_id?: string | null
           project_name?: string
+          report_type?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reports_parent_report_id_fkey"
+            columns: ["parent_report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {

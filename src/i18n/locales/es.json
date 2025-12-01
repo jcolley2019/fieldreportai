@@ -536,7 +536,9 @@
     "reportSummary": "Resumen del Informe",
     "editSummary": "Editar Resumen",
     "regenerate": "Regenerar Resumen",
-    "regenerating": "Regenerando resumen...",
+    "regenerating": "Regenerando...",
+    "regenerated": "¡Reporte regenerado!",
+    "regenerateFailed": "Error al regenerar el reporte",
     "print": "Imprimir",
     "export": "Exportar",
     "finalize": "Finalizar Informe",
@@ -691,5 +693,24 @@
     "recordingPaused": "Grabación pausada",
     "recordingResumed": "Grabación reanudada",
     "undo": "Deshacer"
+  },
+  "reportType": {
+    "selectType": "Tipo de Reporte",
+    "daily": "Reporte Diario",
+    "dailyDesc": "Documentar actividades diarias y progreso",
+    "weekly": "Reporte Semanal",
+    "weeklyDesc": "Resumir progreso semanal e hitos",
+    "siteSurvey": "Inspección de Sitio",
+    "siteSurveyDesc": "Documentar condiciones y evaluaciones del sitio",
+    "weeklySource": "Incluir Reportes Diarios",
+    "autoDetect": "Detectar automáticamente",
+    "autoDetectDesc": "Incluir reportes diarios de esta semana",
+    "manualSelect": "Selección manual",
+    "manualSelectDesc": "Elegir qué reportes diarios incluir",
+    "freshStart": "Comenzar de nuevo",
+    "freshStartDesc": "Crear reporte semanal solo con contenido actual",
+    "selectDailyReports": "Seleccionar Reportes Diarios",
+    "noDailyReports": "No hay reportes diarios disponibles",
+    "autoDetectInfo": "Se incluirán {{count}} reporte(s) diario(s) de esta semana"
   }
 }
