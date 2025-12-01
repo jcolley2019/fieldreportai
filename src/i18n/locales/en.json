@@ -13,6 +13,9 @@
     "changeLogo": "Change Logo",
     "completeSetup": "Complete Setup",
     "skipForNow": "Skip for now",
+    "completeLater": "Complete Later",
+    "progressSaved": "Progress saved!",
+    "continueSetup": "You can continue setup from Settings anytime.",
     "errors": {
       "fileTooLarge": "File too large",
       "avatarSize": "Avatar image must be less than 5MB",
@@ -650,6 +653,7 @@
   "common": {
     "back": "Back",
     "save": "Save",
+    "saving": "Saving...",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",

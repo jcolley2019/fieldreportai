@@ -13,6 +13,9 @@
     "changeLogo": "Cambiar Logo",
     "completeSetup": "Completar Configuración",
     "skipForNow": "Omitir por ahora",
+    "completeLater": "Completar Después",
+    "progressSaved": "¡Progreso guardado!",
+    "continueSetup": "Puedes continuar la configuración desde Ajustes en cualquier momento.",
     "errors": {
       "fileTooLarge": "Archivo demasiado grande",
       "avatarSize": "La imagen de perfil debe ser menor de 5MB",
@@ -654,6 +657,7 @@
   "common": {
     "back": "Atrás",
     "save": "Guardar",
+    "saving": "Guardando...",
     "cancel": "Cancelar",
     "delete": "Eliminar",
     "edit": "Editar",
