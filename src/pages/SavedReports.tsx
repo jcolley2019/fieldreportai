@@ -6,9 +6,10 @@ import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { toast } from "sonner";
-import { Download, Trash2, FileText, Cloud, Search, Filter } from "lucide-react";
+import { Download, Trash2, FileText, Cloud, Search, Filter, Calendar, CalendarDays, MapPin } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -35,6 +36,7 @@ interface SavedReport {
   file_size: number | null;
   created_at: string;
   report_id: string;
+  report_type?: string | null;
 }
 
 const SavedReports = () => {
@@ -63,19 +65,40 @@ const SavedReports = () => {
         return;
       }
 
-      const { data, error } = await supabase
+      // Fetch documents with their associated report's report_type
+      const { data: documents, error: docError } = await supabase
         .from("documents")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        console.error("Error loading reports:", error);
+      if (docError) {
+        console.error("Error loading reports:", docError);
         toast.error("Failed to load reports");
         return;
       }
 
-      setReports(data || []);
+      // Fetch report types for all documents
+      if (documents && documents.length > 0) {
+        const reportIds = [...new Set(documents.map(d => d.report_id))];
+        const { data: reports, error: reportError } = await supabase
+          .from("reports")
+          .select("id, report_type")
+          .in("id", reportIds);
+
+        if (!reportError && reports) {
+          const reportTypeMap = new Map(reports.map(r => [r.id, r.report_type]));
+          const enrichedDocuments = documents.map(doc => ({
+            ...doc,
+            report_type: reportTypeMap.get(doc.report_id) || null
+          }));
+          setReports(enrichedDocuments);
+        } else {
+          setReports(documents);
+        }
+      } else {
+        setReports(documents || []);
+      }
     } catch (error) {
       console.error("Error:", error);
       toast.error("An unexpected error occurred");
@@ -172,6 +195,32 @@ const SavedReports = () => {
 
   const formatDateDisplay = (dateString: string) => {
     return formatDateTime(dateString);
+  };
+
+  // Get report type badge info
+  const getReportTypeBadge = (reportType: string | null | undefined) => {
+    switch (reportType) {
+      case 'daily':
+        return {
+          label: t('reportType.daily', 'Daily Report'),
+          icon: Calendar,
+          className: 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+        };
+      case 'weekly':
+        return {
+          label: t('reportType.weekly', 'Weekly Report'),
+          icon: CalendarDays,
+          className: 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+        };
+      case 'site_survey':
+        return {
+          label: t('reportType.siteSurvey', 'Site Survey'),
+          icon: MapPin,
+          className: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+        };
+      default:
+        return null;
+    }
   };
 
   // Highlight matching text
@@ -276,50 +325,66 @@ const SavedReports = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredReports.map((report) => (
-              <div
-                key={report.id}
-                className="flex items-start gap-4 rounded-lg bg-card p-4 hover:bg-secondary/50 transition-colors cursor-pointer"
-                onClick={() => handleDownload(report, { stopPropagation: () => {} } as React.MouseEvent)}
-              >
-                <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <FileText className="h-7 w-7 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground text-lg mb-1 truncate">
-                    {highlightText(report.file_name, searchQuery)}
-                  </h3>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Cloud className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate">{formatDateDisplay(report.created_at)}</span>
+            {filteredReports.map((report) => {
+              const badgeInfo = getReportTypeBadge(report.report_type);
+              const BadgeIcon = badgeInfo?.icon;
+              
+              return (
+                <div
+                  key={report.id}
+                  className="flex items-start gap-4 rounded-lg bg-card p-4 hover:bg-secondary/50 transition-colors cursor-pointer"
+                  onClick={() => handleDownload(report, { stopPropagation: () => {} } as React.MouseEvent)}
+                >
+                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <FileText className="h-7 w-7 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h3 className="font-semibold text-foreground text-lg truncate">
+                        {highlightText(report.file_name, searchQuery)}
+                      </h3>
+                      {badgeInfo && (
+                        <Badge 
+                          variant="outline" 
+                          className={`flex items-center gap-1 text-xs font-medium ${badgeInfo.className}`}
+                        >
+                          {BadgeIcon && <BadgeIcon className="h-3 w-3" />}
+                          <span className="hidden sm:inline">{badgeInfo.label}</span>
+                        </Badge>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <FileText className="h-4 w-4 flex-shrink-0" />
-                      <span>{formatFileSize(report.file_size)}</span>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Cloud className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">{formatDateDisplay(report.created_at)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <FileText className="h-4 w-4 flex-shrink-0" />
+                        <span>{formatFileSize(report.file_size)}</span>
+                      </div>
                     </div>
                   </div>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleDownload(report, e)}
+                      className="text-primary hover:text-primary hover:bg-primary/10"
+                    >
+                      <Download className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleDeleteClick(report, e)}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => handleDownload(report, e)}
-                    className="text-primary hover:text-primary hover:bg-primary/10"
-                  >
-                    <Download className="h-5 w-5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => handleDeleteClick(report, e)}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
