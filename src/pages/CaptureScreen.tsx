@@ -15,6 +15,7 @@ import { CameraDialog } from "@/components/CameraDialog";
 import { LiveCameraCapture } from "@/components/LiveCameraCapture";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from '@/lib/dateFormat';
+import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 
 interface ImageItem {
   id: string;
@@ -28,6 +29,7 @@ const CaptureScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+  const { features } = usePlanFeatures();
   const isSimpleMode = location.state?.simpleMode || false;
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<ImageItem[]>([]);
@@ -791,6 +793,10 @@ const CaptureScreen = () => {
         isPaused={isPaused}
         onPauseRecording={handlePauseRecording}
         onStopRecording={handleStopRecording}
+        maxRecordingSeconds={features.maxRecordingSeconds}
+        onRecordingLimitReached={() => {
+          toast.info(t('captureScreen.upgradeToPremium'));
+        }}
       />
 
       {/* Full-size Image Viewer */}

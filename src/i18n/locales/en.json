@@ -215,7 +215,10 @@
     "editCaption": "Edit Photo Label",
     "editCaptionDescription": "Add or edit the label for this photo. Labels appear below photos in reports.",
     "captionPlaceholder": "Enter photo label...",
-    "captionSaved": "Photo label saved"
+    "captionSaved": "Photo label saved",
+    "upgradeToPremium": "Upgrade to Premium for longer recording time",
+    "recordingLimitWarning": "Recording will stop in 30 seconds",
+    "recordingLimitReached": "Recording limit reached"
   },
   "tasks": {
     "title": "Tasks",
