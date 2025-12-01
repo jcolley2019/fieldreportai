@@ -5,11 +5,16 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2 } from "lucide-react";
+import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2, Printer, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate } from '@/lib/dateFormat';
+import { pdf } from '@react-pdf/renderer';
+import { ReportPDF } from '@/components/ReportPDF';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
+import { saveAs } from 'file-saver';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface ProjectData {
   id: string;
@@ -191,6 +196,145 @@ const ProjectDetail = () => {
     return mediaUrls[mediaId] || '';
   };
 
+  const getReportTypeLabel = (reportType?: string) => {
+    switch (reportType) {
+      case 'daily': return 'Daily Report';
+      case 'weekly': return 'Weekly Report';
+      case 'site_survey': return 'Site Survey';
+      default: return 'Daily Report';
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!project) return;
+    
+    try {
+      const mediaUrlsMap = new Map<string, string>();
+      media.forEach(item => {
+        const url = mediaUrls[item.id];
+        if (url) mediaUrlsMap.set(item.id, url);
+      });
+
+      const blob = await pdf(
+        <ReportPDF 
+          reportData={{
+            ...project,
+            report_type: (project as any).report_type
+          }}
+          media={media}
+          checklists={checklists}
+          mediaUrls={mediaUrlsMap}
+        />
+      ).toBlob();
+      
+      saveAs(blob, `${project.project_name.replace(/\s+/g, '_')}_Report.pdf`);
+      toast.success('PDF downloaded');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF');
+    }
+  };
+
+  const handleDownloadWord = async () => {
+    if (!project) return;
+
+    try {
+      const children: Paragraph[] = [];
+      
+      // Title
+      children.push(
+        new Paragraph({
+          children: [new TextRun({ text: project.project_name, bold: true, size: 48 })],
+          heading: HeadingLevel.HEADING_1,
+        })
+      );
+
+      // Subtitle
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({ 
+              text: `${getReportTypeLabel((project as any).report_type)} • Job #${project.job_number}`, 
+              color: '666666' 
+            })
+          ],
+        })
+      );
+
+      // Date
+      children.push(
+        new Paragraph({
+          children: [new TextRun({ text: `Created: ${formatDateDisplay(project.created_at)}`, color: '999999', size: 20 })],
+          spacing: { after: 400 },
+        })
+      );
+
+      // Description
+      if (project.job_description) {
+        children.push(
+          new Paragraph({
+            children: [new TextRun({ text: 'Description', bold: true, size: 28 })],
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 400 },
+          })
+        );
+        children.push(
+          new Paragraph({
+            children: [new TextRun({ text: project.job_description })],
+            spacing: { after: 200 },
+          })
+        );
+      }
+
+      // Checklists
+      if (checklists.length > 0) {
+        children.push(
+          new Paragraph({
+            children: [new TextRun({ text: 'Checklists', bold: true, size: 28 })],
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 400 },
+          })
+        );
+        
+        checklists.forEach(checklist => {
+          children.push(
+            new Paragraph({
+              children: [new TextRun({ text: checklist.title, bold: true })],
+              spacing: { before: 200 },
+            })
+          );
+          checklist.items.forEach(item => {
+            children.push(
+              new Paragraph({
+                children: [
+                  new TextRun({ text: item.completed ? '☑ ' : '☐ ' }),
+                  new TextRun({ text: item.text }),
+                  new TextRun({ text: ` (${item.priority})`, color: '666666', size: 18 }),
+                ],
+                spacing: { before: 100 },
+              })
+            );
+          });
+        });
+      }
+
+      const doc = new Document({
+        sections: [{ children }],
+      });
+
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, `${project.project_name.replace(/\s+/g, '_')}_Report.docx`);
+      toast.success('Word document downloaded');
+    } catch (error) {
+      console.error('Error generating Word document:', error);
+      toast.error('Failed to generate Word document');
+    }
+  };
+
   if (loading) {
     return (
       <div className="dark min-h-screen bg-background">
@@ -260,6 +404,36 @@ const ProjectDetail = () => {
             </CardContent>
           )}
         </Card>
+
+        {/* Action Buttons */}
+        <div className="flex gap-3 mb-6">
+          <Button 
+            variant="outline" 
+            className="flex-1 gap-2"
+            onClick={handlePrint}
+          >
+            <Printer className="h-4 w-4" />
+            Print
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex-1 gap-2">
+                <Download className="h-4 w-4" />
+                Download
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center">
+              <DropdownMenuItem onClick={handleDownloadPDF}>
+                <FileText className="h-4 w-4 mr-2" />
+                Save as PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDownloadWord}>
+                <FileText className="h-4 w-4 mr-2" />
+                Save as Word
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
         {/* Content Tabs */}
         <Tabs defaultValue="media" className="w-full">
