@@ -65,7 +65,6 @@ export const LiveCameraCapture = ({
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
       const cameras = devices.filter(device => device.kind === 'videoinput');
-      console.log('Available cameras:', cameras.map(c => ({ id: c.deviceId, label: c.label })));
       setVideoDevices(cameras);
       return cameras;
     } catch (error) {
@@ -133,7 +132,6 @@ export const LiveCameraCapture = ({
           video: { deviceId: { exact: deviceId } },
           audio: false,
         });
-        console.log('Camera started with deviceId:', deviceId);
         setSelectedDeviceId(deviceId);
       } else if (selectedDeviceId) {
         // Use previously selected device
@@ -141,7 +139,6 @@ export const LiveCameraCapture = ({
           video: { deviceId: { exact: selectedDeviceId } },
           audio: false,
         });
-        console.log('Camera started with selectedDeviceId:', selectedDeviceId);
       } else {
         // Try facingMode first, fallback to any camera
         try {
@@ -149,14 +146,12 @@ export const LiveCameraCapture = ({
             video: { facingMode: facingMode },
             audio: false,
           });
-          console.log('Camera started with facingMode:', facingMode);
         } catch (facingModeError) {
           console.warn('Failed with facingMode, trying fallback:', facingModeError);
           stream = await navigator.mediaDevices.getUserMedia({
             video: true,
             audio: false,
           });
-          console.log('Camera started with fallback (any camera)');
         }
       }
 
@@ -168,10 +163,8 @@ export const LiveCameraCapture = ({
         
         // Set up metadata handler BEFORE assigning srcObject to avoid race condition
         const handleMetadataLoaded = async () => {
-          console.log('Video onloadedmetadata fired');
           try {
             await videoRef.current?.play();
-            console.log('Video play() succeeded, setting isReady to true');
             setIsReady(true);
           } catch (playError) {
             console.error('Video play() failed:', playError);
@@ -195,13 +188,11 @@ export const LiveCameraCapture = ({
             const allZoomLevels = [0.5, 1, 2, 4, 8];
             const supported = allZoomLevels.filter(level => level >= minZoom && level <= maxZoom);
             setSupportedZoomLevels(supported);
-            console.log('Supported zoom levels:', supported);
           } else {
             // If zoom not supported, only show 1x
             setSupportedZoomLevels([1]);
             setMinZoomCapability(1);
             setMaxZoomCapability(1);
-            console.log('Zoom not supported on this device');
           }
         };
         
@@ -213,7 +204,6 @@ export const LiveCameraCapture = ({
         
         // Fallback: if metadata already loaded (readyState >= 1), call handler directly
         if (videoRef.current.readyState >= 1) {
-          console.log('Video metadata already loaded, calling handler directly');
           handleMetadataLoaded();
         }
       }
@@ -420,10 +410,7 @@ export const LiveCameraCapture = ({
   };
 
   const capturePhoto = () => {
-    console.log('capturePhoto called, isReady:', isReady);
-    
     if (!videoRef.current || !canvasRef.current) {
-      console.error('Video or canvas ref is null', { video: !!videoRef.current, canvas: !!canvasRef.current });
       toast.error('Camera not ready. Please try again.');
       return;
     }
@@ -433,16 +420,11 @@ export const LiveCameraCapture = ({
     const context = canvas.getContext("2d");
 
     if (!context) {
-      console.error('Could not get canvas 2d context');
       toast.error('Could not capture photo. Please try again.');
       return;
     }
 
-    // Check if video has valid dimensions
-    console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
-    
     if (video.videoWidth === 0 || video.videoHeight === 0) {
-      console.error('Video dimensions are 0, camera may not be streaming');
       toast.error('Camera not ready. Please wait for camera to initialize.');
       return;
     }
@@ -461,9 +443,7 @@ export const LiveCameraCapture = ({
           type: "image/jpeg",
         });
         setCapturedImages((prev) => [...prev, file]);
-        console.log('Photo captured successfully, total:', capturedImages.length + 1);
       } else {
-        console.error('canvas.toBlob returned null');
         toast.error('Could not save photo. Please try again.');
       }
     }, "image/jpeg", 0.95);
