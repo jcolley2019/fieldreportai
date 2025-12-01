@@ -8,6 +8,7 @@ import { User } from "@supabase/supabase-js";
 import { FileText, Camera, Mic, Share2, Eye, ChevronDown, ChevronRight, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Circle, Cloud, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { TrialBanner } from "@/components/TrialBanner";
+import { SubscriptionBadge } from "@/components/SubscriptionBadge";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import {
@@ -301,23 +302,28 @@ const Index = () => {
         </NavbarLeft>
         
         <NavbarCenter>
-          <NavbarTitle>Dashboard</NavbarTitle>
+          <div className="flex items-center gap-3">
+            <NavbarTitle>Dashboard</NavbarTitle>
+            <SubscriptionBadge plan={currentPlan} />
+          </div>
         </NavbarCenter>
         
         <NavbarRight>
-          <Button
-            onClick={() => {
-              setIsUpgradeClicked(true);
-              setTimeout(() => {
-                setIsUpgradeClicked(false);
-                navigate("/pricing");
-              }, 200);
-            }}
-            className={`gap-2 text-base px-4 py-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-medium shadow-lg transition-all duration-300 ${isUpgradeClicked ? "scale-95" : "hover:scale-105 hover:shadow-[0_0_20px_hsl(var(--primary)/0.5)] hover:from-primary/90 hover:to-primary"}`}
-          >
-            <Zap className="h-4 w-4 fill-current" />
-            {t('dashboard.upgradeNow')}
-          </Button>
+          {(!currentPlan || currentPlan === 'trial') && (
+            <Button
+              onClick={() => {
+                setIsUpgradeClicked(true);
+                setTimeout(() => {
+                  setIsUpgradeClicked(false);
+                  navigate("/pricing");
+                }, 200);
+              }}
+              className={`gap-2 text-base px-4 py-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-medium shadow-lg transition-all duration-300 ${isUpgradeClicked ? "scale-95" : "hover:scale-105 hover:shadow-[0_0_20px_hsl(var(--primary)/0.5)] hover:from-primary/90 hover:to-primary"}`}
+            >
+              <Zap className="h-4 w-4 fill-current" />
+              {t('dashboard.upgradeNow')}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
