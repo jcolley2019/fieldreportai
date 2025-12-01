@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, User, Building2, X, SkipForward } from "lucide-react";
+import { Upload, User, Building2, X, SkipForward, Save } from "lucide-react";
 import { ImageCropDialog } from "@/components/ImageCropDialog";
 import { LanguageSelector } from "@/components/LanguageSelector";
 
@@ -16,6 +16,7 @@ const Onboarding = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+  const [savingProgress, setSavingProgress] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [firstName, setFirstName] = useState("");
@@ -38,13 +39,29 @@ const Onboarding = () => {
   });
 
   useEffect(() => {
-    checkAuth();
+    checkAuthAndLoadProfile();
   }, []);
 
-  const checkAuth = async () => {
+  const checkAuthAndLoadProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       navigate("/auth");
+      return;
+    }
+
+    // Load existing profile data
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("first_name, last_name, company_name, avatar_url, company_logo_url")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profile) {
+      if (profile.first_name) setFirstName(profile.first_name);
+      if (profile.last_name) setLastName(profile.last_name);
+      if (profile.company_name) setCompanyName(profile.company_name);
+      if (profile.avatar_url) setAvatarPreview(profile.avatar_url);
+      if (profile.company_logo_url) setLogoPreview(profile.company_logo_url);
     }
   };
 
@@ -266,6 +283,67 @@ const Onboarding = () => {
     }
   };
 
+  const handleSaveAndCompleteLater = async () => {
+    setSavingProgress(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+
+      let avatarUrl = avatarPreview;
+      let logoUrl = logoPreview;
+
+      // Upload avatar if a new file was selected (not an existing URL)
+      if (avatarFile) {
+        try {
+          avatarUrl = await uploadFile(avatarFile, "avatars", user.id, setUploadingAvatar);
+        } catch (error: any) {
+          console.error("Avatar upload error:", error);
+        }
+      }
+
+      // Upload logo if a new file was selected (not an existing URL)
+      if (logoFile) {
+        try {
+          logoUrl = await uploadFile(logoFile, "company-logos", user.id, setUploadingLogo);
+        } catch (error: any) {
+          console.error("Logo upload error:", error);
+        }
+      }
+
+      // Save partial progress
+      const { error } = await supabase
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          first_name: firstName.trim() || null,
+          last_name: lastName.trim() || null,
+          company_name: companyName.trim() || null,
+          avatar_url: avatarUrl || null,
+          company_logo_url: logoUrl || null,
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: t('onboarding.progressSaved'),
+        description: t('onboarding.continueSetup'),
+      });
+
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error("Save progress error:", error);
+      toast({
+        title: t('onboarding.errors.setupFailed'),
+        description: error.message || "Failed to save progress",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingProgress(false);
+    }
+  };
+
   return (
     <div className="dark min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-4">
       {/* Language Selector - Top Right */}
@@ -282,21 +360,34 @@ const Onboarding = () => {
                 {t('onboarding.setupProfile')}
               </CardDescription>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                localStorage.setItem('skipOnboarding', 'true');
-                navigate("/dashboard");
-              }}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <SkipForward className="w-4 h-4" />
-              {t('common.skip')}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSaveAndCompleteLater}
+                disabled={savingProgress}
+                className="flex items-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                {savingProgress ? t('common.saving') : t('onboarding.completeLater')}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  localStorage.setItem('skipOnboarding', 'true');
+                  navigate("/dashboard");
+                }}
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <SkipForward className="w-4 h-4" />
+                {t('common.skip')}
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
