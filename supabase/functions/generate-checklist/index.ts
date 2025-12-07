@@ -1,10 +1,17 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const requestSchema = z.object({
+  images: z.array(z.string().max(10_000_000)).max(20).optional(), // Max 20 images, 10MB each base64
+  description: z.string().max(5000).optional(),
+});
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -12,7 +19,19 @@ serve(async (req) => {
   }
 
   try {
-    const { images, description } = await req.json();
+    const body = await req.json();
+    
+    // Validate input
+    const validationResult = requestSchema.safeParse(body);
+    if (!validationResult.success) {
+      console.error("Validation error:", validationResult.error.flatten());
+      return new Response(
+        JSON.stringify({ error: "Invalid input", details: validationResult.error.flatten() }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const { images, description } = validationResult.data;
     console.log("Generating checklist with", images?.length || 0, "images and description:", description?.substring(0, 100));
 
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
