@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -11,12 +12,22 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-interface CaptureLeadRequest {
-  email: string;
-  name?: string;
-  source: "pricing_page" | "landing_page" | "newsletter" | "trial_signup";
-  sequence?: "welcome" | "trial" | "newsletter";
-}
+// Input validation schema
+const leadSourceSchema = z.enum([
+  'pricing_page',
+  'landing_page',
+  'newsletter',
+  'trial_signup'
+]);
+
+const sequenceSchema = z.enum(['welcome', 'trial', 'newsletter']);
+
+const requestSchema = z.object({
+  email: z.string().email("Invalid email address").max(255),
+  name: z.string().max(100).optional(),
+  source: leadSourceSchema,
+  sequence: sequenceSchema.optional().default('welcome'),
+});
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -25,30 +36,19 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, name, source, sequence = "welcome" }: CaptureLeadRequest = await req.json();
-
-    // Validate required fields
-    if (!email || !source) {
+    const body = await req.json();
+    
+    // Validate input
+    const validationResult = requestSchema.safeParse(body);
+    if (!validationResult.success) {
+      console.error("Validation error:", validationResult.error.flatten());
       return new Response(
-        JSON.stringify({ error: "Email and source are required" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
+        JSON.stringify({ error: "Invalid input", details: validationResult.error.flatten() }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid email format" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
+    
+    const { email, name, source, sequence } = validationResult.data;
 
     // Create Supabase client with service role
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);

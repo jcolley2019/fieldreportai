@@ -1,7 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const SALES_EMAIL = Deno.env.get("SALES_EMAIL") || "jcolley2019@gmail.com";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -11,16 +13,17 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-interface SalesInquiryRequest {
-  name: string;
-  email: string;
-  company: string;
-  companySize: string;
-  licenseQuantity: string;
-  integrationsNeeded: string;
-  customFormatting: string;
-  customFeatures: string;
-}
+// Input validation schema
+const requestSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100),
+  email: z.string().email("Invalid email address").max(255),
+  company: z.string().min(1, "Company is required").max(200),
+  companySize: z.string().max(50).optional(),
+  licenseQuantity: z.string().max(50).optional(),
+  integrationsNeeded: z.string().max(500).optional(),
+  customFormatting: z.string().max(500).optional(),
+  customFeatures: z.string().max(2000).optional(),
+});
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -29,6 +32,18 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    const body = await req.json();
+    
+    // Validate input
+    const validationResult = requestSchema.safeParse(body);
+    if (!validationResult.success) {
+      console.error("Validation error:", validationResult.error.flatten());
+      return new Response(
+        JSON.stringify({ error: "Invalid input", details: validationResult.error.flatten() }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+    
     const {
       name,
       email,
@@ -38,18 +53,7 @@ const handler = async (req: Request): Promise<Response> => {
       integrationsNeeded,
       customFormatting,
       customFeatures,
-    }: SalesInquiryRequest = await req.json();
-
-    // Validate required fields
-    if (!name || !email || !company) {
-      return new Response(
-        JSON.stringify({ error: "Name, email, and company are required" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
+    } = validationResult.data;
 
     // Create Supabase client with service role for lead capture
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -82,7 +86,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: "Field Report AI <onboarding@resend.dev>",
-        to: ["jcolley2019@gmail.com"],
+        to: [SALES_EMAIL],
         reply_to: email,
         subject: `Enterprise Plan Inquiry from ${company}`,
         html: `

@@ -1,9 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const requestSchema = z.object({
+  context: z.string().min(1, "Context is required").max(10000, "Context is too long"),
+  projectName: z.string().max(200).optional(),
+});
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -12,7 +19,19 @@ serve(async (req) => {
   }
 
   try {
-    const { context, projectName } = await req.json();
+    const body = await req.json();
+    
+    // Validate input
+    const validationResult = requestSchema.safeParse(body);
+    if (!validationResult.success) {
+      console.error("Validation error:", validationResult.error.flatten());
+      return new Response(
+        JSON.stringify({ error: "Invalid input", details: validationResult.error.flatten() }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const { context, projectName } = validationResult.data;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -29,7 +48,7 @@ If the context is more general, suggest 3-5 practical tasks that would help prog
 
     const userPrompt = `Based on this context, extract or suggest actionable tasks:
 Project Name: ${projectName || 'General'}
-Context: ${context || 'No specific context provided'}
+Context: ${context}
 
 If this sounds like someone dictating tasks, extract each task they mentioned.
 Otherwise, generate practical, specific tasks that would help with this project.
