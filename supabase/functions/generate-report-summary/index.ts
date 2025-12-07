@@ -1,12 +1,23 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-type ReportType = 'daily' | 'weekly' | 'site_survey';
+// Input validation schema
+const reportTypeSchema = z.enum(['daily', 'weekly', 'site_survey']);
+
+const requestSchema = z.object({
+  description: z.string().max(50000).optional(),
+  imageDataUrls: z.array(z.string().max(10_000_000)).max(20).optional(), // Max 20 images
+  reportType: reportTypeSchema.optional().default('daily'),
+  includedDailyReports: z.array(z.string().max(50000)).max(7).optional(), // Max 7 daily reports for weekly
+});
+
+type ReportType = z.infer<typeof reportTypeSchema>;
 
 const getSystemPrompt = (reportType: ReportType, includedDailyReports?: string[]): string => {
   const baseInstructions = "You are a professional field report assistant. Analyze the provided field notes and images to create a clear, structured report.";
@@ -142,7 +153,19 @@ serve(async (req) => {
   }
 
   try {
-    const { description, imageDataUrls, reportType = 'daily', includedDailyReports } = await req.json();
+    const body = await req.json();
+    
+    // Validate input
+    const validationResult = requestSchema.safeParse(body);
+    if (!validationResult.success) {
+      console.error("Validation error:", validationResult.error.flatten());
+      return new Response(
+        JSON.stringify({ error: "Invalid input", details: validationResult.error.flatten() }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const { description, imageDataUrls, reportType, includedDailyReports } = validationResult.data;
     console.log("Generating report summary", { 
       descriptionLength: description?.length,
       imageCount: imageDataUrls?.length,
@@ -187,7 +210,7 @@ serve(async (req) => {
       throw new Error("No content provided for summary generation");
     }
 
-    const systemPrompt = getSystemPrompt(reportType as ReportType, includedDailyReports);
+    const systemPrompt = getSystemPrompt(reportType, includedDailyReports);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',

@@ -1,10 +1,16 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const requestSchema = z.object({
+  noteText: z.string().min(1, "Note text is required").max(50000, "Note text is too long"),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,12 +18,20 @@ serve(async (req) => {
   }
 
   try {
-    const { noteText } = await req.json();
-    console.log("Generating note summary for text of length:", noteText?.length);
-
-    if (!noteText || noteText.trim().length === 0) {
-      throw new Error("Note text is required");
+    const body = await req.json();
+    
+    // Validate input
+    const validationResult = requestSchema.safeParse(body);
+    if (!validationResult.success) {
+      console.error("Validation error:", validationResult.error.flatten());
+      return new Response(
+        JSON.stringify({ error: "Invalid input", details: validationResult.error.flatten() }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
+    
+    const { noteText } = validationResult.data;
+    console.log("Generating note summary for text of length:", noteText.length);
 
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     if (!OPENAI_API_KEY) {

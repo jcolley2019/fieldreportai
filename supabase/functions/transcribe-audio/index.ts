@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import OpenAI from "https://esm.sh/openai@4.73.1";
 import { toFile } from "https://esm.sh/openai@4.73.1/uploads";
 
@@ -7,6 +8,12 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema - 25MB max for audio files
+const requestSchema = z.object({
+  audio: z.string().min(1, "Audio data is required").max(35_000_000, "Audio file is too large (max 25MB)"),
+  mimeType: z.string().max(100).optional(),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -28,11 +35,17 @@ serve(async (req) => {
 
     // Parse and validate input
     const body = await req.json();
-    const { audio, mimeType } = body;
     
-    if (!audio) {
-      throw new Error('No audio data provided');
+    const validationResult = requestSchema.safeParse(body);
+    if (!validationResult.success) {
+      console.error("Validation error:", validationResult.error.flatten());
+      return new Response(
+        JSON.stringify({ error: "Invalid input", details: validationResult.error.flatten() }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
+    
+    const { audio, mimeType } = validationResult.data;
 
     console.log('Audio data received', { 
       base64Length: audio.length,

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -10,17 +11,18 @@ const corsHeaders = {
 
 const MAX_ATTACHMENT_SIZE = 25 * 1024 * 1024; // 25MB - Resend's limit
 
-interface SendExportEmailRequest {
-  recipientEmail: string;
-  recipientName?: string;
-  senderName: string;
-  subject?: string;
-  message?: string;
-  fileData?: string; // Base64 encoded file
-  fileName?: string;
-  fileSize?: number;
-  downloadUrl?: string; // For large files
-}
+// Input validation schema
+const requestSchema = z.object({
+  recipientEmail: z.string().email("Invalid recipient email").max(255),
+  recipientName: z.string().max(100).optional(),
+  senderName: z.string().min(1, "Sender name is required").max(100),
+  subject: z.string().max(200).optional(),
+  message: z.string().max(2000).optional(),
+  fileData: z.string().max(35_000_000).optional(), // ~25MB base64
+  fileName: z.string().max(255).optional(),
+  fileSize: z.number().max(MAX_ATTACHMENT_SIZE).optional(),
+  downloadUrl: z.string().url().max(2000).optional(),
+});
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -59,6 +61,18 @@ const handler = async (req: Request): Promise<Response> => {
     const companyName = profile?.company_name || "Field Report AI";
     const companyLogoUrl = isPremiumOrEnterprise && profile?.company_logo_url ? profile.company_logo_url : null;
 
+    const body = await req.json();
+    
+    // Validate input
+    const validationResult = requestSchema.safeParse(body);
+    if (!validationResult.success) {
+      console.error("Validation error:", validationResult.error.flatten());
+      return new Response(
+        JSON.stringify({ error: "Invalid input", details: validationResult.error.flatten() }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     const { 
       recipientEmail, 
       recipientName,
@@ -69,7 +83,7 @@ const handler = async (req: Request): Promise<Response> => {
       fileName,
       fileSize,
       downloadUrl 
-    }: SendExportEmailRequest = await req.json();
+    } = validationResult.data;
 
     console.log("Sending export email to:", recipientEmail);
     console.log("File size:", fileSize);
