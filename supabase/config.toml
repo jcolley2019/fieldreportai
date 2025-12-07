@@ -13,7 +13,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.suggest-tasks]
-verify_jwt = false
+verify_jwt = true
 
 [functions.label-photo]
-verify_jwt = false
+verify_jwt = true
