@@ -15,6 +15,7 @@ import { ReportPDF } from '@/components/ReportPDF';
 import { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer, Table, TableCell, TableRow, WidthType, BorderStyle, ImageRun } from 'docx';
 import { saveAs } from 'file-saver';
 import { formatDate, formatDateLong } from '@/lib/dateFormat';
+import DOMPurify from 'dompurify';
 
 interface MediaItem {
   id: string;
@@ -819,7 +820,7 @@ const FinalReport = () => {
                           ) : (
                             <div 
                               className="prose prose-sm max-w-none text-base leading-relaxed text-muted-foreground"
-                              dangerouslySetInnerHTML={{ __html: summaryMatch[1].trim() }}
+                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(summaryMatch[1].trim()) }}
                             />
                           )}
                         </div>
@@ -868,7 +869,7 @@ const FinalReport = () => {
                           ) : (
                             <div 
                               className="prose prose-sm max-w-none text-base leading-relaxed text-muted-foreground"
-                              dangerouslySetInnerHTML={{ __html: keyPointsMatch[1].trim() }}
+                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(keyPointsMatch[1].trim()) }}
                             />
                           )}
                         </div>
@@ -917,7 +918,7 @@ const FinalReport = () => {
                           ) : (
                             <div 
                               className="prose prose-sm max-w-none text-base leading-relaxed text-muted-foreground"
-                              dangerouslySetInnerHTML={{ __html: actionItemsMatch[1].trim() }}
+                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(actionItemsMatch[1].trim()) }}
                             />
                           )}
                         </div>
