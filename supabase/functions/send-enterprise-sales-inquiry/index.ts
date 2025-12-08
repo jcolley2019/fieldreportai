@@ -85,7 +85,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Field Report AI <onboarding@resend.dev>",
+        from: "Field Report AI <sales@rapidforgeai.com>",
         to: [SALES_EMAIL],
         reply_to: email,
         subject: `Enterprise Plan Inquiry from ${company}`,
@@ -130,7 +130,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Field Report AI <onboarding@resend.dev>",
+        from: "Field Report AI <sales@rapidforgeai.com>",
         to: [email],
         subject: "We received your Enterprise Plan inquiry",
         html: `
