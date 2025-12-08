@@ -17,3 +17,9 @@ verify_jwt = true
 
 [functions.label-photo]
 verify_jwt = true
+
+[functions.send-enterprise-sales-inquiry]
+verify_jwt = false
+
+[functions.capture-lead]
+verify_jwt = false
