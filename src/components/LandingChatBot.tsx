@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -12,18 +12,96 @@ interface Message {
   content: string;
 }
 
+type SectionType = 'hero' | 'features' | 'pricing' | 'faq' | 'general';
+
+const getContextualMessage = (section: SectionType): string => {
+  const messages: Record<SectionType, string> = {
+    hero: "Hey there! 👋 I noticed you're checking out Field Report AI. Want me to walk you through how we can help your team create reports 10x faster?",
+    features: "I see you're exploring our features! Would you like me to explain how any of these work, or how they could help your specific workflow?",
+    pricing: "Looking at pricing? I can help you figure out which plan is right for your team. How many people will be using Field Report AI?",
+    faq: "Got questions? I'm here to help! Feel free to ask me anything about Field Report AI - I might have the answer you're looking for.",
+    general: "Hey there! I'm Field, an AI Assistant from Field Report AI. What are you looking to learn more about today?\n\nI'm available if you have questions about our features, pricing, or how our AI can help your construction team!"
+  };
+  return messages[section];
+};
+
 const LandingChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [hasAutoOpened, setHasAutoOpened] = useState(false);
+  const [currentSection, setCurrentSection] = useState<SectionType>('general');
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Hey there! I'm Field, an AI Assistant from Field Report AI. What are you looking to learn more about today?\n\nI'm available if you have questions about our features, pricing, or how our AI can help your construction team!"
+      content: getContextualMessage('general')
     }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Track which section the user is viewing
+  useEffect(() => {
+    const sections = [
+      { id: 'pricing', type: 'pricing' as SectionType },
+      { id: 'features', type: 'features' as SectionType },
+      { id: 'faq', type: 'faq' as SectionType },
+    ];
+
+    const observers: IntersectionObserver[] = [];
+
+    sections.forEach(({ id, type }) => {
+      const element = document.getElementById(id);
+      if (element) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
+                setCurrentSection(type);
+              }
+            });
+          },
+          { threshold: 0.3 }
+        );
+        observer.observe(element);
+        observers.push(observer);
+      }
+    });
+
+    // Check if user is at the top (hero section)
+    const handleScroll = () => {
+      if (window.scrollY < 300) {
+        setCurrentSection('hero');
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial check
+
+    return () => {
+      observers.forEach(observer => observer.disconnect());
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  // Auto-open chatbot after 30 seconds with contextual message
+  useEffect(() => {
+    if (hasAutoOpened) return;
+
+    const timer = setTimeout(() => {
+      if (!isOpen && !hasAutoOpened) {
+        // Update the initial message to be contextual
+        setMessages([{
+          role: 'assistant',
+          content: getContextualMessage(currentSection)
+        }]);
+        setIsOpen(true);
+        setHasAutoOpened(true);
+      }
+    }, 30000);
+
+    return () => clearTimeout(timer);
+  }, [isOpen, hasAutoOpened, currentSection]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
