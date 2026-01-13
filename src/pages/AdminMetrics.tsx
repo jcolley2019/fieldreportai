@@ -6,9 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Activity, AlertTriangle, Clock, TrendingUp } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Activity, AlertTriangle, Clock, TrendingUp, Trash2, Settings, Loader2 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from "recharts";
-import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { format, subDays, startOfDay } from "date-fns";
+import { toast } from "sonner";
 
 interface MetricRow {
   id: string;
@@ -57,6 +60,9 @@ export default function AdminMetrics() {
   const [metrics, setMetrics] = useState<MetricRow[]>([]);
   const [timeRange, setTimeRange] = useState("7");
   const [selectedFunction, setSelectedFunction] = useState<string>("all");
+  const [cleanupLoading, setCleanupLoading] = useState(false);
+  const [retentionDays, setRetentionDays] = useState("90");
+  const [totalRecords, setTotalRecords] = useState(0);
 
   // Check admin status
   useEffect(() => {
@@ -107,8 +113,62 @@ export default function AdminMetrics() {
       setLoading(false);
     };
 
+    const fetchTotalCount = async () => {
+      const { count } = await supabase
+        .from("ai_metrics")
+        .select("*", { count: "exact", head: true });
+      setTotalRecords(count || 0);
+    };
+
     fetchMetrics();
+    fetchTotalCount();
   }, [isAdmin, timeRange]);
+
+  // Manual cleanup function
+  const handleManualCleanup = async () => {
+    const days = parseInt(retentionDays);
+    if (isNaN(days) || days < 1) {
+      toast.error("Please enter a valid number of days");
+      return;
+    }
+
+    setCleanupLoading(true);
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      
+      const { data, error } = await supabase
+        .from("ai_metrics")
+        .delete()
+        .lt("created_at", cutoffDate.toISOString())
+        .select("id");
+
+      if (error) throw error;
+
+      const deletedCount = data?.length || 0;
+      toast.success(`Deleted ${deletedCount} records older than ${days} days`);
+      
+      // Refresh metrics
+      const startDate = startOfDay(subDays(new Date(), parseInt(timeRange)));
+      const { data: newData } = await supabase
+        .from("ai_metrics")
+        .select("*")
+        .gte("created_at", startDate.toISOString())
+        .order("created_at", { ascending: true });
+      
+      setMetrics(newData || []);
+      
+      const { count } = await supabase
+        .from("ai_metrics")
+        .select("*", { count: "exact", head: true });
+      setTotalRecords(count || 0);
+    } catch (error) {
+      console.error("Cleanup error:", error);
+      toast.error("Failed to cleanup metrics");
+    } finally {
+      setCleanupLoading(false);
+    }
+  };
 
   // Filter metrics by selected function
   const filteredMetrics = selectedFunction === "all" 
@@ -499,6 +559,67 @@ export default function AdminMetrics() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Maintenance Section */}
+            <Card className="mt-8">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  <CardTitle>Data Maintenance</CardTitle>
+                </div>
+                <CardDescription>Manage metrics data retention and cleanup</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Stats */}
+                  <div className="flex-1 p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-1">Total Records in Database</p>
+                    <p className="text-2xl font-bold">{totalRecords.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Auto-cleanup runs daily at midnight UTC (90-day retention)
+                    </p>
+                  </div>
+
+                  {/* Manual Cleanup */}
+                  <div className="flex-1 space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="retention">Delete records older than (days)</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="retention"
+                          type="number"
+                          min="1"
+                          max="365"
+                          value={retentionDays}
+                          onChange={(e) => setRetentionDays(e.target.value)}
+                          className="w-24"
+                        />
+                        <Button 
+                          onClick={handleManualCleanup}
+                          disabled={cleanupLoading}
+                          variant="destructive"
+                        >
+                          {cleanupLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Cleaning...
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Run Cleanup
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        This will permanently delete all metrics older than the specified number of days
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
