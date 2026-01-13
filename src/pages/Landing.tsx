@@ -13,6 +13,7 @@ import {
 import logo from "@/assets/field-report-ai-logo.png";
 import { PricingSection } from "@/components/PricingSection";
 import LandingChatBot from "@/components/LandingChatBot";
+import { ScrollAnimation } from "@/hooks/useScrollAnimation";
 
 const Landing = () => {
   const features = [
@@ -218,7 +219,7 @@ const Landing = () => {
         </div>
         
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center mb-16">
+          <ScrollAnimation className="max-w-4xl mx-auto text-center mb-16">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/30 mb-6">
               <AlertTriangle className="h-8 w-8 text-primary" />
             </div>
@@ -228,7 +229,7 @@ const Landing = () => {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Your competitors are already saving hours every day. Here's what's holding you back:
             </p>
-          </div>
+          </ScrollAnimation>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {[
@@ -257,21 +258,22 @@ const Landing = () => {
                 stat: "35% error rate",
               },
             ].map((pain, index) => (
-              <Card 
-                key={index} 
-                className="group relative bg-card/50 backdrop-blur border-primary/30 hover:border-primary/60 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1"
-              >
-                <CardContent className="pt-8 pb-6 text-center">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
-                    {pain.icon}
-                  </div>
-                  <div className="text-xs font-bold text-primary/80 mb-2 tracking-wider uppercase">
-                    {pain.stat}
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-2">{pain.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{pain.description}</p>
-                </CardContent>
-              </Card>
+              <ScrollAnimation key={index} delay={index * 100} animation="fade-up">
+                <Card 
+                  className="group relative bg-card/50 backdrop-blur border-primary/30 hover:border-primary/60 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1 h-full"
+                >
+                  <CardContent className="pt-8 pb-6 text-center">
+                    <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
+                      {pain.icon}
+                    </div>
+                    <div className="text-xs font-bold text-primary/80 mb-2 tracking-wider uppercase">
+                      {pain.stat}
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-2">{pain.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{pain.description}</p>
+                  </CardContent>
+                </Card>
+              </ScrollAnimation>
             ))}
           </div>
           
@@ -301,22 +303,24 @@ const Landing = () => {
       {/* How It Works */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center mb-16">
+          <ScrollAnimation className="max-w-4xl mx-auto text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Field Reporting Made Simple</h2>
             <p className="text-muted-foreground">Three steps to professional documentation</p>
-          </div>
+          </ScrollAnimation>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {steps.map((step, index) => (
-              <div key={index} className="text-center group">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/20 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 group-hover:scale-110">
-                  {step.icon}
+              <ScrollAnimation key={index} delay={index * 150} animation="fade-up">
+                <div className="text-center group">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/20 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 group-hover:scale-110">
+                    {step.icon}
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2 text-white">{step.title}</h3>
+                  <p className="text-muted-foreground">{step.description}</p>
+                  {index < steps.length - 1 && (
+                    <ArrowRight className="h-6 w-6 text-primary/40 mx-auto mt-6 hidden md:block" />
+                  )}
                 </div>
-                <h3 className="text-xl font-semibold mb-2 text-white">{step.title}</h3>
-                <p className="text-muted-foreground">{step.description}</p>
-                {index < steps.length - 1 && (
-                  <ArrowRight className="h-6 w-6 text-primary/40 mx-auto mt-6 hidden md:block" />
-                )}
-              </div>
+              </ScrollAnimation>
             ))}
           </div>
         </div>
@@ -325,23 +329,25 @@ const Landing = () => {
       {/* Features */}
       <section id="features" className="py-20 bg-muted/30 scroll-mt-24">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center mb-16">
+          <ScrollAnimation className="max-w-4xl mx-auto text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Everything You Need to Document Your Job Site</h2>
             <p className="text-muted-foreground">Powerful features designed for field professionals</p>
-          </div>
+          </ScrollAnimation>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {features.map((feature, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mb-4">
-                    {feature.icon}
-                  </div>
-                  <CardTitle>{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription>{feature.description}</CardDescription>
-                </CardContent>
-              </Card>
+              <ScrollAnimation key={index} delay={index * 100} animation="fade-up">
+                <Card className="hover:shadow-lg transition-shadow h-full">
+                  <CardHeader>
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mb-4">
+                      {feature.icon}
+                    </div>
+                    <CardTitle>{feature.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription>{feature.description}</CardDescription>
+                  </CardContent>
+                </Card>
+              </ScrollAnimation>
             ))}
           </div>
         </div>
@@ -350,27 +356,29 @@ const Landing = () => {
       {/* Social Proof */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center mb-16">
+          <ScrollAnimation className="max-w-4xl mx-auto text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Trusted by Construction Teams</h2>
             <p className="text-muted-foreground">See what professionals are saying</p>
-          </div>
+          </ScrollAnimation>
           <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {testimonials.map((testimonial, index) => (
-              <Card key={index}>
-                <CardHeader>
-                  <div className="flex gap-1 mb-2">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-primary text-primary" />
-                    ))}
-                  </div>
-                  <CardDescription className="text-base">"{testimonial.content}"</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="font-semibold">{testimonial.name}</div>
-                  <div className="text-sm text-muted-foreground">{testimonial.role}</div>
-                  <div className="text-sm text-muted-foreground">{testimonial.company}</div>
-                </CardContent>
-              </Card>
+              <ScrollAnimation key={index} delay={index * 150} animation="scale-in">
+                <Card className="h-full">
+                  <CardHeader>
+                    <div className="flex gap-1 mb-2">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="h-4 w-4 fill-primary text-primary" />
+                      ))}
+                    </div>
+                    <CardDescription className="text-base">"{testimonial.content}"</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="font-semibold">{testimonial.name}</div>
+                    <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                    <div className="text-sm text-muted-foreground">{testimonial.company}</div>
+                  </CardContent>
+                </Card>
+              </ScrollAnimation>
             ))}
           </div>
         </div>
@@ -382,9 +390,9 @@ const Landing = () => {
       {/* FAQ */}
       <section id="faq" className="py-20 bg-muted/30 scroll-mt-24">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center mb-16">
+          <ScrollAnimation className="max-w-4xl mx-auto text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Frequently Asked Questions</h2>
-          </div>
+          </ScrollAnimation>
           <div className="max-w-3xl mx-auto">
             <Accordion type="single" collapsible className="space-y-4">
               {faqs.map((faq, index) => (
