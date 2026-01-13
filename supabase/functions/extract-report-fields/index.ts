@@ -1,8 +1,10 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 const transcriptionSchema = z.object({
   transcription: z.string()
@@ -10,11 +12,6 @@ const transcriptionSchema = z.object({
     .min(1, 'Transcription cannot be empty')
     .max(10000, 'Transcription too long (max 10000 characters)')
 });
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -42,14 +39,19 @@ serve(async (req) => {
     
     const { transcription } = validationResult.data;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'google/gemini-2.5-flash',
         messages: [
           { 
             role: 'system', 
@@ -57,28 +59,74 @@ serve(async (req) => {
           },
           { role: 'user', content: transcription }
         ],
-        max_completion_tokens: 500,
-        response_format: { type: "json_object" }
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "extract_fields",
+              description: "Extract project fields from transcription",
+              parameters: {
+                type: "object",
+                properties: {
+                  projectName: { type: "string", description: "Name of the project" },
+                  customerName: { type: "string", description: "Name of the customer or client" },
+                  jobNumber: { type: "string", description: "Job or project number" },
+                  jobDescription: { type: "string", description: "Description of the job or work" }
+                },
+                required: ["projectName", "customerName", "jobNumber", "jobDescription"],
+                additionalProperties: false
+              }
+            }
+          }
+        ],
+        tool_choice: { type: "function", function: { name: "extract_fields" } }
       }),
     });
 
     if (!response.ok) {
-      // Sanitized logging - only status code and timestamp
-      console.error('OpenAI API error occurred', { 
+      console.error('AI gateway error occurred', { 
         status: response.status,
         timestamp: new Date().toISOString() 
       });
+      
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Payment required. Please add credits to your workspace." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
       throw new Error('Failed to extract fields from transcription');
     }
 
     const data = await response.json();
-    const extractedData = JSON.parse(data.choices[0].message.content);
-
-    return new Response(JSON.stringify(extractedData), {
+    
+    // Extract tool call results
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (toolCall?.function?.arguments) {
+      const extractedData = JSON.parse(toolCall.function.arguments);
+      return new Response(JSON.stringify(extractedData), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    // Fallback to empty fields
+    return new Response(JSON.stringify({
+      projectName: "",
+      customerName: "",
+      jobNumber: "",
+      jobDescription: ""
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    // Sanitized logging - only error type and timestamp, no user data
     console.error('Error in extract-report-fields function', { 
       errorType: error instanceof Error ? error.constructor.name : 'Unknown',
       timestamp: new Date().toISOString() 
