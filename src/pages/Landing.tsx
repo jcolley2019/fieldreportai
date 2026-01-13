@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Camera, FileText, Clock, Users, Shield, Zap, ArrowRight, Star, Play, ListTodo, Linkedin, Instagram, Facebook, Youtube, AlertTriangle, FolderOpen, FileX, Timer, ArrowDown, ChevronDown, ArrowUp } from "lucide-react";
+import { Check, Camera, FileText, Clock, Users, Shield, Zap, ArrowRight, Star, Play, ListTodo, Linkedin, Instagram, Facebook, Youtube, AlertTriangle, FolderOpen, FileX, Timer, ArrowDown, ChevronDown, ArrowUp, Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   Accordion,
@@ -14,6 +14,12 @@ import logo from "@/assets/field-report-ai-logo.png";
 import { PricingSection } from "@/components/PricingSection";
 import LandingChatBot from "@/components/LandingChatBot";
 import { ScrollAnimation } from "@/hooks/useScrollAnimation";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
 
 const Landing = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -154,13 +160,15 @@ const Landing = () => {
       <header className="border-b border-border sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="Field Report AI" className="h-16 w-auto" />
-            <span className="font-bold text-xl text-white">Field Report AI</span>
+            <img src={logo} alt="Field Report AI" className="h-12 md:h-16 w-auto" />
+            <span className="font-bold text-lg md:text-xl text-white">Field Report AI</span>
           </div>
+          
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-sm text-foreground/80 hover:text-foreground">Features</a>
-            <a href="#pricing" className="text-sm text-foreground/80 hover:text-foreground">Pricing</a>
-            <a href="#faq" className="text-sm text-foreground/80 hover:text-foreground">FAQ</a>
+            <a href="#features" className="text-sm text-foreground/80 hover:text-foreground transition-colors">Features</a>
+            <a href="#pricing" className="text-sm text-foreground/80 hover:text-foreground transition-colors">Pricing</a>
+            <a href="#faq" className="text-sm text-foreground/80 hover:text-foreground transition-colors">FAQ</a>
             <Link to="/auth">
               <Button variant="secondary" size="sm" className="border-2 border-primary font-bold">Sign In</Button>
             </Link>
@@ -168,6 +176,55 @@ const Landing = () => {
               <Button size="sm">Get Started Free</Button>
             </Link>
           </nav>
+
+          {/* Mobile Navigation */}
+          <Sheet>
+            <SheetTrigger asChild className="md:hidden">
+              <Button variant="ghost" size="icon" className="text-foreground">
+                <Menu className="h-6 w-6" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[280px] bg-background border-border">
+              <div className="flex flex-col gap-6 mt-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <img src={logo} alt="Field Report AI" className="h-10 w-auto" />
+                  <span className="font-bold text-lg text-white">Field Report AI</span>
+                </div>
+                
+                <nav className="flex flex-col gap-4">
+                  <SheetClose asChild>
+                    <a href="#features" className="text-lg text-foreground/80 hover:text-foreground transition-colors py-2 border-b border-border/50">
+                      Features
+                    </a>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <a href="#pricing" className="text-lg text-foreground/80 hover:text-foreground transition-colors py-2 border-b border-border/50">
+                      Pricing
+                    </a>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <a href="#faq" className="text-lg text-foreground/80 hover:text-foreground transition-colors py-2 border-b border-border/50">
+                      FAQ
+                    </a>
+                  </SheetClose>
+                </nav>
+
+                <div className="flex flex-col gap-3 mt-4">
+                  <SheetClose asChild>
+                    <Link to="/auth">
+                      <Button variant="secondary" className="w-full border-2 border-primary font-bold">Sign In</Button>
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link to="/auth">
+                      <Button className="w-full">Get Started Free</Button>
+                    </Link>
+                  </SheetClose>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </header>
 
