@@ -2,7 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Camera, FileText, Clock, Users, Shield, Zap, ArrowRight, Star, Play, ListTodo, Linkedin, Instagram, Facebook, Youtube } from "lucide-react";
+import { Check, Camera, FileText, Clock, Users, Shield, Zap, ArrowRight, Star, Play, ListTodo, Linkedin, Instagram, Facebook, Youtube, AlertTriangle, FolderOpen, FileX, Timer } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   Accordion,
@@ -210,25 +210,73 @@ const Landing = () => {
       </section>
 
       {/* Pain Points */}
-      <section className="py-20 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Field Reporting Is Broken</h2>
-            <p className="text-muted-foreground">Traditional methods waste time and create inefficiencies</p>
+      <section className="py-20 bg-gradient-to-b from-muted/20 to-destructive/5 relative overflow-hidden">
+        {/* Subtle warning background pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-10 left-1/4 w-48 h-48 bg-destructive rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 right-1/4 w-64 h-64 bg-destructive rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-4xl mx-auto text-center mb-16">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-destructive/10 border-2 border-destructive/30 mb-6">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">
+              Still Doing Reports <span className="text-destructive">The Old Way?</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Your competitors are already saving hours every day. Here's what's holding you back:
+            </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {[
-              "Manual reports take hours",
-              "Scattered photos and notes",
-              "Inconsistent formatting",
-              "Missed issues and delays",
+              {
+                icon: <Timer className="h-8 w-8" />,
+                title: "2+ Hours Wasted Daily",
+                description: "Writing reports after a 10-hour shift? That's unpaid overtime eating into your life.",
+                stat: "2+ hrs/day",
+              },
+              {
+                icon: <FolderOpen className="h-8 w-8" />,
+                title: "Photo Chaos",
+                description: "Hundreds of photos across phones, emails, and folders. Good luck finding the right one.",
+                stat: "500+ photos/week",
+              },
+              {
+                icon: <FileX className="h-8 w-8" />,
+                title: "Inconsistent Reports",
+                description: "Every team member formats differently. Clients notice. Your credibility takes a hit.",
+                stat: "Zero standards",
+              },
+              {
+                icon: <Clock className="h-8 w-8" />,
+                title: "Critical Details Missed",
+                description: "By the time you write the report, you've forgotten half of what you saw. Errors happen.",
+                stat: "35% error rate",
+              },
             ].map((pain, index) => (
-              <Card key={index} className="text-center border-destructive/50">
-                <CardContent className="pt-6">
-                  <p className="text-muted-foreground">{pain}</p>
+              <Card 
+                key={index} 
+                className="group relative bg-card/50 backdrop-blur border-destructive/30 hover:border-destructive/60 transition-all duration-300 hover:shadow-lg hover:shadow-destructive/10 hover:-translate-y-1"
+              >
+                <CardContent className="pt-8 pb-6 text-center">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-destructive/10 text-destructive mb-4 group-hover:bg-destructive group-hover:text-white transition-colors duration-300">
+                    {pain.icon}
+                  </div>
+                  <div className="text-xs font-bold text-destructive/80 mb-2 tracking-wider uppercase">
+                    {pain.stat}
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-2">{pain.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{pain.description}</p>
                 </CardContent>
               </Card>
             ))}
+          </div>
+          
+          <div className="text-center mt-12">
+            <p className="text-muted-foreground mb-4">There's a better way ↓</p>
           </div>
         </div>
       </section>
