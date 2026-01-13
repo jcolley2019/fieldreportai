@@ -24,6 +24,7 @@ import SavedReports from "./pages/SavedReports";
 import AllContent from "./pages/AllContent";
 import Tasks from "./pages/Tasks";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
+import AdminMetrics from "./pages/AdminMetrics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/checkout-success" element={<CheckoutSuccess />} />
+          <Route path="/admin/metrics" element={<AdminMetrics />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
