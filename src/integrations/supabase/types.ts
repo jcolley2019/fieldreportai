@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_metrics: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          function_name: string
+          id: string
+          latency_ms: number | null
+          model_used: string
+          primary_model: string
+          status: string
+          used_fallback: boolean
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          function_name: string
+          id?: string
+          latency_ms?: number | null
+          model_used: string
+          primary_model: string
+          status?: string
+          used_fallback?: boolean
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          function_name?: string
+          id?: string
+          latency_ms?: number | null
+          model_used?: string
+          primary_model?: string
+          status?: string
+          used_fallback?: boolean
+        }
+        Relationships: []
+      }
       checklist_items: {
         Row: {
           category: string
