@@ -2,7 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Camera, FileText, Clock, Users, Shield, Zap, ArrowRight, Star, Play } from "lucide-react";
+import { Check, Camera, FileText, Clock, Users, Shield, Zap, ArrowRight, Star, Play, ListTodo } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   Accordion,
@@ -39,6 +39,11 @@ const Landing = () => {
       icon: <Shield className="h-8 w-8" />,
       title: "Project Workspace",
       description: "Organize reports and media by job with secure cloud storage.",
+    },
+    {
+      icon: <ListTodo className="h-8 w-8" />,
+      title: "Smart Task Management",
+      description: "AI analyzes your reports and automatically suggests follow-up tasks, deadlines, and priorities.",
     },
   ];
 
