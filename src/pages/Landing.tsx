@@ -20,9 +20,11 @@ import {
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
+import StepPreviewDialog from "@/components/StepPreviewDialog";
 
 const Landing = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [previewStep, setPreviewStep] = useState<'capture' | 'generate' | 'share' | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -377,26 +379,42 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <ScrollAnimation className="max-w-4xl mx-auto text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Field Reporting Made Simple</h2>
-            <p className="text-muted-foreground">Three steps to professional documentation</p>
+            <p className="text-muted-foreground">Three steps to professional documentation — click to learn more</p>
           </ScrollAnimation>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {steps.map((step, index) => (
-              <ScrollAnimation key={index} delay={index * 150} animation="fade-up">
-                <div className="text-center group">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/20 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 group-hover:scale-110">
-                    {step.icon}
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2 text-white">{step.title}</h3>
-                  <p className="text-muted-foreground">{step.description}</p>
-                  {index < steps.length - 1 && (
-                    <ArrowRight className="h-6 w-6 text-primary/40 mx-auto mt-6 hidden md:block" />
-                  )}
-                </div>
-              </ScrollAnimation>
-            ))}
+            {steps.map((step, index) => {
+              const stepKey = step.title.toLowerCase() as 'capture' | 'generate' | 'share';
+              return (
+                <ScrollAnimation key={index} delay={index * 150} animation="fade-up">
+                  <button 
+                    onClick={() => setPreviewStep(stepKey)}
+                    className="text-center group w-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-xl p-4 -m-4 hover:bg-primary/5 transition-colors"
+                  >
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/20 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 group-hover:scale-110">
+                      {step.icon}
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-primary transition-colors">{step.title}</h3>
+                    <p className="text-muted-foreground">{step.description}</p>
+                    <span className="inline-block mt-3 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                      Click to preview →
+                    </span>
+                    {index < steps.length - 1 && (
+                      <ArrowRight className="h-6 w-6 text-primary/40 mx-auto mt-6 hidden md:block" />
+                    )}
+                  </button>
+                </ScrollAnimation>
+              );
+            })}
           </div>
         </div>
       </section>
+
+      {/* Step Preview Dialog */}
+      <StepPreviewDialog 
+        open={previewStep !== null} 
+        onOpenChange={(open) => !open && setPreviewStep(null)} 
+        step={previewStep} 
+      />
 
       {/* Features */}
       <section id="features" className="py-20 bg-muted/30 scroll-mt-24">
