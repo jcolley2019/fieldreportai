@@ -27,6 +27,7 @@ import {
   Check,
   Palette,
   Languages,
+  BarChart3,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -86,6 +87,7 @@ const Settings = () => {
   const [verifyCode, setVerifyCode] = useState<string>("");
   const [copiedSecret, setCopiedSecret] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [emailTemplateColor, setEmailTemplateColor] = useState("#007bff");
   const [emailTemplateMessage, setEmailTemplateMessage] = useState("");
 
@@ -150,6 +152,16 @@ const Settings = () => {
           i18n.changeLanguage(profile.preferred_language);
         }
       }
+
+      // Check admin role
+      const { data: adminRole } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .single();
+
+      setIsAdmin(!!adminRole);
     } catch (error) {
       console.error("Error loading profile:", error);
       toast.error("Failed to load profile");
@@ -1045,6 +1057,34 @@ const Settings = () => {
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
           </button>
         </div>
+
+        {/* ADMIN Section - Only visible to admins */}
+        {isAdmin && (
+          <div className="px-4 pt-6">
+            <h3 className="pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Admin
+            </h3>
+
+            {/* AI Metrics Dashboard */}
+            <button 
+              onClick={() => navigate('/admin/metrics')}
+              className="flex w-full items-center justify-between border-b border-border py-4"
+            >
+              <div className="flex items-center gap-4">
+                <BarChart3 className="h-5 w-5 text-foreground" />
+                <div className="flex flex-col items-start">
+                  <span className="text-base font-medium text-foreground">
+                    AI Metrics Dashboard
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    Monitor AI performance and fallback rates
+                  </span>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </button>
+          </div>
+        )}
 
         {/* ABOUT Section */}
         <div className="px-4 pt-6">
