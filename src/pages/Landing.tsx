@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/accordion";
 import logo from "@/assets/field-report-ai-logo.png";
 import { PricingSection } from "@/components/PricingSection";
+import LandingChatBot from "@/components/LandingChatBot";
 
 const Landing = () => {
   const features = [
@@ -398,6 +399,9 @@ const Landing = () => {
           </div>
         </div>
       </footer>
+
+      {/* AI Chatbot */}
+      <LandingChatBot />
     </div>
   );
 };
