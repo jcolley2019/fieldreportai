@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Camera, FileText, Clock, Users, Shield, Zap, ArrowRight, Star, Play, ListTodo, Linkedin, Instagram, Facebook, Youtube, AlertTriangle, FolderOpen, FileX, Timer, ArrowDown, ChevronDown } from "lucide-react";
+import { Check, Camera, FileText, Clock, Users, Shield, Zap, ArrowRight, Star, Play, ListTodo, Linkedin, Instagram, Facebook, Youtube, AlertTriangle, FolderOpen, FileX, Timer, ArrowDown, ChevronDown, ArrowUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   Accordion,
@@ -16,6 +16,21 @@ import LandingChatBot from "@/components/LandingChatBot";
 import { ScrollAnimation } from "@/hooks/useScrollAnimation";
 
 const Landing = () => {
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const features = [
     {
       icon: <FileText className="h-8 w-8" />,
@@ -489,6 +504,17 @@ const Landing = () => {
 
       {/* AI Chatbot */}
       <LandingChatBot />
+
+      {/* Scroll to Top Button */}
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-24 right-6 z-50 p-3 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-primary/40 ${
+          showScrollTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
+        }`}
+        aria-label="Scroll to top"
+      >
+        <ArrowUp className="h-5 w-5" />
+      </button>
     </div>
   );
 };
