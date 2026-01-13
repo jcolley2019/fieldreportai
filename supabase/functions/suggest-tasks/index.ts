@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,6 +17,41 @@ const requestSchema = z.object({
 const PRIMARY_MODEL = "google/gemini-2.5-flash-lite";
 const FALLBACK_MODEL = "google/gemini-2.5-flash";
 const RETRY_DELAY_MS = 1000;
+const FUNCTION_NAME = "suggest-tasks";
+
+// Metrics logging helper
+async function logMetrics(params: {
+  modelUsed: string;
+  usedFallback: boolean;
+  latencyMs: number;
+  status: 'success' | 'error';
+  errorMessage?: string;
+}) {
+  const logEnabled = Deno.env.get('LOG_AI_METRICS') === 'true';
+  if (!logEnabled) return;
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn('Supabase credentials not configured for metrics logging');
+      return;
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    await supabase.from('ai_metrics').insert({
+      function_name: FUNCTION_NAME,
+      primary_model: PRIMARY_MODEL,
+      model_used: params.modelUsed,
+      used_fallback: params.usedFallback,
+      latency_ms: params.latencyMs,
+      status: params.status,
+      error_message: params.errorMessage,
+    });
+  } catch (error) {
+    console.error('Failed to log metrics:', error);
+  }
+}
 
 async function callAI(apiKey: string, messages: any[], tools: any[], model: string): Promise<Response> {
   return await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -37,12 +73,12 @@ async function callWithRetryAndFallback(
   apiKey: string, 
   messages: any[], 
   tools: any[]
-): Promise<{ response: Response; modelUsed: string }> {
+): Promise<{ response: Response; modelUsed: string; usedFallback: boolean }> {
   // Try primary model
   let response = await callAI(apiKey, messages, tools, PRIMARY_MODEL);
   
   if (response.ok) {
-    return { response, modelUsed: PRIMARY_MODEL };
+    return { response, modelUsed: PRIMARY_MODEL, usedFallback: false };
   }
   
   // If rate limited or timeout, retry once after delay
@@ -52,16 +88,16 @@ async function callWithRetryAndFallback(
     
     response = await callAI(apiKey, messages, tools, PRIMARY_MODEL);
     if (response.ok) {
-      return { response, modelUsed: PRIMARY_MODEL };
+      return { response, modelUsed: PRIMARY_MODEL, usedFallback: false };
     }
     
     // If still failing, try fallback model
     console.log(`Primary model retry failed, switching to fallback model ${FALLBACK_MODEL}...`);
     response = await callAI(apiKey, messages, tools, FALLBACK_MODEL);
-    return { response, modelUsed: FALLBACK_MODEL };
+    return { response, modelUsed: FALLBACK_MODEL, usedFallback: true };
   }
   
-  return { response, modelUsed: PRIMARY_MODEL };
+  return { response, modelUsed: PRIMARY_MODEL, usedFallback: false };
 }
 
 serve(async (req) => {
@@ -69,6 +105,10 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const startTime = Date.now();
+  let modelUsed = PRIMARY_MODEL;
+  let usedFallback = false;
 
   try {
     const body = await req.json();
@@ -141,11 +181,22 @@ Assign priority based on urgency indicators (words like "urgent", "asap", "impor
       }
     ];
 
-    const { response, modelUsed } = await callWithRetryAndFallback(LOVABLE_API_KEY, messages, tools);
+    const result = await callWithRetryAndFallback(LOVABLE_API_KEY, messages, tools);
+    modelUsed = result.modelUsed;
+    usedFallback = result.usedFallback;
+    const response = result.response;
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
+      
+      await logMetrics({
+        modelUsed,
+        usedFallback,
+        latencyMs: Date.now() - startTime,
+        status: 'error',
+        errorMessage: `AI gateway error: ${response.status}`,
+      });
       
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
@@ -170,10 +221,25 @@ Assign priority based on urgency indicators (words like "urgent", "asap", "impor
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall?.function?.arguments) {
       const suggestions = JSON.parse(toolCall.function.arguments);
+      
+      await logMetrics({
+        modelUsed,
+        usedFallback,
+        latencyMs: Date.now() - startTime,
+        status: 'success',
+      });
+      
       return new Response(JSON.stringify(suggestions), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    await logMetrics({
+      modelUsed,
+      usedFallback,
+      latencyMs: Date.now() - startTime,
+      status: 'success',
+    });
 
     // Fallback if no tool call
     return new Response(JSON.stringify({ suggestions: [] }), {
@@ -182,6 +248,15 @@ Assign priority based on urgency indicators (words like "urgent", "asap", "impor
 
   } catch (error) {
     console.error("Error in suggest-tasks function:", error);
+    
+    await logMetrics({
+      modelUsed,
+      usedFallback,
+      latencyMs: Date.now() - startTime,
+      status: 'error',
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+    });
+    
     const message = error instanceof Error ? error.message : "Unknown error";
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
