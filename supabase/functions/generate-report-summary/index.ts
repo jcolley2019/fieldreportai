@@ -11,12 +11,58 @@ const reportTypeSchema = z.enum(['daily', 'weekly', 'site_survey']);
 
 const requestSchema = z.object({
   description: z.string().max(50000).optional(),
-  imageDataUrls: z.array(z.string().max(10_000_000)).max(20).optional(), // Max 20 images
+  imageDataUrls: z.array(z.string().max(10_000_000)).max(20).optional(),
   reportType: reportTypeSchema.optional().default('daily'),
-  includedDailyReports: z.array(z.string().max(50000)).max(7).optional(), // Max 7 daily reports for weekly
+  includedDailyReports: z.array(z.string().max(50000)).max(7).optional(),
 });
 
 type ReportType = z.infer<typeof reportTypeSchema>;
+
+// Retry configuration
+const PRIMARY_MODEL = "google/gemini-2.5-flash-lite";
+const FALLBACK_MODEL = "google/gemini-2.5-flash";
+const RETRY_DELAY_MS = 1000;
+
+async function callAI(apiKey: string, messages: any[], model: string): Promise<Response> {
+  return await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ model, messages }),
+  });
+}
+
+async function callWithRetryAndFallback(
+  apiKey: string, 
+  messages: any[]
+): Promise<{ response: Response; modelUsed: string }> {
+  // Try primary model
+  let response = await callAI(apiKey, messages, PRIMARY_MODEL);
+  
+  if (response.ok) {
+    return { response, modelUsed: PRIMARY_MODEL };
+  }
+  
+  // If rate limited or timeout, retry once after delay
+  if (response.status === 429 || response.status === 504 || response.status === 408) {
+    console.log(`Primary model ${PRIMARY_MODEL} failed with ${response.status}, retrying after delay...`);
+    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+    
+    response = await callAI(apiKey, messages, PRIMARY_MODEL);
+    if (response.ok) {
+      return { response, modelUsed: PRIMARY_MODEL };
+    }
+    
+    // If still failing, try fallback model
+    console.log(`Primary model retry failed, switching to fallback model ${FALLBACK_MODEL}...`);
+    response = await callAI(apiKey, messages, FALLBACK_MODEL);
+    return { response, modelUsed: FALLBACK_MODEL };
+  }
+  
+  return { response, modelUsed: PRIMARY_MODEL };
+}
 
 const getSystemPrompt = (reportType: ReportType, includedDailyReports?: string[]): string => {
   const baseInstructions = "You are a professional field report assistant. Analyze the provided field notes and images to create a clear, structured report.";
@@ -211,20 +257,12 @@ serve(async (req) => {
 
     const systemPrompt = getSystemPrompt(reportType, includedDailyReports);
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-lite',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content }
-        ],
-      }),
-    });
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content }
+    ];
+
+    const { response, modelUsed } = await callWithRetryAndFallback(LOVABLE_API_KEY, messages);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -248,7 +286,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log("Summary generated successfully", { reportType, timestamp: new Date().toISOString() });
+    console.log("Summary generated successfully using model:", modelUsed, { reportType, timestamp: new Date().toISOString() });
 
     const summaryText = data.choices?.[0]?.message?.content;
     if (!summaryText) {

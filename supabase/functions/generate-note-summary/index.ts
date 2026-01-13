@@ -11,6 +11,52 @@ const requestSchema = z.object({
   noteText: z.string().min(1, "Note text is required").max(50000, "Note text is too long"),
 });
 
+// Retry configuration
+const PRIMARY_MODEL = "google/gemini-2.5-flash-lite";
+const FALLBACK_MODEL = "google/gemini-2.5-flash";
+const RETRY_DELAY_MS = 1000;
+
+async function callAI(apiKey: string, messages: any[], model: string): Promise<Response> {
+  return await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ model, messages }),
+  });
+}
+
+async function callWithRetryAndFallback(
+  apiKey: string, 
+  messages: any[]
+): Promise<{ response: Response; modelUsed: string }> {
+  // Try primary model
+  let response = await callAI(apiKey, messages, PRIMARY_MODEL);
+  
+  if (response.ok) {
+    return { response, modelUsed: PRIMARY_MODEL };
+  }
+  
+  // If rate limited or timeout, retry once after delay
+  if (response.status === 429 || response.status === 504 || response.status === 408) {
+    console.log(`Primary model ${PRIMARY_MODEL} failed with ${response.status}, retrying after delay...`);
+    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+    
+    response = await callAI(apiKey, messages, PRIMARY_MODEL);
+    if (response.ok) {
+      return { response, modelUsed: PRIMARY_MODEL };
+    }
+    
+    // If still failing, try fallback model
+    console.log(`Primary model retry failed, switching to fallback model ${FALLBACK_MODEL}...`);
+    response = await callAI(apiKey, messages, FALLBACK_MODEL);
+    return { response, modelUsed: FALLBACK_MODEL };
+  }
+  
+  return { response, modelUsed: PRIMARY_MODEL };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -46,20 +92,12 @@ Format your response as follows:
 
 Keep the tone professional but conversational. Preserve important details while removing filler words and repetitions.`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-lite',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Please organize and summarize these voice notes:\n\n${noteText}` }
-        ],
-      }),
-    });
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `Please organize and summarize these voice notes:\n\n${noteText}` }
+    ];
+
+    const { response, modelUsed } = await callWithRetryAndFallback(LOVABLE_API_KEY, messages);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -83,7 +121,7 @@ Keep the tone professional but conversational. Preserve important details while 
     }
 
     const data = await response.json();
-    console.log("AI response received");
+    console.log("AI response received using model:", modelUsed);
 
     const organizedNotes = data.choices?.[0]?.message?.content;
     if (!organizedNotes) {

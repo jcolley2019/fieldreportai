@@ -13,6 +13,58 @@ const transcriptionSchema = z.object({
     .max(10000, 'Transcription too long (max 10000 characters)')
 });
 
+// Retry configuration
+const PRIMARY_MODEL = "google/gemini-2.5-flash";
+const FALLBACK_MODEL = "google/gemini-2.5-pro";
+const RETRY_DELAY_MS = 1000;
+
+async function callAI(apiKey: string, messages: any[], tools: any[], model: string): Promise<Response> {
+  return await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      tools,
+      tool_choice: { type: "function", function: { name: "extract_fields" } }
+    }),
+  });
+}
+
+async function callWithRetryAndFallback(
+  apiKey: string, 
+  messages: any[],
+  tools: any[]
+): Promise<{ response: Response; modelUsed: string }> {
+  // Try primary model
+  let response = await callAI(apiKey, messages, tools, PRIMARY_MODEL);
+  
+  if (response.ok) {
+    return { response, modelUsed: PRIMARY_MODEL };
+  }
+  
+  // If rate limited or timeout, retry once after delay
+  if (response.status === 429 || response.status === 504 || response.status === 408) {
+    console.log(`Primary model ${PRIMARY_MODEL} failed with ${response.status}, retrying after delay...`);
+    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+    
+    response = await callAI(apiKey, messages, tools, PRIMARY_MODEL);
+    if (response.ok) {
+      return { response, modelUsed: PRIMARY_MODEL };
+    }
+    
+    // If still failing, try fallback model
+    console.log(`Primary model retry failed, switching to fallback model ${FALLBACK_MODEL}...`);
+    response = await callAI(apiKey, messages, tools, FALLBACK_MODEL);
+    return { response, modelUsed: FALLBACK_MODEL };
+  }
+  
+  return { response, modelUsed: PRIMARY_MODEL };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -44,44 +96,36 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
+    const messages = [
+      { 
+        role: 'system', 
+        content: 'Extract project details from the user\'s speech. If any field is not mentioned, leave it empty. Be smart about extracting the information even if the user speaks naturally.' 
       },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'Extract project details from the user\'s speech. Return a JSON object with projectName, customerName, jobNumber, and jobDescription fields. If any field is not mentioned, leave it empty. Be smart about extracting the information even if the user speaks naturally.' 
-          },
-          { role: 'user', content: transcription }
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "extract_fields",
-              description: "Extract project fields from transcription",
-              parameters: {
-                type: "object",
-                properties: {
-                  projectName: { type: "string", description: "Name of the project" },
-                  customerName: { type: "string", description: "Name of the customer or client" },
-                  jobNumber: { type: "string", description: "Job or project number" },
-                  jobDescription: { type: "string", description: "Description of the job or work" }
-                },
-                required: ["projectName", "customerName", "jobNumber", "jobDescription"],
-                additionalProperties: false
-              }
-            }
+      { role: 'user', content: transcription }
+    ];
+
+    const tools = [
+      {
+        type: "function",
+        function: {
+          name: "extract_fields",
+          description: "Extract project fields from transcription",
+          parameters: {
+            type: "object",
+            properties: {
+              projectName: { type: "string", description: "Name of the project" },
+              customerName: { type: "string", description: "Name of the customer or client" },
+              jobNumber: { type: "string", description: "Job or project number" },
+              jobDescription: { type: "string", description: "Description of the job or work" }
+            },
+            required: ["projectName", "customerName", "jobNumber", "jobDescription"],
+            additionalProperties: false
           }
-        ],
-        tool_choice: { type: "function", function: { name: "extract_fields" } }
-      }),
-    });
+        }
+      }
+    ];
+
+    const { response, modelUsed } = await callWithRetryAndFallback(LOVABLE_API_KEY, messages, tools);
 
     if (!response.ok) {
       console.error('AI gateway error occurred', { 
@@ -107,6 +151,7 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    console.log("AI response received using model:", modelUsed);
     
     // Extract tool call results
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
