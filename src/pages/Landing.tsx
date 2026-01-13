@@ -2,7 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Camera, FileText, Clock, Users, Shield, Zap, ArrowRight, Star, Play, ListTodo, Linkedin, Instagram, Facebook, Youtube, AlertTriangle, FolderOpen, FileX, Timer } from "lucide-react";
+import { Check, Camera, FileText, Clock, Users, Shield, Zap, ArrowRight, Star, Play, ListTodo, Linkedin, Instagram, Facebook, Youtube, AlertTriangle, FolderOpen, FileX, Timer, ArrowDown, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   Accordion,
@@ -276,10 +276,27 @@ const Landing = () => {
           </div>
           
           <div className="text-center mt-12">
-            <p className="text-muted-foreground mb-4">There's a better way ↓</p>
+            <p className="text-muted-foreground mb-4">There's a better way</p>
+          </div>
+        </div>
+        
+        {/* Animated Arrow Transition */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-20">
+          <div className="relative">
+            {/* Outer glow ring */}
+            <div className="absolute inset-0 w-16 h-16 rounded-full bg-primary/20 animate-ping"></div>
+            {/* Main arrow container */}
+            <div className="relative w-16 h-16 rounded-full bg-gradient-to-b from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30 border-4 border-background">
+              <ChevronDown className="h-8 w-8 text-primary-foreground animate-bounce" />
+            </div>
           </div>
         </div>
       </section>
+      
+      {/* Visual connector line */}
+      <div className="h-8 bg-gradient-to-b from-primary/5 to-transparent relative">
+        <div className="absolute left-1/2 -translate-x-1/2 w-0.5 h-full bg-gradient-to-b from-primary/40 to-transparent"></div>
+      </div>
 
       {/* How It Works */}
       <section className="py-20">
