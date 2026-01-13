@@ -84,7 +84,7 @@ const LandingChatBot = () => {
     };
   }, []);
 
-  // Auto-open chatbot after 30 seconds with contextual message
+  // Auto-open chatbot after 15 seconds with contextual message
   useEffect(() => {
     if (hasAutoOpened) return;
 
@@ -98,10 +98,27 @@ const LandingChatBot = () => {
         setIsOpen(true);
         setHasAutoOpened(true);
       }
-    }, 30000);
+    }, 15000);
 
     return () => clearTimeout(timer);
   }, [isOpen, hasAutoOpened, currentSection]);
+
+  // Determine if button should pulse (before auto-open, after 5 seconds)
+  const [shouldPulse, setShouldPulse] = useState(false);
+  
+  useEffect(() => {
+    if (hasAutoOpened || isOpen) {
+      setShouldPulse(false);
+      return;
+    }
+
+    // Start pulsing after 5 seconds
+    const pulseTimer = setTimeout(() => {
+      setShouldPulse(true);
+    }, 5000);
+
+    return () => clearTimeout(pulseTimer);
+  }, [hasAutoOpened, isOpen]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -165,7 +182,9 @@ const LandingChatBot = () => {
       {/* Chat Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center justify-center group hover:scale-105"
+        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center justify-center group hover:scale-105 ${
+          shouldPulse && !isOpen ? 'animate-pulse ring-4 ring-primary/30' : ''
+        }`}
         aria-label={isOpen ? 'Close chat' : 'Open chat'}
       >
         {isOpen ? (
