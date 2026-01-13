@@ -350,7 +350,6 @@ const Landing = () => {
                   Get Started Free <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Button size="lg" variant="secondary" className="border-2 border-primary font-bold">Book a Demo</Button>
             </div>
           </div>
         </div>
