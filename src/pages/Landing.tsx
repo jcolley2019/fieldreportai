@@ -394,7 +394,7 @@ const Landing = () => {
             </div>
           </div>
           <div className="pt-8 border-t border-border text-center text-sm text-muted-foreground">
-            <p>© 2024 Field Report AI. All rights reserved.</p>
+            <p>© 2026 Field Report AI. All rights reserved.</p>
           </div>
         </div>
       </footer>
