@@ -84,7 +84,7 @@ const LandingChatBot = () => {
     };
   }, []);
 
-  // Auto-open chatbot after 15 seconds with contextual message
+  // Auto-open chatbot after 30 seconds with contextual message
   useEffect(() => {
     if (hasAutoOpened) return;
 
@@ -98,7 +98,7 @@ const LandingChatBot = () => {
         setIsOpen(true);
         setHasAutoOpened(true);
       }
-    }, 15000);
+    }, 30000);
 
     return () => clearTimeout(timer);
   }, [isOpen, hasAutoOpened, currentSection]);
@@ -112,10 +112,10 @@ const LandingChatBot = () => {
       return;
     }
 
-    // Start pulsing after 5 seconds
+    // Start pulsing after 10 seconds
     const pulseTimer = setTimeout(() => {
       setShouldPulse(true);
-    }, 5000);
+    }, 10000);
 
     return () => clearTimeout(pulseTimer);
   }, [hasAutoOpened, isOpen]);
@@ -179,24 +179,37 @@ const LandingChatBot = () => {
 
   return (
     <>
-      {/* Chat Toggle Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center justify-center group hover:scale-105 ${
-          shouldPulse && !isOpen ? 'animate-pulse ring-4 ring-primary/30' : ''
-        }`}
-        aria-label={isOpen ? 'Close chat' : 'Open chat'}
-      >
-        {isOpen ? (
-          <X className="h-6 w-6" />
-        ) : (
-          <MessageCircle className="h-6 w-6" />
+      {/* Chat Toggle Button with Label */}
+      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3">
+        {/* Label that appears when not open */}
+        {!isOpen && (
+          <div 
+            className={`bg-card border border-border rounded-full px-4 py-2 shadow-lg transition-all duration-300 ${
+              shouldPulse ? 'animate-pulse' : ''
+            }`}
+          >
+            <span className="text-sm font-medium text-foreground whitespace-nowrap">Have Questions?</span>
+          </div>
         )}
-      </button>
+        
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center justify-center group hover:scale-105 ${
+            shouldPulse && !isOpen ? 'animate-pulse ring-4 ring-primary/30' : ''
+          }`}
+          aria-label={isOpen ? 'Close chat' : 'Open chat'}
+        >
+          {isOpen ? (
+            <X className="h-6 w-6" />
+          ) : (
+            <MessageCircle className="h-6 w-6" />
+          )}
+        </button>
+      </div>
 
       {/* Chat Widget */}
       {isOpen && (
-        <Card className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-48px)] shadow-2xl border-2 border-border animate-in slide-in-from-bottom-5 duration-300">
+        <Card className="fixed bottom-24 right-6 z-40 w-[380px] max-w-[calc(100vw-48px)] shadow-2xl border-2 border-border animate-in slide-in-from-bottom-5 duration-300">
           {/* Header */}
           <CardHeader className="pb-3 pt-4 px-4 border-b border-border bg-muted/50">
             <div className="flex items-center gap-3">
