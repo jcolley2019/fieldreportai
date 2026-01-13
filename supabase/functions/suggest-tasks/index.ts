@@ -12,6 +12,58 @@ const requestSchema = z.object({
   projectName: z.string().max(200).optional(),
 });
 
+// Retry configuration
+const PRIMARY_MODEL = "google/gemini-2.5-flash-lite";
+const FALLBACK_MODEL = "google/gemini-2.5-flash";
+const RETRY_DELAY_MS = 1000;
+
+async function callAI(apiKey: string, messages: any[], tools: any[], model: string): Promise<Response> {
+  return await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      tools,
+      tool_choice: { type: "function", function: { name: "suggest_tasks" } }
+    }),
+  });
+}
+
+async function callWithRetryAndFallback(
+  apiKey: string, 
+  messages: any[], 
+  tools: any[]
+): Promise<{ response: Response; modelUsed: string }> {
+  // Try primary model
+  let response = await callAI(apiKey, messages, tools, PRIMARY_MODEL);
+  
+  if (response.ok) {
+    return { response, modelUsed: PRIMARY_MODEL };
+  }
+  
+  // If rate limited or timeout, retry once after delay
+  if (response.status === 429 || response.status === 504 || response.status === 408) {
+    console.log(`Primary model ${PRIMARY_MODEL} failed with ${response.status}, retrying after delay...`);
+    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+    
+    response = await callAI(apiKey, messages, tools, PRIMARY_MODEL);
+    if (response.ok) {
+      return { response, modelUsed: PRIMARY_MODEL };
+    }
+    
+    // If still failing, try fallback model
+    console.log(`Primary model retry failed, switching to fallback model ${FALLBACK_MODEL}...`);
+    response = await callAI(apiKey, messages, tools, FALLBACK_MODEL);
+    return { response, modelUsed: FALLBACK_MODEL };
+  }
+  
+  return { response, modelUsed: PRIMARY_MODEL };
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -54,50 +106,42 @@ If this sounds like someone dictating tasks, extract each task they mentioned.
 Otherwise, generate practical, specific tasks that would help with this project.
 Assign priority based on urgency indicators (words like "urgent", "asap", "important" = high; "when possible", "later" = low; otherwise = medium).`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "suggest_tasks",
-              description: "Return 3-5 actionable task suggestions.",
-              parameters: {
-                type: "object",
-                properties: {
-                  suggestions: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        title: { type: "string", description: "Short, actionable task title" },
-                        description: { type: "string", description: "Brief description of what needs to be done" },
-                        priority: { type: "string", enum: ["low", "medium", "high"], description: "Task priority level" }
-                      },
-                      required: ["title", "priority"],
-                      additionalProperties: false
-                    }
-                  }
-                },
-                required: ["suggestions"],
-                additionalProperties: false
+    const messages = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt }
+    ];
+
+    const tools = [
+      {
+        type: "function",
+        function: {
+          name: "suggest_tasks",
+          description: "Return 3-5 actionable task suggestions.",
+          parameters: {
+            type: "object",
+            properties: {
+              suggestions: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string", description: "Short, actionable task title" },
+                    description: { type: "string", description: "Brief description of what needs to be done" },
+                    priority: { type: "string", enum: ["low", "medium", "high"], description: "Task priority level" }
+                  },
+                  required: ["title", "priority"],
+                  additionalProperties: false
+                }
               }
-            }
+            },
+            required: ["suggestions"],
+            additionalProperties: false
           }
-        ],
-        tool_choice: { type: "function", function: { name: "suggest_tasks" } }
-      }),
-    });
+        }
+      }
+    ];
+
+    const { response, modelUsed } = await callWithRetryAndFallback(LOVABLE_API_KEY, messages, tools);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -120,7 +164,7 @@ Assign priority based on urgency indicators (words like "urgent", "asap", "impor
     }
 
     const data = await response.json();
-    console.log("AI response received:", JSON.stringify(data).slice(0, 200));
+    console.log("AI response received using model:", modelUsed);
     
     // Extract tool call results
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
