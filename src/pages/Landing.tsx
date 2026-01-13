@@ -210,20 +210,20 @@ const Landing = () => {
       </section>
 
       {/* Pain Points */}
-      <section className="py-20 bg-gradient-to-b from-muted/20 to-destructive/5 relative overflow-hidden">
-        {/* Subtle warning background pattern */}
+      <section className="py-20 bg-gradient-to-b from-muted/20 to-primary/5 relative overflow-hidden">
+        {/* Subtle background pattern */}
         <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-10 left-1/4 w-48 h-48 bg-destructive rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 right-1/4 w-64 h-64 bg-destructive rounded-full blur-3xl"></div>
+          <div className="absolute top-10 left-1/4 w-48 h-48 bg-primary rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 right-1/4 w-64 h-64 bg-primary rounded-full blur-3xl"></div>
         </div>
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center mb-16">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-destructive/10 border-2 border-destructive/30 mb-6">
-              <AlertTriangle className="h-8 w-8 text-destructive" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/30 mb-6">
+              <AlertTriangle className="h-8 w-8 text-primary" />
             </div>
             <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">
-              Still Doing Reports <span className="text-destructive">The Old Way?</span>
+              Still Doing Reports <span className="text-primary">The Old Way?</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Your competitors are already saving hours every day. Here's what's holding you back:
@@ -259,13 +259,13 @@ const Landing = () => {
             ].map((pain, index) => (
               <Card 
                 key={index} 
-                className="group relative bg-card/50 backdrop-blur border-destructive/30 hover:border-destructive/60 transition-all duration-300 hover:shadow-lg hover:shadow-destructive/10 hover:-translate-y-1"
+                className="group relative bg-card/50 backdrop-blur border-primary/30 hover:border-primary/60 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1"
               >
                 <CardContent className="pt-8 pb-6 text-center">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-destructive/10 text-destructive mb-4 group-hover:bg-destructive group-hover:text-white transition-colors duration-300">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
                     {pain.icon}
                   </div>
-                  <div className="text-xs font-bold text-destructive/80 mb-2 tracking-wider uppercase">
+                  <div className="text-xs font-bold text-primary/80 mb-2 tracking-wider uppercase">
                     {pain.stat}
                   </div>
                   <h3 className="text-lg font-bold text-white mb-2">{pain.title}</h3>
