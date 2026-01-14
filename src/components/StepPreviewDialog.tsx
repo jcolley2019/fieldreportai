@@ -8,6 +8,9 @@ import {
 } from '@/components/ui/dialog';
 import { Camera, Mic, Video, FileText, Zap, CheckSquare, Mail, Link2, Download, Share2, MessageSquare, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import previewCapture from '@/assets/preview-capture.png';
+import previewGenerate from '@/assets/preview-generate.png';
+import previewShare from '@/assets/preview-share.png';
 
 interface StepPreviewDialogProps {
   open: boolean;
@@ -47,38 +50,12 @@ const StepPreviewDialog: React.FC<StepPreviewDialogProps> = ({
         },
       ],
       mockup: (
-        <div className="bg-card rounded-xl border border-border p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <Badge variant="secondary">Live Camera</Badge>
-            <div className="flex gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
-              <span className="text-xs text-muted-foreground">Recording</span>
-            </div>
-          </div>
-          <div className="aspect-video bg-muted rounded-lg flex items-center justify-center relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/20"></div>
-            <Camera className="h-16 w-16 text-muted-foreground/50" />
-            <div className="absolute bottom-2 left-2 right-2 flex justify-between">
-              <div className="flex gap-2">
-                <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                  <Camera className="h-5 w-5 text-white" />
-                </div>
-                <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                  <Video className="h-5 w-5 text-white" />
-                </div>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                <Mic className="h-5 w-5 text-primary-foreground" />
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-4 gap-2">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-                <Camera className="h-4 w-4 text-muted-foreground/30" />
-              </div>
-            ))}
-          </div>
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <img 
+            src={previewCapture} 
+            alt="Capture screen preview" 
+            className="w-full h-auto rounded-lg shadow-lg"
+          />
         </div>
       ),
     },
@@ -106,38 +83,12 @@ const StepPreviewDialog: React.FC<StepPreviewDialogProps> = ({
         },
       ],
       mockup: (
-        <div className="bg-card rounded-xl border border-border p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <Badge variant="secondary">AI Report Generator</Badge>
-            <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Ready</Badge>
-          </div>
-          <div className="space-y-3">
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <FileText className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">Daily Progress Report</span>
-              </div>
-              <div className="h-2 bg-primary/20 rounded-full overflow-hidden">
-                <div className="h-full bg-primary w-full animate-pulse"></div>
-              </div>
-            </div>
-            <div className="p-3 bg-muted rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckSquare className="h-4 w-4 text-amber-500" />
-                <span className="text-sm font-medium">Safety Inspection Checklist</span>
-              </div>
-              <div className="space-y-1">
-                {['Foundation inspection', 'Electrical systems', 'Safety equipment'].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <div className="w-3 h-3 rounded border border-primary bg-primary/20 flex items-center justify-center">
-                      <span className="text-[8px] text-primary">✓</span>
-                    </div>
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <img 
+            src={previewGenerate} 
+            alt="Generate report preview" 
+            className="w-full h-auto rounded-lg shadow-lg"
+          />
         </div>
       ),
     },
@@ -165,32 +116,12 @@ const StepPreviewDialog: React.FC<StepPreviewDialogProps> = ({
         },
       ],
       mockup: (
-        <div className="bg-card rounded-xl border border-border p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <Badge variant="secondary">Share Report</Badge>
-          </div>
-          <div className="space-y-3">
-            {[
-              { icon: <Mail className="h-5 w-5" />, label: 'Send via Email', desc: 'PDF attachment', color: 'text-blue-500' },
-              { icon: <Link2 className="h-5 w-5" />, label: 'Copy Share Link', desc: 'Expires in 7 days', color: 'text-purple-500' },
-              { icon: <Download className="h-5 w-5" />, label: 'Download PDF', desc: '2.4 MB', color: 'text-green-500' },
-              { icon: <FileText className="h-5 w-5" />, label: 'Export to Word', desc: '.docx format', color: 'text-amber-500' },
-              { icon: <MessageSquare className="h-5 w-5" />, label: 'Send to Slack', desc: '#project-updates', color: 'text-pink-500' },
-              { icon: <Users className="h-5 w-5" />, label: 'Team Access', desc: '5 team members', color: 'text-cyan-500' },
-            ].map((item, i) => (
-              <div 
-                key={i} 
-                className="flex items-center gap-3 p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors cursor-pointer group"
-              >
-                <div className={`${item.color}`}>{item.icon}</div>
-                <div className="flex-1">
-                  <div className="text-sm font-medium group-hover:text-primary transition-colors">{item.label}</div>
-                  <div className="text-xs text-muted-foreground">{item.desc}</div>
-                </div>
-                <Share2 className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-            ))}
-          </div>
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <img 
+            src={previewShare} 
+            alt="Share options preview" 
+            className="w-full h-auto rounded-lg shadow-lg"
+          />
         </div>
       ),
     },
