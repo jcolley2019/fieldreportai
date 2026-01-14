@@ -388,7 +388,7 @@ const Landing = () => {
                 <ScrollAnimation key={index} delay={index * 150} animation="fade-up">
                   <button 
                     onClick={() => setPreviewStep(stepKey)}
-                    className="text-center group w-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-xl p-6 hover:bg-primary/5 transition-colors flex flex-col items-center min-h-[280px]"
+                    className="text-center group w-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-2xl p-6 bg-card/50 border border-border/50 hover:bg-primary/10 hover:border-primary/30 transition-all duration-300 flex flex-col items-center min-h-[280px] shadow-lg shadow-black/5"
                   >
                     <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/20 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 group-hover:scale-110 flex-shrink-0">
                       {step.icon}
