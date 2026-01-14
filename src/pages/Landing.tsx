@@ -381,30 +381,37 @@ const Landing = () => {
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Field Reporting Made Simple</h2>
             <p className="text-muted-foreground">Three steps to professional documentation — click to learn more</p>
           </ScrollAnimation>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto items-stretch">
             {steps.map((step, index) => {
               const stepKey = step.title.toLowerCase() as 'capture' | 'generate' | 'share';
               return (
-                <ScrollAnimation key={index} delay={index * 150} animation="fade-up">
+                <ScrollAnimation key={index} delay={index * 150} animation="fade-up" className="h-full">
                   <button 
                     onClick={() => setPreviewStep(stepKey)}
-                    className="text-center group w-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-xl p-4 -m-4 hover:bg-primary/5 transition-colors"
+                    className="text-center group w-full h-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-xl p-6 hover:bg-primary/5 transition-colors flex flex-col items-center"
                   >
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/20 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 group-hover:scale-110">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/20 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 group-hover:scale-110 flex-shrink-0">
                       {step.icon}
                     </div>
                     <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-primary transition-colors">{step.title}</h3>
-                    <p className="text-muted-foreground">{step.description}</p>
-                    <span className="inline-block mt-3 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                    <p className="text-muted-foreground flex-grow">{step.description}</p>
+                    <span className="inline-block mt-3 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                       Click to preview →
                     </span>
-                    {index < steps.length - 1 && (
-                      <ArrowRight className="h-6 w-6 text-primary/40 mx-auto mt-6 hidden md:block" />
-                    )}
                   </button>
                 </ScrollAnimation>
               );
             })}
+          </div>
+          {/* Arrows between cards - shown separately below on desktop */}
+          <div className="hidden md:flex justify-center gap-8 max-w-5xl mx-auto mt-4">
+            <div className="flex-1 flex justify-center">
+              <ArrowRight className="h-6 w-6 text-primary/40" />
+            </div>
+            <div className="flex-1 flex justify-center">
+              <ArrowRight className="h-6 w-6 text-primary/40" />
+            </div>
+            <div className="flex-1"></div>
           </div>
         </div>
       </section>
