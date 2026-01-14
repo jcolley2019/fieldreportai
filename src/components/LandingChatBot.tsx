@@ -103,6 +103,20 @@ const LandingChatBot = () => {
     return () => clearTimeout(timer);
   }, [isOpen, hasAutoOpened, currentSection]);
 
+  // Track if user has interacted with the chat
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
+
+  // Auto-close chatbot after 10 seconds if user hasn't interacted
+  useEffect(() => {
+    if (!isOpen || hasUserInteracted || !hasAutoOpened) return;
+
+    const autoCloseTimer = setTimeout(() => {
+      setIsOpen(false);
+    }, 10000);
+
+    return () => clearTimeout(autoCloseTimer);
+  }, [isOpen, hasUserInteracted, hasAutoOpened]);
+
   // Determine if button should pulse (before auto-open, after 5 seconds)
   const [shouldPulse, setShouldPulse] = useState(false);
   
@@ -136,6 +150,9 @@ const LandingChatBot = () => {
 
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
+
+    // Mark as user interacted when sending a message
+    setHasUserInteracted(true);
 
     const userMessage: Message = { role: 'user', content: messageText.trim() };
     setMessages(prev => [...prev, userMessage]);
@@ -193,7 +210,10 @@ const LandingChatBot = () => {
         )}
         
         <button
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => {
+            setIsOpen(!isOpen);
+            if (!isOpen) setHasUserInteracted(true);
+          }}
           className={`w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center justify-center group hover:scale-105 ${
             shouldPulse && !isOpen ? 'animate-pulse ring-4 ring-primary/30' : ''
           }`}
