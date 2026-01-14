@@ -381,21 +381,21 @@ const Landing = () => {
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Field Reporting Made Simple</h2>
             <p className="text-muted-foreground">Three steps to professional documentation — click to learn more</p>
           </ScrollAnimation>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto items-stretch">
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {steps.map((step, index) => {
               const stepKey = step.title.toLowerCase() as 'capture' | 'generate' | 'share';
               return (
-                <ScrollAnimation key={index} delay={index * 150} animation="fade-up" className="h-full">
+                <ScrollAnimation key={index} delay={index * 150} animation="fade-up">
                   <button 
                     onClick={() => setPreviewStep(stepKey)}
-                    className="text-center group w-full h-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-xl p-6 hover:bg-primary/5 transition-colors flex flex-col items-center"
+                    className="text-center group w-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-xl p-6 hover:bg-primary/5 transition-colors flex flex-col items-center min-h-[280px]"
                   >
                     <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/20 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 group-hover:scale-110 flex-shrink-0">
                       {step.icon}
                     </div>
                     <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-primary transition-colors">{step.title}</h3>
-                    <p className="text-muted-foreground flex-grow">{step.description}</p>
-                    <span className="inline-block mt-3 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                    <p className="text-muted-foreground min-h-[48px]">{step.description}</p>
+                    <span className="inline-block mt-auto pt-3 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                       Click to preview →
                     </span>
                   </button>
