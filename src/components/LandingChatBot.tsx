@@ -105,17 +105,26 @@ const LandingChatBot = () => {
 
   // Track if user has interacted with the chat
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  
+  // Track fade-out animation state
+  const [isFadingOut, setIsFadingOut] = useState(false);
 
   // Auto-close chatbot after 10 seconds if user hasn't interacted
   useEffect(() => {
-    if (!isOpen || hasUserInteracted || !hasAutoOpened) return;
+    if (!isOpen || hasUserInteracted || !hasAutoOpened || isFadingOut) return;
 
     const autoCloseTimer = setTimeout(() => {
-      setIsOpen(false);
+      // Start fade-out animation
+      setIsFadingOut(true);
+      // Actually close after animation completes (300ms)
+      setTimeout(() => {
+        setIsOpen(false);
+        setIsFadingOut(false);
+      }, 300);
     }, 10000);
 
     return () => clearTimeout(autoCloseTimer);
-  }, [isOpen, hasUserInteracted, hasAutoOpened]);
+  }, [isOpen, hasUserInteracted, hasAutoOpened, isFadingOut]);
 
   // Determine if button should pulse (before auto-open, after 5 seconds)
   const [shouldPulse, setShouldPulse] = useState(false);
@@ -229,7 +238,7 @@ const LandingChatBot = () => {
 
       {/* Chat Widget */}
       {isOpen && (
-        <Card className="fixed bottom-24 right-6 z-40 w-[380px] max-w-[calc(100vw-48px)] shadow-2xl border-2 border-border animate-in slide-in-from-bottom-5 duration-300">
+        <Card className={`fixed bottom-24 right-6 z-40 w-[380px] max-w-[calc(100vw-48px)] shadow-2xl border-2 border-border ${isFadingOut ? 'animate-fade-out' : 'animate-in slide-in-from-bottom-5'} duration-300`}>
           {/* Header */}
           <CardHeader className="pb-3 pt-4 px-4 border-b border-border bg-muted/50">
             <div className="flex items-center gap-3">
