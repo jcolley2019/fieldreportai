@@ -17,6 +17,27 @@ const authSchema = z.object({
     .max(100, { message: "Password must be less than 100 characters" }),
 });
 
+const withTimeout = async <T,>(
+  promise: Promise<T>,
+  ms: number,
+  timeoutMessage: string
+): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(timeoutMessage)), ms);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+};
+
+const runInBackground = (label: string, fn: () => Promise<unknown>) => {
+  void fn().catch((err) => console.error(`${label} failed:`, err));
+};
+
 const Auth = () => {
   const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
@@ -211,13 +232,17 @@ const Auth = () => {
           }
         }
       } else {
-        const { error, data } = await supabase.auth.signUp({
-          email: validatedData.email,
-          password: validatedData.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-          },
-        });
+        const { error, data } = await withTimeout(
+          supabase.auth.signUp({
+            email: validatedData.email,
+            password: validatedData.password,
+            options: {
+              emailRedirectTo: `${window.location.origin}/`,
+            },
+          }),
+          20000,
+          "Sign up timed out. Please try again."
+        );
 
         if (error) {
           if (error.message.includes("already registered")) {
@@ -234,44 +259,51 @@ const Auth = () => {
             });
           }
         } else {
-          // Capture lead in database
-          try {
-            await supabase.functions.invoke("capture-lead", {
-              body: {
-                email: validatedData.email,
-                source: "trial_signup",
-                sequence: "trial",
-              },
-            });
-          } catch (leadError) {
-            console.error("Lead capture failed:", leadError);
-          }
-
-          // Send to Zapier webhook for Google Sheets
-          try {
-            const zapierWebhookUrl = "https://hooks.zapier.com/hooks/catch/25475428/uzqf7vv/";
-            await fetch(zapierWebhookUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              mode: "no-cors",
-              body: JSON.stringify({
-                email: validatedData.email,
-                source: "trial_signup",
-                type: "user_signup",
-                timestamp: new Date().toISOString(),
-                plan: "trial",
-                sequence: "trial",
+          // Capture lead + Zapier webhook are non-critical; never block signup UI on these.
+          runInBackground("Lead capture", async () => {
+            await withTimeout(
+              supabase.functions.invoke("capture-lead", {
+                body: {
+                  email: validatedData.email,
+                  source: "trial_signup",
+                  sequence: "trial",
+                },
               }),
-            });
-          } catch (zapierError) {
-            console.error("Zapier webhook failed:", zapierError);
-          }
+              8000,
+              "Lead capture timed out"
+            );
+          });
+
+          runInBackground("Zapier webhook", async () => {
+            const zapierWebhookUrl = "https://hooks.zapier.com/hooks/catch/25475428/uzqf7vv/";
+            await withTimeout(
+              fetch(zapierWebhookUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                mode: "no-cors",
+                body: JSON.stringify({
+                  email: validatedData.email,
+                  source: "trial_signup",
+                  type: "user_signup",
+                  timestamp: new Date().toISOString(),
+                  plan: "trial",
+                  sequence: "trial",
+                }),
+              }),
+              8000,
+              "Zapier webhook timed out"
+            );
+          });
 
           // Auto-login after successful signup
-          const { error: loginError } = await supabase.auth.signInWithPassword({
-            email: validatedData.email,
-            password: validatedData.password,
-          });
+          const { error: loginError } = await withTimeout(
+            supabase.auth.signInWithPassword({
+              email: validatedData.email,
+              password: validatedData.password,
+            }),
+            20000,
+            "Login timed out. Please try again."
+          );
 
           if (loginError) {
             // If auto-login fails (e.g., email confirmation required), show message and switch to login
