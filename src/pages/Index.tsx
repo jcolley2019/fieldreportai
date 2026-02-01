@@ -9,6 +9,7 @@ import { FileText, Camera, Mic, Share2, Eye, ChevronDown, ChevronRight, Settings
 import { toast } from "sonner";
 import { TrialBanner } from "@/components/TrialBanner";
 import { SubscriptionBadge } from "@/components/SubscriptionBadge";
+import { TrialExpiredModal } from "@/components/TrialExpiredModal";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import {
@@ -54,10 +55,22 @@ const Index = () => {
   const [showProjectDialog, setShowProjectDialog] = useState(false);
   const [trialStartDate, setTrialStartDate] = useState<string | null>(null);
   const [showTrialBanner, setShowTrialBanner] = useState(true);
+  const [showTrialExpiredModal, setShowTrialExpiredModal] = useState(false);
   const [isUpgradeClicked, setIsUpgradeClicked] = useState(false);
   const [isProjectsSectionVisible, setIsProjectsSectionVisible] = useState(false);
   const navigate = useNavigate();
-  const { refreshPlan, currentPlan, features } = usePlanFeatures();
+  const { refreshPlan, currentPlan, features, isTrialExpired, trialDaysExpired } = usePlanFeatures();
+
+  // Show trial expired modal if trial has expired
+  useEffect(() => {
+    if (isTrialExpired && !loading) {
+      // Show modal after a short delay to let the page load
+      const timer = setTimeout(() => {
+        setShowTrialExpiredModal(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isTrialExpired, loading]);
 
   // Handle checkout success
   useEffect(() => {
@@ -562,6 +575,13 @@ const Index = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Trial Expired Modal */}
+      <TrialExpiredModal 
+        open={showTrialExpiredModal} 
+        onOpenChange={setShowTrialExpiredModal}
+        daysExpired={trialDaysExpired}
+      />
     </div>
   );
 };

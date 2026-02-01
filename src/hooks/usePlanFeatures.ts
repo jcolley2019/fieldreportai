@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export type PlanType = 'trial' | 'pro' | 'premium' | 'enterprise' | null;
+export type PlanType = 'trial' | 'basic' | 'pro' | 'premium' | 'enterprise' | null;
 
 interface PlanFeatures {
   maxRecordingSeconds: number;
@@ -10,6 +10,7 @@ interface PlanFeatures {
   hasCustomBranding: boolean;
   hasApiAccess: boolean;
   planName: string;
+  maxReportsPerMonth: number | null; // null = unlimited
 }
 
 interface SubscriptionInfo {
@@ -26,6 +27,16 @@ const PLAN_FEATURES: Record<string, PlanFeatures> = {
     hasCustomBranding: false,
     hasApiAccess: false,
     planName: 'Pro Trial',
+    maxReportsPerMonth: null, // unlimited during trial
+  },
+  basic: {
+    maxRecordingSeconds: 60, // 1 minute
+    maxRecordingMinutes: 1,
+    hasCustomLetterhead: false,
+    hasCustomBranding: false,
+    hasApiAccess: false,
+    planName: 'Basic',
+    maxReportsPerMonth: 3,
   },
   pro: {
     maxRecordingSeconds: 300, // 5 minutes
@@ -34,6 +45,7 @@ const PLAN_FEATURES: Record<string, PlanFeatures> = {
     hasCustomBranding: false,
     hasApiAccess: false,
     planName: 'Pro',
+    maxReportsPerMonth: null, // unlimited
   },
   premium: {
     maxRecordingSeconds: 600, // 10 minutes
@@ -42,6 +54,7 @@ const PLAN_FEATURES: Record<string, PlanFeatures> = {
     hasCustomBranding: true,
     hasApiAccess: true,
     planName: 'Premium',
+    maxReportsPerMonth: null, // unlimited
   },
   enterprise: {
     maxRecordingSeconds: 600, // 10 minutes
@@ -50,17 +63,21 @@ const PLAN_FEATURES: Record<string, PlanFeatures> = {
     hasCustomBranding: true,
     hasApiAccess: true,
     planName: 'Enterprise',
+    maxReportsPerMonth: null, // unlimited
   },
 };
 
-// Default to trial features for users without a plan
-const DEFAULT_FEATURES = PLAN_FEATURES.trial;
+// Default to basic features for users without a plan
+const DEFAULT_FEATURES = PLAN_FEATURES.basic;
 
 export const usePlanFeatures = () => {
   const [currentPlan, setCurrentPlan] = useState<PlanType>(null);
   const [features, setFeatures] = useState<PlanFeatures>(DEFAULT_FEATURES);
   const [isLoading, setIsLoading] = useState(true);
   const [isTrialActive, setIsTrialActive] = useState(false);
+  const [isTrialExpired, setIsTrialExpired] = useState(false);
+  const [trialDaysRemaining, setTrialDaysRemaining] = useState<number | null>(null);
+  const [trialDaysExpired, setTrialDaysExpired] = useState<number>(0);
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
 
   const checkStripeSubscription = useCallback(async (): Promise<SubscriptionInfo | null> => {
@@ -95,13 +112,16 @@ export const usePlanFeatures = () => {
         setCurrentPlan(plan);
         setSubscriptionEnd(subscriptionInfo.subscription_end);
         setIsTrialActive(false);
+        setIsTrialExpired(false);
+        setTrialDaysRemaining(null);
+        setTrialDaysExpired(0);
         const planFeatures = PLAN_FEATURES[plan] || DEFAULT_FEATURES;
         setFeatures(planFeatures);
         setIsLoading(false);
         return;
       }
 
-      // Fall back to profile data for trial users
+      // Fall back to profile data for trial/basic users
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('current_plan, trial_start_date')
@@ -115,15 +135,37 @@ export const usePlanFeatures = () => {
         return;
       }
 
-      const plan = profile?.current_plan as PlanType || 'trial';
-      setCurrentPlan(plan);
-
-      // Check if trial is still active
-      if (plan === 'trial' && profile?.trial_start_date) {
+      let plan = profile?.current_plan as PlanType || 'basic';
+      
+      // Check trial status
+      if (profile?.trial_start_date) {
         const trialStart = new Date(profile.trial_start_date);
         const trialEnd = new Date(trialStart.getTime() + 14 * 24 * 60 * 60 * 1000);
-        setIsTrialActive(new Date() < trialEnd);
+        const now = new Date();
+        
+        if (now < trialEnd) {
+          // Trial is still active
+          const daysRemaining = Math.ceil((trialEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
+          setIsTrialActive(true);
+          setIsTrialExpired(false);
+          setTrialDaysRemaining(daysRemaining);
+          setTrialDaysExpired(0);
+          plan = 'trial';
+        } else {
+          // Trial has expired - downgrade to basic
+          const daysExpired = Math.floor((now.getTime() - trialEnd.getTime()) / (24 * 60 * 60 * 1000));
+          setIsTrialActive(false);
+          setIsTrialExpired(true);
+          setTrialDaysRemaining(0);
+          setTrialDaysExpired(daysExpired);
+          plan = 'basic';
+        }
+      } else if (plan === 'trial') {
+        // Has trial plan but no start date - treat as basic
+        plan = 'basic';
       }
+
+      setCurrentPlan(plan);
 
       // Set features based on plan
       const planFeatures = PLAN_FEATURES[plan] || DEFAULT_FEATURES;
@@ -160,8 +202,12 @@ export const usePlanFeatures = () => {
     features,
     isLoading,
     isTrialActive,
+    isTrialExpired,
+    trialDaysRemaining,
+    trialDaysExpired,
     subscriptionEnd,
     isPremiumOrHigher: currentPlan === 'premium' || currentPlan === 'enterprise',
+    isProOrHigher: currentPlan === 'pro' || currentPlan === 'premium' || currentPlan === 'enterprise',
     refreshPlan: fetchPlan,
   };
 };
