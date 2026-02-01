@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { differenceInDays, parseISO } from "date-fns";
+import { differenceInCalendarDays, parseISO, startOfDay } from "date-fns";
 import { Clock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -11,17 +11,18 @@ interface TrialBannerProps {
 }
 
 export const TrialBanner = ({ trialStartDate, onDismiss }: TrialBannerProps) => {
-  const [daysRemaining, setDaysRemaining] = useState(0);
+  const [daysRemaining, setDaysRemaining] = useState(14);
   const navigate = useNavigate();
   const { t } = useTranslation();
 
   useEffect(() => {
     const calculateDaysRemaining = () => {
-      const startDate = parseISO(trialStartDate);
+      const startDate = startOfDay(parseISO(trialStartDate));
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + 14);
       
-      const remaining = differenceInDays(endDate, new Date());
+      // Use differenceInCalendarDays to count by calendar days, not exact time
+      const remaining = differenceInCalendarDays(endDate, startOfDay(new Date()));
       setDaysRemaining(Math.max(0, remaining));
     };
 
