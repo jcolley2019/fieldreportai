@@ -15,12 +15,9 @@ const logStep = (step: string, details?: any) => {
 // Price ID to plan mapping (TEST MODE price IDs)
 // NOTE: Update these to live price IDs for production
 const PRICE_TO_PLAN: Record<string, string> = {
-  // Monthly prices (Test Mode)
-  "price_1SZOPAGsHdNVicmjmTZxpwwf": "pro",
-  "price_1SZOQpGsHdNVicmj0K3ZiwBr": "premium",
-  // Annual prices (Test Mode)
-  "price_1SZPVwGsHdNVicmjY7uO3cE6": "pro",
-  "price_1SZPYOGsHdNVicmj7sUaJd38": "premium",
+  // $1 Test prices
+  "price_1Sw6tQ2cM0XKZQKCq1umVb9p": "pro",      // $1 Pro Plan (monthly & annual)
+  "price_1Sw6tx2cM0XKZQKC3prvNFZp": "premium",  // $1 Premium Plan (monthly & annual)
 };
 
 serve(async (req) => {
