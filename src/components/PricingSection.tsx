@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,22 @@ import { toast } from "sonner";
 import { EnterpriseSalesDialog } from "./EnterpriseSalesDialog";
 import { STRIPE_PRICES } from "@/lib/stripe";
 
-const pricingPlans = [
+interface PricingPlan {
+  name: string;
+  monthlyPrice: string;
+  annualPrice: string;
+  period: string;
+  description: string;
+  features: string[];
+  cta: string;
+  popular: boolean;
+  comingSoon?: boolean;
+  isTrial?: boolean;
+  isBasic?: boolean;
+}
+
+// Plans for new users who haven't used their trial
+const newUserPlans: PricingPlan[] = [
   {
     name: "Pro Plan 14-day Trial",
     monthlyPrice: "$0",
@@ -28,6 +43,86 @@ const pricingPlans = [
     ],
     cta: "Start Trial",
     popular: false,
+    isTrial: true,
+  },
+  {
+    name: "Pro",
+    monthlyPrice: "$49",
+    annualPrice: "$39",
+    period: "/month",
+    description: "For active field professionals",
+    features: [
+      "Unlimited reports & checklists",
+      "Advanced media capture",
+      "AI-powered insights",
+      "Team collaboration",
+      "Priority support",
+      "Unlimited Photo Storage",
+      "PDF Reports",
+      "5-Minute Video Capture",
+    ],
+    cta: "Start Plan",
+    popular: true,
+  },
+  {
+    name: "Premium",
+    monthlyPrice: "$99",
+    annualPrice: "$79",
+    period: "/month",
+    description: "Advanced features for growing teams",
+    features: [
+      "Everything in Pro",
+      "Custom company letterhead",
+      "Custom branding",
+      "API access",
+      "Advanced analytics",
+      "Dedicated support",
+      "Custom integrations",
+      "10-Minute Video Capture",
+    ],
+    cta: "Start Plan",
+    popular: false,
+  },
+  {
+    name: "Enterprise",
+    monthlyPrice: "Custom Price Quote",
+    annualPrice: "Custom Price Quote",
+    period: "",
+    description: "For large organizations",
+    features: [
+      "Everything in Premium",
+      "Custom company letterhead",
+      "Custom integrations",
+      "Dedicated account manager",
+      "Advanced security",
+      "Custom contract terms",
+      "Training & onboarding",
+      "SLA guarantee",
+    ],
+    cta: "Coming Soon",
+    popular: false,
+    comingSoon: true,
+  },
+];
+
+// Plans for users who have already used their trial
+const postTrialPlans: PricingPlan[] = [
+  {
+    name: "Basic",
+    monthlyPrice: "$0",
+    annualPrice: "$0",
+    period: "",
+    description: "Get started with essential features",
+    features: [
+      "3 reports per month",
+      "Basic media capture",
+      "Standard photo storage",
+      "Email support",
+      "1-Minute Video Capture",
+    ],
+    cta: "Get Started",
+    popular: false,
+    isBasic: true,
   },
   {
     name: "Pro",
@@ -98,9 +193,46 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
   const [internalBillingPeriod, setInternalBillingPeriod] = useState<"monthly" | "annual">("monthly");
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [showEnterpriseDialog, setShowEnterpriseDialog] = useState(false);
+  const [hasUsedTrial, setHasUsedTrial] = useState(false);
+  const [isCheckingTrial, setIsCheckingTrial] = useState(true);
   const navigate = useNavigate();
 
   const billingPeriod = externalBillingPeriod ?? internalBillingPeriod;
+
+  // Check if user has already used their trial
+  useEffect(() => {
+    const checkTrialStatus = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          // Not logged in - show new user plans (with trial option)
+          setHasUsedTrial(false);
+          setIsCheckingTrial(false);
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('trial_start_date')
+          .eq('id', user.id)
+          .single();
+
+        // If user has a trial_start_date, they've already used/started their trial
+        setHasUsedTrial(!!profile?.trial_start_date);
+      } catch (error) {
+        console.error('Error checking trial status:', error);
+        setHasUsedTrial(false);
+      } finally {
+        setIsCheckingTrial(false);
+      }
+    };
+
+    checkTrialStatus();
+  }, []);
+
+  // Select the appropriate plans based on trial status
+  const pricingPlans = hasUsedTrial ? postTrialPlans : newUserPlans;
 
   const handleStartTrial = async () => {
     setLoadingPlan('trial');
@@ -262,7 +394,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
                       </li>
                     ))}
                   </ul>
-                  {plan.name === "Pro Plan 14-day Trial" ? (
+                  {plan.isTrial ? (
                     <Button 
                       className="w-full" 
                       variant={plan.popular ? "default" : "outline"}
@@ -270,6 +402,14 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
                       disabled={loadingPlan === 'trial'}
                     >
                       {loadingPlan === 'trial' ? "Activating..." : plan.cta}
+                    </Button>
+                  ) : plan.isBasic ? (
+                    <Button 
+                      className="w-full" 
+                      variant="outline"
+                      onClick={() => navigate("/auth")}
+                    >
+                      {plan.cta}
                     </Button>
                   ) : plan.comingSoon ? (
                     <Button 
