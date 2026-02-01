@@ -34,14 +34,16 @@ const Auth = () => {
   const mode = searchParams.get("mode"); // 'signup' for guest checkout flow
   const startTrial = searchParams.get("startTrial"); // For starting trial from landing page
 
-  // Set signup mode if coming from guest checkout
+  // Set signup mode if coming from guest checkout or trial start
   useEffect(() => {
-    if (mode === 'signup') {
+    if (mode === 'signup' || startTrial === 'true') {
       setIsLogin(false);
     }
-  }, [mode]);
+  }, [mode, startTrial]);
 
   // Activate trial for the current user
+  // Note: current_plan is auto-set to 'trial' by database trigger on profile creation
+  // We only need to set trial_start_date here
   const activateTrial = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -59,18 +61,23 @@ const Auth = () => {
         return;
       }
 
-      // Activate trial
-      await supabase
+      // Activate trial by setting start date
+      // current_plan is already 'trial' from the database trigger
+      const { error } = await supabase
         .from('profiles')
         .update({
           trial_start_date: new Date().toISOString(),
-          current_plan: 'trial',
         })
         .eq('id', user.id);
 
+      if (error) {
+        console.error('Error activating trial:', error);
+        return;
+      }
+
       toast({
         title: "Trial Activated!",
-        description: "Enjoy 14 days of Pro features",
+        description: "Enjoy 14 days of Pro features — no payment required",
       });
     } catch (error) {
       console.error('Error activating trial:', error);
