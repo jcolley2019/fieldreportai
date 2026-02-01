@@ -174,7 +174,7 @@ const Landing = () => {
             <Link to="/auth">
               <Button variant="secondary" size="sm" className="border-2 border-primary font-bold">Sign In</Button>
             </Link>
-            <Link to="/auth">
+            <Link to="/auth?startTrial=true">
               <Button size="sm">Get Started Free</Button>
             </Link>
           </nav>
@@ -219,7 +219,7 @@ const Landing = () => {
                     </Link>
                   </SheetClose>
                   <SheetClose asChild>
-                    <Link to="/auth">
+                    <Link to="/auth?startTrial=true">
                       <Button className="w-full">Get Started Free</Button>
                     </Link>
                   </SheetClose>
@@ -265,7 +265,7 @@ const Landing = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-              <Link to="/auth">
+              <Link to="/auth?startTrial=true">
                 <Button size="lg" className="gap-2 shadow-lg shadow-primary/20">
                   Get Started Free <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -503,7 +503,7 @@ const Landing = () => {
               Join thousands of construction professionals using Field Report AI
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/auth">
+              <Link to="/auth?startTrial=true">
                 <Button size="lg" className="gap-2">
                   Get Started Free <ArrowRight className="h-4 w-4" />
                 </Button>

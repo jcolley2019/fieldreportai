@@ -32,6 +32,7 @@ const Auth = () => {
   const pendingBilling = searchParams.get("billing");
   const sessionId = searchParams.get("session_id"); // For guest checkout linking
   const mode = searchParams.get("mode"); // 'signup' for guest checkout flow
+  const startTrial = searchParams.get("startTrial"); // For starting trial from landing page
 
   // Set signup mode if coming from guest checkout
   useEffect(() => {
@@ -39,6 +40,42 @@ const Auth = () => {
       setIsLogin(false);
     }
   }, [mode]);
+
+  // Activate trial for the current user
+  const activateTrial = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Check if user already has a trial
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('trial_start_date')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.trial_start_date) {
+        // Already has trial, skip activation
+        return;
+      }
+
+      // Activate trial
+      await supabase
+        .from('profiles')
+        .update({
+          trial_start_date: new Date().toISOString(),
+          current_plan: 'trial',
+        })
+        .eq('id', user.id);
+
+      toast({
+        title: "Trial Activated!",
+        description: "Enjoy 14 days of Pro features",
+      });
+    } catch (error) {
+      console.error('Error activating trial:', error);
+    }
+  };
 
   // Link subscription after signup/login if coming from guest checkout
   const linkSubscriptionToAccount = async () => {
@@ -232,9 +269,14 @@ const Auth = () => {
               await linkSubscriptionToAccount();
             }
             
+            // Activate trial if coming from "Get Started Free" button
+            if (startTrial === 'true') {
+              await activateTrial();
+            }
+            
             toast({
               title: t('auth.success.accountCreated').split('!')[0],
-              description: "You're now logged in!",
+              description: startTrial === 'true' ? "Your 14-day Pro trial is now active!" : "You're now logged in!",
             });
             
             // Redirect to onboarding for new users
