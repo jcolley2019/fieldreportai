@@ -63,7 +63,9 @@
       "emailRegistered": "This email is already registered. Please login instead.",
       "validationError": "Validation Error",
       "unexpectedError": "An unexpected error occurred.",
-      "emailRequired": "Please enter your email address to reset your password."
+      "emailRequired": "Please enter your email address to reset your password.",
+      "noAccountFound": "No account found",
+      "switchedToSignup": "We switched to Sign Up mode. Click the button to create your account."
     },
     "success": {
       "loggedIn": "Logged in successfully!",
