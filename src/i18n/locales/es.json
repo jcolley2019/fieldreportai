@@ -63,7 +63,9 @@
       "emailRegistered": "Este correo electrónico ya está registrado. Por favor, inicia sesión.",
       "validationError": "Error de Validación",
       "unexpectedError": "Ocurrió un error inesperado.",
-      "emailRequired": "Por favor, ingresa tu dirección de correo electrónico para restablecer tu contraseña."
+      "emailRequired": "Por favor, ingresa tu dirección de correo electrónico para restablecer tu contraseña.",
+      "noAccountFound": "No se encontró una cuenta",
+      "switchedToSignup": "Cambiamos al modo de Registro. Haz clic en el botón para crear tu cuenta."
     },
     "success": {
       "loggedIn": "¡Sesión iniciada exitosamente!",
