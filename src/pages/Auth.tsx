@@ -17,27 +17,6 @@ const authSchema = z.object({
     .max(100, { message: "Password must be less than 100 characters" }),
 });
 
-const withTimeout = async <T,>(
-  promise: Promise<T>,
-  ms: number,
-  timeoutMessage: string
-): Promise<T> => {
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(timeoutMessage)), ms);
-  });
-
-  try {
-    return await Promise.race([promise, timeoutPromise]);
-  } finally {
-    if (timeoutId) clearTimeout(timeoutId);
-  }
-};
-
-const runInBackground = (label: string, fn: () => Promise<unknown>) => {
-  void fn().catch((err) => console.error(`${label} failed:`, err));
-};
-
 const Auth = () => {
   const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
@@ -70,26 +49,16 @@ const Auth = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Check if user already has a trial - use maybeSingle() since profile may not exist yet
-      const { data: profile, error: profileError } = await supabase
+      // Check if user already has a trial
+      const { data: profile } = await supabase
         .from('profiles')
         .select('trial_start_date')
         .eq('id', user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError);
-        return;
-      }
+        .single();
 
       if (profile?.trial_start_date) {
         // Already has trial, skip activation
         return;
-      }
-
-      // Wait a moment for the profile trigger to complete if needed
-      if (!profile) {
-        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       // Activate trial by setting start date
@@ -232,17 +201,13 @@ const Auth = () => {
           }
         }
       } else {
-        const { error, data } = await withTimeout(
-          supabase.auth.signUp({
-            email: validatedData.email,
-            password: validatedData.password,
-            options: {
-              emailRedirectTo: `${window.location.origin}/`,
-            },
-          }),
-          20000,
-          "Sign up timed out. Please try again."
-        );
+        const { error, data } = await supabase.auth.signUp({
+          email: validatedData.email,
+          password: validatedData.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+          },
+        });
 
         if (error) {
           if (error.message.includes("already registered")) {
@@ -259,51 +224,44 @@ const Auth = () => {
             });
           }
         } else {
-          // Capture lead + Zapier webhook are non-critical; never block signup UI on these.
-          runInBackground("Lead capture", async () => {
-            await withTimeout(
-              supabase.functions.invoke("capture-lead", {
-                body: {
-                  email: validatedData.email,
-                  source: "trial_signup",
-                  sequence: "trial",
-                },
-              }),
-              8000,
-              "Lead capture timed out"
-            );
-          });
+          // Capture lead in database
+          try {
+            await supabase.functions.invoke("capture-lead", {
+              body: {
+                email: validatedData.email,
+                source: "trial_signup",
+                sequence: "trial",
+              },
+            });
+          } catch (leadError) {
+            console.error("Lead capture failed:", leadError);
+          }
 
-          runInBackground("Zapier webhook", async () => {
+          // Send to Zapier webhook for Google Sheets
+          try {
             const zapierWebhookUrl = "https://hooks.zapier.com/hooks/catch/25475428/uzqf7vv/";
-            await withTimeout(
-              fetch(zapierWebhookUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                mode: "no-cors",
-                body: JSON.stringify({
-                  email: validatedData.email,
-                  source: "trial_signup",
-                  type: "user_signup",
-                  timestamp: new Date().toISOString(),
-                  plan: "trial",
-                  sequence: "trial",
-                }),
+            await fetch(zapierWebhookUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              mode: "no-cors",
+              body: JSON.stringify({
+                email: validatedData.email,
+                source: "trial_signup",
+                type: "user_signup",
+                timestamp: new Date().toISOString(),
+                plan: "trial",
+                sequence: "trial",
               }),
-              8000,
-              "Zapier webhook timed out"
-            );
-          });
+            });
+          } catch (zapierError) {
+            console.error("Zapier webhook failed:", zapierError);
+          }
 
           // Auto-login after successful signup
-          const { error: loginError } = await withTimeout(
-            supabase.auth.signInWithPassword({
-              email: validatedData.email,
-              password: validatedData.password,
-            }),
-            20000,
-            "Login timed out. Please try again."
-          );
+          const { error: loginError } = await supabase.auth.signInWithPassword({
+            email: validatedData.email,
+            password: validatedData.password,
+          });
 
           if (loginError) {
             // If auto-login fails (e.g., email confirmation required), show message and switch to login
@@ -315,14 +273,12 @@ const Auth = () => {
           } else {
             // Link subscription if coming from guest checkout
             if (sessionId) {
-              // Run in background - don't block signup completion
-              runInBackground("Link subscription", () => linkSubscriptionToAccount());
+              await linkSubscriptionToAccount();
             }
             
             // Activate trial if coming from "Get Started Free" button
             if (startTrial === 'true') {
-              // Run in background - don't block signup completion
-              runInBackground("Activate trial", () => activateTrial());
+              await activateTrial();
             }
             
             toast({
@@ -343,23 +299,16 @@ const Auth = () => {
         }
       }
     } catch (error) {
-      console.error('Auth error:', error);
       if (error instanceof z.ZodError) {
         toast({
           title: t('auth.errors.validationError'),
           description: error.errors[0].message,
           variant: "destructive",
         });
-      } else if (error instanceof Error && error.message.includes('timed out')) {
-        toast({
-          title: "Request Timed Out",
-          description: error.message,
-          variant: "destructive",
-        });
       } else {
         toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : t('auth.errors.unexpectedError'),
+          title: t('auth.errors.validationError'),
+          description: t('auth.errors.unexpectedError'),
           variant: "destructive",
         });
       }
