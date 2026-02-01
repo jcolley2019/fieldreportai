@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, User, Building2, X, SkipForward, Save } from "lucide-react";
+import { Upload, User, Building2, X, Save } from "lucide-react";
 import { ImageCropDialog } from "@/components/ImageCropDialog";
 import { LanguageSelector } from "@/components/LanguageSelector";
 
@@ -344,38 +344,21 @@ const Onboarding = () => {
                 {t('onboarding.setupProfile')}
               </CardDescription>
             </div>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleSaveAndCompleteLater();
-                }}
-                disabled={savingProgress}
-                className="flex items-center gap-2"
-              >
-                <Save className="w-4 h-4" />
-                {savingProgress ? t('common.saving') : t('onboarding.completeLater')}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  localStorage.setItem('skipOnboarding', 'true');
-                  navigate("/dashboard");
-                }}
-                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <SkipForward className="w-4 h-4" />
-                {t('common.skip')}
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleSaveAndCompleteLater();
+              }}
+              disabled={savingProgress}
+              className="flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              {savingProgress ? t('common.saving') : t('onboarding.completeLater')}
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
