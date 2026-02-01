@@ -272,11 +272,11 @@ const Landing = () => {
               </Link>
             </div>
             
-            <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto">
+            <div className="grid grid-cols-3 gap-3 md:gap-8 max-w-2xl mx-auto px-2 md:px-0">
               {stats.map((stat, index) => (
-                <div key={index} className="text-center p-4 rounded-lg bg-primary/5 border border-primary/10">
-                  <div className="text-3xl font-bold text-primary mb-1">{stat.value}</div>
-                  <div className="text-sm text-muted-foreground">{stat.label}</div>
+                <div key={index} className="flex flex-col items-center justify-center text-center p-3 md:p-4 rounded-lg bg-primary/5 border border-primary/10">
+                  <div className="text-2xl md:text-3xl font-bold text-primary mb-1">{stat.value}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground text-center leading-tight">{stat.label}</div>
                 </div>
               ))}
             </div>
