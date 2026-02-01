@@ -49,16 +49,26 @@ const Auth = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Check if user already has a trial
-      const { data: profile } = await supabase
+      // Check if user already has a trial - use maybeSingle() since profile may not exist yet
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('trial_start_date')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        return;
+      }
 
       if (profile?.trial_start_date) {
         // Already has trial, skip activation
         return;
+      }
+
+      // Wait a moment for the profile trigger to complete if needed
+      if (!profile) {
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       // Activate trial by setting start date
