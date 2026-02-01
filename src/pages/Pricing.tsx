@@ -1,14 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { PricingSection } from "@/components/PricingSection";
 import { EmailCaptureForm } from "@/components/EmailCaptureForm";
 import logo from "@/assets/field-report-ai-logo.png";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const Pricing = () => {
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
+  const [searchParams] = useSearchParams();
+  const pendingPlan = searchParams.get("plan") as 'pro' | 'premium' | null;
+  const pendingBilling = searchParams.get("billing") as 'monthly' | 'annual' | null;
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">(pendingBilling || "monthly");
 
   return (
     <div className="dark min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
@@ -81,7 +84,7 @@ const Pricing = () => {
       </div>
 
       {/* Pricing Section */}
-      <PricingSection showHeader={false} billingPeriod={billingPeriod} />
+      <PricingSection showHeader={false} billingPeriod={billingPeriod} pendingPlan={pendingPlan} />
 
       {/* FAQ Section */}
       <section id="faq" className="py-12 bg-transparent">

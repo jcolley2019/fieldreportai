@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -25,17 +25,29 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectUrl = searchParams.get("redirect");
+  const pendingPlan = searchParams.get("plan");
+  const pendingBilling = searchParams.get("billing");
 
   useEffect(() => {
     // Check if user is already logged in
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/dashboard");
+        // If there's a redirect URL, go there instead of dashboard
+        if (redirectUrl) {
+          const fullRedirect = pendingPlan && pendingBilling 
+            ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
+            : redirectUrl;
+          navigate(fullRedirect);
+        } else {
+          navigate("/dashboard");
+        }
       }
     };
     checkUser();
-  }, [navigate]);
+  }, [navigate, redirectUrl, pendingPlan, pendingBilling]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +96,15 @@ const Auth = () => {
             description: t('auth.success.loggedIn'),
           });
           
-          navigate(isProfileComplete ? "/dashboard" : "/onboarding");
+          // If there's a redirect URL (e.g., from pricing page), go there
+          if (redirectUrl) {
+            const fullRedirect = pendingPlan && pendingBilling 
+              ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
+              : redirectUrl;
+            navigate(fullRedirect);
+          } else {
+            navigate(isProfileComplete ? "/dashboard" : "/onboarding");
+          }
         }
       } else {
         const { error, data } = await supabase.auth.signUp({
