@@ -309,7 +309,13 @@ const LandingChatBot = () => {
                   variant="outline"
                   size="sm"
                   className="text-xs h-8 gap-1"
-                  onClick={() => handleQuickAction("What are your pricing plans?")}
+                  onClick={() => {
+                    setIsOpen(false);
+                    const pricingSection = document.getElementById('pricing');
+                    if (pricingSection) {
+                      pricingSection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
                 >
                   💰 Pricing
                 </Button>
