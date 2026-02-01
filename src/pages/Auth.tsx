@@ -213,11 +213,40 @@ const Auth = () => {
             console.error("Zapier webhook failed:", zapierError);
           }
 
-          toast({
-            title: t('auth.success.accountCreated').split('!')[0],
-            description: t('auth.success.accountCreated'),
+          // Auto-login after successful signup
+          const { error: loginError } = await supabase.auth.signInWithPassword({
+            email: validatedData.email,
+            password: validatedData.password,
           });
-          setIsLogin(true);
+
+          if (loginError) {
+            // If auto-login fails (e.g., email confirmation required), show message and switch to login
+            toast({
+              title: t('auth.success.accountCreated').split('!')[0],
+              description: t('auth.success.accountCreated'),
+            });
+            setIsLogin(true);
+          } else {
+            // Link subscription if coming from guest checkout
+            if (sessionId) {
+              await linkSubscriptionToAccount();
+            }
+            
+            toast({
+              title: t('auth.success.accountCreated').split('!')[0],
+              description: "You're now logged in!",
+            });
+            
+            // Redirect to onboarding for new users
+            if (redirectUrl) {
+              const fullRedirect = pendingPlan && pendingBilling 
+                ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
+                : redirectUrl;
+              navigate(fullRedirect);
+            } else {
+              navigate("/onboarding");
+            }
+          }
         }
       }
     } catch (error) {
