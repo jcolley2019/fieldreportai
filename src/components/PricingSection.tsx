@@ -298,14 +298,25 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
+      const priceId = STRIPE_PRICES[planKey][billingPeriod].priceId;
+      
       if (!user) {
-        // Redirect to auth with return URL to resume checkout after login
-        navigate(`/auth?redirect=/pricing&plan=${planKey}&billing=${billingPeriod}`);
+        // Guest checkout - payment first, then account creation
+        const { data, error } = await supabase.functions.invoke('create-guest-checkout', {
+          body: { priceId, plan: planKey, billingPeriod },
+        });
+
+        if (error) throw error;
+
+        if (data?.url) {
+          window.location.href = data.url;
+        } else {
+          throw new Error('No checkout URL returned');
+        }
         return;
       }
 
-      const priceId = STRIPE_PRICES[planKey][billingPeriod].priceId;
-      
+      // Existing user - regular checkout
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { priceId },
       });
@@ -313,7 +324,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
       if (error) throw error;
 
       if (data?.url) {
-        window.open(data.url, '_blank');
+        window.location.href = data.url;
       } else {
         throw new Error('No checkout URL returned');
       }

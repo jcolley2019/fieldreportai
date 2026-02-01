@@ -28,6 +28,10 @@ import {
   Palette,
   Languages,
   BarChart3,
+  CreditCard,
+  Crown,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -90,6 +94,7 @@ const Settings = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [emailTemplateColor, setEmailTemplateColor] = useState("#007bff");
   const [emailTemplateMessage, setEmailTemplateMessage] = useState("");
+  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -369,6 +374,33 @@ const Settings = () => {
 
   const handleManageCloud = () => {
     toast.success("Opening cloud connections...");
+  };
+
+  const handleManageSubscription = async () => {
+    setIsLoadingPortal(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      
+      if (error) {
+        if (error.message?.includes('No Stripe customer found')) {
+          toast.error("No active subscription found. Please subscribe to a plan first.");
+          navigate("/pricing");
+          return;
+        }
+        throw error;
+      }
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No portal URL returned');
+      }
+    } catch (error) {
+      console.error('Error opening customer portal:', error);
+      toast.error("Failed to open subscription management. Please try again.");
+    } finally {
+      setIsLoadingPortal(false);
+    }
   };
 
   const handleSaveEmailTemplate = async () => {
@@ -925,6 +957,63 @@ const Settings = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Subscription Management Section */}
+        <div className="bg-background px-4 py-6 border-t border-border">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-foreground" />
+                <h2 className="text-lg font-bold text-foreground">
+                  {t('settings.subscription') || 'Subscription'}
+                </h2>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t('settings.subscriptionDesc') || 'Manage your subscription, update payment method, or change plans.'}
+              </p>
+              {/* Current Plan Badge */}
+              {currentPlan && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-sm text-muted-foreground">Current plan:</span>
+                  <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    currentPlan === 'premium' 
+                      ? 'bg-amber-500/20 text-amber-400' 
+                      : currentPlan === 'pro' 
+                        ? 'bg-primary/20 text-primary'
+                        : currentPlan === 'trial'
+                          ? 'bg-blue-500/20 text-blue-400'
+                          : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {currentPlan === 'premium' && <Crown className="h-3 w-3" />}
+                    {currentPlan === 'pro' && <Sparkles className="h-3 w-3" />}
+                    {currentPlan === 'trial' && <Zap className="h-3 w-3" />}
+                    {currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              {(currentPlan === 'pro' || currentPlan === 'premium') && (
+                <Button
+                  onClick={handleManageSubscription}
+                  disabled={isLoadingPortal}
+                  className="shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  {isLoadingPortal ? "Loading..." : (t('settings.manageSubscription') || 'Manage Plan')}
+                </Button>
+              )}
+              {(!currentPlan || currentPlan === 'trial' || currentPlan === 'basic') && (
+                <Button
+                  onClick={() => navigate("/pricing")}
+                  className="shrink-0 bg-gradient-to-r from-primary to-primary/80"
+                >
+                  <Zap className="mr-2 h-4 w-4" />
+                  {t('dashboard.upgradeNow') || 'Upgrade Now'}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Cloud Connections Section */}
         <div className="bg-background px-4 py-5">

@@ -24,17 +24,62 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [isLinkingSubscription, setIsLinkingSubscription] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectUrl = searchParams.get("redirect");
   const pendingPlan = searchParams.get("plan");
   const pendingBilling = searchParams.get("billing");
+  const sessionId = searchParams.get("session_id"); // For guest checkout linking
+  const mode = searchParams.get("mode"); // 'signup' for guest checkout flow
+
+  // Set signup mode if coming from guest checkout
+  useEffect(() => {
+    if (mode === 'signup') {
+      setIsLogin(false);
+    }
+  }, [mode]);
+
+  // Link subscription after signup/login if coming from guest checkout
+  const linkSubscriptionToAccount = async () => {
+    if (!sessionId) return;
+    
+    setIsLinkingSubscription(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('link-subscription', {
+        body: { sessionId },
+      });
+
+      if (error) {
+        console.error('Error linking subscription:', error);
+        toast({
+          title: "Subscription Linking Failed",
+          description: "Please contact support to link your subscription.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Subscription Activated",
+          description: `Your ${pendingPlan || 'plan'} subscription is now active!`,
+        });
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setIsLinkingSubscription(false);
+    }
+  };
 
   useEffect(() => {
     // Check if user is already logged in
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        // If coming from guest checkout, link the subscription
+        if (sessionId) {
+          await linkSubscriptionToAccount();
+        }
+        
         // If there's a redirect URL, go there instead of dashboard
         if (redirectUrl) {
           const fullRedirect = pendingPlan && pendingBilling 
@@ -47,7 +92,7 @@ const Auth = () => {
       }
     };
     checkUser();
-  }, [navigate, redirectUrl, pendingPlan, pendingBilling]);
+  }, [navigate, redirectUrl, pendingPlan, pendingBilling, sessionId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +127,11 @@ const Auth = () => {
             });
           }
         } else {
+          // Link subscription if coming from guest checkout
+          if (sessionId) {
+            await linkSubscriptionToAccount();
+          }
+          
           // Check if profile is complete
           const { data: profile } = await supabase
             .from('profiles')
