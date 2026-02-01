@@ -83,8 +83,9 @@ const pricingPlans = [
       "Training & onboarding",
       "SLA guarantee",
     ],
-    cta: "Contact Sales",
+    cta: "Coming Soon",
     popular: false,
+    comingSoon: true,
   },
 ];
 
@@ -214,10 +215,15 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
           {pricingPlans.map((plan, index) => {
             const displayPrice = billingPeriod === "monthly" ? plan.monthlyPrice : plan.annualPrice;
             return (
-              <Card key={index} className={`flex flex-col ${plan.popular ? "border-primary shadow-lg rounded-tl-none rounded-tr-none" : ""}`}>
+              <Card key={index} className={`flex flex-col ${plan.popular ? "border-primary shadow-lg rounded-tl-none rounded-tr-none" : ""} ${plan.comingSoon ? "opacity-75" : ""}`}>
                 {plan.popular && (
                   <div className="bg-primary text-primary-foreground text-center py-2 text-sm font-semibold">
                     Most Popular
+                  </div>
+                )}
+                {plan.comingSoon && (
+                  <div className="bg-muted text-muted-foreground text-center py-2 text-sm font-semibold">
+                    Coming Soon
                   </div>
                 )}
                 <CardHeader>
@@ -265,11 +271,11 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
                     >
                       {loadingPlan === 'trial' ? "Activating..." : plan.cta}
                     </Button>
-                  ) : plan.name === "Enterprise" ? (
+                  ) : plan.comingSoon ? (
                     <Button 
                       className="w-full" 
-                      variant={plan.popular ? "default" : "outline"}
-                      onClick={() => setShowEnterpriseDialog(true)}
+                      variant="outline"
+                      disabled
                     >
                       {plan.cta}
                     </Button>
