@@ -336,6 +336,7 @@ export type Database = {
           email_template_message: string | null
           first_name: string | null
           id: string
+          idle_timeout_minutes: number | null
           last_name: string | null
           letterhead_url: string | null
           preferred_language: string | null
@@ -353,6 +354,7 @@ export type Database = {
           email_template_message?: string | null
           first_name?: string | null
           id: string
+          idle_timeout_minutes?: number | null
           last_name?: string | null
           letterhead_url?: string | null
           preferred_language?: string | null
@@ -370,6 +372,7 @@ export type Database = {
           email_template_message?: string | null
           first_name?: string | null
           id?: string
+          idle_timeout_minutes?: number | null
           last_name?: string | null
           letterhead_url?: string | null
           preferred_language?: string | null

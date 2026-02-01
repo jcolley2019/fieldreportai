@@ -32,6 +32,7 @@ import {
   Crown,
   Sparkles,
   Zap,
+  Timer,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -53,6 +54,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -95,6 +103,7 @@ const Settings = () => {
   const [emailTemplateColor, setEmailTemplateColor] = useState("#007bff");
   const [emailTemplateMessage, setEmailTemplateMessage] = useState("");
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useState<number | null>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -136,7 +145,7 @@ const Settings = () => {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("*")
+        .select("*, idle_timeout_minutes")
         .eq("id", user.id)
         .single();
 
@@ -150,6 +159,7 @@ const Settings = () => {
         setCurrentPlan(profile.current_plan);
         setEmailTemplateColor(profile.email_template_color || "#007bff");
         setEmailTemplateMessage(profile.email_template_message || "");
+        setIdleTimeoutMinutes(profile.idle_timeout_minutes);
         
         // Set language from profile
         if (profile.preferred_language) {
@@ -443,6 +453,39 @@ const Settings = () => {
       console.error("Error updating language:", error);
       toast.error(language === 'en' ? 'Failed to update language' : 'Error al actualizar el idioma');
     }
+  };
+
+  const handleIdleTimeoutChange = async (value: string) => {
+    if (!userId) return;
+
+    const minutes = value === "disabled" ? 0 : value === "default" ? null : parseInt(value);
+    
+    try {
+      setIdleTimeoutMinutes(minutes);
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ idle_timeout_minutes: minutes })
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      const message = minutes === 0 
+        ? "Auto-logout disabled" 
+        : minutes === null 
+          ? "Auto-logout set to 15 minutes (default)"
+          : `Auto-logout set to ${minutes} minutes`;
+      toast.success(message);
+    } catch (error) {
+      console.error("Error updating idle timeout:", error);
+      toast.error("Failed to update idle timeout setting");
+    }
+  };
+
+  const getIdleTimeoutValue = () => {
+    if (idleTimeoutMinutes === 0) return "disabled";
+    if (idleTimeoutMinutes === null) return "default";
+    return idleTimeoutMinutes.toString();
   };
 
   const isPremiumOrEnterprise = currentPlan === 'premium' || currentPlan === 'enterprise';
@@ -957,6 +1000,49 @@ const Settings = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Session Timeout Section */}
+        <div className="bg-background px-4 py-6 border-t border-border">
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+              <Timer className="h-5 w-5" />
+              Session Timeout
+            </h2>
+            <p className="text-sm text-muted-foreground mt-2">
+              Automatically log out after a period of inactivity for security.
+            </p>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div>
+                <p className="text-base font-medium text-foreground">
+                  Auto-logout Timer
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {idleTimeoutMinutes === 0 
+                    ? "Disabled - you will stay logged in" 
+                    : idleTimeoutMinutes === null 
+                      ? "15 minutes of inactivity (default)"
+                      : `${idleTimeoutMinutes} minutes of inactivity`}
+                </p>
+              </div>
+            </div>
+            <Select value={getIdleTimeoutValue()} onValueChange={handleIdleTimeoutChange}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Select timeout" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5 minutes</SelectItem>
+                <SelectItem value="10">10 minutes</SelectItem>
+                <SelectItem value="default">15 minutes</SelectItem>
+                <SelectItem value="30">30 minutes</SelectItem>
+                <SelectItem value="60">1 hour</SelectItem>
+                <SelectItem value="disabled">Disabled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         {/* Subscription Management Section */}
         <div className="bg-background px-4 py-6 border-t border-border">
