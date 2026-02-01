@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Upload, User, Building2, X, Save } from "lucide-react";
 import { ImageCropDialog } from "@/components/ImageCropDialog";
-import { LanguageSelector } from "@/components/LanguageSelector";
+
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -330,10 +330,6 @@ const Onboarding = () => {
 
   return (
     <div className="dark min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-4">
-      {/* Language Selector - Top Right */}
-      <div className="absolute top-4 right-4">
-        <LanguageSelector />
-      </div>
 
       <Card className="w-full max-w-2xl bg-card border-border animate-fade-in">
         <CardHeader>
