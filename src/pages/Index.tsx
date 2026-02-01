@@ -318,10 +318,12 @@ const Index = () => {
                   navigate("/pricing");
                 }, 200);
               }}
-              className={`gap-2 text-base px-4 py-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-medium shadow-lg transition-all duration-300 ${isUpgradeClicked ? "scale-95" : "hover:scale-105 hover:shadow-[0_0_20px_hsl(var(--primary)/0.5)] hover:from-primary/90 hover:to-primary"}`}
+              size="sm"
+              className={`gap-1.5 text-sm md:text-base px-2.5 md:px-4 py-1.5 md:py-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-medium shadow-lg transition-all duration-300 ${isUpgradeClicked ? "scale-95" : "hover:scale-105 hover:shadow-[0_0_20px_hsl(var(--primary)/0.5)] hover:from-primary/90 hover:to-primary"}`}
             >
-              <Zap className="h-4 w-4 fill-current" />
-              {t('dashboard.upgradeNow')}
+              <Zap className="h-3.5 w-3.5 md:h-4 md:w-4 fill-current" />
+              <span className="hidden sm:inline">{t('dashboard.upgradeNow')}</span>
+              <span className="sm:hidden">Upgrade</span>
             </Button>
           )}
           <Button
