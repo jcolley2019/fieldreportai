@@ -43,7 +43,7 @@ export const TrialBanner = ({ trialStartDate, onDismiss }: TrialBannerProps) => 
             <Clock className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">14-Day Trial Active</h3>
+            <h3 className="font-semibold text-foreground">Pro Plan 14-Day Trial</h3>
             <p className="text-sm text-muted-foreground">
               {daysRemaining === 0 ? (
                 <span className="text-destructive font-medium">Trial expires today!</span>
