@@ -315,12 +315,14 @@ const Auth = () => {
           } else {
             // Link subscription if coming from guest checkout
             if (sessionId) {
-              await linkSubscriptionToAccount();
+              // Run in background - don't block signup completion
+              runInBackground("Link subscription", () => linkSubscriptionToAccount());
             }
             
             // Activate trial if coming from "Get Started Free" button
             if (startTrial === 'true') {
-              await activateTrial();
+              // Run in background - don't block signup completion
+              runInBackground("Activate trial", () => activateTrial());
             }
             
             toast({
@@ -341,16 +343,23 @@ const Auth = () => {
         }
       }
     } catch (error) {
+      console.error('Auth error:', error);
       if (error instanceof z.ZodError) {
         toast({
           title: t('auth.errors.validationError'),
           description: error.errors[0].message,
           variant: "destructive",
         });
+      } else if (error instanceof Error && error.message.includes('timed out')) {
+        toast({
+          title: "Request Timed Out",
+          description: error.message,
+          variant: "destructive",
+        });
       } else {
         toast({
-          title: t('auth.errors.validationError'),
-          description: t('auth.errors.unexpectedError'),
+          title: "Error",
+          description: error instanceof Error ? error.message : t('auth.errors.unexpectedError'),
           variant: "destructive",
         });
       }
