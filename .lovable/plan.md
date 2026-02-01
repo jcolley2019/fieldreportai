@@ -1,83 +1,53 @@
 
+# Stop Flashing & Update Text on AI Chat Button
 
-# Modern Scroll Indicator Redesign
+## Summary
+Remove the pulsing/flashing animation from the AI help menu button and label, and shorten the text from "Have Questions?" to "Questions?"
 
-## Current Issue
-The current bouncing arrow between the "Pain Points" and "Field Reporting Made Simple" sections is a large, prominent element with:
-- A pulsing ring animation (`animate-ping`)
-- A bouncing chevron (`animate-bounce`)
-- A large blue circle that feels disconnected from the surrounding content
+## Changes Required
 
-This design is visually heavy and distracting rather than guiding the user naturally.
+### File: `src/components/LandingChatBot.tsx`
 
-## Proposed Solution
-Replace the bouncing arrow with a **subtle, integrated scroll indicator** that feels modern and intuitive, following Apple-like design principles already used in the landing page.
+| Line | Current | Change To |
+|------|---------|-----------|
+| 213-215 | Label with `animate-pulse` class when `shouldPulse` | Remove the conditional `animate-pulse` class entirely |
+| 217 | `"Have Questions?"` | `"Questions?"` |
+| 226-228 | Button with `animate-pulse ring-4 ring-primary/30` when pulsing | Remove the conditional `animate-pulse ring-4 ring-primary/30` class |
 
-### Design Options
+### Detailed Changes
 
-**Option 1: Gradient Fade Line with Subtle Arrow (Recommended)**
-- Replace the large circle with a subtle vertical gradient line
-- Add a small, gently pulsing arrow at the bottom
-- Much cleaner and more professional appearance
+**1. Remove pulse animation from label (line 213-215):**
+```tsx
+// Before
+className={`bg-card border border-border rounded-full px-4 py-2 shadow-lg transition-all duration-300 ${
+  shouldPulse ? 'animate-pulse' : ''
+}`}
 
-**Option 2: Remove Arrow, Enhance Text CTA**
-- Remove the arrow entirely
-- Enhance the "There's a better way" text to be more prominent
-- Let the natural content flow guide users
-
-**Option 3: Minimal Dot Indicator**
-- Replace with a small animated dot or subtle pulse
-- Less intrusive while still providing visual continuity
-
-## Recommended Implementation (Option 1)
-
-### Changes to `src/pages/Landing.tsx`
-
-1. **Remove the current bouncing arrow element** (lines 359-369):
-   - Delete the outer glow ring with `animate-ping`
-   - Delete the large blue circle with bouncing chevron
-
-2. **Replace with a modern, subtle indicator**:
-   - A thin vertical gradient line extending from the section
-   - A small, subtle down arrow with gentle opacity pulse animation
-   - The arrow will use `animate-pulse-slow` (already available) for a calm, non-distracting effect
-
-3. **Enhance the "There's a better way" text**:
-   - Add the down arrow inline with the text
-   - Make it a subtle scroll hint rather than a prominent element
-
-### Visual Result
-
-```text
-Before:                          After:
-                                 
-[Pain Points Cards]              [Pain Points Cards]
-                                 
-"There's a better way"           "There's a better way"
-                                          ↓
-    ┌─────────────┐                      │
-    │  (pulsing)  │              ────────┼────────
-    │    ↓ ↓ ↓    │              
-    └─────────────┘              [Field Reporting Made Simple]
-          │                      
-          │                      
-[Field Reporting Made Simple]    
+// After
+className="bg-card border border-border rounded-full px-4 py-2 shadow-lg transition-all duration-300"
 ```
 
-### Technical Implementation
+**2. Update text (line 217):**
+```tsx
+// Before
+<span className="text-sm font-medium text-foreground whitespace-nowrap">Have Questions?</span>
 
-The new scroll indicator will:
-- Use a subtle vertical line (`w-px` or `w-0.5`) with gradient opacity
-- Include a small `ChevronDown` icon (smaller size: `h-5 w-5`)
-- Apply `opacity-60` for subtlety with `hover:opacity-100` for interaction feedback
-- Use `animate-pulse-slow` for a gentle, non-distracting animation
-- Integrate seamlessly with the existing section transition
+// After
+<span className="text-sm font-medium text-foreground whitespace-nowrap">Questions?</span>
+```
 
-### Code Changes Summary
+**3. Remove pulse animation from button (line 226-228):**
+```tsx
+// Before
+className={`w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center justify-center group hover:scale-105 ${
+  shouldPulse && !isOpen ? 'animate-pulse ring-4 ring-primary/30' : ''
+}`}
 
-| File | Change |
-|------|--------|
-| `src/pages/Landing.tsx` | Replace lines 354-375 with new subtle scroll indicator |
+// After
+className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center justify-center group hover:scale-105"
+```
 
-The new design will feel more integrated with the page's premium, Apple-like aesthetic while still providing visual guidance to scroll down.
-
+## Result
+- The AI chat button and label will no longer flash/pulse
+- The label will display the shorter, cleaner text "Questions?"
+- The button retains its hover effects (scale and color change) for interactivity
