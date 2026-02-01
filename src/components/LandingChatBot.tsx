@@ -209,12 +209,8 @@ const LandingChatBot = () => {
       <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3">
         {/* Label that appears when not open */}
         {!isOpen && (
-          <div 
-            className={`bg-card border border-border rounded-full px-4 py-2 shadow-lg transition-all duration-300 ${
-              shouldPulse ? 'animate-pulse' : ''
-            }`}
-          >
-            <span className="text-sm font-medium text-foreground whitespace-nowrap">Have Questions?</span>
+          <div className="bg-card border border-border rounded-full px-4 py-2 shadow-lg transition-all duration-300">
+            <span className="text-sm font-medium text-foreground whitespace-nowrap">Questions?</span>
           </div>
         )}
         
@@ -223,9 +219,7 @@ const LandingChatBot = () => {
             setIsOpen(!isOpen);
             if (!isOpen) setHasUserInteracted(true);
           }}
-          className={`w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center justify-center group hover:scale-105 ${
-            shouldPulse && !isOpen ? 'animate-pulse ring-4 ring-primary/30' : ''
-          }`}
+          className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center justify-center group hover:scale-105"
           aria-label={isOpen ? 'Close chat' : 'Open chat'}
         >
           {isOpen ? (
