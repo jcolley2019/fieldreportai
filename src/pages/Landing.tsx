@@ -351,28 +351,19 @@ const Landing = () => {
             ))}
           </div>
           
-          <div className="text-center mt-12">
-            <p className="text-muted-foreground mb-4">There's a better way</p>
-          </div>
-        </div>
-        
-        {/* Animated Arrow Transition */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-20">
-          <div className="relative">
-            {/* Outer glow ring */}
-            <div className="absolute inset-0 w-16 h-16 rounded-full bg-primary/20 animate-ping"></div>
-            {/* Main arrow container */}
-            <div className="relative w-16 h-16 rounded-full bg-gradient-to-b from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30 border-4 border-background">
-              <ChevronDown className="h-8 w-8 text-primary-foreground animate-bounce" />
+          {/* Subtle scroll transition */}
+          <div className="flex flex-col items-center mt-16 mb-8">
+            <p className="text-muted-foreground mb-6 text-sm tracking-wide">There's a better way</p>
+            <div className="flex flex-col items-center opacity-60 hover:opacity-100 transition-opacity duration-300">
+              <div className="w-px h-8 bg-gradient-to-b from-primary/60 to-primary/20"></div>
+              <ChevronDown className="h-5 w-5 text-primary animate-pulse-slow mt-1" />
             </div>
           </div>
         </div>
       </section>
       
-      {/* Visual connector line */}
-      <div className="h-8 bg-gradient-to-b from-primary/5 to-transparent relative">
-        <div className="absolute left-1/2 -translate-x-1/2 w-0.5 h-full bg-gradient-to-b from-primary/40 to-transparent"></div>
-      </div>
+      {/* Subtle visual connector */}
+      <div className="h-4 bg-gradient-to-b from-transparent via-primary/5 to-transparent"></div>
 
       {/* How It Works */}
       <section className="py-20">
