@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { IdleTimeoutProvider } from "@/components/IdleTimeoutProvider";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Pricing from "./pages/Pricing";
@@ -35,31 +36,33 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/dashboard" element={<Index />} />
-          <Route path="/new-project" element={<NewProject />} />
-          <Route path="/projects" element={<ProjectsCustomers />} />
-          <Route path="/project/:projectId" element={<ProjectDetail />} />
-          <Route path="/notes" element={<Notes />} />
-          <Route path="/saved-notes" element={<SavedNotes />} />
-          <Route path="/capture-screen" element={<CaptureScreen />} />
-          <Route path="/checklist" element={<Checklist />} />
-          <Route path="/checklist-confirmation" element={<ChecklistConfirmation />} />
-          <Route path="/confirmation" element={<Confirmation />} />
-          <Route path="/final-report" element={<FinalReport />} />
-          <Route path="/review-summary" element={<ReviewSummary />} />
-          <Route path="/saved-reports" element={<SavedReports />} />
-          <Route path="/all-content" element={<AllContent />} />
-          <Route path="/tasks" element={<Tasks />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/checkout-success" element={<CheckoutSuccess />} />
-          <Route path="/admin/metrics" element={<AdminMetrics />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <IdleTimeoutProvider>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/dashboard" element={<Index />} />
+            <Route path="/new-project" element={<NewProject />} />
+            <Route path="/projects" element={<ProjectsCustomers />} />
+            <Route path="/project/:projectId" element={<ProjectDetail />} />
+            <Route path="/notes" element={<Notes />} />
+            <Route path="/saved-notes" element={<SavedNotes />} />
+            <Route path="/capture-screen" element={<CaptureScreen />} />
+            <Route path="/checklist" element={<Checklist />} />
+            <Route path="/checklist-confirmation" element={<ChecklistConfirmation />} />
+            <Route path="/confirmation" element={<Confirmation />} />
+            <Route path="/final-report" element={<FinalReport />} />
+            <Route path="/review-summary" element={<ReviewSummary />} />
+            <Route path="/saved-reports" element={<SavedReports />} />
+            <Route path="/all-content" element={<AllContent />} />
+            <Route path="/tasks" element={<Tasks />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/checkout-success" element={<CheckoutSuccess />} />
+            <Route path="/admin/metrics" element={<AdminMetrics />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </IdleTimeoutProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
