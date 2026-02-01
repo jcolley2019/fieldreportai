@@ -3,23 +3,23 @@
 export const STRIPE_PRICES = {
   pro: {
     monthly: {
-      priceId: "price_1SZOPAGsHdNVicmjmTZxpwwf",
-      amount: 49,
+      priceId: "price_1Sw6tQ2cM0XKZQKCq1umVb9p", // TEST: $1 Pro Plan
+      amount: 1,
     },
     annual: {
-      priceId: "price_1SZPVwGsHdNVicmjY7uO3cE6",
-      amount: 468, // $39/month billed annually
+      priceId: "price_1Sw6tQ2cM0XKZQKCq1umVb9p", // TEST: $1 Pro Plan
+      amount: 1,
     },
     name: "Pro",
   },
   premium: {
     monthly: {
-      priceId: "price_1SZOQpGsHdNVicmj0K3ZiwBr",
-      amount: 99,
+      priceId: "price_1Sw6tx2cM0XKZQKC3prvNFZp", // TEST: $1 Premium Plan
+      amount: 1,
     },
     annual: {
-      priceId: "price_1SZPYOGsHdNVicmj7sUaJd38",
-      amount: 948, // $79/month billed annually
+      priceId: "price_1Sw6tx2cM0XKZQKC3prvNFZp", // TEST: $1 Premium Plan
+      amount: 1,
     },
     name: "Premium",
   },
