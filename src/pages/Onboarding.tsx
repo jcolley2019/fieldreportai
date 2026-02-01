@@ -349,7 +349,11 @@ const Onboarding = () => {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={handleSaveAndCompleteLater}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSaveAndCompleteLater();
+                }}
                 disabled={savingProgress}
                 className="flex items-center gap-2"
               >
