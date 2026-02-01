@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -187,9 +187,10 @@ const postTrialPlans: PricingPlan[] = [
 interface PricingSectionProps {
   showHeader?: boolean;
   billingPeriod?: "monthly" | "annual";
+  pendingPlan?: 'pro' | 'premium' | null;
 }
 
-export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = true, billingPeriod: externalBillingPeriod }) => {
+export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = true, billingPeriod: externalBillingPeriod, pendingPlan }) => {
   const [internalBillingPeriod, setInternalBillingPeriod] = useState<"monthly" | "annual">("monthly");
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [showEnterpriseDialog, setShowEnterpriseDialog] = useState(false);
@@ -233,6 +234,21 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
 
   // Select the appropriate plans based on trial status
   const pricingPlans = hasUsedTrial ? postTrialPlans : newUserPlans;
+
+  // Track if we've already triggered pending checkout to prevent loops
+  const pendingCheckoutTriggered = useRef(false);
+
+  // Auto-trigger checkout if returning from auth with a pending plan
+  useEffect(() => {
+    if (pendingPlan && !isCheckingTrial && !pendingCheckoutTriggered.current) {
+      pendingCheckoutTriggered.current = true;
+      // Small delay to ensure component is fully mounted
+      const timer = setTimeout(() => {
+        handleStartPlan(pendingPlan);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [pendingPlan, isCheckingTrial]);
 
   const handleStartTrial = async () => {
     setLoadingPlan('trial');
@@ -283,7 +299,8 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        navigate("/auth");
+        // Redirect to auth with return URL to resume checkout after login
+        navigate(`/auth?redirect=/pricing&plan=${planKey}&billing=${billingPeriod}`);
         return;
       }
 
