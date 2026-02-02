@@ -56,13 +56,6 @@ export const TrialBanner = ({ trialStartDate, onDismiss }: TrialBannerProps) => 
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            onClick={() => navigate("/pricing")}
-            size="sm"
-            variant="default"
-          >
-            Choose Plan
-          </Button>
           {onDismiss && (
             <Button
               onClick={onDismiss}
