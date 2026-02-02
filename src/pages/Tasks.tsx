@@ -391,7 +391,12 @@ const Tasks = () => {
               </Button>
             ) : null}
           </div>
-          <TaskActionsBar tasks={tasks} projectName={projectName} />
+          <TaskActionsBar 
+            tasks={tasks} 
+            projectName={projectName} 
+            reportId={reportId}
+            onSaveToProject={() => setShowProjectSelector(true)}
+          />
         </div>
 
         {/* Action Buttons */}

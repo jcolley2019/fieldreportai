@@ -281,7 +281,10 @@
     "noProjectsAvailable": "No projects available. Create a project first.",
     "linkTasks": "Link Tasks",
     "linkedToProject": "Tasks linked to {{project}}",
-    "linkError": "Failed to link tasks to project"
+    "linkError": "Failed to link tasks to project",
+    "saveToProject": "Save to Project",
+    "saved": "Saved",
+    "savedToProject": "Tasks saved to {{project}}"
   },
   "newProject": {
     "title": "New Project/Customer",
