@@ -11,6 +11,16 @@ const corsHeaders = {
 
 const MAX_ATTACHMENT_SIZE = 25 * 1024 * 1024; // 25MB - Resend's limit
 
+// HTML escape function to prevent XSS in emails
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 // Input validation schema
 const requestSchema = z.object({
   recipientEmail: z.string().email("Invalid recipient email").max(255),
@@ -93,18 +103,25 @@ const handler = async (req: Request): Promise<Response> => {
     // Determine if we should send as attachment or download link
     const useAttachment = fileData && fileSize && fileSize <= MAX_ATTACHMENT_SIZE;
 
+    // Escape all user-provided content to prevent XSS
+    const safeRecipientName = recipientName ? escapeHtml(recipientName) : '';
+    const safeSenderName = escapeHtml(senderName);
+    const safeCompanyName = escapeHtml(companyName);
+    const safeMessage = message ? escapeHtml(message) : '';
+    const safeCustomMessage = customMessage ? escapeHtml(customMessage) : '';
+
     let emailHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         ${companyLogoUrl ? `
           <div style="text-align: center; margin-bottom: 20px;">
-            <img src="${companyLogoUrl}" alt="${companyName}" style="max-height: 60px; width: auto;" />
+            <img src="${companyLogoUrl}" alt="${safeCompanyName}" style="max-height: 60px; width: auto;" />
           </div>
         ` : ''}
         <div style="background: #ffffff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h2 style="color: #1a1a1a; margin: 0 0 10px 0; font-size: 24px;">Field Report Export</h2>
-          <p style="color: #666; margin: 0 0 5px 0;">Hi${recipientName ? ` ${recipientName}` : ''},</p>
-          <p style="color: #666; margin: 0 0 20px 0;">${senderName} from ${companyName} has shared a field report export with you.</p>
-          ${message ? `<div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid ${brandColor};"><p style="margin: 0; color: #333; font-style: italic;">${message}</p></div>` : ''}
+          <p style="color: #666; margin: 0 0 5px 0;">Hi${safeRecipientName ? ` ${safeRecipientName}` : ''},</p>
+          <p style="color: #666; margin: 0 0 20px 0;">${safeSenderName} from ${safeCompanyName} has shared a field report export with you.</p>
+          ${safeMessage ? `<div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid ${brandColor};"><p style="margin: 0; color: #333; font-style: italic;">${safeMessage}</p></div>` : ''}
     `;
 
     if (useAttachment && fileData && fileName) {
@@ -127,9 +144,9 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     emailHtml += `
-          ${customMessage ? `
+          ${safeCustomMessage ? `
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e5e5;">
-              <p style="color: #666; font-size: 14px; margin: 0;">${customMessage}</p>
+              <p style="color: #666; font-size: 14px; margin: 0;">${safeCustomMessage}</p>
             </div>
           ` : ''}
           <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e5e5; text-align: center;">
