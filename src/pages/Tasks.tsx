@@ -9,9 +9,11 @@ import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Sparkles, Trash2, Clock, Flag, CheckCircle2, Circle, Loader2, Mic, MicOff } from "lucide-react";
+import { Plus, Sparkles, Trash2, Clock, Flag, CheckCircle2, Circle, Loader2, Mic, MicOff, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { TaskActionsBar } from "@/components/tasks/TaskActionsBar";
+import { TaskProjectSelector } from "@/components/tasks/TaskProjectSelector";
 
 interface Task {
   id: string;
@@ -28,7 +30,11 @@ const Tasks = () => {
   const location = useLocation();
   const { t } = useTranslation();
   const isSimpleMode = location.state?.simpleMode || false;
-  const reportId = location.state?.reportId;
+  const initialReportId = location.state?.reportId;
+  const initialProjectName = location.state?.projectName;
+
+  const [reportId, setReportId] = useState<string | undefined>(initialReportId);
+  const [projectName, setProjectName] = useState<string | undefined>(initialProjectName);
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,6 +43,7 @@ const Tasks = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newTask, setNewTask] = useState<{ title: string; description: string; priority: 'low' | 'medium' | 'high' }>({ title: '', description: '', priority: 'medium' });
   const [filter, setFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all');
+  const [showProjectSelector, setShowProjectSelector] = useState(false);
   
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -325,6 +332,30 @@ const Tasks = () => {
 
   const isVoiceProcessing = isRecording || isProcessingVoice || isSuggestingTasks;
 
+  const handleProjectSelected = async (selectedProjectId: string, selectedProjectName: string) => {
+    try {
+      // Update all user's tasks that don't have a report_id to link to this project
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('tasks')
+        .update({ report_id: selectedProjectId })
+        .eq('user_id', user.id)
+        .is('report_id', null);
+
+      if (error) throw error;
+
+      setReportId(selectedProjectId);
+      setProjectName(selectedProjectName);
+      toast.success(t('tasks.linkedToProject', { project: selectedProjectName }));
+      fetchTasks();
+    } catch (error) {
+      console.error('Error linking tasks to project:', error);
+      toast.error(t('tasks.linkError'));
+    }
+  };
+
   return (
     <div className="dark min-h-screen bg-background">
       <GlassNavbar fixed={false}>
@@ -340,6 +371,29 @@ const Tasks = () => {
       </GlassNavbar>
 
       <main className="flex-1 px-4 pt-4 pb-24 animate-fade-in">
+        {/* Project Badge & Actions */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            {projectName ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg text-sm">
+                <FolderOpen className="h-4 w-4 text-primary" />
+                <span className="text-foreground">{projectName}</span>
+              </div>
+            ) : isSimpleMode ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowProjectSelector(true)}
+                className="gap-2"
+              >
+                <FolderOpen className="h-4 w-4" />
+                {t('tasks.linkToProject')}
+              </Button>
+            ) : null}
+          </div>
+          <TaskActionsBar tasks={tasks} projectName={projectName} />
+        </div>
+
         {/* Action Buttons */}
         <div className="flex gap-3 mb-6">
           <Button
@@ -534,6 +588,14 @@ const Tasks = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Project Selector Dialog */}
+      <TaskProjectSelector
+        open={showProjectSelector}
+        onOpenChange={setShowProjectSelector}
+        onProjectSelected={handleProjectSelected}
+        currentProjectId={reportId}
+      />
     </div>
   );
 };
