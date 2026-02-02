@@ -256,7 +256,8 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        navigate("/auth");
+        // Navigate to auth with startTrial param, same as "Get Started Free" button
+        navigate("/auth?startTrial=true");
         return;
       }
 
