@@ -5,6 +5,34 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Simple in-memory rate limiting (resets on function cold start)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 10; // 10 requests per minute per IP
+
+function getRateLimitKey(req: Request): string {
+  const forwarded = req.headers.get('x-forwarded-for');
+  const realIp = req.headers.get('x-real-ip');
+  return forwarded?.split(',')[0]?.trim() || realIp || 'unknown';
+}
+
+function checkRateLimit(clientId: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const existing = rateLimitMap.get(clientId);
+  
+  if (!existing || now > existing.resetTime) {
+    rateLimitMap.set(clientId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1 };
+  }
+  
+  if (existing.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return { allowed: false, remaining: 0 };
+  }
+  
+  existing.count++;
+  return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - existing.count };
+}
+
 const SYSTEM_PROMPT = `You are a friendly and helpful AI assistant for Field Report AI, a construction field reporting application. Your name is "Field" and you help potential customers learn about the product.
 
 ## About Field Report AI
@@ -61,6 +89,25 @@ serve(async (req) => {
   }
 
   try {
+    // Check rate limit
+    const clientId = getRateLimitKey(req);
+    const rateLimit = checkRateLimit(clientId);
+    
+    if (!rateLimit.allowed) {
+      console.log('Rate limit exceeded for client:', clientId);
+      return new Response(
+        JSON.stringify({ error: 'Too many requests. Please wait a moment before sending another message.' }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Retry-After': '60'
+          } 
+        }
+      );
+    }
+
     const { message, conversationHistory = [] } = await req.json();
 
     if (!message || typeof message !== 'string') {

@@ -13,6 +13,16 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// HTML escape function to prevent XSS in emails
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 // Input validation schema
 const requestSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -77,6 +87,16 @@ const handler = async (req: Request): Promise<Response> => {
       // Don't fail the request if lead capture fails
     }
 
+    // Escape all user-provided content to prevent XSS
+    const safeName = escapeHtml(name);
+    const safeEmail = escapeHtml(email);
+    const safeCompany = escapeHtml(company);
+    const safeCompanySize = companySize ? escapeHtml(companySize) : "Not specified";
+    const safeLicenseQuantity = licenseQuantity ? escapeHtml(licenseQuantity) : "Not specified";
+    const safeIntegrationsNeeded = integrationsNeeded ? escapeHtml(integrationsNeeded) : "None specified";
+    const safeCustomFormatting = customFormatting ? escapeHtml(customFormatting) : "None specified";
+    const safeCustomFeatures = customFeatures ? escapeHtml(customFeatures) : "None specified";
+
     // Send email to sales team using Resend API directly
     const salesEmailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -88,26 +108,26 @@ const handler = async (req: Request): Promise<Response> => {
         from: "Field Report AI <sales@rapidforgeai.com>",
         to: [SALES_EMAIL],
         reply_to: email,
-        subject: `Enterprise Plan Inquiry from ${company}`,
+        subject: `Enterprise Plan Inquiry from ${safeCompany}`,
         html: `
           <h1>New Enterprise Plan Inquiry</h1>
           <h2>Contact Information</h2>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Company:</strong> ${company}</p>
+          <p><strong>Name:</strong> ${safeName}</p>
+          <p><strong>Email:</strong> ${safeEmail}</p>
+          <p><strong>Company:</strong> ${safeCompany}</p>
           
           <h2>Company Details</h2>
-          <p><strong>Company Size:</strong> ${companySize || "Not specified"}</p>
-          <p><strong>Number of Licenses:</strong> ${licenseQuantity || "Not specified"}</p>
+          <p><strong>Company Size:</strong> ${safeCompanySize}</p>
+          <p><strong>Number of Licenses:</strong> ${safeLicenseQuantity}</p>
           
           <h2>Integration Requirements</h2>
-          <p>${integrationsNeeded || "None specified"}</p>
+          <p>${safeIntegrationsNeeded}</p>
           
           <h2>Custom Formatting Requirements</h2>
-          <p>${customFormatting || "None specified"}</p>
+          <p>${safeCustomFormatting}</p>
           
           <h2>Custom Feature Requests</h2>
-          <p>${customFeatures || "None specified"}</p>
+          <p>${safeCustomFeatures}</p>
           
           <hr style="margin: 30px 0;" />
           <p style="color: #666; font-size: 12px;">
@@ -134,14 +154,14 @@ const handler = async (req: Request): Promise<Response> => {
         to: [email],
         subject: "We received your Enterprise Plan inquiry",
         html: `
-          <h1>Thank you for your interest, ${name}!</h1>
-          <p>We have received your inquiry about our Enterprise Plan for <strong>${company}</strong>.</p>
+          <h1>Thank you for your interest, ${safeName}!</h1>
+          <p>We have received your inquiry about our Enterprise Plan for <strong>${safeCompany}</strong>.</p>
           <p>Our sales team will review your requirements and get back to you within 1-2 business days with a custom quote and next steps.</p>
           
           <h2>Your Submitted Information</h2>
-          <p><strong>Company Size:</strong> ${companySize || "Not specified"}</p>
-          <p><strong>Licenses Needed:</strong> ${licenseQuantity || "Not specified"}</p>
-          <p><strong>Integrations:</strong> ${integrationsNeeded || "None specified"}</p>
+          <p><strong>Company Size:</strong> ${safeCompanySize}</p>
+          <p><strong>Licenses Needed:</strong> ${safeLicenseQuantity}</p>
+          <p><strong>Integrations:</strong> ${safeIntegrationsNeeded}</p>
           
           <p>If you have any questions in the meantime, feel free to reply to this email.</p>
           
