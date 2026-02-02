@@ -230,6 +230,7 @@
     "filterAll": "Todas",
     "filterPending": "Pendientes",
     "filterIn_progress": "En Progreso",
+    "filterInprogress": "En Progreso",
     "filterCompleted": "Completadas",
     "noTasks": "Aún no hay tareas",
     "noTasksHint": "Agrega una tarea o deja que la IA sugiera algunas",
