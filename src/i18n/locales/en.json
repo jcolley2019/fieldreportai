@@ -230,6 +230,7 @@
     "filterAll": "All",
     "filterPending": "Pending",
     "filterIn_progress": "In Progress",
+    "filterInprogress": "In Progress",
     "filterCompleted": "Completed",
     "noTasks": "No tasks yet",
     "noTasksHint": "Add a task or let AI suggest some for you",
