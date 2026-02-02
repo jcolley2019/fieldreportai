@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Printer, Share2, Link, Mail, Loader2, Check, Copy } from "lucide-react";
+import { Printer, Share2, Mail, Loader2, Check, Copy, Save } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -21,9 +21,11 @@ interface Task {
 interface TaskActionsBarProps {
   tasks: Task[];
   projectName?: string;
+  reportId?: string;
+  onSaveToProject: () => void;
 }
 
-export const TaskActionsBar = ({ tasks, projectName }: TaskActionsBarProps) => {
+export const TaskActionsBar = ({ tasks, projectName, reportId, onSaveToProject }: TaskActionsBarProps) => {
   const { t } = useTranslation();
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [shareMode, setShareMode] = useState<'email' | 'link' | null>(null);
@@ -244,9 +246,29 @@ export const TaskActionsBar = ({ tasks, projectName }: TaskActionsBarProps) => {
     }
   };
 
+  const handleSaveToProject = () => {
+    if (reportId) {
+      // Already linked to a project
+      toast.success(t('tasks.savedToProject', { project: projectName }));
+    } else {
+      // Open project selector
+      onSaveToProject();
+    }
+  };
+
   return (
     <>
       <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSaveToProject}
+          disabled={tasks.length === 0}
+          className="gap-2"
+        >
+          <Save className="h-4 w-4" />
+          {reportId ? t('tasks.saved') : t('tasks.saveToProject')}
+        </Button>
         <Button
           variant="outline"
           size="sm"

@@ -281,7 +281,10 @@
     "noProjectsAvailable": "No hay proyectos disponibles. Crea un proyecto primero.",
     "linkTasks": "Vincular Tareas",
     "linkedToProject": "Tareas vinculadas a {{project}}",
-    "linkError": "Error al vincular tareas al proyecto"
+    "linkError": "Error al vincular tareas al proyecto",
+    "saveToProject": "Guardar en Proyecto",
+    "saved": "Guardado",
+    "savedToProject": "Tareas guardadas en {{project}}"
   },
   "newProject": {
     "title": "Nuevo Proyecto/Cliente",
