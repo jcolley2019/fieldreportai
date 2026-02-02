@@ -314,6 +314,9 @@ const Onboarding = () => {
 
       if (error) throw error;
 
+      // Set flag to prevent redirect loop back to onboarding
+      localStorage.setItem('skipOnboarding', 'true');
+
       // Navigate directly without toast for smoother flow
       navigate("/dashboard");
     } catch (error: any) {
