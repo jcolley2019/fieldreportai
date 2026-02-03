@@ -49,12 +49,17 @@ const Auth = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Check if user already has a trial
-      const { data: profile } = await supabase
+      // Check if user already has a trial - use maybeSingle to avoid throwing on no rows
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('trial_start_date')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Error checking trial status:', profileError);
+        return;
+      }
 
       if (profile?.trial_start_date) {
         // Already has trial, skip activation
