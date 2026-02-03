@@ -233,38 +233,33 @@ const Auth = () => {
             });
           }
         } else {
-          // Capture lead in database
-          try {
-            await supabase.functions.invoke("capture-lead", {
-              body: {
-                email: validatedData.email,
-                source: "trial_signup",
-                sequence: "trial",
-              },
-            });
-          } catch (leadError) {
+          // Capture lead in database (non-blocking)
+          supabase.functions.invoke("capture-lead", {
+            body: {
+              email: validatedData.email,
+              source: "trial_signup",
+              sequence: "trial",
+            },
+          }).catch((leadError) => {
             console.error("Lead capture failed:", leadError);
-          }
+          });
 
-          // Send to Zapier webhook for Google Sheets
-          try {
-            const zapierWebhookUrl = "https://hooks.zapier.com/hooks/catch/25475428/uzqf7vv/";
-            await fetch(zapierWebhookUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              mode: "no-cors",
-              body: JSON.stringify({
-                email: validatedData.email,
-                source: "trial_signup",
-                type: "user_signup",
-                timestamp: new Date().toISOString(),
-                plan: "trial",
-                sequence: "trial",
-              }),
-            });
-          } catch (zapierError) {
+          // Send to Zapier webhook for Google Sheets (non-blocking)
+          fetch("https://hooks.zapier.com/hooks/catch/25475428/uzqf7vv/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            mode: "no-cors",
+            body: JSON.stringify({
+              email: validatedData.email,
+              source: "trial_signup",
+              type: "user_signup",
+              timestamp: new Date().toISOString(),
+              plan: "trial",
+              sequence: "trial",
+            }),
+          }).catch((zapierError) => {
             console.error("Zapier webhook failed:", zapierError);
-          }
+          });
 
           // Auto-login after successful signup
           const { error: loginError } = await supabase.auth.signInWithPassword({

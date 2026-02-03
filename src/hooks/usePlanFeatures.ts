@@ -126,7 +126,7 @@ export const usePlanFeatures = () => {
         .from('profiles')
         .select('current_plan, trial_start_date')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching plan:', error);
