@@ -27,7 +27,6 @@ const getContextualMessage = (section: SectionType): string => {
 
 const LandingChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [hasAutoOpened, setHasAutoOpened] = useState(false);
   const [currentSection, setCurrentSection] = useState<SectionType>('general');
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -84,65 +83,6 @@ const LandingChatBot = () => {
     };
   }, []);
 
-  // Auto-open chatbot after 30 seconds with contextual message
-  useEffect(() => {
-    if (hasAutoOpened) return;
-
-    const timer = setTimeout(() => {
-      if (!isOpen && !hasAutoOpened) {
-        // Update the initial message to be contextual
-        setMessages([{
-          role: 'assistant',
-          content: getContextualMessage(currentSection)
-        }]);
-        setIsOpen(true);
-        setHasAutoOpened(true);
-      }
-    }, 30000);
-
-    return () => clearTimeout(timer);
-  }, [isOpen, hasAutoOpened, currentSection]);
-
-  // Track if user has interacted with the chat
-  const [hasUserInteracted, setHasUserInteracted] = useState(false);
-  
-  // Track fade-out animation state
-  const [isFadingOut, setIsFadingOut] = useState(false);
-
-  // Auto-close chatbot after 10 seconds if user hasn't interacted
-  useEffect(() => {
-    if (!isOpen || hasUserInteracted || !hasAutoOpened || isFadingOut) return;
-
-    const autoCloseTimer = setTimeout(() => {
-      // Start fade-out animation
-      setIsFadingOut(true);
-      // Actually close after animation completes (300ms)
-      setTimeout(() => {
-        setIsOpen(false);
-        setIsFadingOut(false);
-      }, 300);
-    }, 10000);
-
-    return () => clearTimeout(autoCloseTimer);
-  }, [isOpen, hasUserInteracted, hasAutoOpened, isFadingOut]);
-
-  // Determine if button should pulse (before auto-open, after 5 seconds)
-  const [shouldPulse, setShouldPulse] = useState(false);
-  
-  useEffect(() => {
-    if (hasAutoOpened || isOpen) {
-      setShouldPulse(false);
-      return;
-    }
-
-    // Start pulsing after 10 seconds
-    const pulseTimer = setTimeout(() => {
-      setShouldPulse(true);
-    }, 10000);
-
-    return () => clearTimeout(pulseTimer);
-  }, [hasAutoOpened, isOpen]);
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -159,9 +99,6 @@ const LandingChatBot = () => {
 
   const sendMessage = async (messageText: string) => {
     if (!messageText.trim() || isLoading) return;
-
-    // Mark as user interacted when sending a message
-    setHasUserInteracted(true);
 
     const userMessage: Message = { role: 'user', content: messageText.trim() };
     setMessages(prev => [...prev, userMessage]);
@@ -215,10 +152,7 @@ const LandingChatBot = () => {
         )}
         
         <button
-          onClick={() => {
-            setIsOpen(!isOpen);
-            if (!isOpen) setHasUserInteracted(true);
-          }}
+          onClick={() => setIsOpen(!isOpen)}
           className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center justify-center group hover:scale-105"
           aria-label={isOpen ? 'Close chat' : 'Open chat'}
         >
@@ -232,7 +166,7 @@ const LandingChatBot = () => {
 
       {/* Chat Widget */}
       {isOpen && (
-        <Card className={`fixed bottom-24 right-6 z-40 w-[380px] max-w-[calc(100vw-48px)] shadow-2xl border-2 border-border ${isFadingOut ? 'animate-fade-out' : 'animate-in slide-in-from-bottom-5'} duration-300`}>
+        <Card className="fixed bottom-24 right-6 z-40 w-[380px] max-w-[calc(100vw-48px)] shadow-2xl border-2 border-border animate-in slide-in-from-bottom-5 duration-300">
           {/* Header */}
           <CardHeader className="pb-3 pt-4 px-4 border-b border-border bg-muted/50">
             <div className="flex items-center gap-3">
