@@ -48,8 +48,9 @@ const FinalReport = () => {
   const [isLoading, setIsLoading] = useState(!reportData);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editedContent, setEditedContent] = useState<{ [key: string]: string }>({});
-  const [isSaving, setIsSaving] = useState(false);
+const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const loadReportData = async () => {
@@ -92,6 +93,20 @@ const FinalReport = () => {
 
         if (!mediaError && mediaData) {
           setMedia(mediaData);
+          
+          // Generate signed URLs for private storage bucket
+          const urls: Record<string, string> = {};
+          for (const item of mediaData) {
+            if (item.file_type === 'image') {
+              const { data: signedUrlData } = await supabase.storage
+                .from('media')
+                .createSignedUrl(item.file_path, 3600); // 1 hour expiry
+              if (signedUrlData?.signedUrl) {
+                urls[item.id] = signedUrlData.signedUrl;
+              }
+            }
+          }
+          setMediaUrls(urls);
         }
 
         const { data: checklistsData, error: checklistsError } = await supabase
@@ -148,11 +163,11 @@ const FinalReport = () => {
         description: t('finalReport.preparingPDF'),
       });
 
+      // Use existing signed URLs from state for PDF generation
       const mediaUrlsMap = new Map<string, string>();
       for (const item of media) {
-        if (item.file_type === 'image') {
-          const { data } = supabase.storage.from('media').getPublicUrl(item.file_path);
-          mediaUrlsMap.set(item.id, data.publicUrl);
+        if (item.file_type === 'image' && mediaUrls[item.id]) {
+          mediaUrlsMap.set(item.id, mediaUrls[item.id]);
         }
       }
 
@@ -396,8 +411,12 @@ const FinalReport = () => {
           .slice(0, 6) // Limit to 6 images to avoid file size issues
           .map(async (item) => {
             try {
-              const { data } = supabase.storage.from('media').getPublicUrl(item.file_path);
-              const response = await fetch(data.publicUrl);
+              // Use signed URL from state for private bucket access
+              const signedUrl = mediaUrls[item.id];
+              if (!signedUrl) {
+                return { success: false };
+              }
+              const response = await fetch(signedUrl);
               const blob = await response.blob();
               const arrayBuffer = await blob.arrayBuffer();
               
@@ -664,9 +683,8 @@ const FinalReport = () => {
     });
   };
 
-  const getMediaUrl = (filePath: string) => {
-    const { data } = supabase.storage.from('media').getPublicUrl(filePath);
-    return data.publicUrl;
+  const getMediaUrl = (itemId: string) => {
+    return mediaUrls[itemId] || '';
   };
 
   const handleEditSection = (sectionKey: string, content: string) => {
@@ -948,7 +966,7 @@ const FinalReport = () => {
                     <div key={item.id} className="aspect-square overflow-hidden rounded-xl bg-muted">
                       {item.file_type === 'image' ? (
                         <img
-                          src={getMediaUrl(item.file_path)}
+                          src={getMediaUrl(item.id)}
                           alt="Project media"
                           className="h-full w-full object-cover"
                         />
