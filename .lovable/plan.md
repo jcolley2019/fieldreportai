@@ -1,53 +1,91 @@
 
-# Stop Flashing & Update Text on AI Chat Button
 
-## Summary
-Remove the pulsing/flashing animation from the AI help menu button and label, and shorten the text from "Have Questions?" to "Questions?"
+# Fix: Image Previews Not Showing in Final Report
 
-## Changes Required
+## Problem Identified
 
-### File: `src/components/LandingChatBot.tsx`
+The Final Report page shows broken/blank image previews because it's using `getPublicUrl()` to fetch images from a **private storage bucket**. 
 
-| Line | Current | Change To |
-|------|---------|-----------|
-| 213-215 | Label with `animate-pulse` class when `shouldPulse` | Remove the conditional `animate-pulse` class entirely |
-| 217 | `"Have Questions?"` | `"Questions?"` |
-| 226-228 | Button with `animate-pulse ring-4 ring-primary/30` when pulsing | Remove the conditional `animate-pulse ring-4 ring-primary/30` class |
+The `media` bucket has `public: false`, which means images can only be accessed via **signed URLs** (temporary, time-limited access tokens), not public URLs.
 
-### Detailed Changes
+## Current Behavior
 
-**1. Remove pulse animation from label (line 213-215):**
-```tsx
-// Before
-className={`bg-card border border-border rounded-full px-4 py-2 shadow-lg transition-all duration-300 ${
-  shouldPulse ? 'animate-pulse' : ''
-}`}
-
-// After
-className="bg-card border border-border rounded-full px-4 py-2 shadow-lg transition-all duration-300"
+**FinalReport.tsx** (broken):
+```typescript
+const getMediaUrl = (filePath: string) => {
+  const { data } = supabase.storage.from('media').getPublicUrl(filePath);
+  return data.publicUrl;  // Returns a URL that requires authentication - won't work!
+};
 ```
 
-**2. Update text (line 217):**
-```tsx
-// Before
-<span className="text-sm font-medium text-foreground whitespace-nowrap">Have Questions?</span>
-
-// After
-<span className="text-sm font-medium text-foreground whitespace-nowrap">Questions?</span>
+**ProjectDetail.tsx** (working correctly):
+```typescript
+const { data: signedUrlData } = await supabase.storage
+  .from('media')
+  .createSignedUrl(item.file_path, 3600); // Creates a temporary access URL
 ```
 
-**3. Remove pulse animation from button (line 226-228):**
-```tsx
-// Before
-className={`w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center justify-center group hover:scale-105 ${
-  shouldPulse && !isOpen ? 'animate-pulse ring-4 ring-primary/30' : ''
-}`}
+## Solution
 
-// After
-className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center justify-center group hover:scale-105"
-```
+Update FinalReport.tsx to generate signed URLs for media files, just like ProjectDetail.tsx does. This involves:
 
-## Result
-- The AI chat button and label will no longer flash/pulse
-- The label will display the shorter, cleaner text "Questions?"
-- The button retains its hover effects (scale and color change) for interactivity
+1. **Add state to store signed URLs** - Create a `mediaUrls` state object to cache the generated URLs
+2. **Generate signed URLs when loading media** - After fetching media items, generate signed URLs for each image
+3. **Update the display function** - Modify `getMediaUrl()` to look up URLs from the cached state
+4. **Fix PDF and Word export functions** - These also use `getPublicUrl()` and need the same fix
+
+---
+
+## Technical Details
+
+### Files to Modify
+
+**1. src/pages/FinalReport.tsx**
+
+- Add new state variable:
+  ```typescript
+  const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
+  ```
+
+- Update the `useEffect` data loading to generate signed URLs after fetching media:
+  ```typescript
+  // After fetching media, generate signed URLs for private bucket
+  const urls: Record<string, string> = {};
+  for (const item of mediaData) {
+    if (item.file_type === 'image') {
+      const { data: signedUrlData } = await supabase.storage
+        .from('media')
+        .createSignedUrl(item.file_path, 3600); // 1 hour expiry
+      if (signedUrlData?.signedUrl) {
+        urls[item.id] = signedUrlData.signedUrl;
+      }
+    }
+  }
+  setMediaUrls(urls);
+  ```
+
+- Update `getMediaUrl` function to use cached signed URLs:
+  ```typescript
+  const getMediaUrl = (itemId: string) => {
+    return mediaUrls[itemId] || '';
+  };
+  ```
+
+- Update the image display JSX to pass `item.id` instead of `item.file_path`:
+  ```typescript
+  <img src={getMediaUrl(item.id)} alt="Project media" ... />
+  ```
+
+- Update `handleDownloadPDF` to use signed URLs for PDF generation
+- Update `handleDownloadWord` to use signed URLs for Word document image embedding
+
+**2. src/pages/Checklist.tsx** (also affected)
+
+- Apply the same signed URL pattern for displaying images on the checklist page
+
+### Why Signed URLs?
+
+- The `media` bucket is intentionally private for security (user-uploaded photos shouldn't be publicly accessible)
+- Signed URLs provide temporary access (1 hour) and expire automatically
+- This is the recommended pattern already in use on ProjectDetail.tsx
+
