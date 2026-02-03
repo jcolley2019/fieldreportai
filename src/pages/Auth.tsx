@@ -176,12 +176,16 @@ const Auth = () => {
             await linkSubscriptionToAccount();
           }
           
-          // Check if profile is complete
-          const { data: profile } = await supabase
+          // Check if profile is complete - use maybeSingle to avoid throwing on no rows
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('first_name, last_name, company_name')
             .eq('id', data.user.id)
-            .single();
+            .maybeSingle();
+          
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
+          }
 
           const isProfileComplete = profile?.first_name && profile?.last_name && profile?.company_name;
 
