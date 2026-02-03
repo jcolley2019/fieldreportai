@@ -172,15 +172,16 @@ const Checklist = () => {
           .eq('report_id', checklist.report_id);
 
         if (media && media.length > 0) {
-          // Get public URLs for the images
-          imageUrls = await Promise.all(
+          // Generate signed URLs for private bucket access
+          const signedUrls = await Promise.all(
             media.map(async (m) => {
-              const { data } = supabase.storage
+              const { data: signedUrlData } = await supabase.storage
                 .from('media')
-                .getPublicUrl(m.file_path);
-              return data.publicUrl;
+                .createSignedUrl(m.file_path, 3600); // 1 hour expiry
+              return signedUrlData?.signedUrl || '';
             })
           );
+          imageUrls = signedUrls.filter(url => url !== '');
         }
       }
 
