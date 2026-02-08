@@ -736,21 +736,31 @@
   },
   "reportType": {
     "selectType": "Tipo de Reporte",
+    "field": "Reporte de Campo",
+    "fieldDesc": "Condiciones del sitio, trabajo observado, problemas encontrados",
     "daily": "Reporte Diario",
     "dailyDesc": "Documentar actividades diarias y progreso",
     "weekly": "Reporte Semanal",
     "weeklyDesc": "Resumir progreso semanal e hitos",
+    "monthly": "Reporte Mensual",
+    "monthlyDesc": "Agrega reportes semanales en resumen mensual",
     "siteSurvey": "Inspección de Sitio",
     "siteSurveyDesc": "Documentar condiciones y evaluaciones del sitio",
     "weeklySource": "Incluir Reportes Diarios",
+    "monthlySource": "Incluir Reportes Semanales",
     "autoDetect": "Detectar automáticamente",
     "autoDetectDesc": "Incluir reportes diarios de esta semana",
+    "autoDetectMonthlyDesc": "Incluir reportes semanales de este mes",
     "manualSelect": "Selección manual",
     "manualSelectDesc": "Elegir qué reportes diarios incluir",
+    "manualSelectMonthlyDesc": "Elegir qué reportes semanales incluir",
     "freshStart": "Comenzar de nuevo",
-    "freshStartDesc": "Crear reporte semanal solo con contenido actual",
+    "freshStartDesc": "Crear reporte solo con contenido actual",
     "selectDailyReports": "Seleccionar Reportes Diarios",
+    "selectWeeklyReports": "Seleccionar Reportes Semanales",
     "noDailyReports": "No hay reportes diarios disponibles",
-    "autoDetectInfo": "Se incluirán {{count}} reporte(s) diario(s) de esta semana"
+    "noWeeklyReports": "No hay reportes semanales disponibles",
+    "autoDetectInfo": "Se incluirán {{count}} reporte(s) diario(s) de esta semana",
+    "autoDetectMonthlyInfo": "Se incluirán {{count}} reporte(s) semanal(es) de este mes"
   }
 }
