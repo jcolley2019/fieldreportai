@@ -761,5 +761,17 @@
     "noWeeklyReports": "No weekly reports available",
     "autoDetectInfo": "{{count}} daily report(s) from this week will be included",
     "autoDetectMonthlyInfo": "{{count}} weekly report(s) from this month will be included"
+  },
+  "annotation": {
+    "title": "Annotate Photo",
+    "arrow": "Arrow",
+    "circle": "Circle",
+    "text": "Text",
+    "freehand": "Freehand",
+    "undo": "Undo",
+    "redo": "Redo",
+    "saveAnnotation": "Save Annotation",
+    "enterText": "Enter text...",
+    "annotate": "Annotate"
   }
 }
