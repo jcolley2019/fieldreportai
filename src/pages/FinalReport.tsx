@@ -14,13 +14,18 @@ import { pdf } from '@react-pdf/renderer';
 import { ReportPDF } from '@/components/ReportPDF';
 import { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer, Table, TableCell, TableRow, WidthType, BorderStyle, ImageRun } from 'docx';
 import { saveAs } from 'file-saver';
-import { formatDate, formatDateLong } from '@/lib/dateFormat';
+import { formatDate, formatDateLong, formatDateTime } from '@/lib/dateFormat';
 import DOMPurify from 'dompurify';
+import { PhotoTimestamp } from "@/components/PhotoTimestamp";
 
 interface MediaItem {
   id: string;
   file_path: string;
   file_type: string;
+  latitude?: number;
+  longitude?: number;
+  captured_at?: string;
+  location_name?: string;
 }
 
 interface ChecklistItem {
@@ -963,13 +968,23 @@ const [isSaving, setIsSaving] = useState(false);
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
                   {media.slice(0, 6).map((item) => (
-                    <div key={item.id} className="aspect-square overflow-hidden rounded-xl bg-muted">
+                    <div key={item.id} className="relative aspect-square overflow-hidden rounded-xl bg-muted">
                       {item.file_type === 'image' ? (
-                        <img
-                          src={getMediaUrl(item.id)}
-                          alt="Project media"
-                          className="h-full w-full object-cover"
-                        />
+                        <>
+                          <img
+                            src={getMediaUrl(item.id)}
+                            alt="Project media"
+                            className="h-full w-full object-cover"
+                          />
+                          {/* GPS & Timestamp overlay */}
+                          <PhotoTimestamp
+                            latitude={item.latitude}
+                            longitude={item.longitude}
+                            capturedAt={item.captured_at}
+                            locationName={item.location_name}
+                            variant="overlay"
+                          />
+                        </>
                       ) : (
                         <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
                           <p className="text-sm text-muted-foreground">{t('finalReport.video')}</p>

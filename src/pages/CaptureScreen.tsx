@@ -14,9 +14,11 @@ import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import { LiveCameraCapture } from "@/components/LiveCameraCapture";
 import { PhotoAnnotationDialog } from "@/components/PhotoAnnotationDialog";
+import { PhotoTimestamp } from "@/components/PhotoTimestamp";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from '@/lib/dateFormat';
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
+import { useGeolocation } from "@/hooks/useGeolocation";
 
 interface ImageItem {
   id: string;
@@ -24,6 +26,10 @@ interface ImageItem {
   file?: File;
   deleted: boolean;
   caption?: string;
+  latitude?: number;
+  longitude?: number;
+  capturedAt?: Date;
+  locationName?: string;
 }
 
 const CaptureScreen = () => {
@@ -31,6 +37,7 @@ const CaptureScreen = () => {
   const location = useLocation();
   const { t } = useTranslation();
   const { features } = usePlanFeatures();
+  const { getCurrentPosition } = useGeolocation();
   const isSimpleMode = location.state?.simpleMode || false;
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<ImageItem[]>([]);
@@ -87,14 +94,21 @@ const CaptureScreen = () => {
     }
   };
 
-  const handleImageUpload = (files: FileList | null) => {
+  const handleImageUpload = async (files: FileList | null) => {
     if (!files) return;
+
+    // Get GPS data first (non-blocking if fails)
+    const geoData = await getCurrentPosition();
 
     const newImages: ImageItem[] = Array.from(files).map(file => ({
       id: Math.random().toString(36).substr(2, 9),
       url: URL.createObjectURL(file),
       file,
-      deleted: false
+      deleted: false,
+      latitude: geoData?.latitude,
+      longitude: geoData?.longitude,
+      capturedAt: new Date(),
+      locationName: geoData?.locationName
     }));
 
     setImages(prev => [...prev, ...newImages]);
@@ -124,12 +138,19 @@ const CaptureScreen = () => {
     setShowLiveCamera(true);
   };
 
-  const handleLiveCameraCapture = (files: File[]) => {
+  const handleLiveCameraCapture = async (files: File[]) => {
+    // Get GPS data first (non-blocking if fails)
+    const geoData = await getCurrentPosition();
+
     const newImages: ImageItem[] = files.map(file => ({
       id: Math.random().toString(36).substr(2, 9),
       url: URL.createObjectURL(file),
       file,
-      deleted: false
+      deleted: false,
+      latitude: geoData?.latitude,
+      longitude: geoData?.longitude,
+      capturedAt: new Date(),
+      locationName: geoData?.locationName
     }));
 
     setImages(prev => [...prev, ...newImages]);
@@ -439,7 +460,7 @@ const CaptureScreen = () => {
       
       // Small delay to show completion
       setTimeout(() => {
-        // Navigate with the generated summary and media (including captions and base64 data)
+        // Navigate with the generated summary and media (including captions, geo data, and base64 data)
         navigate("/review-summary", { 
           state: { 
             simpleMode: isSimpleMode,
@@ -449,7 +470,11 @@ const CaptureScreen = () => {
               url: img.url, 
               id: img.id, 
               caption: img.caption, 
-              base64: img.base64 
+              base64: img.base64,
+              latitude: img.latitude,
+              longitude: img.longitude,
+              capturedAt: img.capturedAt?.toISOString(),
+              locationName: img.locationName
             }))
           } 
         });
@@ -858,6 +883,16 @@ const CaptureScreen = () => {
                   }}
                 />
                 
+                {/* GPS & Timestamp overlay */}
+                <PhotoTimestamp
+                  latitude={activeImages[selectedImageIndex].latitude}
+                  longitude={activeImages[selectedImageIndex].longitude}
+                  capturedAt={activeImages[selectedImageIndex].capturedAt}
+                  locationName={activeImages[selectedImageIndex].locationName}
+                  variant="overlay"
+                  className="pointer-events-none"
+                />
+                
                 {/* Annotate button in top-right */}
                 <button
                   onClick={() => setAnnotatingImageId(activeImages[selectedImageIndex].id)}
@@ -884,7 +919,7 @@ const CaptureScreen = () => {
                     </button>
                     
                     {/* Image Counter */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
+                    <div className="absolute bottom-16 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
                       {selectedImageIndex + 1} / {activeImages.length}
                       {imageScale > 1 && ` • ${imageScale.toFixed(1)}x`}
                     </div>
