@@ -732,21 +732,31 @@
   },
   "reportType": {
     "selectType": "Report Type",
+    "fieldReport": "Field Report",
+    "fieldReportDesc": "Quick observations, photos, and issues from the field",
     "daily": "Daily Report",
     "dailyDesc": "Document daily activities and progress",
     "weekly": "Weekly Report",
     "weeklyDesc": "Summarize weekly progress and milestones",
+    "monthly": "Monthly Report",
+    "monthlyDesc": "Aggregate weekly reports into monthly overview",
     "siteSurvey": "Site Survey",
     "siteSurveyDesc": "Document site conditions and assessments",
     "weeklySource": "Include Daily Reports",
+    "monthlySource": "Include Weekly Reports",
     "autoDetect": "Auto-detect",
     "autoDetectDesc": "Include daily reports from this week",
+    "autoDetectMonthlyDesc": "Include weekly reports from this month",
     "manualSelect": "Manual selection",
     "manualSelectDesc": "Choose which daily reports to include",
+    "manualSelectMonthlyDesc": "Choose which weekly reports to include",
     "freshStart": "Start fresh",
-    "freshStartDesc": "Create weekly report from current content only",
+    "freshStartDesc": "Create report from current content only",
     "selectDailyReports": "Select Daily Reports",
+    "selectWeeklyReports": "Select Weekly Reports",
     "noDailyReports": "No daily reports available",
-    "autoDetectInfo": "{{count}} daily report(s) from this week will be included"
+    "noWeeklyReports": "No weekly reports available",
+    "autoDetectInfo": "{{count}} daily report(s) from this week will be included",
+    "autoDetectMonthlyInfo": "{{count}} weekly report(s) from this month will be included"
   }
 }

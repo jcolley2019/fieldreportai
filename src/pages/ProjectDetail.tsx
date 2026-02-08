@@ -209,10 +209,12 @@ const ProjectDetail = () => {
 
   const getReportTypeLabel = (reportType?: string) => {
     switch (reportType) {
+      case 'field_report': return 'Field Report';
       case 'daily': return 'Daily Report';
       case 'weekly': return 'Weekly Report';
+      case 'monthly': return 'Monthly Report';
       case 'site_survey': return 'Site Survey';
-      default: return 'Daily Report';
+      default: return 'Field Report';
     }
   };
 

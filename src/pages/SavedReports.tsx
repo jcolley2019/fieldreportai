@@ -50,7 +50,7 @@ const SavedReports = () => {
   const [reports, setReports] = useState<SavedReport[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"recent" | "name" | "size">("recent");
-  const [filterType, setFilterType] = useState<"all" | "daily" | "weekly" | "site_survey">("all");
+  const [filterType, setFilterType] = useState<"all" | "field_report" | "daily" | "weekly" | "monthly" | "site_survey">("all");
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<SavedReport | null>(null);
@@ -480,14 +480,16 @@ const SavedReports = () => {
                 <CheckSquare className="h-4 w-4" />
               </Button>
             )}
-            <Select value={filterType} onValueChange={(value: "all" | "daily" | "weekly" | "site_survey") => setFilterType(value)}>
+            <Select value={filterType} onValueChange={(value: "all" | "field_report" | "daily" | "weekly" | "monthly" | "site_survey") => setFilterType(value)}>
               <SelectTrigger className="w-full sm:w-[160px] bg-card border-border text-foreground">
                 <SelectValue placeholder={t('savedReports.filterAll')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t('savedReports.filterAll')}</SelectItem>
+                <SelectItem value="field_report">{t('reportType.fieldReport')}</SelectItem>
                 <SelectItem value="daily">{t('reportType.daily')}</SelectItem>
                 <SelectItem value="weekly">{t('reportType.weekly')}</SelectItem>
+                <SelectItem value="monthly">{t('reportType.monthly')}</SelectItem>
                 <SelectItem value="site_survey">{t('reportType.siteSurvey')}</SelectItem>
               </SelectContent>
             </Select>
