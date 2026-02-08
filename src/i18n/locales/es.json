@@ -765,5 +765,17 @@
     "noWeeklyReports": "No hay reportes semanales disponibles",
     "autoDetectInfo": "Se incluirán {{count}} reporte(s) diario(s) de esta semana",
     "autoDetectMonthlyInfo": "Se incluirán {{count}} reporte(s) semanal(es) de este mes"
+  },
+  "annotation": {
+    "title": "Anotar Foto",
+    "arrow": "Flecha",
+    "circle": "Círculo",
+    "text": "Texto",
+    "freehand": "Dibujo Libre",
+    "undo": "Deshacer",
+    "redo": "Rehacer",
+    "saveAnnotation": "Guardar Anotación",
+    "enterText": "Escribir texto...",
+    "annotate": "Anotar"
   }
 }
