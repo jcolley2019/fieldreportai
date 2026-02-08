@@ -9,7 +9,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
 
-const AUTH_TIMEOUT_MS = 15_000;
+const AUTH_TIMEOUT_MS = 30_000; // 30 seconds - mobile networks need more time
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255),
