@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Upload, User, Building2, X, Save } from "lucide-react";
 import { ImageCropDialog } from "@/components/ImageCropDialog";
 
+const SAVE_TIMEOUT_MS = 20000; // 20 seconds max for save operations
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -30,6 +31,8 @@ const Onboarding = () => {
   const [tempLogoUrl, setTempLogoUrl] = useState<string>("");
   const [showAvatarCrop, setShowAvatarCrop] = useState(false);
   const [showLogoCrop, setShowLogoCrop] = useState(false);
+  const saveTimeoutRef = useRef<number | null>(null);
+  const loadingTimeoutRef = useRef<number | null>(null);
   const [errors, setErrors] = useState({
     firstName: "",
     lastName: "",
@@ -37,6 +40,39 @@ const Onboarding = () => {
     avatar: "",
     logo: "",
   });
+
+  // Safety: never keep the form in a loading/saving state indefinitely
+  useEffect(() => {
+    if (savingProgress) {
+      saveTimeoutRef.current = window.setTimeout(() => {
+        setSavingProgress(false);
+        toast({
+          title: "Request timed out",
+          description: "Saving took too long. Please try again.",
+          variant: "destructive",
+        });
+      }, SAVE_TIMEOUT_MS);
+    }
+    return () => {
+      if (saveTimeoutRef.current) window.clearTimeout(saveTimeoutRef.current);
+    };
+  }, [savingProgress, toast]);
+
+  useEffect(() => {
+    if (loading) {
+      loadingTimeoutRef.current = window.setTimeout(() => {
+        setLoading(false);
+        toast({
+          title: "Request timed out",
+          description: "Setup took too long. Please try again.",
+          variant: "destructive",
+        });
+      }, SAVE_TIMEOUT_MS);
+    }
+    return () => {
+      if (loadingTimeoutRef.current) window.clearTimeout(loadingTimeoutRef.current);
+    };
+  }, [loading, toast]);
 
   useEffect(() => {
     checkAuthAndLoadProfile();
