@@ -9,10 +9,32 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
 
+const AUTH_TIMEOUT_MS = 15_000;
+
+class RequestTimeoutError extends Error {
+  constructor(public label: string) {
+    super(`REQUEST_TIMEOUT:${label}`);
+    this.name = "RequestTimeoutError";
+  }
+}
+
+const withTimeout = async <T,>(promise: Promise<T>, ms: number, label: string): Promise<T> => {
+  let timeoutId: number | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new RequestTimeoutError(label)), ms);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) window.clearTimeout(timeoutId);
+  }
+};
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255),
-  password: z.string()
+  password: z
+    .string()
     .min(8, { message: "Password must be at least 8 characters" })
     .max(100, { message: "Password must be less than 100 characters" }),
 });
@@ -92,7 +114,7 @@ const Auth = () => {
   // Link subscription after signup/login if coming from guest checkout
   const linkSubscriptionToAccount = async () => {
     if (!sessionId) return;
-    
+
     setIsLinkingSubscription(true);
     try {
       const { data, error } = await supabase.functions.invoke('link-subscription', {
@@ -128,10 +150,10 @@ const Auth = () => {
         if (sessionId) {
           await linkSubscriptionToAccount();
         }
-        
+
         // If there's a redirect URL, go there instead of dashboard
         if (redirectUrl) {
-          const fullRedirect = pendingPlan && pendingBilling 
+          const fullRedirect = pendingPlan && pendingBilling
             ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
             : redirectUrl;
           navigate(fullRedirect);
@@ -150,15 +172,19 @@ const Auth = () => {
     try {
       // For login, only validate email format (password was created before, might not meet current rules)
       // For signup, validate both email and password
-      const validatedData = isLogin 
+      const validatedData = isLogin
         ? { email: z.string().trim().email().max(255).parse(email), password }
         : authSchema.parse({ email, password });
 
       if (isLogin) {
-        const { error, data } = await supabase.auth.signInWithPassword({
-          email: validatedData.email,
-          password: validatedData.password,
-        });
+        const { error, data } = await withTimeout(
+          supabase.auth.signInWithPassword({
+            email: validatedData.email,
+            password: validatedData.password,
+          }),
+          AUTH_TIMEOUT_MS,
+          'login'
+        );
 
         if (error) {
           if (error.message.includes("Invalid login credentials")) {
@@ -168,195 +194,219 @@ const Auth = () => {
               title: t('auth.errors.noAccountFound') || "No account found",
               description: t('auth.errors.switchedToSignup') || "We switched to Sign Up mode. Click the button to create your account.",
             });
-          } else {
-            toast({
-              title: "Error",
-              description: error.message,
-              variant: "destructive",
-            });
+            return;
           }
-        } else {
-          // Link subscription if coming from guest checkout
-          if (sessionId) {
-            await linkSubscriptionToAccount();
-          }
-          
-          // Check if profile is complete - use maybeSingle to avoid throwing on no rows
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('first_name, last_name, company_name')
-            .eq('id', data.user.id)
-            .maybeSingle();
-          
-          if (profileError) {
-            console.error('Error fetching profile:', profileError);
-          }
-
-          const isProfileComplete = profile?.first_name && profile?.last_name && profile?.company_name;
 
           toast({
-            title: t('auth.success.loggedIn').split('!')[0],
-            description: t('auth.success.loggedIn'),
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
           });
-          
-          // If there's a redirect URL (e.g., from pricing page), go there
-          if (redirectUrl) {
-            const fullRedirect = pendingPlan && pendingBilling 
-              ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
-              : redirectUrl;
-            navigate(fullRedirect);
-          } else {
-            navigate(isProfileComplete ? "/dashboard" : "/onboarding");
-          }
+          return;
         }
-      } else {
-        const { error, data } = await supabase.auth.signUp({
-          email: validatedData.email,
-          password: validatedData.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-          },
+
+        // Link subscription if coming from guest checkout
+        if (sessionId) {
+          await linkSubscriptionToAccount();
+        }
+
+        // Check if profile is complete - use maybeSingle to avoid throwing on no rows
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, company_name')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+        }
+
+        const isProfileComplete = profile?.first_name && profile?.last_name && profile?.company_name;
+
+        toast({
+          title: t('auth.success.loggedIn').split('!')[0],
+          description: t('auth.success.loggedIn'),
         });
 
+        // If there's a redirect URL (e.g., from pricing page), go there
+        if (redirectUrl) {
+          const fullRedirect = pendingPlan && pendingBilling
+            ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
+            : redirectUrl;
+          navigate(fullRedirect);
+        } else {
+          navigate(isProfileComplete ? "/dashboard" : "/onboarding");
+        }
+      } else {
+        const { error, data } = await withTimeout(
+          supabase.auth.signUp({
+            email: validatedData.email,
+            password: validatedData.password,
+            options: {
+              emailRedirectTo: `${window.location.origin}/`,
+            },
+          }),
+          AUTH_TIMEOUT_MS,
+          'signup'
+        );
+
         if (error) {
-          if (error.message.includes("already registered")) {
+          const msg = (error.message || "").toLowerCase();
+          if (msg.includes("already registered") || msg.includes("already exists")) {
+            setIsLogin(true);
             toast({
               title: t('auth.errors.accountExists'),
               description: t('auth.errors.emailRegistered'),
               variant: "destructive",
             });
-          } else {
-            toast({
-              title: "Error",
-              description: error.message,
-              variant: "destructive",
-            });
+            return;
           }
-        } else {
-          // Check if email confirmation is required
-          const needsEmailConfirmation = data?.user && !data?.session;
-          
-          // Capture lead in database (non-blocking)
-          supabase.functions.invoke("capture-lead", {
+
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Check if email confirmation is required
+        const needsEmailConfirmation = data?.user && !data?.session;
+
+        // Capture lead in database (non-blocking)
+        supabase.functions
+          .invoke("capture-lead", {
             body: {
               email: validatedData.email,
               source: "trial_signup",
               sequence: "trial",
             },
-          }).catch((leadError) => {
+          })
+          .catch((leadError) => {
             console.error("Lead capture failed:", leadError);
           });
 
-          // Send to Zapier webhook for Google Sheets (non-blocking)
-          fetch("https://hooks.zapier.com/hooks/catch/25475428/uzqf7vv/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            mode: "no-cors",
-            body: JSON.stringify({
-              email: validatedData.email,
-              source: "trial_signup",
-              type: "user_signup",
-              timestamp: new Date().toISOString(),
-              plan: "trial",
-              sequence: "trial",
-            }),
-          }).catch((zapierError) => {
-            console.error("Zapier webhook failed:", zapierError);
+        // Send to Zapier webhook for Google Sheets (non-blocking)
+        fetch("https://hooks.zapier.com/hooks/catch/25475428/uzqf7vv/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          mode: "no-cors",
+          body: JSON.stringify({
+            email: validatedData.email,
+            source: "trial_signup",
+            type: "user_signup",
+            timestamp: new Date().toISOString(),
+            plan: "trial",
+            sequence: "trial",
+          }),
+        }).catch((zapierError) => {
+          console.error("Zapier webhook failed:", zapierError);
+        });
+
+        // If email confirmation is required, show message and switch to login
+        if (needsEmailConfirmation) {
+          toast({
+            title: t('auth.success.accountCreated').split('!')[0],
+            description: "Please check your email to confirm your account before logging in.",
+          });
+          setIsLogin(true);
+          return;
+        }
+
+        // Auto-login after successful signup (only if session was created immediately)
+        if (data?.session) {
+          // Link subscription if coming from guest checkout
+          if (sessionId) {
+            await linkSubscriptionToAccount();
+          }
+
+          // Activate trial if coming from "Get Started Free" button
+          if (startTrial === 'true') {
+            await activateTrial();
+          }
+
+          toast({
+            title: t('auth.success.accountCreated').split('!')[0],
+            description: startTrial === 'true' ? "Your 14-day Pro trial is now active!" : "You're now logged in!",
           });
 
-          // If email confirmation is required, show message and switch to login
-          if (needsEmailConfirmation) {
+          // Redirect to onboarding for new users
+          if (redirectUrl) {
+            const fullRedirect = pendingPlan && pendingBilling
+              ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
+              : redirectUrl;
+            navigate(fullRedirect);
+          } else {
+            navigate("/onboarding");
+          }
+        } else {
+          // Fallback: try auto-login (timeout-protected)
+          const { error: loginError } = await withTimeout(
+            supabase.auth.signInWithPassword({
+              email: validatedData.email,
+              password: validatedData.password,
+            }),
+            AUTH_TIMEOUT_MS,
+            'signup_auto_login'
+          );
+
+          if (loginError) {
             toast({
               title: t('auth.success.accountCreated').split('!')[0],
-              description: "Please check your email to confirm your account before logging in.",
+              description: t('auth.success.accountCreated'),
             });
             setIsLogin(true);
             return;
           }
 
-          // Auto-login after successful signup (only if session was created immediately)
-          if (data?.session) {
-            // Link subscription if coming from guest checkout
-            if (sessionId) {
-              await linkSubscriptionToAccount();
-            }
-            
-            // Activate trial if coming from "Get Started Free" button
-            if (startTrial === 'true') {
-              await activateTrial();
-            }
-            
-            toast({
-              title: t('auth.success.accountCreated').split('!')[0],
-              description: startTrial === 'true' ? "Your 14-day Pro trial is now active!" : "You're now logged in!",
-            });
-            
-            // Redirect to onboarding for new users
-            if (redirectUrl) {
-              const fullRedirect = pendingPlan && pendingBilling 
-                ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
-                : redirectUrl;
-              navigate(fullRedirect);
-            } else {
-              navigate("/onboarding");
-            }
-          } else {
-            // Fallback: try auto-login
-            const { error: loginError } = await supabase.auth.signInWithPassword({
-              email: validatedData.email,
-              password: validatedData.password,
-            });
+          if (sessionId) {
+            await linkSubscriptionToAccount();
+          }
 
-            if (loginError) {
-              // If auto-login fails (e.g., email confirmation required), show message and switch to login
-              toast({
-                title: t('auth.success.accountCreated').split('!')[0],
-                description: t('auth.success.accountCreated'),
-              });
-              setIsLogin(true);
-            } else {
-              // Link subscription if coming from guest checkout
-              if (sessionId) {
-                await linkSubscriptionToAccount();
-              }
-              
-              // Activate trial if coming from "Get Started Free" button
-              if (startTrial === 'true') {
-                await activateTrial();
-              }
-              
-              toast({
-                title: t('auth.success.accountCreated').split('!')[0],
-                description: startTrial === 'true' ? "Your 14-day Pro trial is now active!" : "You're now logged in!",
-              });
-              
-              // Redirect to onboarding for new users
-              if (redirectUrl) {
-                const fullRedirect = pendingPlan && pendingBilling 
-                  ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
-                  : redirectUrl;
-                navigate(fullRedirect);
-              } else {
-                navigate("/onboarding");
-              }
-            }
+          if (startTrial === 'true') {
+            await activateTrial();
+          }
+
+          toast({
+            title: t('auth.success.accountCreated').split('!')[0],
+            description: startTrial === 'true' ? "Your 14-day Pro trial is now active!" : "You're now logged in!",
+          });
+
+          if (redirectUrl) {
+            const fullRedirect = pendingPlan && pendingBilling
+              ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
+              : redirectUrl;
+            navigate(fullRedirect);
+          } else {
+            navigate("/onboarding");
           }
         }
       }
     } catch (error) {
+      if (error instanceof RequestTimeoutError) {
+        toast({
+          title: "Request timed out",
+          description: "Please check your connection and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (error instanceof z.ZodError) {
         toast({
           title: t('auth.errors.validationError'),
           description: error.errors[0].message,
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: t('auth.errors.validationError'),
-          description: t('auth.errors.unexpectedError'),
-          variant: "destructive",
-        });
+        return;
       }
+
+      console.error('Unexpected auth error:', error);
+      toast({
+        title: t('auth.errors.validationError'),
+        description: t('auth.errors.unexpectedError'),
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
