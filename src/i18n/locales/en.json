@@ -119,6 +119,8 @@
   },
   "settings": {
     "title": "Settings",
+    "subscription": "Subscription",
+    "subscriptionDesc": "Manage your subscription plan",
     "profile": "Profile",
     "profilePicture": "Profile Picture",
     "firstName": "First Name",
