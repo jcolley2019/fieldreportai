@@ -8,13 +8,14 @@ const corsHeaders = {
 };
 
 // Input validation schema
-const reportTypeSchema = z.enum(['daily', 'weekly', 'site_survey']);
+const reportTypeSchema = z.enum(['field', 'daily', 'weekly', 'monthly', 'site_survey']);
 
 const requestSchema = z.object({
   description: z.string().max(50000).optional(),
   imageDataUrls: z.array(z.string().max(10_000_000)).max(20).optional(),
   reportType: reportTypeSchema.optional().default('daily'),
   includedDailyReports: z.array(z.string().max(50000)).max(7).optional(),
+  includedWeeklyReports: z.array(z.string().max(100000)).max(5).optional(),
 });
 
 type ReportType = z.infer<typeof reportTypeSchema>;
@@ -100,8 +101,44 @@ async function callWithRetryAndFallback(
   return { response, modelUsed: PRIMARY_MODEL, usedFallback: false };
 }
 
-const getSystemPrompt = (reportType: ReportType, includedDailyReports?: string[]): string => {
+const getSystemPrompt = (reportType: ReportType, includedDailyReports?: string[], includedWeeklyReports?: string[]): string => {
   const baseInstructions = "You are a professional field report assistant. Analyze the provided field notes and images to create a clear, structured report.";
+  
+  // Field Report - Quick jobsite documentation
+  if (reportType === 'field') {
+    return `${baseInstructions}
+
+Format your response EXACTLY as follows for a FIELD REPORT:
+
+SITE CONDITIONS:
+• Weather: [Current weather conditions]
+• Ground: [Soil/ground conditions - dry, wet, muddy, etc.]
+• Access: [Site access conditions and any restrictions]
+• Safety: [Any safety concerns or hazards observed]
+
+WORK OBSERVED:
+• [Specific work activity observed]
+• [Another activity observed]
+• [Add more as needed]
+
+PERSONNEL & EQUIPMENT:
+• Workers on site: [Number and trades if visible]
+• Equipment in use: [List of equipment/machinery observed]
+
+ISSUES FOUND:
+• [Issue or concern 1] - [Severity: Low/Medium/High]
+• [Issue or concern 2] - [Severity: Low/Medium/High]
+• [Add more as needed, or "No issues observed" if none]
+
+PHOTOS DOCUMENTED:
+[Brief description of what the photos capture]
+
+FOLLOW-UP REQUIRED:
+• [Action needed and responsible party]
+• [Add more as needed, or "None" if not applicable]
+
+Keep the tone professional and concise. Focus on observable facts and field conditions.`;
+  }
   
   if (reportType === 'daily') {
     return `${baseInstructions}
@@ -183,6 +220,67 @@ SAFETY & COMPLIANCE:
 Keep the tone professional and comprehensive. Provide a clear picture of the week's activities.`;
   }
   
+  if (reportType === 'monthly') {
+    const weeklyContext = includedWeeklyReports?.length 
+      ? `\n\nYou have been provided with ${includedWeeklyReports.length} weekly report(s) to synthesize. Aggregate this information into a comprehensive monthly overview.`
+      : '';
+    
+    return `${baseInstructions}${weeklyContext}
+
+Format your response EXACTLY as follows for a MONTHLY REPORT:
+
+EXECUTIVE SUMMARY:
+[3-4 sentence high-level summary of the month's progress, major achievements, and overall project status]
+
+MONTHLY METRICS:
+• Work Days: [Total work days this month]
+• Completion: [Overall progress percentage or milestone status]
+• Budget Status: [On budget / Over / Under if mentioned]
+• Schedule: [On track / Behind / Ahead]
+
+KEY MILESTONES ACHIEVED:
+• [Major milestone 1]
+• [Major milestone 2]
+• [Add more as needed]
+
+PROGRESS SUMMARY BY WEEK:
+• Week 1: [Brief summary]
+• Week 2: [Brief summary]
+• Week 3: [Brief summary]
+• Week 4: [Brief summary]
+
+CUMULATIVE ACCOMPLISHMENTS:
+• [Significant accomplishment 1]
+• [Significant accomplishment 2]
+• [Add more as needed]
+
+CHALLENGES & LESSONS LEARNED:
+• [Challenge]: [Resolution and lesson learned]
+• [Add more as needed]
+
+RESOURCE SUMMARY:
+• Total Personnel Hours: [If available]
+• Major Materials Consumed: [List]
+• Equipment Utilization: [Summary]
+
+SAFETY RECORD:
+• Incidents: [Number or "None"]
+• Near Misses: [Number or "None"]
+• Safety Observations: [Summary]
+
+NEXT MONTH OUTLOOK:
+• Key Objectives: [List 3-5 main goals]
+• Anticipated Challenges: [List any foreseen issues]
+• Resource Needs: [Any additional resources required]
+
+RECOMMENDATIONS:
+• [Recommendation 1]
+• [Recommendation 2]
+• [Add more as needed]
+
+Keep the tone executive and comprehensive. Provide a clear picture of the month's activities and forward-looking insights.`;
+  }
+  
   // Site Survey
   return `${baseInstructions}
 
@@ -250,12 +348,13 @@ serve(async (req) => {
       );
     }
     
-    const { description, imageDataUrls, reportType, includedDailyReports } = validationResult.data;
+    const { description, imageDataUrls, reportType, includedDailyReports, includedWeeklyReports } = validationResult.data;
     console.log("Generating report summary", { 
       descriptionLength: description?.length,
       imageCount: imageDataUrls?.length,
       reportType,
       includedDailyReportsCount: includedDailyReports?.length,
+      includedWeeklyReportsCount: includedWeeklyReports?.length,
       timestamp: new Date().toISOString() 
     });
 
@@ -272,6 +371,14 @@ serve(async (req) => {
       content.push({
         type: "text",
         text: `Previous Daily Reports to summarize:\n\n${includedDailyReports.map((report: string, index: number) => `--- Daily Report ${index + 1} ---\n${report}`).join('\n\n')}`
+      });
+    }
+    
+    // Add included weekly reports content for monthly reports
+    if (reportType === 'monthly' && includedWeeklyReports?.length) {
+      content.push({
+        type: "text",
+        text: `Previous Weekly Reports to summarize:\n\n${includedWeeklyReports.map((report: string, index: number) => `--- Weekly Report ${index + 1} ---\n${report}`).join('\n\n')}`
       });
     }
     
@@ -295,7 +402,7 @@ serve(async (req) => {
       throw new Error("No content provided for summary generation");
     }
 
-    const systemPrompt = getSystemPrompt(reportType, includedDailyReports);
+    const systemPrompt = getSystemPrompt(reportType, includedDailyReports, includedWeeklyReports);
 
     const messages = [
       { role: 'system', content: systemPrompt },
