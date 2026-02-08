@@ -72,7 +72,7 @@ const AllContent = () => {
   const [sortBy, setSortBy] = useState<"recent" | "name" | "project">("recent");
   const [activeTab, setActiveTab] = useState<"all" | "reports" | "checklists">("all");
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all");
-  const [reportTypeFilter, setReportTypeFilter] = useState<"all" | "field_report" | "daily" | "weekly" | "monthly" | "site_survey">("all");
+  const [reportTypeFilter, setReportTypeFilter] = useState<"all" | "daily" | "weekly" | "site_survey">("all");
   const [isExporting, setIsExporting] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [emailForm, setEmailForm] = useState({
@@ -241,18 +241,14 @@ const AllContent = () => {
 
   const getReportTypeLabel = (reportType?: string | null) => {
     switch (reportType) {
-      case 'field_report':
-        return 'Field Report';
       case 'daily':
         return 'Daily Report';
       case 'weekly':
         return 'Weekly Report';
-      case 'monthly':
-        return 'Monthly Report';
       case 'site_survey':
         return 'Site Survey';
       default:
-        return 'Field Report';
+        return 'Daily Report';
     }
   };
 
@@ -791,10 +787,8 @@ const AllContent = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t('allContent.reportTypeAll')}</SelectItem>
-                <SelectItem value="field_report">{t('reportType.fieldReport')}</SelectItem>
                 <SelectItem value="daily">{t('reportType.daily')}</SelectItem>
                 <SelectItem value="weekly">{t('reportType.weekly')}</SelectItem>
-                <SelectItem value="monthly">{t('reportType.monthly')}</SelectItem>
                 <SelectItem value="site_survey">{t('reportType.siteSurvey')}</SelectItem>
               </SelectContent>
             </Select>

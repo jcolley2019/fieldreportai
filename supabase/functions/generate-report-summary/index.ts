@@ -8,13 +8,13 @@ const corsHeaders = {
 };
 
 // Input validation schema
-const reportTypeSchema = z.enum(['field_report', 'daily', 'weekly', 'monthly', 'site_survey']);
+const reportTypeSchema = z.enum(['daily', 'weekly', 'site_survey']);
 
 const requestSchema = z.object({
   description: z.string().max(50000).optional(),
   imageDataUrls: z.array(z.string().max(10_000_000)).max(20).optional(),
-  reportType: reportTypeSchema.optional().default('field_report'),
-  includedSourceReports: z.array(z.string().max(50000)).max(31).optional(),
+  reportType: reportTypeSchema.optional().default('daily'),
+  includedDailyReports: z.array(z.string().max(50000)).max(7).optional(),
 });
 
 type ReportType = z.infer<typeof reportTypeSchema>;
@@ -100,41 +100,8 @@ async function callWithRetryAndFallback(
   return { response, modelUsed: PRIMARY_MODEL, usedFallback: false };
 }
 
-const getSystemPrompt = (reportType: ReportType, includedSourceReports?: string[]): string => {
+const getSystemPrompt = (reportType: ReportType, includedDailyReports?: string[]): string => {
   const baseInstructions = "You are a professional field report assistant. Analyze the provided field notes and images to create a clear, structured report.";
-  
-  if (reportType === 'field_report') {
-    return `${baseInstructions}
-
-Format your response EXACTLY as follows for a FIELD REPORT:
-
-SITE CONDITIONS:
-• [Current weather and environmental conditions]
-• [Ground/terrain conditions observed]
-• [Access conditions]
-
-WORK OBSERVED:
-• [Specific work activity or task observed]
-• [Another activity observed]
-• [Add more as needed]
-
-ISSUES FOUND:
-• [Issue or concern identified]: [Severity - Minor/Moderate/Critical]
-• [Another issue if any]
-• [Add more as needed, or "No issues identified" if none]
-
-PHOTOS TAKEN:
-[Brief description of what the photos document]
-
-IMMEDIATE ACTIONS NEEDED:
-• [Any urgent action required]
-• [Add more as needed, or "No immediate actions required"]
-
-NOTES:
-[Any additional observations or comments from the field]
-
-Keep the tone professional and concise. Focus on what was directly observed in the field.`;
-  }
   
   if (reportType === 'daily') {
     return `${baseInstructions}
@@ -171,11 +138,11 @@ Keep the tone professional and concise. Focus on observable facts and specific d
   }
   
   if (reportType === 'weekly') {
-    const sourceContext = includedSourceReports?.length 
-      ? `\n\nYou have been provided with ${includedSourceReports.length} daily report(s) to summarize. Synthesize this information into a cohesive weekly overview.`
+    const dailyContext = includedDailyReports?.length 
+      ? `\n\nYou have been provided with ${includedDailyReports.length} daily report(s) to summarize. Synthesize this information into a cohesive weekly overview.`
       : '';
     
-    return `${baseInstructions}${sourceContext}
+    return `${baseInstructions}${dailyContext}
 
 Format your response EXACTLY as follows for a WEEKLY REPORT:
 
@@ -214,62 +181,6 @@ SAFETY & COMPLIANCE:
 [Any safety incidents or compliance notes, or "No incidents reported"]
 
 Keep the tone professional and comprehensive. Provide a clear picture of the week's activities.`;
-  }
-  
-  if (reportType === 'monthly') {
-    const sourceContext = includedSourceReports?.length 
-      ? `\n\nYou have been provided with ${includedSourceReports.length} weekly report(s) to aggregate. Synthesize this information into a comprehensive monthly overview.`
-      : '';
-    
-    return `${baseInstructions}${sourceContext}
-
-Format your response EXACTLY as follows for a MONTHLY REPORT:
-
-MONTH OVERVIEW:
-[3-4 sentence executive summary of the month's progress, major achievements, and overall project status]
-
-KEY MILESTONES ACHIEVED:
-• [Major milestone 1 - with date if known]
-• [Major milestone 2 - with date if known]
-• [Add more as needed]
-
-PROGRESS SUMMARY:
-[Comprehensive breakdown of work completed this month]
-• Phase/Area 1: [Percentage complete] - [Brief status]
-• Phase/Area 2: [Percentage complete] - [Brief status]
-• [Add more as needed]
-
-BUDGET & RESOURCES:
-• Personnel hours: [Summary of labor utilization]
-• Materials consumed: [Summary of key materials]
-• Equipment usage: [Summary of equipment if applicable]
-• Budget status: [On budget / Over / Under - brief explanation]
-
-SCHEDULE PERFORMANCE:
-• Original timeline: [Status]
-• Current forecast: [Any adjustments needed]
-• Critical path items: [Key items affecting schedule]
-
-CHALLENGES & LESSONS LEARNED:
-• [Challenge 1]: [Resolution and lessons learned]
-• [Challenge 2]: [Resolution and lessons learned]
-• [Add more as needed]
-
-QUALITY & SAFETY:
-• Quality issues: [Summary or "No quality issues"]
-• Safety incidents: [Summary or "No safety incidents"]
-• Compliance notes: [Any relevant compliance updates]
-
-NEXT MONTH'S FOCUS:
-1. [Priority objective 1]
-2. [Priority objective 2]
-3. [Priority objective 3]
-• Key risks to monitor: [Any risks to watch]
-
-STAKEHOLDER NOTES:
-[Any important updates for stakeholders, client communications, or decisions needed]
-
-Keep the tone professional and executive-level. This report should provide a comprehensive view suitable for project stakeholders.`;
   }
   
   // Site Survey
@@ -339,12 +250,12 @@ serve(async (req) => {
       );
     }
     
-    const { description, imageDataUrls, reportType, includedSourceReports } = validationResult.data;
+    const { description, imageDataUrls, reportType, includedDailyReports } = validationResult.data;
     console.log("Generating report summary", { 
       descriptionLength: description?.length,
       imageCount: imageDataUrls?.length,
       reportType,
-      includedSourceReportsCount: includedSourceReports?.length,
+      includedDailyReportsCount: includedDailyReports?.length,
       timestamp: new Date().toISOString() 
     });
 
@@ -356,12 +267,11 @@ serve(async (req) => {
     // Build messages array with text and images
     const content: any[] = [];
     
-    // Add included source reports content for weekly/monthly reports
-    if ((reportType === 'weekly' || reportType === 'monthly') && includedSourceReports?.length) {
-      const reportLabel = reportType === 'monthly' ? 'Weekly Report' : 'Daily Report';
+    // Add included daily reports content for weekly reports
+    if (reportType === 'weekly' && includedDailyReports?.length) {
       content.push({
         type: "text",
-        text: `Previous ${reportLabel}s to summarize:\n\n${includedSourceReports.map((report: string, index: number) => `--- ${reportLabel} ${index + 1} ---\n${report}`).join('\n\n')}`
+        text: `Previous Daily Reports to summarize:\n\n${includedDailyReports.map((report: string, index: number) => `--- Daily Report ${index + 1} ---\n${report}`).join('\n\n')}`
       });
     }
     
@@ -385,7 +295,7 @@ serve(async (req) => {
       throw new Error("No content provided for summary generation");
     }
 
-    const systemPrompt = getSystemPrompt(reportType, includedSourceReports);
+    const systemPrompt = getSystemPrompt(reportType, includedDailyReports);
 
     const messages = [
       { role: 'system', content: systemPrompt },

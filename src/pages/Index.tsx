@@ -112,39 +112,22 @@ const Index = () => {
   const checkProfileComplete = async () => {
     if (!user) return;
 
-    try {
-      // Ensure a profile row exists (prevents freezes/crashes for brand-new users)
-      const { error: ensureError } = await supabase
-        .from("profiles")
-        .upsert({ id: user.id }, { onConflict: "id" });
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('first_name, last_name, company_name, trial_start_date, current_plan')
+      .eq('id', user.id)
+      .single();
 
-      if (ensureError) {
-        console.error("Error ensuring profile exists:", ensureError);
-      }
+    const isProfileComplete = profile?.first_name && profile?.last_name && profile?.company_name;
+    const skipOnboarding = localStorage.getItem('skipOnboarding') === 'true';
+    
+    if (!isProfileComplete && !skipOnboarding) {
+      navigate("/onboarding");
+    }
 
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("first_name, last_name, company_name, trial_start_date, current_plan")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
-      }
-
-      const isProfileComplete = !!(profile?.first_name && profile?.last_name && profile?.company_name);
-      const skipOnboarding = localStorage.getItem("skipOnboarding") === "true";
-
-      if (!isProfileComplete && !skipOnboarding) {
-        navigate("/onboarding");
-      }
-
-      // Check if user is on trial and set trial start date
-      if (profile?.current_plan === "trial" && profile?.trial_start_date) {
-        setTrialStartDate(profile.trial_start_date);
-      }
-    } catch (err) {
-      console.error("Error checking profile completion:", err);
+    // Check if user is on trial and set trial start date
+    if (profile?.current_plan === 'trial' && profile?.trial_start_date) {
+      setTrialStartDate(profile.trial_start_date);
     }
   };
 
@@ -329,24 +312,9 @@ const Index = () => {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
-                onSelect={async (e) => {
-                  e.preventDefault();
-                  try {
-                    const { error } = await supabase.auth.signOut();
-                    if (error) {
-                      console.error("Logout error:", error);
-                      toast.error("Failed to log out. Please try again.");
-                      return;
-                    }
-
-                    localStorage.removeItem("skipOnboarding");
-
-                    // Hard redirect ensures no stale in-memory state keeps the user "logged in"
-                    window.location.assign("/auth");
-                  } catch (err) {
-                    console.error("Logout error:", err);
-                    toast.error("Failed to log out. Please try again.");
-                  }
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  navigate("/auth");
                 }} 
                 className="cursor-pointer text-destructive focus:text-destructive"
               >
@@ -453,7 +421,11 @@ const Index = () => {
           {projects.length === 0 ? (
             <div className="glass-card p-8 text-center">
               <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-              <p className="text-muted-foreground">{t('dashboard.noProjectsGetStarted')}</p>
+              <p className="text-muted-foreground mb-4">{t('dashboard.noProjects')}</p>
+              <Button onClick={() => navigate("/new-project")}>
+                <Plus className="mr-2 h-4 w-4" />
+                {t('dashboard.createProject')}
+              </Button>
             </div>
           ) : (
             <div className="space-y-3">

@@ -377,23 +377,9 @@ const Settings = () => {
   };
 
   const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error("Logout error:", error);
-        toast.error("Failed to log out. Please try again.");
-        return;
-      }
-
-      localStorage.removeItem("skipOnboarding");
-      toast.success("Logged out successfully");
-
-      // Hard redirect avoids any stale client state
-      window.location.assign("/auth");
-    } catch (err) {
-      console.error("Logout error:", err);
-      toast.error("Failed to log out. Please try again.");
-    }
+    await supabase.auth.signOut();
+    toast.success("Logged out successfully");
+    navigate("/auth");
   };
 
   const handleManageCloud = () => {

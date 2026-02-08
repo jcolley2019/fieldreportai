@@ -9,11 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, ListChecks, ClipboardList, Pencil, Loader2, PenTool } from "lucide-react";
+import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, ListChecks, ClipboardList, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import { LiveCameraCapture } from "@/components/LiveCameraCapture";
-import { PhotoAnnotationDialog } from "@/components/PhotoAnnotationDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from '@/lib/dateFormat';
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
@@ -48,7 +47,6 @@ const CaptureScreen = () => {
   const [editingCaptionId, setEditingCaptionId] = useState<string | null>(null);
   const [editingCaptionText, setEditingCaptionText] = useState("");
   const [isLabelingImage, setIsLabelingImage] = useState<string | null>(null);
-  const [annotatingImage, setAnnotatingImage] = useState<ImageItem | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -177,25 +175,6 @@ const CaptureScreen = () => {
     setImages([]);
     setDescription("");
     toast.success(t('common.allDiscarded'));
-  };
-
-  // Handle saving annotated image
-  const handleSaveAnnotation = (annotatedUrl: string, annotatedFile: File) => {
-    if (!annotatingImage) return;
-    
-    // Replace the original image with the annotated version
-    setImages(prev => prev.map(img =>
-      img.id === annotatingImage.id
-        ? { ...img, url: annotatedUrl, file: annotatedFile }
-        : img
-    ));
-    
-    setAnnotatingImage(null);
-    toast.success(t('annotation.saveAnnotation'));
-  };
-
-  const handleAnnotateImage = (image: ImageItem) => {
-    setAnnotatingImage(image);
   };
 
   const handleVoiceRecord = async () => {
@@ -767,17 +746,6 @@ const CaptureScreen = () => {
                         >
                           <Pencil className="h-3 w-3" />
                         </button>
-                        {/* Annotate button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAnnotateImage(image);
-                          }}
-                          className="absolute top-1 left-7 flex h-5 w-5 items-center justify-center rounded-full bg-primary/80 text-white backdrop-blur-sm hover:bg-primary"
-                          title={t('annotation.annotate')}
-                        >
-                          <PenTool className="h-3 w-3" />
-                        </button>
                         <button
                           onClick={() => deleteImage(image.id)}
                           className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70"
@@ -885,20 +853,6 @@ const CaptureScreen = () => {
                     </div>
                   </>
                 )}
-                
-                {/* Annotate button in viewer */}
-                <button
-                  onClick={() => {
-                    if (selectedImageIndex !== null && activeImages[selectedImageIndex]) {
-                      setSelectedImageIndex(null);
-                      handleAnnotateImage(activeImages[selectedImageIndex]);
-                    }
-                  }}
-                  className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white backdrop-blur-sm hover:bg-primary/90 transition-all"
-                  title={t('annotation.annotate')}
-                >
-                  <PenTool className="h-5 w-5" />
-                </button>
               </>
             )}
           </div>
@@ -960,16 +914,6 @@ const CaptureScreen = () => {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Photo Annotation Dialog */}
-      {annotatingImage && (
-        <PhotoAnnotationDialog
-          open={!!annotatingImage}
-          onOpenChange={(open) => !open && setAnnotatingImage(null)}
-          imageUrl={annotatingImage.url}
-          onSave={handleSaveAnnotation}
-        />
-      )}
     </div>
   );
 };

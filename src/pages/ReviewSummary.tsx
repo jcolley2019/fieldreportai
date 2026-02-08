@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ReportTypeSelector, ReportType, AggregationSourceMode } from "@/components/ReportTypeSelector";
+import { ReportTypeSelector, ReportType, WeeklySourceMode } from "@/components/ReportTypeSelector";
 
 interface SummarySection {
   id: string;
@@ -29,12 +29,11 @@ interface SummarySection {
   isOpen: boolean;
 }
 
-interface SourceReport {
+interface DailyReport {
   id: string;
   project_name: string;
   created_at: string;
   job_description: string;
-  report_type?: string;
 }
 
 const ReviewSummary = () => {
@@ -49,12 +48,12 @@ const ReviewSummary = () => {
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   
-  // Report type state - Simple Mode defaults to field_report
-  const [reportType, setReportType] = useState<ReportType>(isSimpleMode ? 'field_report' : 'daily');
-  const [aggregationSourceMode, setAggregationSourceMode] = useState<AggregationSourceMode>('auto');
-  const [availableSourceReports, setAvailableSourceReports] = useState<SourceReport[]>([]);
-  const [selectedSourceReportIds, setSelectedSourceReportIds] = useState<string[]>([]);
-  const [isLoadingSourceReports, setIsLoadingSourceReports] = useState(false);
+  // Report type state
+  const [reportType, setReportType] = useState<ReportType>('daily');
+  const [weeklySourceMode, setWeeklySourceMode] = useState<WeeklySourceMode>('auto');
+  const [availableDailyReports, setAvailableDailyReports] = useState<DailyReport[]>([]);
+  const [selectedDailyReportIds, setSelectedDailyReportIds] = useState<string[]>([]);
+  const [isLoadingDailyReports, setIsLoadingDailyReports] = useState(false);
   const [summaryText, setSummaryText] = useState(initialSummary);
   const [isRegenerating, setIsRegenerating] = useState(false);
   
@@ -106,64 +105,51 @@ const ReviewSummary = () => {
   const [sections, setSections] = useState<SummarySection[]>(() => parseSummary(summaryText));
   const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch source reports when weekly or monthly mode is selected
+  // Fetch daily reports when weekly mode is selected
   useEffect(() => {
-    if (reportType === 'weekly' || reportType === 'monthly') {
-      fetchSourceReports();
+    if (reportType === 'weekly') {
+      fetchDailyReports();
     }
   }, [reportType]);
 
-  // Auto-select source reports when auto mode is selected
+  // Auto-select daily reports when auto mode is selected
   useEffect(() => {
-    if (aggregationSourceMode === 'auto' && availableSourceReports.length > 0) {
-      setSelectedSourceReportIds(availableSourceReports.map(r => r.id));
-    } else if (aggregationSourceMode === 'fresh') {
-      setSelectedSourceReportIds([]);
+    if (weeklySourceMode === 'auto' && availableDailyReports.length > 0) {
+      setSelectedDailyReportIds(availableDailyReports.map(r => r.id));
+    } else if (weeklySourceMode === 'fresh') {
+      setSelectedDailyReportIds([]);
     }
-  }, [aggregationSourceMode, availableSourceReports]);
+  }, [weeklySourceMode, availableDailyReports]);
 
-  const fetchSourceReports = async () => {
-    setIsLoadingSourceReports(true);
+  const fetchDailyReports = async () => {
+    setIsLoadingDailyReports(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Determine date range and report type based on current selection
-      let startDate: Date;
-      let sourceReportType: string;
-      
-      if (reportType === 'monthly') {
-        // Get weekly reports from the current month
-        startDate = new Date();
-        startDate.setDate(1); // First day of month
-        startDate.setHours(0, 0, 0, 0);
-        sourceReportType = 'weekly';
-      } else {
-        // Get daily reports from the current week (for weekly reports)
-        startDate = new Date();
-        startDate.setDate(startDate.getDate() - startDate.getDay());
-        startDate.setHours(0, 0, 0, 0);
-        sourceReportType = 'daily';
-      }
+      // Get daily reports from the current week
+      const startOfWeek = new Date();
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
 
       const { data, error } = await supabase
         .from('reports')
-        .select('id, project_name, created_at, job_description, report_type')
+        .select('id, project_name, created_at, job_description')
         .eq('user_id', user.id)
-        .eq('report_type', sourceReportType)
-        .gte('created_at', startDate.toISOString())
+        .eq('report_type', 'daily')
+        .gte('created_at', startOfWeek.toISOString())
         .order('created_at', { ascending: false });
 
       if (!error && data) {
-        setAvailableSourceReports(data);
-        if (aggregationSourceMode === 'auto') {
-          setSelectedSourceReportIds(data.map(r => r.id));
+        setAvailableDailyReports(data);
+        if (weeklySourceMode === 'auto') {
+          setSelectedDailyReportIds(data.map(r => r.id));
         }
       }
     } catch (error) {
-      console.error('Error fetching source reports:', error);
+      console.error('Error fetching daily reports:', error);
     } finally {
-      setIsLoadingSourceReports(false);
+      setIsLoadingDailyReports(false);
     }
   };
 
@@ -178,11 +164,11 @@ const ReviewSummary = () => {
   const handleRegenerateSummary = async () => {
     setIsRegenerating(true);
     try {
-      // Get included source reports content for weekly/monthly mode
-      let includedSourceReports: string[] = [];
-      if ((reportType === 'weekly' || reportType === 'monthly') && aggregationSourceMode !== 'fresh' && selectedSourceReportIds.length > 0) {
-        includedSourceReports = availableSourceReports
-          .filter(r => selectedSourceReportIds.includes(r.id))
+      // Get included daily reports content for weekly mode
+      let includedDailyReports: string[] = [];
+      if (reportType === 'weekly' && weeklySourceMode !== 'fresh' && selectedDailyReportIds.length > 0) {
+        includedDailyReports = availableDailyReports
+          .filter(r => selectedDailyReportIds.includes(r.id))
           .map(r => r.job_description);
       }
 
@@ -194,7 +180,7 @@ const ReviewSummary = () => {
           description: initialSummary,
           imageDataUrls,
           reportType,
-          includedSourceReports: includedSourceReports.length > 0 ? includedSourceReports : undefined
+          includedDailyReports: includedDailyReports.length > 0 ? includedDailyReports : undefined
         }
       });
 
@@ -410,13 +396,12 @@ const ReviewSummary = () => {
           <ReportTypeSelector
             selectedType={reportType}
             onTypeChange={setReportType}
-            aggregationSourceMode={aggregationSourceMode}
-            onAggregationSourceModeChange={setAggregationSourceMode}
-            availableSourceReports={availableSourceReports}
-            selectedSourceReportIds={selectedSourceReportIds}
-            onSourceReportSelectionChange={setSelectedSourceReportIds}
-            isLoadingSourceReports={isLoadingSourceReports}
-            isSimpleMode={isSimpleMode}
+            weeklySourceMode={weeklySourceMode}
+            onWeeklySourceModeChange={setWeeklySourceMode}
+            availableDailyReports={availableDailyReports}
+            selectedDailyReportIds={selectedDailyReportIds}
+            onDailyReportSelectionChange={setSelectedDailyReportIds}
+            isLoadingDailyReports={isLoadingDailyReports}
           />
         </div>
 
