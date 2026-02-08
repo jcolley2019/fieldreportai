@@ -9,10 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, ListChecks, ClipboardList, Pencil, Loader2 } from "lucide-react";
+import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, ListChecks, ClipboardList, Pencil, Loader2, PenTool } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import { LiveCameraCapture } from "@/components/LiveCameraCapture";
+import { PhotoAnnotationDialog } from "@/components/PhotoAnnotationDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from '@/lib/dateFormat';
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
@@ -47,6 +48,7 @@ const CaptureScreen = () => {
   const [editingCaptionId, setEditingCaptionId] = useState<string | null>(null);
   const [editingCaptionText, setEditingCaptionText] = useState("");
   const [isLabelingImage, setIsLabelingImage] = useState<string | null>(null);
+  const [annotatingImageId, setAnnotatingImageId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -175,6 +177,21 @@ const CaptureScreen = () => {
     setImages([]);
     setDescription("");
     toast.success(t('common.allDiscarded'));
+  };
+
+  // Handle annotated image save - replaces original with annotated version
+  const handleAnnotationSave = (imageId: string, annotatedBlob: Blob) => {
+    const newUrl = URL.createObjectURL(annotatedBlob);
+    const newFile = new File([annotatedBlob], `annotated-${Date.now()}.png`, { type: 'image/png' });
+    
+    setImages(prev => prev.map(img =>
+      img.id === imageId 
+        ? { ...img, url: newUrl, file: newFile }
+        : img
+    ));
+    
+    setAnnotatingImageId(null);
+    toast.success("Annotation saved");
   };
 
   const handleVoiceRecord = async () => {
@@ -746,6 +763,17 @@ const CaptureScreen = () => {
                         >
                           <Pencil className="h-3 w-3" />
                         </button>
+                        {/* Annotate button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAnnotatingImageId(image.id);
+                          }}
+                          className="absolute top-1 left-7 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white backdrop-blur-sm hover:bg-primary/80"
+                          title="Annotate photo"
+                        >
+                          <PenTool className="h-3 w-3" />
+                        </button>
                         <button
                           onClick={() => deleteImage(image.id)}
                           className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70"
@@ -829,6 +857,15 @@ const CaptureScreen = () => {
                     touchAction: 'none'
                   }}
                 />
+                
+                {/* Annotate button in top-right */}
+                <button
+                  onClick={() => setAnnotatingImageId(activeImages[selectedImageIndex].id)}
+                  className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white backdrop-blur-sm hover:bg-primary/80 transition-all"
+                  title="Annotate photo"
+                >
+                  <PenTool className="h-5 w-5" />
+                </button>
                 
                 {/* Navigation Arrows */}
                 {activeImages.length > 1 && (
@@ -914,6 +951,16 @@ const CaptureScreen = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Photo Annotation Dialog */}
+      {annotatingImageId && (
+        <PhotoAnnotationDialog
+          open={!!annotatingImageId}
+          onClose={() => setAnnotatingImageId(null)}
+          imageUrl={images.find(img => img.id === annotatingImageId)?.url || ""}
+          onSave={(blob) => handleAnnotationSave(annotatingImageId, blob)}
+        />
+      )}
     </div>
   );
 };
