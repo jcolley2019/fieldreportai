@@ -384,10 +384,12 @@ const Settings = () => {
         toast.error("Failed to log out. Please try again.");
         return;
       }
-      // Clear any local storage flags
-      localStorage.removeItem('skipOnboarding');
+
+      localStorage.removeItem("skipOnboarding");
       toast.success("Logged out successfully");
-      navigate("/auth");
+
+      // Hard redirect avoids any stale client state
+      window.location.assign("/auth");
     } catch (err) {
       console.error("Logout error:", err);
       toast.error("Failed to log out. Please try again.");

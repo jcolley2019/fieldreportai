@@ -105,51 +105,45 @@ const Auth = () => {
     };
   }, [navigate]);
 
-  // Listen for auth state changes (handles successful login/signup)
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("Auth state changed:", event, !!session);
-        
-        if (event === 'SIGNED_IN' && session) {
-          // Small delay to ensure state is settled
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-          if (!isMountedRef.current) return;
-          
-          setLoading(false);
-          
-          // Handle subscription linking if needed (non-blocking)
-          if (sessionId) {
-            supabase.functions
-              .invoke('link-subscription', { body: { sessionId } })
-              .catch(err => console.error('Subscription link error:', err));
-          }
+  const ensureProfileRow = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .upsert({ id: userId }, { onConflict: "id" });
 
-          // Handle trial activation if needed (non-blocking)
-          if (startTrial === 'true') {
-            activateTrialNonBlocking(session.user.id);
-          }
-
-          // Check profile completion for navigation
-          const destination = await getNavigationDestination(session.user.id);
-          
-          if (redirectUrl) {
-            const fullRedirect = pendingPlan && pendingBilling
-              ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
-              : redirectUrl;
-            navigate(fullRedirect);
-          } else {
-            navigate(destination);
-          }
-        }
+      if (error) {
+        console.error("ensureProfileRow error:", error);
       }
-    );
+    } catch (err) {
+      console.error("ensureProfileRow error:", err);
+    }
+  };
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate, redirectUrl, pendingPlan, pendingBilling, sessionId, startTrial]);
+  const navigateAfterAuth = async (userId: string) => {
+    await ensureProfileRow(userId);
+
+    // Fire-and-forget side-effects
+    if (sessionId) {
+      supabase.functions
+        .invoke("link-subscription", { body: { sessionId } })
+        .catch((err) => console.error("Subscription link error:", err));
+    }
+
+    if (startTrial === "true") {
+      activateTrialNonBlocking(userId);
+    }
+
+    if (redirectUrl) {
+      const fullRedirect =
+        pendingPlan && pendingBilling
+          ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
+          : redirectUrl;
+      navigate(fullRedirect);
+    } else {
+      const destination = await getNavigationDestination(userId);
+      navigate(destination);
+    }
+  };
 
   const activateTrialNonBlocking = async (userId: string) => {
     try {
@@ -193,7 +187,7 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (loading) return;
     setLoading(true);
 
@@ -204,20 +198,19 @@ const Auth = () => {
         : authSchema.parse({ email, password });
 
       if (isLogin) {
-        // LOGIN FLOW
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email: validatedData.email,
           password: validatedData.password,
         });
 
         if (error) {
-          setLoading(false);
-          
           if (error.message.includes("Invalid login credentials")) {
             setIsLogin(false);
             toast({
-              title: t('auth.errors.noAccountFound') || "No account found",
-              description: t('auth.errors.switchedToSignup') || "We switched to Sign Up mode. Click the button to create your account.",
+              title: t("auth.errors.noAccountFound") || "No account found",
+              description:
+                t("auth.errors.switchedToSignup") ||
+                "We switched to Sign Up mode. Click the button to create your account.",
             });
             return;
           }
@@ -230,113 +223,111 @@ const Auth = () => {
           return;
         }
 
-        // Success - onAuthStateChange will handle navigation
         toast({
           title: "Success",
           description: "Logging you in...",
         });
-      } else {
-        // SIGNUP FLOW
-        const { error, data } = await supabase.auth.signUp({
-          email: validatedData.email,
-          password: validatedData.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-          },
-        });
 
-        if (error) {
-          setLoading(false);
-          
-          const msg = (error.message || "").toLowerCase();
-          if (msg.includes("already registered") || msg.includes("already exists")) {
-            setIsLogin(true);
-            toast({
-              title: t('auth.errors.accountExists'),
-              description: t('auth.errors.emailRegistered'),
-              variant: "destructive",
-            });
-            return;
-          }
+        await navigateAfterAuth(data.user.id);
+        return;
+      }
 
+      // SIGNUP FLOW
+      const { data, error } = await supabase.auth.signUp({
+        email: validatedData.email,
+        password: validatedData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (error) {
+        const msg = (error.message || "").toLowerCase();
+        if (msg.includes("already registered") || msg.includes("already exists")) {
+          setIsLogin(true);
           toast({
-            title: "Signup Error",
-            description: error.message,
+            title: t("auth.errors.accountExists"),
+            description: t("auth.errors.emailRegistered"),
             variant: "destructive",
           });
           return;
         }
 
-        // Capture lead (non-blocking)
-        supabase.functions
-          .invoke("capture-lead", {
-            body: { email: validatedData.email, source: "trial_signup", sequence: "trial" },
-          })
-          .catch(err => console.error("Lead capture failed:", err));
-
-        // Zapier webhook (non-blocking)
-        fetch("https://hooks.zapier.com/hooks/catch/25475428/uzqf7vv/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          mode: "no-cors",
-          body: JSON.stringify({
-            email: validatedData.email,
-            source: "trial_signup",
-            type: "user_signup",
-            timestamp: new Date().toISOString(),
-            plan: "trial",
-            sequence: "trial",
-          }),
-        }).catch(err => console.error("Zapier webhook failed:", err));
-
-        // Check if email confirmation is required
-        const needsEmailConfirmation = data?.user && !data?.session;
-
-        if (needsEmailConfirmation) {
-          setLoading(false);
-          toast({
-            title: "Check your email",
-            description: "Please check your email to confirm your account before logging in.",
-          });
-          setIsLogin(true);
-          return;
-        }
-
-        // If session was created immediately, onAuthStateChange will handle it
-        if (data?.session) {
-          toast({
-            title: "Account Created!",
-            description: "Setting up your account...",
-          });
-          // onAuthStateChange will handle navigation
-        } else {
-          // No session - need manual login
-          setLoading(false);
-          toast({
-            title: "Account Created!",
-            description: "Please log in with your new credentials.",
-          });
-          setIsLogin(true);
-        }
+        toast({
+          title: "Signup Error",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
       }
+
+      // Capture lead (non-blocking)
+      supabase.functions
+        .invoke("capture-lead", {
+          body: { email: validatedData.email, source: "trial_signup", sequence: "trial" },
+        })
+        .catch((err) => console.error("Lead capture failed:", err));
+
+      // Zapier webhook (non-blocking)
+      fetch("https://hooks.zapier.com/hooks/catch/25475428/uzqf7vv/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        mode: "no-cors",
+        body: JSON.stringify({
+          email: validatedData.email,
+          source: "trial_signup",
+          type: "user_signup",
+          timestamp: new Date().toISOString(),
+          plan: "trial",
+          sequence: "trial",
+        }),
+      }).catch((err) => console.error("Zapier webhook failed:", err));
+
+      const needsEmailConfirmation = data?.user && !data?.session;
+      if (needsEmailConfirmation) {
+        toast({
+          title: "Check your email",
+          description: "Please check your email to confirm your account before logging in.",
+        });
+        setIsLogin(true);
+        return;
+      }
+
+      const userId = data?.user?.id;
+      if (!userId) {
+        toast({
+          title: "Signup Error",
+          description: "Account created, but could not finish setup. Please log in.",
+          variant: "destructive",
+        });
+        setIsLogin(true);
+        return;
+      }
+
+      toast({
+        title: "Account Created!",
+        description: "Setting up your account...",
+      });
+
+      await navigateAfterAuth(userId);
     } catch (error) {
-      setLoading(false);
-      
       if (error instanceof z.ZodError) {
         toast({
-          title: t('auth.errors.validationError'),
+          title: t("auth.errors.validationError"),
           description: error.errors[0].message,
           variant: "destructive",
         });
         return;
       }
 
-      console.error('Auth error:', error);
+      console.error("Auth error:", error);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      if (isMountedRef.current) setLoading(false);
     }
   };
 
