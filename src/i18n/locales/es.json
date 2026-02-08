@@ -119,6 +119,8 @@
   },
   "settings": {
     "title": "Configuración",
+    "subscription": "Suscripción",
+    "subscriptionDesc": "Administra tu plan de suscripción",
     "profile": "Perfil",
     "profilePicture": "Foto de Perfil",
     "firstName": "Nombre",
