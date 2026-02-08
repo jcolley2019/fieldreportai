@@ -313,8 +313,20 @@ const Index = () => {
               <DropdownMenuSeparator />
               <DropdownMenuItem 
                 onClick={async () => {
-                  await supabase.auth.signOut();
-                  navigate("/auth");
+                  try {
+                    const { error } = await supabase.auth.signOut();
+                    if (error) {
+                      console.error("Logout error:", error);
+                      toast.error("Failed to log out. Please try again.");
+                      return;
+                    }
+                    // Clear any local storage flags
+                    localStorage.removeItem('skipOnboarding');
+                    navigate("/auth");
+                  } catch (err) {
+                    console.error("Logout error:", err);
+                    toast.error("Failed to log out. Please try again.");
+                  }
                 }} 
                 className="cursor-pointer text-destructive focus:text-destructive"
               >
