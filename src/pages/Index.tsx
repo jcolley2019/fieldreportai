@@ -421,11 +421,7 @@ const Index = () => {
           {projects.length === 0 ? (
             <div className="glass-card p-8 text-center">
               <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-              <p className="text-muted-foreground mb-4">{t('dashboard.noProjects')}</p>
-              <Button onClick={() => navigate("/new-project")}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t('dashboard.createProject')}
-              </Button>
+              <p className="text-muted-foreground">{t('dashboard.noProjectsGetStarted')}</p>
             </div>
           ) : (
             <div className="space-y-3">
