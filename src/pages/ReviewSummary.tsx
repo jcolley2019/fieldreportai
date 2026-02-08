@@ -49,11 +49,14 @@ const ReviewSummary = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   
   // Report type state
-  const [reportType, setReportType] = useState<ReportType>('daily');
+  const [reportType, setReportType] = useState<ReportType>(isSimpleMode ? 'field' : 'daily');
   const [weeklySourceMode, setWeeklySourceMode] = useState<WeeklySourceMode>('auto');
   const [availableDailyReports, setAvailableDailyReports] = useState<DailyReport[]>([]);
   const [selectedDailyReportIds, setSelectedDailyReportIds] = useState<string[]>([]);
   const [isLoadingDailyReports, setIsLoadingDailyReports] = useState(false);
+  const [availableWeeklyReports, setAvailableWeeklyReports] = useState<DailyReport[]>([]);
+  const [selectedWeeklyReportIds, setSelectedWeeklyReportIds] = useState<string[]>([]);
+  const [isLoadingWeeklyReports, setIsLoadingWeeklyReports] = useState(false);
   const [summaryText, setSummaryText] = useState(initialSummary);
   const [isRegenerating, setIsRegenerating] = useState(false);
   
@@ -109,17 +112,24 @@ const ReviewSummary = () => {
   useEffect(() => {
     if (reportType === 'weekly') {
       fetchDailyReports();
+    } else if (reportType === 'monthly') {
+      fetchWeeklyReports();
     }
   }, [reportType]);
 
-  // Auto-select daily reports when auto mode is selected
+  // Auto-select reports when auto mode is selected
   useEffect(() => {
-    if (weeklySourceMode === 'auto' && availableDailyReports.length > 0) {
-      setSelectedDailyReportIds(availableDailyReports.map(r => r.id));
+    if (weeklySourceMode === 'auto') {
+      if (reportType === 'weekly' && availableDailyReports.length > 0) {
+        setSelectedDailyReportIds(availableDailyReports.map(r => r.id));
+      } else if (reportType === 'monthly' && availableWeeklyReports.length > 0) {
+        setSelectedWeeklyReportIds(availableWeeklyReports.map(r => r.id));
+      }
     } else if (weeklySourceMode === 'fresh') {
       setSelectedDailyReportIds([]);
+      setSelectedWeeklyReportIds([]);
     }
-  }, [weeklySourceMode, availableDailyReports]);
+  }, [weeklySourceMode, availableDailyReports, availableWeeklyReports, reportType]);
 
   const fetchDailyReports = async () => {
     setIsLoadingDailyReports(true);
@@ -134,7 +144,7 @@ const ReviewSummary = () => {
 
       const { data, error } = await supabase
         .from('reports')
-        .select('id, project_name, created_at, job_description')
+        .select('id, project_name, created_at, job_description, report_type')
         .eq('user_id', user.id)
         .eq('report_type', 'daily')
         .gte('created_at', startOfWeek.toISOString())
@@ -150,6 +160,38 @@ const ReviewSummary = () => {
       console.error('Error fetching daily reports:', error);
     } finally {
       setIsLoadingDailyReports(false);
+    }
+  };
+
+  const fetchWeeklyReports = async () => {
+    setIsLoadingWeeklyReports(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get weekly reports from the current month
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const { data, error } = await supabase
+        .from('reports')
+        .select('id, project_name, created_at, job_description, report_type')
+        .eq('user_id', user.id)
+        .eq('report_type', 'weekly')
+        .gte('created_at', startOfMonth.toISOString())
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setAvailableWeeklyReports(data);
+        if (weeklySourceMode === 'auto') {
+          setSelectedWeeklyReportIds(data.map(r => r.id));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching weekly reports:', error);
+    } finally {
+      setIsLoadingWeeklyReports(false);
     }
   };
 
@@ -172,6 +214,14 @@ const ReviewSummary = () => {
           .map(r => r.job_description);
       }
 
+      // Get included weekly reports content for monthly mode
+      let includedWeeklyReports: string[] = [];
+      if (reportType === 'monthly' && weeklySourceMode !== 'fresh' && selectedWeeklyReportIds.length > 0) {
+        includedWeeklyReports = availableWeeklyReports
+          .filter(r => selectedWeeklyReportIds.includes(r.id))
+          .map(r => r.job_description);
+      }
+
       // Get image data URLs for the AI
       const imageDataUrls = capturedImages.map((img: any) => img.url);
 
@@ -180,7 +230,8 @@ const ReviewSummary = () => {
           description: initialSummary,
           imageDataUrls,
           reportType,
-          includedDailyReports: includedDailyReports.length > 0 ? includedDailyReports : undefined
+          includedDailyReports: includedDailyReports.length > 0 ? includedDailyReports : undefined,
+          includedWeeklyReports: includedWeeklyReports.length > 0 ? includedWeeklyReports : undefined
         }
       });
 
@@ -402,6 +453,10 @@ const ReviewSummary = () => {
             selectedDailyReportIds={selectedDailyReportIds}
             onDailyReportSelectionChange={setSelectedDailyReportIds}
             isLoadingDailyReports={isLoadingDailyReports}
+            availableWeeklyReports={availableWeeklyReports}
+            selectedWeeklyReportIds={selectedWeeklyReportIds}
+            onWeeklyReportSelectionChange={setSelectedWeeklyReportIds}
+            isLoadingWeeklyReports={isLoadingWeeklyReports}
           />
         </div>
 
