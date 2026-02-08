@@ -99,13 +99,33 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 10,
   },
-  image: {
+  imageContainer: {
     width: '48%',
+    marginBottom: 10,
+  },
+  image: {
+    width: '100%',
     height: 120,
     objectFit: 'cover',
     borderRadius: 4,
   },
+  imageMetadata: {
+    fontSize: 8,
+    color: '#6b7280',
+    marginTop: 4,
+    paddingHorizontal: 2,
+  },
 });
+
+interface MediaItemForPDF {
+  id: string;
+  file_path: string;
+  file_type: string;
+  latitude?: number;
+  longitude?: number;
+  captured_at?: string;
+  location_name?: string;
+}
 
 interface ReportPDFProps {
   reportData: {
@@ -116,7 +136,7 @@ interface ReportPDFProps {
     created_at: string;
     report_type?: string;
   };
-  media?: Array<{ id: string; file_path: string; file_type: string }>;
+  media?: MediaItemForPDF[];
   checklists?: Array<{
     id: string;
     title: string;
@@ -153,6 +173,25 @@ export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls }
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
       month: 'long', 
+      day: 'numeric', 
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  };
+
+  const formatCoordinates = (lat?: number, lon?: number) => {
+    if (lat === undefined || lon === undefined) return null;
+    const latDir = lat >= 0 ? 'N' : 'S';
+    const lonDir = lon >= 0 ? 'E' : 'W';
+    return `${Math.abs(lat).toFixed(4)}°${latDir}, ${Math.abs(lon).toFixed(4)}°${lonDir}`;
+  };
+
+  const formatCaptureDate = (dateString?: string) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
       day: 'numeric', 
       year: 'numeric',
       hour: 'numeric',
@@ -251,12 +290,24 @@ export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls }
             <View style={styles.imageGrid}>
               {media.slice(0, 4).map((item) => {
                 const url = mediaUrls?.get(item.id);
+                const coords = formatCoordinates(item.latitude, item.longitude);
+                const captureDate = formatCaptureDate(item.captured_at);
+                const locationDisplay = item.location_name || coords;
+                
                 return item.file_type === 'image' && url ? (
-                  <Image
-                    key={item.id}
-                    src={url}
-                    style={styles.image}
-                  />
+                  <View key={item.id} style={styles.imageContainer}>
+                    <Image
+                      src={url}
+                      style={styles.image}
+                    />
+                    {(locationDisplay || captureDate) && (
+                      <Text style={styles.imageMetadata}>
+                        {captureDate && `📅 ${captureDate}`}
+                        {locationDisplay && captureDate && ' • '}
+                        {locationDisplay && `📍 ${locationDisplay}`}
+                      </Text>
+                    )}
+                  </View>
                 ) : null;
               })}
             </View>

@@ -252,33 +252,45 @@ export type Database = {
       }
       media: {
         Row: {
+          captured_at: string | null
           created_at: string
           file_path: string
           file_size: number | null
           file_type: string
           id: string
+          latitude: number | null
+          location_name: string | null
+          longitude: number | null
           mime_type: string | null
           report_id: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          captured_at?: string | null
           created_at?: string
           file_path: string
           file_size?: number | null
           file_type: string
           id?: string
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
           mime_type?: string | null
           report_id: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          captured_at?: string | null
           created_at?: string
           file_path?: string
           file_size?: number | null
           file_type?: string
           id?: string
+          latitude?: number | null
+          location_name?: string | null
+          longitude?: number | null
           mime_type?: string | null
           report_id?: string
           updated_at?: string

@@ -374,7 +374,7 @@ const ReviewSummary = () => {
               continue;
             }
             
-            // Save to media table
+            // Save to media table with GPS data
             const { error: mediaError } = await supabase
               .from('media')
               .insert({
@@ -382,7 +382,11 @@ const ReviewSummary = () => {
                 report_id: currentReportId,
                 file_path: storagePath,
                 file_type: 'image',
-                mime_type: 'image/jpeg'
+                mime_type: 'image/jpeg',
+                latitude: image.latitude,
+                longitude: image.longitude,
+                captured_at: image.capturedAt || new Date().toISOString(),
+                location_name: image.locationName
               });
             
             if (mediaError) {
