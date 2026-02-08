@@ -761,6 +761,24 @@
     "noDailyReports": "No daily reports available",
     "noWeeklyReports": "No weekly reports available",
     "autoDetectInfo": "{{count}} daily report(s) from this week will be included",
-    "autoDetectMonthlyInfo": "{{count}} weekly report(s) from this month will be included"
+    "autoDetectMonthlyInfo": "{{count}} weekly report(s) from this month will be included",
+    "timeline": "Timeline",
+    "timelineDesc": "Visual timeline of project progress with AI narrative"
+  },
+  "timeline": {
+    "title": "Project Timeline",
+    "photosCount": "{{count}} photos in chronological order",
+    "generateNarrative": "Generate AI Narrative",
+    "generating": "Generating...",
+    "generated": "Timeline narrative generated",
+    "aiNarrative": "AI Progress Narrative",
+    "noPhotos": "No photos available for timeline",
+    "noPhotosYet": "No photos with timestamps yet",
+    "enableGPS": "Enable GPS stamping in Settings to track photo dates",
+    "fetchError": "Failed to load timeline photos",
+    "generateError": "Failed to generate timeline",
+    "rateLimitError": "Rate limit exceeded. Please try again later.",
+    "creditsError": "AI credits depleted. Please add credits.",
+    "viewTimeline": "View Timeline"
   }
 }

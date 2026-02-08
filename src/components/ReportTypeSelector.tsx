@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FileText, Calendar, CalendarDays, MapPin, ChevronDown, ChevronUp, Check, ClipboardList, CalendarRange } from "lucide-react";
+import { FileText, Calendar, CalendarDays, MapPin, ChevronDown, ChevronUp, Check, ClipboardList, CalendarRange, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
-export type ReportType = 'field' | 'daily' | 'weekly' | 'monthly' | 'site_survey';
+export type ReportType = 'field' | 'daily' | 'weekly' | 'monthly' | 'site_survey' | 'timeline';
 export type WeeklySourceMode = 'manual' | 'auto' | 'fresh';
 
 interface DailyReport {
@@ -86,6 +86,12 @@ export const ReportTypeSelector = ({
       icon: MapPin,
       label: t('reportType.siteSurvey', 'Site Survey'),
       description: t('reportType.siteSurveyDesc', 'Document site conditions and assessments'),
+    },
+    {
+      value: 'timeline' as ReportType,
+      icon: Clock,
+      label: t('reportType.timeline', 'Timeline'),
+      description: t('reportType.timelineDesc', 'Visual timeline of project progress with AI narrative'),
     },
   ];
 

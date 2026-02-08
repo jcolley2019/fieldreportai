@@ -765,6 +765,24 @@
     "noDailyReports": "No hay reportes diarios disponibles",
     "noWeeklyReports": "No hay reportes semanales disponibles",
     "autoDetectInfo": "Se incluirán {{count}} reporte(s) diario(s) de esta semana",
-    "autoDetectMonthlyInfo": "Se incluirán {{count}} reporte(s) semanal(es) de este mes"
+    "autoDetectMonthlyInfo": "Se incluirán {{count}} reporte(s) semanal(es) de este mes",
+    "timeline": "Línea de Tiempo",
+    "timelineDesc": "Línea de tiempo visual del progreso del proyecto con narrativa de IA"
+  },
+  "timeline": {
+    "title": "Línea de Tiempo del Proyecto",
+    "photosCount": "{{count}} fotos en orden cronológico",
+    "generateNarrative": "Generar Narrativa IA",
+    "generating": "Generando...",
+    "generated": "Narrativa de línea de tiempo generada",
+    "aiNarrative": "Narrativa de Progreso con IA",
+    "noPhotos": "No hay fotos disponibles para la línea de tiempo",
+    "noPhotosYet": "Aún no hay fotos con marcas de tiempo",
+    "enableGPS": "Habilita el estampado GPS en Configuración para rastrear fechas de fotos",
+    "fetchError": "Error al cargar fotos de la línea de tiempo",
+    "generateError": "Error al generar línea de tiempo",
+    "rateLimitError": "Límite de tasa excedido. Inténtalo más tarde.",
+    "creditsError": "Créditos de IA agotados. Por favor agrega créditos.",
+    "viewTimeline": "Ver Línea de Tiempo"
   }
 }
