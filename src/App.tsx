@@ -26,6 +26,7 @@ import AllContent from "./pages/AllContent";
 import Tasks from "./pages/Tasks";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import AdminMetrics from "./pages/AdminMetrics";
+import SharedProject from "./pages/SharedProject";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/checkout-success" element={<CheckoutSuccess />} />
             <Route path="/admin/metrics" element={<AdminMetrics />} />
+            <Route path="/shared/:token" element={<SharedProject />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </IdleTimeoutProvider>

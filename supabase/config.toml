@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.generate-timeline]
 verify_jwt = true
+
+[functions.get-public-share]
+verify_jwt = false

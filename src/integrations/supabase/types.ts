@@ -396,6 +396,47 @@ export type Database = {
         }
         Relationships: []
       }
+      project_shares: {
+        Row: {
+          allow_download: boolean | null
+          created_at: string | null
+          expires_at: string
+          id: string
+          report_id: string
+          revoked_at: string | null
+          share_token: string
+          user_id: string
+        }
+        Insert: {
+          allow_download?: boolean | null
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          report_id: string
+          revoked_at?: string | null
+          share_token?: string
+          user_id: string
+        }
+        Update: {
+          allow_download?: boolean | null
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          report_id?: string
+          revoked_at?: string | null
+          share_token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_shares_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           created_at: string
@@ -490,6 +531,47 @@ export type Database = {
           },
         ]
       }
+      team_members: {
+        Row: {
+          accepted_at: string | null
+          id: string
+          invited_at: string | null
+          member_email: string
+          member_user_id: string | null
+          owner_id: string
+          report_id: string
+          role: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          id?: string
+          invited_at?: string | null
+          member_email: string
+          member_user_id?: string | null
+          owner_id: string
+          report_id: string
+          role?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          id?: string
+          invited_at?: string | null
+          member_email?: string
+          member_user_id?: string | null
+          owner_id?: string
+          report_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -521,6 +603,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      has_team_access: {
+        Args: { p_report_id: string; p_user_id: string }
         Returns: boolean
       }
       is_trial_active: { Args: { user_id: string }; Returns: boolean }

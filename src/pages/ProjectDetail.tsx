@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2, Printer, Download, Mail, Send, Loader2, Clock } from "lucide-react";
+import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2, Printer, Download, Mail, Send, Loader2, Clock, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ProjectTimeline } from "@/components/ProjectTimeline";
+import { ShareProjectDialog } from "@/components/ShareProjectDialog";
 
 interface ProjectData {
   id: string;
@@ -63,12 +65,16 @@ interface DocumentData {
 const ProjectDetail = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<ProjectData | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [checklists, setChecklists] = useState<ChecklistData[]>([]);
   const [documents, setDocuments] = useState<DocumentData[]>([]);
+  
+  // Share dialog state
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   
   // Email sharing state
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
@@ -509,26 +515,34 @@ const ProjectDetail = () => {
             onClick={handlePrint}
           >
             <Printer className="h-4 w-4" />
-            Print
+            {t("common.print")}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="flex-1 gap-2">
                 <Download className="h-4 w-4" />
-                Download
+                {t("common.download")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center">
               <DropdownMenuItem onClick={handleDownloadPDF}>
                 <FileText className="h-4 w-4 mr-2" />
-                Save as PDF
+                {t("common.saveAsPDF")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDownloadWord}>
                 <FileText className="h-4 w-4 mr-2" />
-                Save as Word
+                {t("common.saveAsWord")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Button 
+            variant="outline" 
+            className="flex-1 gap-2"
+            onClick={() => setShareDialogOpen(true)}
+          >
+            <Share2 className="h-4 w-4" />
+            {t("common.share")}
+          </Button>
           <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="flex-1 gap-2">
@@ -774,6 +788,16 @@ const ProjectDetail = () => {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Share Project Dialog */}
+        {project && projectId && (
+          <ShareProjectDialog
+            open={shareDialogOpen}
+            onOpenChange={setShareDialogOpen}
+            reportId={projectId}
+            projectName={project.project_name}
+          />
+        )}
       </main>
     </div>
   );
