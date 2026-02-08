@@ -233,6 +233,9 @@ const Auth = () => {
             });
           }
         } else {
+          // Check if email confirmation is required
+          const needsEmailConfirmation = data?.user && !data?.session;
+          
           // Capture lead in database (non-blocking)
           supabase.functions.invoke("capture-lead", {
             body: {
@@ -261,20 +264,18 @@ const Auth = () => {
             console.error("Zapier webhook failed:", zapierError);
           });
 
-          // Auto-login after successful signup
-          const { error: loginError } = await supabase.auth.signInWithPassword({
-            email: validatedData.email,
-            password: validatedData.password,
-          });
-
-          if (loginError) {
-            // If auto-login fails (e.g., email confirmation required), show message and switch to login
+          // If email confirmation is required, show message and switch to login
+          if (needsEmailConfirmation) {
             toast({
               title: t('auth.success.accountCreated').split('!')[0],
-              description: t('auth.success.accountCreated'),
+              description: "Please check your email to confirm your account before logging in.",
             });
             setIsLogin(true);
-          } else {
+            return;
+          }
+
+          // Auto-login after successful signup (only if session was created immediately)
+          if (data?.session) {
             // Link subscription if coming from guest checkout
             if (sessionId) {
               await linkSubscriptionToAccount();
@@ -298,6 +299,46 @@ const Auth = () => {
               navigate(fullRedirect);
             } else {
               navigate("/onboarding");
+            }
+          } else {
+            // Fallback: try auto-login
+            const { error: loginError } = await supabase.auth.signInWithPassword({
+              email: validatedData.email,
+              password: validatedData.password,
+            });
+
+            if (loginError) {
+              // If auto-login fails (e.g., email confirmation required), show message and switch to login
+              toast({
+                title: t('auth.success.accountCreated').split('!')[0],
+                description: t('auth.success.accountCreated'),
+              });
+              setIsLogin(true);
+            } else {
+              // Link subscription if coming from guest checkout
+              if (sessionId) {
+                await linkSubscriptionToAccount();
+              }
+              
+              // Activate trial if coming from "Get Started Free" button
+              if (startTrial === 'true') {
+                await activateTrial();
+              }
+              
+              toast({
+                title: t('auth.success.accountCreated').split('!')[0],
+                description: startTrial === 'true' ? "Your 14-day Pro trial is now active!" : "You're now logged in!",
+              });
+              
+              // Redirect to onboarding for new users
+              if (redirectUrl) {
+                const fullRedirect = pendingPlan && pendingBilling 
+                  ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
+                  : redirectUrl;
+                navigate(fullRedirect);
+              } else {
+                navigate("/onboarding");
+              }
             }
           }
         }
