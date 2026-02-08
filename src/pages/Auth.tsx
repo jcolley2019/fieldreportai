@@ -63,6 +63,22 @@ const Auth = () => {
     }
   }, [mode, startTrial]);
 
+  // Safety: never keep the form in a loading state indefinitely (some mobile browsers can stall requests)
+  useEffect(() => {
+    if (!loading) return;
+
+    const id = window.setTimeout(() => {
+      setLoading(false);
+      toast({
+        title: "Request timed out",
+        description: "That is taking too long. Please try again.",
+        variant: "destructive",
+      });
+    }, AUTH_TIMEOUT_MS + 1000);
+
+    return () => window.clearTimeout(id);
+  }, [loading]);
+
   // Activate trial for the current user
   // Note: current_plan is auto-set to 'trial' by database trigger on profile creation
   // We only need to set trial_start_date here
