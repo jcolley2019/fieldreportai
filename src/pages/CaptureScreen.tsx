@@ -56,8 +56,27 @@ const CaptureScreen = () => {
   const [editingCaptionText, setEditingCaptionText] = useState("");
   const [isLabelingImage, setIsLabelingImage] = useState<string | null>(null);
   const [annotatingImageId, setAnnotatingImageId] = useState<string | null>(null);
+  const [gpsStampingEnabled, setGpsStampingEnabled] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  // Load GPS stamping preference
+  useEffect(() => {
+    const loadGpsSetting = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('gps_stamping_enabled')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (profile) {
+          setGpsStampingEnabled(profile.gps_stamping_enabled || false);
+        }
+      }
+    };
+    loadGpsSetting();
+  }, []);
 
   // Generate AI label for a photo
   const generateAILabel = async (imageId: string, file: File) => {
@@ -97,8 +116,8 @@ const CaptureScreen = () => {
   const handleImageUpload = async (files: FileList | null) => {
     if (!files) return;
 
-    // Get GPS data first (non-blocking if fails)
-    const geoData = await getCurrentPosition();
+    // Get GPS data only if enabled in settings
+    const geoData = gpsStampingEnabled ? await getCurrentPosition() : null;
 
     const newImages: ImageItem[] = Array.from(files).map(file => ({
       id: Math.random().toString(36).substr(2, 9),
@@ -107,7 +126,7 @@ const CaptureScreen = () => {
       deleted: false,
       latitude: geoData?.latitude,
       longitude: geoData?.longitude,
-      capturedAt: new Date(),
+      capturedAt: gpsStampingEnabled ? new Date() : undefined,
       locationName: geoData?.locationName
     }));
 
@@ -139,8 +158,8 @@ const CaptureScreen = () => {
   };
 
   const handleLiveCameraCapture = async (files: File[]) => {
-    // Get GPS data first (non-blocking if fails)
-    const geoData = await getCurrentPosition();
+    // Get GPS data only if enabled in settings
+    const geoData = gpsStampingEnabled ? await getCurrentPosition() : null;
 
     const newImages: ImageItem[] = files.map(file => ({
       id: Math.random().toString(36).substr(2, 9),
@@ -149,7 +168,7 @@ const CaptureScreen = () => {
       deleted: false,
       latitude: geoData?.latitude,
       longitude: geoData?.longitude,
-      capturedAt: new Date(),
+      capturedAt: gpsStampingEnabled ? new Date() : undefined,
       locationName: geoData?.locationName
     }));
 

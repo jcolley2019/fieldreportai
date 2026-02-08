@@ -347,6 +347,7 @@ export type Database = {
           email_template_color: string | null
           email_template_message: string | null
           first_name: string | null
+          gps_stamping_enabled: boolean
           id: string
           idle_timeout_minutes: number | null
           last_name: string | null
@@ -365,6 +366,7 @@ export type Database = {
           email_template_color?: string | null
           email_template_message?: string | null
           first_name?: string | null
+          gps_stamping_enabled?: boolean
           id: string
           idle_timeout_minutes?: number | null
           last_name?: string | null
@@ -383,6 +385,7 @@ export type Database = {
           email_template_color?: string | null
           email_template_message?: string | null
           first_name?: string | null
+          gps_stamping_enabled?: boolean
           id?: string
           idle_timeout_minutes?: number | null
           last_name?: string | null

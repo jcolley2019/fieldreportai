@@ -33,6 +33,7 @@ import {
   Sparkles,
   Zap,
   Timer,
+  MapPin,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -104,6 +105,7 @@ const Settings = () => {
   const [emailTemplateMessage, setEmailTemplateMessage] = useState("");
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useState<number | null>(null);
+  const [gpsStampingEnabled, setGpsStampingEnabled] = useState(false);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -145,7 +147,7 @@ const Settings = () => {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("*, idle_timeout_minutes")
+        .select("*, idle_timeout_minutes, gps_stamping_enabled")
         .eq("id", user.id)
         .single();
 
@@ -160,6 +162,7 @@ const Settings = () => {
         setEmailTemplateColor(profile.email_template_color || "#007bff");
         setEmailTemplateMessage(profile.email_template_message || "");
         setIdleTimeoutMinutes(profile.idle_timeout_minutes);
+        setGpsStampingEnabled(profile.gps_stamping_enabled || false);
         
         // Set language from profile
         if (profile.preferred_language) {
@@ -1136,6 +1139,39 @@ const Settings = () => {
               </span>
             </div>
             <Switch checked={offlineMode} onCheckedChange={setOfflineMode} />
+          </div>
+
+          {/* GPS Stamping Toggle */}
+          <div className="flex items-center justify-between border-b border-border py-4">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-4">
+                <MapPin className="h-5 w-5 text-foreground" />
+                <span className="text-base font-medium text-foreground">
+                  {t('settings.gpsStamping')}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground ml-9">
+                {t('settings.gpsStampingDesc')}
+              </p>
+            </div>
+            <Switch 
+              checked={gpsStampingEnabled} 
+              onCheckedChange={async (checked) => {
+                setGpsStampingEnabled(checked);
+                if (userId) {
+                  const { error } = await supabase
+                    .from("profiles")
+                    .update({ gps_stamping_enabled: checked })
+                    .eq("id", userId);
+                  if (error) {
+                    toast.error(t('settings.saveError'));
+                    setGpsStampingEnabled(!checked); // Revert on error
+                  } else {
+                    toast.success(t('settings.gpsSaved'));
+                  }
+                }
+              }}
+            />
           </div>
 
         </div>
