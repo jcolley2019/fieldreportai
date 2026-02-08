@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2, Printer, Download, Mail, Send, Loader2 } from "lucide-react";
+import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2, Printer, Download, Mail, Send, Loader2, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ProjectTimeline } from "@/components/ProjectTimeline";
 
 interface ProjectData {
   id: string;
@@ -602,18 +603,25 @@ const ProjectDetail = () => {
 
         {/* Content Tabs */}
         <Tabs defaultValue="media" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-muted">
+          <TabsList className="grid w-full grid-cols-4 bg-muted">
             <TabsTrigger value="media" className="gap-2">
               <ImageIcon className="h-4 w-4" />
-              Photos ({media.length})
+              <span className="hidden sm:inline">Photos</span>
+              <span className="sm:hidden">{media.length}</span>
+            </TabsTrigger>
+            <TabsTrigger value="timeline" className="gap-2">
+              <Clock className="h-4 w-4" />
+              <span className="hidden sm:inline">Timeline</span>
             </TabsTrigger>
             <TabsTrigger value="checklists" className="gap-2">
               <ListChecks className="h-4 w-4" />
-              Checklists ({checklists.length})
+              <span className="hidden sm:inline">Checklists</span>
+              <span className="sm:hidden">{checklists.length}</span>
             </TabsTrigger>
             <TabsTrigger value="documents" className="gap-2">
               <FileText className="h-4 w-4" />
-              Documents ({documents.length})
+              <span className="hidden sm:inline">Docs</span>
+              <span className="sm:hidden">{documents.length}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -659,6 +667,15 @@ const ProjectDetail = () => {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          {/* Timeline Tab */}
+          <TabsContent value="timeline" className="mt-4">
+            <ProjectTimeline
+              projectId={projectId!}
+              projectName={project.project_name}
+              customerName={project.customer_name}
+            />
           </TabsContent>
 
           {/* Checklists Tab */}
