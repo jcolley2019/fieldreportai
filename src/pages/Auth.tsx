@@ -437,13 +437,13 @@ const Auth = () => {
         <div className="w-full max-w-sm">
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
             <h1 className="text-2xl font-bold text-center text-white mb-6">
-              {isLogin ? t('auth.signIn') : t('auth.signUp')}
+              {isLogin ? t('auth.logIn') : t('auth.signUp')}
             </h1>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-gray-300">
-                  {t('auth.email')}
+                  {t('auth.emailAddress')}
                 </Label>
                 <Input
                   id="email"
@@ -506,7 +506,7 @@ const Auth = () => {
                     {isLogin ? "Signing in..." : "Creating account..."}
                   </span>
                 ) : (
-                  isLogin ? t('auth.signIn') : t('auth.signUp')
+                  isLogin ? t('auth.logIn') : t('auth.signUp')
                 )}
               </Button>
             </form>
@@ -517,7 +517,7 @@ const Auth = () => {
                   <span className="w-full border-t border-gray-600" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-gray-800 px-2 text-gray-400">{t('auth.or')}</span>
+                  <span className="bg-gray-800 px-2 text-gray-400">{t('auth.orContinueWith')}</span>
                 </div>
               </div>
 
@@ -557,19 +557,19 @@ const Auth = () => {
                 disabled={loading}
               >
                 <Fingerprint className="w-4 h-4 mr-2" />
-                {t('auth.biometricLogin')}
+                {t('auth.loginWithBiometrics')}
               </Button>
             </div>
 
             <p className="mt-6 text-center text-sm text-gray-400">
-              {isLogin ? t('auth.noAccount') : t('auth.haveAccount')}{" "}
+              {isLogin ? t('auth.dontHaveAccount') : t('auth.alreadyHaveAccount')}
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
                 className="text-primary hover:underline font-medium"
                 disabled={loading}
               >
-                {isLogin ? t('auth.signUp') : t('auth.signIn')}
+                {isLogin ? t('auth.signUp') : t('auth.logIn')}
               </button>
             </p>
           </div>
