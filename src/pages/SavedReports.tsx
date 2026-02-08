@@ -50,7 +50,7 @@ const SavedReports = () => {
   const [reports, setReports] = useState<SavedReport[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"recent" | "name" | "size">("recent");
-  const [filterType, setFilterType] = useState<"all" | "daily" | "weekly" | "site_survey">("all");
+  const [filterType, setFilterType] = useState<"all" | "field" | "daily" | "weekly" | "monthly" | "site_survey">("all");
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<SavedReport | null>(null);
@@ -215,6 +215,12 @@ const SavedReports = () => {
   // Get report type badge info
   const getReportTypeBadge = (reportType: string | null | undefined) => {
     switch (reportType) {
+      case 'field':
+        return {
+          label: t('reportType.field', 'Field Report'),
+          icon: FileText,
+          className: 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+        };
       case 'daily':
         return {
           label: t('reportType.daily', 'Daily Report'),
@@ -226,6 +232,12 @@ const SavedReports = () => {
           label: t('reportType.weekly', 'Weekly Report'),
           icon: CalendarDays,
           className: 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+        };
+      case 'monthly':
+        return {
+          label: t('reportType.monthly', 'Monthly Report'),
+          icon: CalendarDays,
+          className: 'bg-amber-500/20 text-amber-400 border-amber-500/30'
         };
       case 'site_survey':
         return {
@@ -480,14 +492,16 @@ const SavedReports = () => {
                 <CheckSquare className="h-4 w-4" />
               </Button>
             )}
-            <Select value={filterType} onValueChange={(value: "all" | "daily" | "weekly" | "site_survey") => setFilterType(value)}>
+            <Select value={filterType} onValueChange={(value: "all" | "field" | "daily" | "weekly" | "monthly" | "site_survey") => setFilterType(value)}>
               <SelectTrigger className="w-full sm:w-[160px] bg-card border-border text-foreground">
                 <SelectValue placeholder={t('savedReports.filterAll')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t('savedReports.filterAll')}</SelectItem>
+                <SelectItem value="field">{t('reportType.field')}</SelectItem>
                 <SelectItem value="daily">{t('reportType.daily')}</SelectItem>
                 <SelectItem value="weekly">{t('reportType.weekly')}</SelectItem>
+                <SelectItem value="monthly">{t('reportType.monthly')}</SelectItem>
                 <SelectItem value="site_survey">{t('reportType.siteSurvey')}</SelectItem>
               </SelectContent>
             </Select>
