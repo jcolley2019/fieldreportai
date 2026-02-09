@@ -57,6 +57,7 @@ export type Database = {
           completed: boolean
           created_at: string
           id: string
+          media_id: string | null
           priority: string
           text: string
           updated_at: string
@@ -67,6 +68,7 @@ export type Database = {
           completed?: boolean
           created_at?: string
           id?: string
+          media_id?: string | null
           priority: string
           text: string
           updated_at?: string
@@ -77,6 +79,7 @@ export type Database = {
           completed?: boolean
           created_at?: string
           id?: string
+          media_id?: string | null
           priority?: string
           text?: string
           updated_at?: string
@@ -310,6 +313,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          media_id: string | null
           note_text: string
           organized_notes: string | null
           report_id: string | null
@@ -319,6 +323,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          media_id?: string | null
           note_text: string
           organized_notes?: string | null
           report_id?: string | null
@@ -328,13 +333,22 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          media_id?: string | null
           note_text?: string
           organized_notes?: string | null
           report_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notes_media_id_fkey"
+            columns: ["media_id"]
+            isOneToOne: false
+            referencedRelation: "media"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -490,6 +504,7 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          media_id: string | null
           priority: string
           report_id: string | null
           status: string
@@ -502,6 +517,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          media_id?: string | null
           priority?: string
           report_id?: string | null
           status?: string
@@ -514,6 +530,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          media_id?: string | null
           priority?: string
           report_id?: string | null
           status?: string
@@ -522,6 +539,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_media_id_fkey"
+            columns: ["media_id"]
+            isOneToOne: false
+            referencedRelation: "media"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tasks_report_id_fkey"
             columns: ["report_id"]

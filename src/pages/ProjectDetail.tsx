@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ProjectTimeline } from "@/components/ProjectTimeline";
 import { ShareProjectDialog } from "@/components/ShareProjectDialog";
+import { MediaLinkedContent, MediaLinkBadge } from "@/components/MediaLinkedContent";
 
 interface ProjectData {
   id: string;
@@ -75,6 +76,10 @@ const ProjectDetail = () => {
   
   // Share dialog state
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  
+  // Media linked content state
+  const [selectedMediaForLink, setSelectedMediaForLink] = useState<string | null>(null);
+  const [mediaLinkCounts, setMediaLinkCounts] = useState<Record<string, number>>({});
   
   // Email sharing state
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
@@ -161,6 +166,32 @@ const ProjectDetail = () => {
 
       if (!documentsError && documentsData) {
         setDocuments(documentsData);
+      }
+
+      // Fetch linked content counts for each media item
+      if (mediaData && mediaData.length > 0) {
+        const mediaIds = mediaData.map((m: MediaItem) => m.id);
+        
+        const [notesResult, checklistResult, tasksResult] = await Promise.all([
+          supabase.from('notes').select('media_id').in('media_id', mediaIds),
+          supabase.from('checklist_items').select('media_id').in('media_id', mediaIds),
+          supabase.from('tasks').select('media_id').in('media_id', mediaIds),
+        ]);
+
+        const counts: Record<string, number> = {};
+        mediaIds.forEach((id: string) => { counts[id] = 0; });
+        
+        notesResult.data?.forEach((n: { media_id: string | null }) => { 
+          if (n.media_id) counts[n.media_id] = (counts[n.media_id] || 0) + 1; 
+        });
+        checklistResult.data?.forEach((c: { media_id: string | null }) => { 
+          if (c.media_id) counts[c.media_id] = (counts[c.media_id] || 0) + 1; 
+        });
+        tasksResult.data?.forEach((t: { media_id: string | null }) => { 
+          if (t.media_id) counts[t.media_id] = (counts[t.media_id] || 0) + 1; 
+        });
+        
+        setMediaLinkCounts(counts);
       }
 
     } catch (error) {
@@ -652,7 +683,10 @@ const ProjectDetail = () => {
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
                 {media.map((item) => (
                   <div key={item.id} className="relative group">
-                    <div className="aspect-square overflow-hidden rounded-lg bg-secondary">
+                    <div 
+                      className="aspect-square overflow-hidden rounded-lg bg-secondary cursor-pointer"
+                      onClick={() => setSelectedMediaForLink(item.id)}
+                    >
                       {item.file_type === 'image' ? (
                         <img
                           src={getMediaUrl(item.id)}
@@ -667,6 +701,11 @@ const ProjectDetail = () => {
                           <FileText className="h-12 w-12 text-muted-foreground" />
                         </div>
                       )}
+                      {/* Linked content badge */}
+                      <MediaLinkBadge 
+                        count={mediaLinkCounts[item.id] || 0} 
+                        onClick={() => setSelectedMediaForLink(item.id)} 
+                      />
                     </div>
                     <Button
                       variant="destructive"
@@ -796,6 +835,19 @@ const ProjectDetail = () => {
             onOpenChange={setShareDialogOpen}
             reportId={projectId}
             projectName={project.project_name}
+          />
+        )}
+
+        {/* Media Linked Content Panel */}
+        {selectedMediaForLink && projectId && (
+          <MediaLinkedContent
+            mediaId={selectedMediaForLink}
+            reportId={projectId}
+            open={!!selectedMediaForLink}
+            onClose={() => {
+              setSelectedMediaForLink(null);
+              fetchProjectData(); // Refresh to update badge counts
+            }}
           />
         )}
       </main>

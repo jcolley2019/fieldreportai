@@ -827,5 +827,26 @@
     "noNotes": "No hay notas en este proyecto",
     "noChecklists": "No hay listas de verificación en este proyecto",
     "noTasks": "No hay tareas en este proyecto"
+  },
+  "mediaLink": {
+    "linkedContent": "Contenido Vinculado",
+    "linkedContentDesc": "Agregar notas, elementos de lista o tareas vinculadas a esta foto",
+    "notes": "Notas",
+    "checklist": "Lista",
+    "tasks": "Tareas",
+    "addNotePlaceholder": "Agregar una nota sobre esta foto...",
+    "addChecklistPlaceholder": "Agregar elemento de lista...",
+    "addTaskPlaceholder": "Agregar título de tarea...",
+    "taskDescPlaceholder": "Descripción (opcional)",
+    "noNotes": "No hay notas vinculadas a esta foto",
+    "noChecklist": "No hay elementos de lista vinculados a esta foto",
+    "noTasks": "No hay tareas vinculadas a esta foto",
+    "noteAdded": "Nota vinculada a la foto",
+    "checklistAdded": "Elemento de lista vinculado a la foto",
+    "taskAdded": "Tarea vinculada a la foto",
+    "addError": "Error al agregar contenido vinculado",
+    "unlinked": "Contenido desvinculado de la foto",
+    "needsProject": "Vincula esta captura a un proyecto primero para agregar elementos de lista",
+    "linkToPhoto": "Vincular a Foto"
   }
 }

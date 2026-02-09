@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, ListChecks, ClipboardList, Pencil, Loader2, PenTool } from "lucide-react";
+import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, ListChecks, ClipboardList, Pencil, Loader2, PenTool, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import { LiveCameraCapture } from "@/components/LiveCameraCapture";
@@ -817,6 +817,17 @@ const CaptureScreen = () => {
                           title="Annotate photo"
                         >
                           <PenTool className="h-3 w-3" />
+                        </button>
+                        {/* Link content button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toast.info(t('mediaLink.linkToPhoto') + " - " + t('mediaLink.needsProject'));
+                          }}
+                          className="absolute top-1 left-[52px] flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-foreground backdrop-blur-sm hover:bg-secondary/80"
+                          title={t('mediaLink.linkToPhoto')}
+                        >
+                          <Link2 className="h-3 w-3" />
                         </button>
                         <button
                           onClick={() => deleteImage(image.id)}
