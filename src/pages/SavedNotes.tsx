@@ -7,7 +7,8 @@ import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { Textarea } from "@/components/ui/textarea";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Edit2, Trash2, Sparkles, Save, X, Search, Filter } from "lucide-react";
+import { Edit2, Trash2, Sparkles, Save, X, Search, Filter, ImageIcon } from "lucide-react";
+import { PhotoPickerDialog } from "@/components/PhotoPickerDialog";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -54,6 +55,7 @@ const SavedNotes = () => {
   const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string>("all");
+  const [photoPickerNoteId, setPhotoPickerNoteId] = useState<string | null>(null);
   const [aiOrganizedFilter, setAiOrganizedFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
@@ -395,6 +397,14 @@ const SavedNotes = () => {
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => setPhotoPickerNoteId(note.id)}
+                      title={t('mediaLink.linkToPhoto')}
+                    >
+                      <ImageIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleEdit(note)}
                       title={t('savedNotes.editNote')}
                     >
@@ -498,6 +508,27 @@ const SavedNotes = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Photo Picker Dialog */}
+      <PhotoPickerDialog
+        open={!!photoPickerNoteId}
+        onOpenChange={(open) => { if (!open) setPhotoPickerNoteId(null); }}
+        onSelect={async (mediaId) => {
+          if (!photoPickerNoteId) return;
+          try {
+            const { error } = await supabase
+              .from('notes')
+              .update({ media_id: mediaId })
+              .eq('id', photoPickerNoteId);
+            if (error) throw error;
+            toast.success(t('mediaLink.noteAdded'));
+            setPhotoPickerNoteId(null);
+          } catch (error) {
+            console.error('Error linking note to photo:', error);
+            toast.error(t('mediaLink.addError'));
+          }
+        }}
+      />
     </div>
   );
 };

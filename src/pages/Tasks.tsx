@@ -9,7 +9,8 @@ import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Sparkles, Trash2, Clock, Flag, CheckCircle2, Circle, Loader2, Mic, MicOff, FolderOpen } from "lucide-react";
+import { Plus, Sparkles, Trash2, Clock, Flag, CheckCircle2, Circle, Loader2, Mic, MicOff, FolderOpen, ImageIcon } from "lucide-react";
+import { PhotoPickerDialog } from "@/components/PhotoPickerDialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { TaskActionsBar } from "@/components/tasks/TaskActionsBar";
@@ -44,6 +45,7 @@ const Tasks = () => {
   const [newTask, setNewTask] = useState<{ title: string; description: string; priority: 'low' | 'medium' | 'high' }>({ title: '', description: '', priority: 'medium' });
   const [filter, setFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all');
   const [showProjectSelector, setShowProjectSelector] = useState(false);
+  const [photoPickerTaskId, setPhotoPickerTaskId] = useState<string | null>(null);
   
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -529,6 +531,13 @@ const Tasks = () => {
                 </div>
 
                 <button
+                  onClick={() => setPhotoPickerTaskId(task.id)}
+                  className="flex-shrink-0 p-2 text-muted-foreground hover:text-primary transition-colors"
+                  title={t('mediaLink.linkToPhoto')}
+                >
+                  <ImageIcon className="h-4 w-4" />
+                </button>
+                <button
                   onClick={() => handleDeleteTask(task.id)}
                   className="flex-shrink-0 p-2 text-muted-foreground hover:text-destructive transition-colors"
                 >
@@ -600,6 +609,27 @@ const Tasks = () => {
         onOpenChange={setShowProjectSelector}
         onProjectSelected={handleProjectSelected}
         currentProjectId={reportId}
+      />
+
+      {/* Photo Picker Dialog */}
+      <PhotoPickerDialog
+        open={!!photoPickerTaskId}
+        onOpenChange={(open) => { if (!open) setPhotoPickerTaskId(null); }}
+        onSelect={async (mediaId) => {
+          if (!photoPickerTaskId) return;
+          try {
+            const { error } = await supabase
+              .from('tasks')
+              .update({ media_id: mediaId })
+              .eq('id', photoPickerTaskId);
+            if (error) throw error;
+            toast.success(t('mediaLink.taskAdded'));
+            setPhotoPickerTaskId(null);
+          } catch (error) {
+            console.error('Error linking task to photo:', error);
+            toast.error(t('mediaLink.addError'));
+          }
+        }}
       />
     </div>
   );
