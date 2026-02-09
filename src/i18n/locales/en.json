@@ -823,5 +823,26 @@
     "noNotes": "No notes in this project",
     "noChecklists": "No checklists in this project",
     "noTasks": "No tasks in this project"
+  },
+  "mediaLink": {
+    "linkedContent": "Linked Content",
+    "linkedContentDesc": "Add notes, checklist items, or tasks linked to this photo",
+    "notes": "Notes",
+    "checklist": "Checklist",
+    "tasks": "Tasks",
+    "addNotePlaceholder": "Add a note about this photo...",
+    "addChecklistPlaceholder": "Add checklist item...",
+    "addTaskPlaceholder": "Add task title...",
+    "taskDescPlaceholder": "Description (optional)",
+    "noNotes": "No notes linked to this photo",
+    "noChecklist": "No checklist items linked to this photo",
+    "noTasks": "No tasks linked to this photo",
+    "noteAdded": "Note linked to photo",
+    "checklistAdded": "Checklist item linked to photo",
+    "taskAdded": "Task linked to photo",
+    "addError": "Failed to add linked content",
+    "unlinked": "Content unlinked from photo",
+    "needsProject": "Link this capture to a project first to add checklist items",
+    "linkToPhoto": "Link to Photo"
   }
 }
