@@ -848,6 +848,8 @@
   "gettingStarted": {
     "title": "Getting Started",
     "subtitle": "Follow these steps to make the most of your app",
+    "step0Title": "Complete Onboarding",
+    "step0Desc": "Set up your profile with your name and company info. This can be bypassed from the onboarding screen.",
     "step1Title": "Create a Project",
     "step1Desc": "Start by creating a new project with your job details, customer info, and job number.",
     "step2Title": "Take a Photo, Video, or Note",

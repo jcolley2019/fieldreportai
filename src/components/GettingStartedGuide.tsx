@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FolderOpen, Camera, FileText, Share2, ChevronRight, X, Lightbulb } from 'lucide-react';
+import { UserCheck, FolderOpen, Camera, FileText, Share2, ChevronRight, X, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const steps = [
+  {
+    icon: UserCheck,
+    titleKey: 'gettingStarted.step0Title',
+    titleFallback: 'Complete Onboarding',
+    descKey: 'gettingStarted.step0Desc',
+    descFallback: 'Set up your profile with your name and company info. This can be bypassed from the onboarding screen.',
+    link: '/onboarding',
+  },
   {
     icon: FolderOpen,
     titleKey: 'gettingStarted.step1Title',
