@@ -234,6 +234,14 @@ const Tasks = () => {
 
   const transcribeAndCreateTasks = async (audioBlob: Blob) => {
     setIsProcessingVoice(true);
+
+    // Safety timeout — force reset after 60s to prevent infinite spinner
+    const safetyTimeout = setTimeout(() => {
+      setIsProcessingVoice(false);
+      setIsSuggestingTasks(false);
+      toast.error(t('tasks.transcriptionFailed') || 'Processing timed out. Please try again.');
+    }, 60000);
+
     try {
       // Convert blob to base64 using Promise wrapper
       const base64Audio = await new Promise<string>((resolve, reject) => {
@@ -267,6 +275,7 @@ const Tasks = () => {
       console.error("Error transcribing audio:", error);
       toast.error(t('tasks.transcriptionFailed'));
     } finally {
+      clearTimeout(safetyTimeout);
       setIsProcessingVoice(false);
     }
   };
