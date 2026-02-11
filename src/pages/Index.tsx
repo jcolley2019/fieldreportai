@@ -12,6 +12,7 @@ import { SubscriptionBadge } from "@/components/SubscriptionBadge";
 import { TrialExpiredModal } from "@/components/TrialExpiredModal";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
+import BetaCountdownBanner from "@/components/BetaCountdownBanner";
 import {
   Select,
   SelectContent,
@@ -243,6 +244,7 @@ const Index = () => {
 
   return (
     <div className="dark min-h-screen bg-background">
+      <BetaCountdownBanner />
       {/* Glass Navbar */}
       <GlassNavbar fixed={false}>
         <NavbarLeft>
