@@ -805,38 +805,40 @@ export const LiveCameraCapture = ({
 
                   {/* Right: Pause + Shutter */}
                   <div className="flex justify-center">
-                    {onPauseRecording && (
-                      <div className="relative flex flex-col items-center gap-1">
-                        <button
-                          onClick={onPauseRecording}
-                          className={`flex h-16 w-16 items-center justify-center rounded-full transition-all ${
-                            isPaused
-                              ? 'bg-red-500 hover:bg-red-600'
-                              : 'bg-green-500 hover:bg-green-600 animate-pulse'
-                          }`}
-                        >
-                          {isPaused ? (
-                            <VideoOff className="h-7 w-7 text-white" />
-                          ) : (
-                            <Video className="h-7 w-7 text-white" />
-                          )}
-                        </button>
-                        <span className="text-sm font-semibold uppercase tracking-wider text-white">
-                          {isPaused ? 'Resume' : 'Pause'}
-                        </span>
-                        {/* Photo snapshot button */}
-                        <div className="absolute -right-20 top-0 flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-3">
+                      {onPauseRecording && (
+                        <div className="flex flex-col items-center gap-1">
                           <button
-                            onClick={capturePhoto}
-                            disabled={!isReady}
-                            className="flex h-16 w-16 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-lg border-2 border-white/80"
+                            onClick={onPauseRecording}
+                            className={`flex h-14 w-14 items-center justify-center rounded-full transition-all ${
+                              isPaused
+                                ? 'bg-red-500 hover:bg-red-600'
+                                : 'bg-green-500 hover:bg-green-600 animate-pulse'
+                            }`}
                           >
-                            <div className="h-12 w-12 rounded-full bg-white" />
+                            {isPaused ? (
+                              <VideoOff className="h-6 w-6 text-white" />
+                            ) : (
+                              <Video className="h-6 w-6 text-white" />
+                            )}
                           </button>
-                          <span className="text-sm font-semibold uppercase tracking-wider text-white">Photo</span>
+                          <span className="text-xs font-semibold uppercase tracking-wider text-white">
+                            {isPaused ? 'Resume' : 'Pause'}
+                          </span>
                         </div>
+                      )}
+                      {/* Photo snapshot button */}
+                      <div className="flex flex-col items-center gap-1">
+                        <button
+                          onClick={capturePhoto}
+                          disabled={!isReady}
+                          className="flex h-14 w-14 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-lg border-2 border-white/80"
+                        >
+                          <div className="h-10 w-10 rounded-full bg-white" />
+                        </button>
+                        <span className="text-xs font-semibold uppercase tracking-wider text-white">Photo</span>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </>
               ) : cameraMode === 'video' && onStartRecording ? (
@@ -922,48 +924,51 @@ export const LiveCameraCapture = ({
 
                   {/* Right: Audio */}
                   <div className="flex justify-center">
-                    {onAudioToggle ? (
-                      <div className="relative flex flex-col items-center gap-1">
-                        <button
-                          onClick={onAudioToggle}
-                          className={`flex h-16 w-16 items-center justify-center rounded-full transition-all ${
-                            isAudioRecording && !isPaused
-                              ? 'bg-green-500 hover:bg-green-600 animate-pulse'
-                              : isAudioRecording && isPaused
-                                ? 'bg-red-500 hover:bg-red-600'
-                                : 'bg-white/20 backdrop-blur-sm hover:bg-white/30'
-                          }`}
-                        >
-                          {isAudioRecording ? (
-                            isPaused ? (
-                              <MicOff className="h-7 w-7 text-white" />
+                    <div className="flex items-center gap-3">
+                      {onAudioToggle && (
+                        <div className="flex flex-col items-center gap-1">
+                          <button
+                            onClick={onAudioToggle}
+                            className={`flex h-14 w-14 items-center justify-center rounded-full transition-all ${
+                              isAudioRecording && !isPaused
+                                ? 'bg-green-500 hover:bg-green-600 animate-pulse'
+                                : isAudioRecording && isPaused
+                                  ? 'bg-red-500 hover:bg-red-600'
+                                  : 'bg-white/20 backdrop-blur-sm hover:bg-white/30'
+                            }`}
+                          >
+                            {isAudioRecording ? (
+                              isPaused ? (
+                                <MicOff className="h-6 w-6 text-white" />
+                              ) : (
+                                <Mic className="h-6 w-6 text-white" />
+                              )
                             ) : (
-                              <Mic className="h-7 w-7 text-white" />
-                            )
-                          ) : (
-                            <Mic className="h-7 w-7 text-white" />
-                          )}
-                        </button>
-                        <span className="text-sm font-semibold uppercase tracking-wider text-white">
-                          AI Notes
-                        </span>
-                        {isAudioRecording && onStopRecording && (
-                          <div className="absolute -right-20 top-0 flex flex-col items-center gap-1">
-                            <button
-                              onClick={onStopRecording}
-                              className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all border-2 border-white/30"
-                            >
-                              <div className="h-6 w-6 rounded-sm bg-red-500" />
-                            </button>
-                            <span className="text-sm font-semibold uppercase tracking-wider text-white">
-                              Stop
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="w-16"></div>
-                    )}
+                              <Mic className="h-6 w-6 text-white" />
+                            )}
+                          </button>
+                          <span className="text-xs font-semibold uppercase tracking-wider text-white">
+                            AI Notes
+                          </span>
+                        </div>
+                      )}
+                      {isAudioRecording && onStopRecording && (
+                        <div className="flex flex-col items-center gap-1">
+                          <button
+                            onClick={onStopRecording}
+                            className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all border-2 border-white/30"
+                          >
+                            <div className="h-5 w-5 rounded-sm bg-red-500" />
+                          </button>
+                          <span className="text-xs font-semibold uppercase tracking-wider text-white">
+                            Stop
+                          </span>
+                        </div>
+                      )}
+                      {!onAudioToggle && (
+                        <div className="w-14"></div>
+                      )}
+                    </div>
                   </div>
                 </>
               )}
