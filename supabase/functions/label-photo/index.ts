@@ -146,10 +146,13 @@ Respond with ONLY the refined label text, no quotes or additional formatting.`
 
 Your label should:
 - Be concise (5-15 words maximum)
-- Describe what's visible in the photo
+- Describe ONLY the general scene, structure, and work area visible
 - Be professional and factual
 - Focus on the main subject or work being documented
 - Include location details if visible (e.g., "north wall", "roof section")
+- DO NOT identify or name specific objects, equipment, brands, or features that are not the primary focus of the work being documented
+- DO NOT speculate about items in the background or periphery
+- Keep descriptions generic and work-focused (e.g., "Rear exterior of house with patio area" NOT "House with solar panels on roof")
 
 Respond with ONLY the label text, no quotes or additional formatting.`;
 
