@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,28 @@ const Notes = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [lastClearedContent, setLastClearedContent] = useState<{ noteText: string; organizedNotes: string } | null>(null);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Recording timer
+  useEffect(() => {
+    if (isRecording) {
+      setRecordingSeconds(0);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    }
+    return () => {
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    };
+  }, [isRecording]);
 
   useEffect(() => {
     if (showOptionsDialog && isSimpleMode && !projectReportId) {
@@ -68,6 +90,11 @@ const Notes = () => {
         
         const recorder = new MediaRecorder(stream, recorderOptions);
         const chunks: Blob[] = [];
+        // Clear previous audio preview
+        if (audioUrl) {
+          URL.revokeObjectURL(audioUrl);
+          setAudioUrl(null);
+        }
 
         recorder.ondataavailable = (e) => {
           if (e.data.size > 0) {
@@ -77,6 +104,9 @@ const Notes = () => {
 
         recorder.onstop = async () => {
           const audioBlob = new Blob(chunks, { type: recorder.mimeType });
+          // Create playback URL for review
+          const url = URL.createObjectURL(audioBlob);
+          setAudioUrl(url);
           await transcribeAudio(audioBlob);
           stream.getTracks().forEach(track => track.stop());
         };
@@ -102,6 +132,7 @@ const Notes = () => {
   };
 
   const transcribeAudio = async (audioBlob: Blob) => {
+    setIsTranscribing(true);
     try {
       // Convert blob to base64
       const reader = new FileReader();
@@ -128,6 +159,7 @@ const Notes = () => {
           } else {
             toast.error("Failed to transcribe audio");
           }
+          setIsTranscribing(false);
           return;
         }
 
@@ -136,10 +168,12 @@ const Notes = () => {
           setNoteText(prev => prev ? `${prev}\n\n${data.text}` : data.text);
           toast.success("Audio transcribed successfully!");
         }
+        setIsTranscribing(false);
       };
     } catch (error) {
       console.error("Error transcribing audio:", error);
       toast.error("Failed to process audio");
+      setIsTranscribing(false);
     }
   };
 
@@ -710,6 +744,11 @@ const Notes = () => {
                 <Mic className="h-12 w-12 text-primary" />
               )}
             </div>
+            {isRecording && (
+              <p className="text-lg font-mono font-bold text-destructive">
+                {Math.floor(recordingSeconds / 60).toString().padStart(2, '0')}:{(recordingSeconds % 60).toString().padStart(2, '0')}
+              </p>
+            )}
             <p className="text-sm font-bold text-foreground">
               {isRecording 
                 ? t('notes.tapToStop')
@@ -720,6 +759,22 @@ const Notes = () => {
               {t('notes.voiceHint')}
             </p>
           </button>
+
+          {/* Transcription status */}
+          {isTranscribing && (
+            <div className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-muted/50 p-3">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Transcribing audio...</p>
+            </div>
+          )}
+
+          {/* Audio playback preview */}
+          {audioUrl && !isRecording && !isTranscribing && (
+            <div className="mt-3 rounded-xl border border-border/40 bg-card/50 p-3">
+              <p className="text-xs text-muted-foreground mb-2">Recording preview:</p>
+              <audio controls src={audioUrl} className="w-full h-10" />
+            </div>
+          )}
         </div>
       </main>
 
