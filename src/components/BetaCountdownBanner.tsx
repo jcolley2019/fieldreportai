@@ -17,7 +17,7 @@ const BetaCountdownBanner = () => {
   if (dismissed || timeLeft.total <= 0) return null;
 
   return (
-    <div className="relative bg-gradient-to-r from-primary/90 via-primary to-primary/90 text-primary-foreground py-4 px-4 text-center z-[60]">
+    <div className="sticky top-0 relative bg-gradient-to-r from-primary/90 via-primary to-primary/90 text-primary-foreground py-4 px-4 text-center z-[60]">
       <div className="container mx-auto flex items-center justify-center gap-4 flex-wrap">
         <Rocket className="h-6 w-6 animate-pulse shrink-0" />
         <span className="text-base md:text-lg font-bold">
