@@ -6,6 +6,7 @@ import { PricingSection } from "@/components/PricingSection";
 import { EmailCaptureForm } from "@/components/EmailCaptureForm";
 import logo from "@/assets/field-report-ai-logo.png";
 import { useState, useEffect } from "react";
+import BetaCountdownBanner from "@/components/BetaCountdownBanner";
 
 const Pricing = () => {
   const [searchParams] = useSearchParams();
@@ -15,6 +16,9 @@ const Pricing = () => {
 
   return (
     <div className="dark min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+      {/* Beta Countdown Banner */}
+      <BetaCountdownBanner />
+
       {/* Header */}
       <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-2">
