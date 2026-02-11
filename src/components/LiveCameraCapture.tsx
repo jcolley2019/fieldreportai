@@ -797,26 +797,58 @@ export const LiveCameraCapture = ({
                     <div className="h-7 w-7 rounded-[5px] bg-red-500 transition-all duration-300" />
                   </button>
 
-                  {/* Right: Shutter button for photo snapshots */}
-                  <div className="relative flex flex-col items-center gap-1">
-                    <button
-                      onClick={capturePhoto}
-                      disabled={!isReady}
-                      className="flex h-16 w-16 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-lg border-2 border-white/80"
-                    >
-                      <div className="h-12 w-12 rounded-full bg-white" />
-                    </button>
+                  {/* Right: Shutter + Gallery */}
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="relative flex flex-col items-center gap-1">
+                      <button
+                        onClick={capturePhoto}
+                        disabled={!isReady}
+                        className="flex h-16 w-16 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-lg border-2 border-white/80"
+                      >
+                        <div className="h-12 w-12 rounded-full bg-white" />
+                      </button>
+                      {capturedImages.length > 0 && (
+                        <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
+                          {capturedImages.length}
+                        </div>
+                      )}
+                    </div>
                     {capturedImages.length > 0 && (
-                      <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
-                        {capturedImages.length}
-                      </div>
+                      <button
+                        onClick={() => setShowGalleryReview(true)}
+                        className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all overflow-hidden border border-white/20"
+                      >
+                        <img 
+                          src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} 
+                          alt="Gallery"
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
                     )}
                   </div>
                 </>
               ) : cameraMode === 'video' && onStartRecording ? (
                 <>
-                  {/* Video mode not recording: only the record button centered */}
-                  <div className="w-16"></div>
+                  {/* Video mode not recording */}
+                  {capturedImages.length > 0 ? (
+                    <div className="relative flex flex-col items-center gap-1">
+                      <button
+                        onClick={() => setShowGalleryReview(true)}
+                        className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all overflow-hidden border-2 border-white/20"
+                      >
+                        <img 
+                          src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} 
+                          alt="Gallery"
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                      <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
+                        {capturedImages.length}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-16"></div>
+                  )}
                   <button
                     onClick={onStartRecording}
                     className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300 border-2 border-white/30"
