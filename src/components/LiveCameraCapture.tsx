@@ -804,38 +804,39 @@ export const LiveCameraCapture = ({
                   </div>
 
                   {/* Right: Pause + Shutter */}
-                  <div className="flex items-end justify-center gap-3">
+                  <div className="flex justify-center">
                     {onPauseRecording && (
-                      <div className="flex flex-col items-center gap-1">
+                      <div className="relative flex flex-col items-center gap-1">
                         <button
                           onClick={onPauseRecording}
-                          className={`flex h-14 w-14 items-center justify-center rounded-full transition-all ${
+                          className={`flex h-16 w-16 items-center justify-center rounded-full transition-all ${
                             isPaused
                               ? 'bg-red-500 hover:bg-red-600'
-                              : 'bg-green-500 hover:bg-green-600'
+                              : 'bg-green-500 hover:bg-green-600 animate-pulse'
                           }`}
                         >
                           {isPaused ? (
-                            <div className="h-7 w-7 rounded-full bg-red-300" />
-                          ) : (
                             <Pause className="h-7 w-7 text-white" fill="white" />
+                          ) : (
+                            <Video className="h-7 w-7 text-white" />
                           )}
                         </button>
                         <span className="text-sm font-semibold uppercase tracking-wider text-white">
                           {isPaused ? 'Resume' : 'Pause'}
                         </span>
+                        {/* Photo snapshot button */}
+                        <div className="absolute -right-20 top-0 flex flex-col items-center gap-1">
+                          <button
+                            onClick={capturePhoto}
+                            disabled={!isReady}
+                            className="flex h-16 w-16 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-lg border-2 border-white/80"
+                          >
+                            <div className="h-12 w-12 rounded-full bg-white" />
+                          </button>
+                          <span className="text-sm font-semibold uppercase tracking-wider text-white">Photo</span>
+                        </div>
                       </div>
                     )}
-                    <div className="flex flex-col items-center gap-1">
-                      <button
-                        onClick={capturePhoto}
-                        disabled={!isReady}
-                        className="flex h-14 w-14 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-lg border-2 border-white/80"
-                      >
-                        <div className="h-10 w-10 rounded-full bg-white" />
-                      </button>
-                      <span className="text-sm font-semibold uppercase tracking-wider text-white">Photo</span>
-                    </div>
                   </div>
                 </>
               ) : cameraMode === 'video' && onStartRecording ? (
