@@ -353,7 +353,7 @@ const ReviewSummary = () => {
               const fileExt = image.isVideo 
                 ? 'webm' 
                 : (image.base64.includes('image/png') ? 'png' : 'jpg');
-              const contentType = image.isVideo ? 'video/webm' : (image.base64.includes('image/png') ? 'image/png' : 'image/jpeg');
+              const fileName = `${currentReportId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
               
               const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('media')
