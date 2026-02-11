@@ -13,6 +13,7 @@ import { TrialExpiredModal } from "@/components/TrialExpiredModal";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import BetaCountdownBanner from "@/components/BetaCountdownBanner";
+import GettingStartedGuide from "@/components/GettingStartedGuide";
 import {
   Select,
   SelectContent,
@@ -372,6 +373,9 @@ const Index = () => {
           />
         )}
         
+        {/* Getting Started Guide */}
+        <GettingStartedGuide />
+
         {/* Mode Selection Section */}
         <section className="mb-8">
           <h2 className="mb-6 text-2xl font-semibold text-foreground">{t('dashboard.chooseWorkflow')}</h2>
