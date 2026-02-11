@@ -626,19 +626,16 @@ export const LiveCameraCapture = ({
               {/* Center: Recording indicator or Camera name */}
               <div className="flex flex-col items-center gap-1">
               {isRecording ? (
-                  <div className="flex flex-col items-center gap-1">
-                    {/* iPhone-style recording timer */}
-                    <div className={`px-4 py-1.5 rounded-full text-sm font-semibold backdrop-blur-sm ${
-                      isPaused 
-                        ? 'bg-transparent' 
-                        : 'bg-green-500/90'
-                    }`}>
-                      <span className={`font-mono ${isPaused ? 'text-white' : 'text-white'}`}>
-                        {formatDuration(recordingDuration)}
-                      </span>
-                    </div>
+                  <div className={`px-4 py-1.5 rounded-full text-sm font-semibold backdrop-blur-sm ${
+                    isPaused 
+                      ? 'bg-transparent' 
+                      : 'bg-green-500/90'
+                  }`}>
+                    <span className="font-mono text-white">
+                      {formatDuration(recordingDuration)}
+                    </span>
                     {isPaused && (
-                      <span className="px-3 py-0.5 rounded text-xs font-bold bg-red-500 text-white tracking-wider">
+                      <span className="ml-2 px-2 py-0.5 rounded text-xs font-bold bg-red-500 text-white tracking-wider">
                         PAUSED
                       </span>
                     )}
