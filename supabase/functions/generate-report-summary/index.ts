@@ -399,7 +399,7 @@ serve(async (req) => {
       if (captionList) {
         content.push({
           type: "text",
-          text: `User's spoken descriptions for each photo (use these as the PRIMARY source for photo descriptions - do NOT add observations outside the scope of these notes):\n${captionList}`
+          text: `CRITICAL INSTRUCTION - User's spoken descriptions for each photo:\n${captionList}\n\nYou MUST use ONLY these spoken descriptions when writing about the photos. DO NOT add any visual observations from the images that the user did not mention. If the user says "damaged post" do NOT also mention solar panels, roofing materials, or other objects visible in the photo. Stick strictly to what the user described.`
         });
       }
     }
