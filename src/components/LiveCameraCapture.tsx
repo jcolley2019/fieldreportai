@@ -737,7 +737,7 @@ export const LiveCameraCapture = ({
           )}
 
           {/* Mode Toggle (VIDEO / PHOTO) */}
-          {!isRecording && (
+          {!(isRecording && cameraMode === 'video') && (
             <div className="shrink-0 flex items-center justify-center py-2 bg-black/90">
               <div className="flex items-center gap-6">
                 <button
