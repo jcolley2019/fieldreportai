@@ -812,9 +812,21 @@ export const LiveCameraCapture = ({
                     )}
                   </div>
                 </>
+              ) : cameraMode === 'video' && onStartRecording ? (
+                <>
+                  {/* Video mode not recording: only the record button centered */}
+                  <div className="w-16"></div>
+                  <button
+                    onClick={onStartRecording}
+                    className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300 border-2 border-white/30"
+                  >
+                    <div className="h-16 w-16 rounded-full bg-red-500 hover:bg-red-600 transition-all duration-300" />
+                  </button>
+                  <div className="w-16"></div>
+                </>
               ) : (
                 <>
-                  {/* Left: Gallery preview / Done */}
+                  {/* Photo mode: Gallery / Shutter / empty */}
                   <div className="relative flex flex-col items-center gap-1">
                     <button
                       onClick={handleDone}
@@ -841,45 +853,17 @@ export const LiveCameraCapture = ({
                     )}
                   </div>
 
-                  {/* Center: Shutter (photo mode) or Record (video mode) */}
-                  {cameraMode === 'video' && onStartRecording ? (
-                    <button
-                      onClick={onStartRecording}
-                      className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300 border-2 border-white/30"
-                    >
-                      <div className="h-16 w-16 rounded-full bg-red-500 hover:bg-red-600 transition-all duration-300" />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={capturePhoto}
-                      disabled={!isReady}
-                      className="flex h-20 w-20 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-2xl"
-                    >
-                      <div className="h-16 w-16 rounded-full border-4 border-black/10 bg-white flex items-center justify-center">
-                        <Camera className="h-10 w-10 text-black" />
-                      </div>
-                    </button>
-                  )}
-
-                  {/* Right: Shutter in video mode, empty in photo mode */}
-                  {cameraMode === 'video' ? (
-                    <div className="relative flex flex-col items-center gap-1">
-                      <button
-                        onClick={capturePhoto}
-                        disabled={!isReady}
-                        className="flex h-16 w-16 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-lg border-2 border-white/80"
-                      >
-                        <div className="h-12 w-12 rounded-full bg-white" />
-                      </button>
-                      {capturedImages.length > 0 && (
-                        <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
-                          {capturedImages.length}
-                        </div>
-                      )}
+                  <button
+                    onClick={capturePhoto}
+                    disabled={!isReady}
+                    className="flex h-20 w-20 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-2xl"
+                  >
+                    <div className="h-16 w-16 rounded-full border-4 border-black/10 bg-white flex items-center justify-center">
+                      <Camera className="h-10 w-10 text-black" />
                     </div>
-                  ) : (
-                    <div className="w-16"></div>
-                  )}
+                  </button>
+
+                  <div className="w-16"></div>
                 </>
               )}
             </div>
