@@ -76,13 +76,17 @@ serve(async (req) => {
     else if (mimeType?.includes('mpeg')) extension = 'mp3';
     else if (mimeType?.includes('wav')) extension = 'wav';
     
+    // Determine the content type for the file
+    const contentType = mimeType || 'audio/webm';
+    
     // Use OpenAI's toFile helper to create a proper file from binary data
-    const audioFile = await toFile(bytes, `recording.${extension}`);
+    const audioFile = await toFile(bytes, `recording.${extension}`, { type: contentType });
     
     console.log('Audio file created', { 
       name: audioFile.name,
       size: audioFile.size,
       type: audioFile.type,
+      contentType,
       timestamp: new Date().toISOString() 
     });
 
@@ -90,7 +94,7 @@ serve(async (req) => {
     
     const transcription = await client.audio.transcriptions.create({
       file: audioFile,
-      model: 'gpt-4o-mini-transcribe',
+      model: 'whisper-1',
     });
 
     console.log('Transcription successful', { timestamp: new Date().toISOString() });
