@@ -767,7 +767,7 @@ export const LiveCameraCapture = ({
           {/* Bottom Controls */}
           <div className="shrink-0 bg-black/95 backdrop-blur-sm p-6">
             <div className="flex items-center justify-between max-w-[600px] mx-auto">
-              {isRecording ? (
+              {isRecording && cameraMode === 'video' ? (
                 <>
                   {/* Left: Pause/Resume button (iPhone-style) */}
                   <div className="flex flex-col items-center gap-1">
@@ -866,19 +866,25 @@ export const LiveCameraCapture = ({
                       <button
                         onClick={onAudioToggle}
                         className={`flex h-16 w-16 items-center justify-center rounded-full transition-all ${
-                          isAudioRecording
+                          isAudioRecording && !isPaused
                             ? 'bg-red-500 hover:bg-red-600 animate-pulse'
-                            : 'bg-white/20 backdrop-blur-sm hover:bg-white/30'
+                            : isAudioRecording && isPaused
+                              ? 'bg-yellow-500 hover:bg-yellow-600'
+                              : 'bg-white/20 backdrop-blur-sm hover:bg-white/30'
                         }`}
                       >
                         {isAudioRecording ? (
-                          <MicOff className="h-7 w-7 text-white" />
+                          isPaused ? (
+                            <Mic className="h-7 w-7 text-white" />
+                          ) : (
+                            <MicOff className="h-7 w-7 text-white" />
+                          )
                         ) : (
                           <Mic className="h-7 w-7 text-white" />
                         )}
                       </button>
                       <span className="text-sm font-semibold uppercase tracking-wider text-white">
-                        {isAudioRecording ? 'Stop' : 'AI Notes'}
+                        AI Notes
                       </span>
                     </div>
                   ) : (
