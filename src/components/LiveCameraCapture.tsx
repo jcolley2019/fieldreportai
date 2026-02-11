@@ -946,14 +946,14 @@ export const LiveCameraCapture = ({
                           AI Notes
                         </span>
                         {isAudioRecording && onStopRecording && (
-                          <div className="absolute -right-16 top-0 flex flex-col items-center gap-1">
+                          <div className="absolute -right-20 top-0 flex flex-col items-center gap-1">
                             <button
                               onClick={onStopRecording}
-                              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all border-2 border-white/30"
+                              className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all border-2 border-white/30"
                             >
-                              <div className="h-5 w-5 rounded-sm bg-red-500" />
+                              <div className="h-6 w-6 rounded-sm bg-red-500" />
                             </button>
-                            <span className="text-xs font-semibold uppercase tracking-wider text-white">
+                            <span className="text-sm font-semibold uppercase tracking-wider text-white">
                               Stop
                             </span>
                           </div>
