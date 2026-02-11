@@ -852,6 +852,8 @@
   "gettingStarted": {
     "title": "Primeros Pasos",
     "subtitle": "Sigue estos pasos para aprovechar al máximo tu app",
+    "step0Title": "Completar la Incorporación",
+    "step0Desc": "Configura tu perfil con tu nombre e información de la empresa. Esto se puede omitir desde la pantalla de incorporación.",
     "step1Title": "Crear un Proyecto",
     "step1Desc": "Comienza creando un nuevo proyecto con los detalles del trabajo, información del cliente y número de trabajo.",
     "step2Title": "Tomar una Foto, Video o Nota",
