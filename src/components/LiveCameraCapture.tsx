@@ -914,7 +914,7 @@ export const LiveCameraCapture = ({
             </div>
             <div className="grid grid-cols-3 gap-2">
               {capturedImages.map((file, index) => (
-                <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-white/20">
+                <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-white/20 group">
                   <img
                     src={URL.createObjectURL(file)}
                     alt={`Photo ${index + 1}`}
@@ -923,18 +923,15 @@ export const LiveCameraCapture = ({
                   <div className="absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white text-[10px] font-bold">
                     {index + 1}
                   </div>
+                  <button
+                    onClick={() => setCapturedImages(prev => prev.filter((_, i) => i !== index))}
+                    className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500/80 hover:bg-red-500 text-white transition-all"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               ))}
             </div>
-            <Button
-              onClick={() => {
-                setShowGalleryReview(false);
-                handleDone();
-              }}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              Done
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
