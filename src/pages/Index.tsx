@@ -127,11 +127,16 @@ const Index = () => {
   const checkProfileComplete = async () => {
     if (!user) return;
 
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('first_name, last_name, company_name, trial_start_date, current_plan')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('Error fetching profile:', profileError);
+      return;
+    }
 
     const isProfileComplete = profile?.first_name && profile?.last_name && profile?.company_name;
     const skipOnboarding = localStorage.getItem('skipOnboarding') === 'true';
