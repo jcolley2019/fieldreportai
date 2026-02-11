@@ -335,7 +335,7 @@ const Index = () => {
         </NavbarCenter>
         
         <NavbarRight>
-          {(!currentPlan || currentPlan === 'trial') && (
+          {new Date() >= new Date("2026-03-01T00:00:00") && (!currentPlan || currentPlan === 'trial') && (
             <Button
               onClick={() => {
                 setIsUpgradeClicked(true);
