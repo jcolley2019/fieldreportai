@@ -905,15 +905,18 @@ export const LiveCameraCapture = ({
                   </div>
 
                   {/* Center: Shutter */}
-                  <button
-                    onClick={capturePhoto}
-                    disabled={!isReady}
-                    className="flex h-20 w-20 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-2xl"
-                  >
-                    <div className="h-16 w-16 rounded-full border-4 border-black/10 bg-white flex items-center justify-center">
-                      <Camera className="h-10 w-10 text-black" />
-                    </div>
-                  </button>
+                  <div className="flex flex-col items-center gap-1">
+                    <button
+                      onClick={capturePhoto}
+                      disabled={!isReady}
+                      className="flex h-20 w-20 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-2xl"
+                    >
+                      <div className="h-16 w-16 rounded-full border-4 border-black/10 bg-white flex items-center justify-center">
+                        <Camera className="h-10 w-10 text-black" />
+                      </div>
+                    </button>
+                    <span className="text-sm font-semibold uppercase tracking-wider text-white">Photo</span>
+                  </div>
 
                   {/* Right: Audio */}
                   <div className="flex justify-center">
