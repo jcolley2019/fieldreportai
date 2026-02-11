@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -451,14 +452,24 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
                       {plan.cta}
                     </Button>
                   ) : (
-                    <Button 
-                      className="w-full" 
-                      variant={plan.popular ? "default" : "outline"}
-                      onClick={() => handleStartPlan(plan.name.toLowerCase() as 'pro' | 'premium')}
-                      disabled={loadingPlan === plan.name.toLowerCase()}
-                    >
-                      {loadingPlan === plan.name.toLowerCase() ? "Processing..." : plan.cta}
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="w-full">
+                            <Button 
+                              className="w-full" 
+                              variant={plan.popular ? "default" : "outline"}
+                              disabled
+                            >
+                              Coming March 1st
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Subscriptions launch March 1st, 2026 🚀</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   )}
                 </CardContent>
               </Card>
