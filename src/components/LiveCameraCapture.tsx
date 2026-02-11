@@ -881,8 +881,8 @@ export const LiveCameraCapture = ({
                           <Mic className="h-7 w-7 text-white" />
                         )}
                       </button>
-                      <span className="text-white text-[10px] font-medium">
-                        {isAudioRecording ? 'Stop' : 'Audio'}
+                      <span className="text-sm font-semibold uppercase tracking-wider text-white">
+                        {isAudioRecording ? 'Stop' : 'AI Notes'}
                       </span>
                     </div>
                   ) : (
