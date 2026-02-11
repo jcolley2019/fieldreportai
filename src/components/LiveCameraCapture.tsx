@@ -737,32 +737,30 @@ export const LiveCameraCapture = ({
           )}
 
           {/* Mode Toggle (VIDEO / PHOTO) */}
-          {!(isRecording && cameraMode === 'video') && (
-            <div className="shrink-0 flex items-center justify-center py-2 bg-black/90">
-              <div className="flex items-center gap-6">
-                <button
-                  onClick={() => setCameraMode('video')}
-                  className={`text-sm font-semibold uppercase tracking-wider transition-all ${
-                    cameraMode === 'video'
-                      ? 'text-yellow-500'
-                      : 'text-white/50 hover:text-white/80'
-                  }`}
-                >
-                  Video
-                </button>
-                <button
-                  onClick={() => setCameraMode('photo')}
-                  className={`text-sm font-semibold uppercase tracking-wider transition-all ${
-                    cameraMode === 'photo'
-                      ? 'text-yellow-500'
-                      : 'text-white/50 hover:text-white/80'
-                  }`}
-                >
-                  Photo
-                </button>
-              </div>
+          <div className="shrink-0 flex items-center justify-center py-2 bg-black/90">
+            <div className="flex items-center gap-6">
+              <button
+                onClick={() => setCameraMode('video')}
+                className={`text-sm font-semibold uppercase tracking-wider transition-all ${
+                  cameraMode === 'video'
+                    ? 'text-yellow-500'
+                    : 'text-white/50 hover:text-white/80'
+                }`}
+              >
+                Video
+              </button>
+              <button
+                onClick={() => setCameraMode('photo')}
+                className={`text-sm font-semibold uppercase tracking-wider transition-all ${
+                  cameraMode === 'photo'
+                    ? 'text-yellow-500'
+                    : 'text-white/50 hover:text-white/80'
+                }`}
+              >
+                Photo
+              </button>
             </div>
-          )}
+          </div>
 
           {/* Bottom Controls */}
           <div className="shrink-0 bg-black/95 backdrop-blur-sm p-6">
