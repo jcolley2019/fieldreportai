@@ -42,6 +42,13 @@ const ChecklistConfirmation = () => {
   const [reportId, setReportId] = useState<string | null>(projectReportId);
   const [showProjectSelector, setShowProjectSelector] = useState(false);
   const [projects, setProjects] = useState<any[]>([]);
+  const [localItems, setLocalItems] = useState<ChecklistItem[]>(checklist?.items || []);
+
+  const handleToggleItem = (index: number) => {
+    setLocalItems(prev => prev.map((item, i) => 
+      i === index ? { ...item, completed: !item.completed } : item
+    ));
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -61,7 +68,40 @@ const ChecklistConfirmation = () => {
   };
 
   const handlePrintChecklist = () => {
-    window.print();
+    if (!checklist) return;
+    const printHtml = `
+      <html>
+      <head>
+        <title>${checklist.title}</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; }
+          h1 { font-size: 22px; margin-bottom: 8px; }
+          .subtitle { color: #666; font-size: 13px; margin-bottom: 24px; }
+          .item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #eee; }
+          .checkbox { width: 16px; height: 16px; border: 2px solid #999; border-radius: 3px; flex-shrink: 0; margin-top: 2px; }
+          .checkbox.checked { background: #333; border-color: #333; }
+          .text { font-size: 14px; }
+          .completed { text-decoration: line-through; color: #999; }
+        </style>
+      </head>
+      <body>
+        <h1>${checklist.title}</h1>
+        <p class="subtitle">${formatDateLong(new Date())} • ${localItems.length} items</p>
+        ${localItems.map(item => `
+          <div class="item">
+            <div class="checkbox ${item.completed ? 'checked' : ''}"></div>
+            <span class="text ${item.completed ? 'completed' : ''}">${item.text}</span>
+          </div>
+        `).join('')}
+      </body>
+      </html>
+    `;
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printHtml);
+      printWindow.document.close();
+      printWindow.print();
+    }
   };
 
   const handleCreateNew = () => {
@@ -422,68 +462,64 @@ const ChecklistConfirmation = () => {
         </NavbarRight>
       </GlassNavbar>
 
-      {/* Success Icon and Message */}
-      <div className="flex flex-col items-center justify-center px-4 pt-12 animate-fade-in">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/20">
-          <Check className="h-12 w-12 text-primary" strokeWidth={3} />
+      {/* Header */}
+      <div className="flex flex-col items-center justify-center px-4 pt-8 animate-fade-in">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/20">
+          <Check className="h-10 w-10 text-primary" strokeWidth={3} />
         </div>
-        <h2 className="text-center text-[28px] font-bold leading-tight tracking-tight text-foreground mb-2">
-          {t('checklistConfirmation.success')}
-        </h2>
         {checklist && (
-          <p className="text-center text-muted-foreground">
-            {checklist.items.length} {t('checklistConfirmation.tasksGenerated')}
-          </p>
+          <h2 className="text-center text-xl font-bold text-foreground mb-1">
+            {checklist.title}
+          </h2>
         )}
+        <p className="text-center text-sm text-muted-foreground">
+          {localItems.filter(i => i.completed).length} / {localItems.length} {t('checklistConfirmation.tasksGenerated')}
+        </p>
       </div>
 
-      {/* AI Generated Checklist Display */}
+      {/* Interactive Checklist */}
       {checklist && (
-        <div className="px-4 py-6 max-h-96 overflow-y-auto">
-          <h3 className="text-xl font-bold text-white mb-4">{checklist.title}</h3>
-          <div className="space-y-3">
-            {checklist.items.map((item, index) => (
-              <div 
+        <div className="px-4 py-4">
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            {localItems.map((item, index) => (
+              <button
                 key={index}
-                className="flex items-start gap-3 p-4 rounded-lg bg-card border border-border hover:bg-secondary/50 transition-colors"
+                onClick={() => handleToggleItem(index)}
+                className={`flex items-center gap-3 w-full px-4 py-3.5 text-left transition-colors hover:bg-secondary/50 ${
+                  index !== localItems.length - 1 ? 'border-b border-border' : ''
+                } ${item.completed ? 'opacity-60' : ''}`}
               >
-                <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-foreground font-medium mb-2">{item.text}</p>
-                  <div className="flex gap-2 flex-wrap">
-                    <Badge variant={getPriorityColor(item.priority)} className="text-xs">
-                      {item.priority}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {item.category}
-                    </Badge>
-                  </div>
+                <div className={`flex-shrink-0 h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
+                  item.completed 
+                    ? 'bg-primary border-primary' 
+                    : 'border-muted-foreground/40'
+                }`}>
+                  {item.completed && <Check className="h-3.5 w-3.5 text-primary-foreground" strokeWidth={3} />}
                 </div>
-              </div>
+                <span className={`text-sm text-foreground ${item.completed ? 'line-through text-muted-foreground' : ''}`}>
+                  {item.text}
+                </span>
+              </button>
             ))}
           </div>
         </div>
       )}
 
       {/* Action Buttons */}
-      <div className="space-y-3 px-4 pb-2 pt-10">
-        <Button
-          onClick={handleViewChecklist}
-          className="h-14 w-full bg-primary text-base font-bold text-primary-foreground hover:bg-primary/90"
-        >
-          {t('checklistConfirmation.viewChecklist')}
-        </Button>
+      <div className="space-y-3 px-4 pb-2 pt-4">
         <Button
           onClick={handlePrintChecklist}
-          className="h-14 w-full bg-primary text-base font-bold text-primary-foreground hover:bg-primary/90"
+          className="h-14 w-full bg-primary text-base font-bold text-primary-foreground hover:bg-primary/90 gap-2"
         >
+          <Printer className="h-5 w-5" />
           {t('checklistConfirmation.printChecklist')}
         </Button>
         <Button
           onClick={handleCreateNew}
           variant="outline"
-          className="h-14 w-full border-2 border-border bg-transparent text-base font-bold text-foreground hover:bg-secondary"
+          className="h-14 w-full border-2 border-border bg-transparent text-base font-bold text-foreground hover:bg-secondary gap-2"
         >
+          <Plus className="h-5 w-5" />
           {t('checklistConfirmation.createNew')}
         </Button>
       </div>
