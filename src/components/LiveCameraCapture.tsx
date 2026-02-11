@@ -44,6 +44,7 @@ export const LiveCameraCapture = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [capturedImages, setCapturedImages] = useState<File[]>([]);
+  const [showGalleryReview, setShowGalleryReview] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [cameraMode, setCameraMode] = useState<'photo' | 'video'>('photo');
@@ -493,6 +494,7 @@ export const LiveCameraCapture = ({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         className={`!flex !flex-col p-0 overflow-hidden bg-black border-none transition-all duration-300 [&>button]:hidden ${
@@ -828,31 +830,25 @@ export const LiveCameraCapture = ({
               ) : (
                 <>
                   {/* Photo mode: Gallery / Shutter / Audio */}
-                  <div className="relative flex flex-col items-center gap-1">
-                    <button
-                      onClick={handleDone}
-                      disabled={capturedImages.length === 0}
-                      className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all disabled:opacity-50 overflow-hidden border-2 border-white/20"
-                    >
-                      {capturedImages.length > 0 ? (
+                  {capturedImages.length > 0 ? (
+                    <div className="relative flex flex-col items-center gap-1">
+                      <button
+                        onClick={() => setShowGalleryReview(true)}
+                        className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all overflow-hidden border-2 border-white/20"
+                      >
                         <img 
                           src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} 
                           alt="Last captured"
                           className="w-full h-full object-cover"
                         />
-                      ) : (
-                        <Image className="h-6 w-6 text-white/50" />
-                      )}
-                    </button>
-                    {capturedImages.length > 0 && (
+                      </button>
                       <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
                         {capturedImages.length}
                       </div>
-                    )}
-                    {capturedImages.length > 0 && (
-                      <span className="text-white text-xs font-semibold">Done</span>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="w-16"></div>
+                  )}
 
                   <button
                     onClick={capturePhoto}
@@ -895,5 +891,48 @@ export const LiveCameraCapture = ({
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Gallery Review Dialog */}
+    {showGalleryReview && (
+      <Dialog open={showGalleryReview} onOpenChange={setShowGalleryReview}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto bg-black border-border">
+          <VisuallyHidden>
+            <DialogTitle>Photo Gallery</DialogTitle>
+            <DialogDescription>Review your captured photos</DialogDescription>
+          </VisuallyHidden>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-white">
+                {capturedImages.length} Photo{capturedImages.length !== 1 ? 's' : ''} Captured
+              </h2>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {capturedImages.map((file, index) => (
+                <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-white/20">
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt={`Photo ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white text-[10px] font-bold">
+                    {index + 1}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button
+              onClick={() => {
+                setShowGalleryReview(false);
+                handleDone();
+              }}
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Done
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )}
+    </>
   );
 };
