@@ -38,7 +38,7 @@ const Tasks = () => {
   const [projectName, setProjectName] = useState<string | undefined>(initialProjectName);
 
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [isSuggestingTasks, setIsSuggestingTasks] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
