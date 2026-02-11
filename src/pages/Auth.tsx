@@ -170,6 +170,16 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
+    // Safety timeout to prevent infinite "Please Wait..." state
+    const safetyTimeout = setTimeout(() => {
+      setLoading(false);
+      toast({
+        title: "Request timed out",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }, 30000);
+
     try {
       // For login, only validate email format (password was created before, might not meet current rules)
       // For signup, validate both email and password
@@ -340,6 +350,7 @@ const Auth = () => {
         });
       }
     } finally {
+      clearTimeout(safetyTimeout);
       setLoading(false);
     }
   };
