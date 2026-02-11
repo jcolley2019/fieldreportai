@@ -239,18 +239,13 @@ const CaptureScreen = () => {
     setShowLiveCamera(true);
   };
 
-  const handleVoiceRecord = async () => {
+  const handleAudioToggle = async () => {
     if (!isRecording) {
       // Start recording
       await handleStartNewRecording();
     } else {
-      // Stop recording
-      if (mediaRecorder) {
-        mediaRecorder.stop();
-        setMediaRecorder(null);
-        setIsRecording(false);
-        setIsPaused(false);
-      }
+      // Pause/Resume recording
+      handlePauseRecording();
     }
   };
 
@@ -887,7 +882,7 @@ const CaptureScreen = () => {
           toast.info(t('captureScreen.upgradeToPremium'));
         }}
         isAudioRecording={isRecording}
-        onAudioToggle={handleVoiceRecord}
+        onAudioToggle={handleAudioToggle}
       />
 
       {/* Full-size Image Viewer */}
