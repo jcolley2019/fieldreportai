@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { ChevronDown, ChevronUp, Pencil, Printer, Download, FolderPlus, Plus, RefreshCw, Save, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Printer, Download, FolderPlus, Plus, RefreshCw, Save, X, Mic, MicOff, Loader2 } from "lucide-react";
+import { useVoiceTranscription } from "@/hooks/useVoiceTranscription";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -110,6 +111,11 @@ const ReviewSummary = () => {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [editingSectionText, setEditingSectionText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  // Voice transcription for inline editing
+  const voiceTranscription = useVoiceTranscription((text: string) => {
+    setEditingSectionText(prev => prev ? `${prev}\n${text}` : text);
+  });
 
   // Fetch daily reports when weekly mode is selected
   useEffect(() => {
@@ -552,23 +558,48 @@ const ReviewSummary = () => {
                  <CollapsibleContent className="px-4 pb-4">
                    <div className="relative rounded-lg bg-secondary p-4">
                      {editingSectionId === section.id ? (
-                       <div className="space-y-3">
-                         <Textarea
-                           value={editingSectionText}
-                           onChange={(e) => setEditingSectionText(e.target.value)}
-                           className="min-h-[150px] resize-y rounded-lg border-none bg-muted text-sm leading-relaxed text-foreground focus-visible:ring-2 focus-visible:ring-primary"
-                         />
-                         <div className="flex gap-2">
-                           <Button size="sm" onClick={handleSaveEditSection}>
-                             <Save className="h-4 w-4 mr-1" />
-                             {t('common.save', 'Save')}
-                           </Button>
-                           <Button size="sm" variant="outline" onClick={handleCancelEditSection}>
-                             <X className="h-4 w-4 mr-1" />
-                             {t('common.cancel', 'Cancel')}
-                           </Button>
-                         </div>
-                       </div>
+                     <div className="space-y-3">
+                          <Textarea
+                            value={editingSectionText}
+                            onChange={(e) => setEditingSectionText(e.target.value)}
+                            className="min-h-[150px] resize-y rounded-lg border-none bg-muted text-sm leading-relaxed text-foreground focus-visible:ring-2 focus-visible:ring-primary"
+                          />
+                          <div className="flex items-center gap-2">
+                            <Button size="sm" onClick={handleSaveEditSection}>
+                              <Save className="h-4 w-4 mr-1" />
+                              {t('common.save', 'Save')}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={handleCancelEditSection}>
+                              <X className="h-4 w-4 mr-1" />
+                              {t('common.cancel', 'Cancel')}
+                            </Button>
+                            <div className="ml-auto flex items-center gap-2">
+                              {voiceTranscription.isRecording && (
+                                <span className="text-xs text-red-400 animate-pulse">
+                                  ● {voiceTranscription.formatTime(voiceTranscription.recordingTime)}
+                                </span>
+                              )}
+                              {voiceTranscription.isTranscribing && (
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <Loader2 className="h-3 w-3 animate-spin" /> Transcribing...
+                                </span>
+                              )}
+                              <Button
+                                size="sm"
+                                variant={voiceTranscription.isRecording ? "destructive" : "outline"}
+                                onClick={voiceTranscription.isRecording ? voiceTranscription.stopRecording : voiceTranscription.startRecording}
+                                disabled={voiceTranscription.isTranscribing}
+                                className={voiceTranscription.isRecording ? "animate-pulse" : ""}
+                              >
+                                {voiceTranscription.isRecording ? (
+                                  <MicOff className="h-4 w-4" />
+                                ) : (
+                                  <Mic className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
                      ) : (
                        <>
                          <p className="pr-8 text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">
