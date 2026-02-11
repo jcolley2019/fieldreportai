@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2, Printer, Download, Mail, Send, Loader2, Clock, Share2 } from "lucide-react";
+import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2, Printer, Download, Mail, Send, Loader2, Clock, Share2, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -537,6 +537,15 @@ const ProjectDetail = () => {
             </CardContent>
           )}
         </Card>
+
+        {/* Continue Working Button */}
+        <Button
+          onClick={() => navigate("/capture-screen", { state: { reportId: projectId, projectName: project.project_name, customerName: project.customer_name, jobNumber: project.job_number } })}
+          className="w-full h-14 mb-4 gap-3 bg-primary text-primary-foreground hover:bg-primary/90 text-base font-semibold"
+        >
+          <Camera className="h-5 w-5" />
+          Continue Working on Project
+        </Button>
 
         {/* Action Buttons */}
         <div className="flex gap-3 mb-6">
