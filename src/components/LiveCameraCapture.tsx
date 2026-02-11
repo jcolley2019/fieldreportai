@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
-import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff, Grid3x3, Sparkles, Maximize2, Minimize2, ChevronDown, Pause, Square, Video, Trash2, CheckSquare } from "lucide-react";
+import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff, Grid3x3, Sparkles, Maximize2, Minimize2, ChevronDown, Pause, Square, Video, VideoOff, Trash2, CheckSquare } from "lucide-react";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -816,7 +816,7 @@ export const LiveCameraCapture = ({
                           }`}
                         >
                           {isPaused ? (
-                            <Pause className="h-7 w-7 text-white" fill="white" />
+                            <VideoOff className="h-7 w-7 text-white" />
                           ) : (
                             <Video className="h-7 w-7 text-white" />
                           )}
