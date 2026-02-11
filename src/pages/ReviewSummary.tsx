@@ -350,8 +350,10 @@ const ReviewSummary = () => {
               const response = await fetch(image.base64);
               const blob = await response.blob();
               
-              const fileExt = image.base64.includes('image/png') ? 'png' : 'jpg';
-              const fileName = `${user.id}/${currentReportId}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+              const fileExt = image.isVideo 
+                ? 'webm' 
+                : (image.base64.includes('image/png') ? 'png' : 'jpg');
+              const contentType = image.isVideo ? 'video/webm' : (image.base64.includes('image/png') ? 'image/png' : 'image/jpeg');
               
               const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('media')
@@ -381,8 +383,8 @@ const ReviewSummary = () => {
                 user_id: user.id,
                 report_id: currentReportId,
                 file_path: storagePath,
-                file_type: 'image',
-                mime_type: 'image/jpeg',
+                file_type: image.isVideo ? 'video' : 'image',
+                mime_type: image.isVideo ? 'video/webm' : 'image/jpeg',
                 latitude: image.latitude,
                 longitude: image.longitude,
                 captured_at: image.capturedAt || new Date().toISOString(),
@@ -515,19 +517,31 @@ const ReviewSummary = () => {
                   className="flex flex-col gap-2 rounded-lg bg-card p-3"
                 >
                   <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
-                    <img 
-                      src={image.url} 
-                      alt={image.caption || `Captured photo ${index + 1}`}
-                      className="h-full w-full object-cover"
-                    />
+                    {image.isVideo ? (
+                      <div className="relative h-full w-full">
+                        <video src={image.url} className="h-full w-full object-cover" muted />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/60">
+                            <span className="text-white text-lg">▶</span>
+                          </div>
+                        </div>
+                        <div className="absolute top-2 left-2 rounded bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">VIDEO</div>
+                      </div>
+                    ) : (
+                      <img 
+                        src={image.url} 
+                        alt={image.caption || `Captured photo ${index + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+                    )}
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground">
-                      {image.caption || `${t('reviewSummary.photo')} ${index + 1}`}
+                      {image.caption || `${image.isVideo ? 'Video' : t('reviewSummary.photo')} ${index + 1}`}
                     </h3>
-                    {!image.caption && (
-                      <p className="text-xs text-muted-foreground">
-                        {t('reviewSummary.fieldPhoto')}
+                    {image.voiceNote && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        🎙 {image.voiceNote}
                       </p>
                     )}
                   </div>
