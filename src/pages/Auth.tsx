@@ -206,7 +206,7 @@ const Auth = () => {
               : redirectUrl;
             navigate(fullRedirect);
           } else {
-            navigate(isProfileComplete ? "/dashboard" : "/onboarding");
+            navigate("/dashboard");
           }
         }
       } else {
@@ -297,7 +297,7 @@ const Auth = () => {
                 : redirectUrl;
               navigate(fullRedirect);
             } else {
-              navigate("/onboarding");
+              navigate("/dashboard");
             }
           }
         }
