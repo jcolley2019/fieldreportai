@@ -791,9 +791,7 @@ export const LiveCameraCapture = ({
                   {/* Center: Stop recording button */}
                   <button
                     onClick={onStopRecording}
-                    className={`flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300 border-2 border-white/30 ${
-                      isPaused ? 'h-16 w-16' : 'h-20 w-20'
-                    }`}
+                    className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300 border-2 border-white/30"
                   >
                     <div className="h-7 w-7 rounded-[5px] bg-red-500 transition-all duration-300" />
                   </button>
