@@ -235,39 +235,38 @@ const Tasks = () => {
   const transcribeAndCreateTasks = async (audioBlob: Blob) => {
     setIsProcessingVoice(true);
     try {
-      // Convert blob to base64
-      const reader = new FileReader();
-      reader.readAsDataURL(audioBlob);
-      
-      reader.onloadend = async () => {
-        const base64Audio = reader.result as string;
-        const base64Data = base64Audio.split(',')[1];
+      // Convert blob to base64 using Promise wrapper
+      const base64Audio = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Failed to read audio file'));
+        reader.readAsDataURL(audioBlob);
+      });
 
-        // First, transcribe the audio
-        const { data: transcriptionData, error: transcriptionError } = await supabase.functions.invoke('transcribe-audio', {
-          body: { audio: base64Data }
-        });
+      const base64Data = base64Audio.split(',')[1];
 
-        if (transcriptionError) {
-          console.error("Transcription error:", transcriptionError);
-          toast.error(t('tasks.transcriptionFailed'));
-          setIsProcessingVoice(false);
-          return;
-        }
+      // First, transcribe the audio
+      const { data: transcriptionData, error: transcriptionError } = await supabase.functions.invoke('transcribe-audio', {
+        body: { audio: base64Data }
+      });
 
-        if (transcriptionData?.text) {
-          toast.success(t('tasks.voiceTranscribed'));
-          // Use the transcribed text to generate task suggestions
-          await handleSuggestTasks(transcriptionData.text);
-        } else {
-          toast.error(t('tasks.noVoiceDetected'));
-        }
-        
-        setIsProcessingVoice(false);
-      };
+      if (transcriptionError) {
+        console.error("Transcription error:", transcriptionError);
+        toast.error(t('tasks.transcriptionFailed'));
+        return;
+      }
+
+      if (transcriptionData?.text) {
+        toast.success(t('tasks.voiceTranscribed'));
+        // Use the transcribed text to generate task suggestions
+        await handleSuggestTasks(transcriptionData.text);
+      } else {
+        toast.error(t('tasks.noVoiceDetected'));
+      }
     } catch (error) {
       console.error("Error transcribing audio:", error);
       toast.error(t('tasks.transcriptionFailed'));
+    } finally {
       setIsProcessingVoice(false);
     }
   };
