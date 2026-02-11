@@ -787,9 +787,9 @@ export const LiveCameraCapture = ({
                   className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all border-2 border-white/20"
                 >
                   {isPaused ? (
-                    <Mic className="h-8 w-8 text-white" />
-                  ) : (
                     <MicOff className="h-8 w-8 text-white" />
+                  ) : (
+                    <Mic className="h-8 w-8 text-white" />
                   )}
                 </button>
               ) : (
