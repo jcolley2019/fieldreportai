@@ -784,6 +784,7 @@ export const LiveCameraCapture = ({
                         <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
                           {capturedImages.length}
                         </div>
+                        <span className="text-sm font-semibold uppercase tracking-wider text-white">Gallery</span>
                       </div>
                     ) : (
                       <div className="w-16"></div>
@@ -791,32 +792,40 @@ export const LiveCameraCapture = ({
                   </div>
 
                   {/* Center: Stop recording button */}
-                  <button
-                    onClick={onStopRecording}
-                    className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300 border-2 border-white/30"
-                  >
-                    <div className="h-7 w-7 rounded-[5px] bg-red-500 transition-all duration-300" />
-                  </button>
+                  <div className="flex flex-col items-center gap-1">
+                    <button
+                      onClick={onStopRecording}
+                      className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300 border-2 border-white/30"
+                    >
+                      <div className="h-7 w-7 rounded-[5px] bg-red-500 transition-all duration-300" />
+                    </button>
+                    <span className="text-sm font-semibold uppercase tracking-wider text-white">Stop</span>
+                  </div>
 
                   {/* Right: Pause + Shutter */}
-                  <div className="flex items-center justify-center gap-3">
+                  <div className="flex items-end justify-center gap-3">
                     {onPauseRecording && (
-                      <button
-                        onClick={onPauseRecording}
-                        className={`flex h-14 w-14 items-center justify-center rounded-full transition-all ${
-                          isPaused
-                            ? 'bg-red-500 hover:bg-red-600'
-                            : 'bg-green-500 hover:bg-green-600'
-                        }`}
-                      >
-                        {isPaused ? (
-                          <div className="h-7 w-7 rounded-full bg-red-300" />
-                        ) : (
-                          <Pause className="h-7 w-7 text-white" fill="white" />
-                        )}
-                      </button>
+                      <div className="flex flex-col items-center gap-1">
+                        <button
+                          onClick={onPauseRecording}
+                          className={`flex h-14 w-14 items-center justify-center rounded-full transition-all ${
+                            isPaused
+                              ? 'bg-red-500 hover:bg-red-600'
+                              : 'bg-green-500 hover:bg-green-600'
+                          }`}
+                        >
+                          {isPaused ? (
+                            <div className="h-7 w-7 rounded-full bg-red-300" />
+                          ) : (
+                            <Pause className="h-7 w-7 text-white" fill="white" />
+                          )}
+                        </button>
+                        <span className="text-sm font-semibold uppercase tracking-wider text-white">
+                          {isPaused ? 'Resume' : 'Pause'}
+                        </span>
+                      </div>
                     )}
-                    <div className="relative">
+                    <div className="flex flex-col items-center gap-1">
                       <button
                         onClick={capturePhoto}
                         disabled={!isReady}
@@ -824,6 +833,7 @@ export const LiveCameraCapture = ({
                       >
                         <div className="h-10 w-10 rounded-full bg-white" />
                       </button>
+                      <span className="text-sm font-semibold uppercase tracking-wider text-white">Photo</span>
                     </div>
                   </div>
                 </>
@@ -853,12 +863,15 @@ export const LiveCameraCapture = ({
                   </div>
 
                   {/* Center: Record button */}
-                  <button
-                    onClick={onStartRecording}
-                    className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300 border-2 border-white/30"
-                  >
-                    <div className="h-16 w-16 rounded-full bg-red-500 hover:bg-red-600 transition-all duration-300" />
-                  </button>
+                  <div className="flex flex-col items-center gap-1">
+                    <button
+                      onClick={onStartRecording}
+                      className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300 border-2 border-white/30"
+                    >
+                      <div className="h-16 w-16 rounded-full bg-red-500 hover:bg-red-600 transition-all duration-300" />
+                    </button>
+                    <span className="text-sm font-semibold uppercase tracking-wider text-white">Record</span>
+                  </div>
 
                   {/* Right: spacer */}
                   <div></div>
