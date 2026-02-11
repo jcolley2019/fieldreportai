@@ -844,5 +844,17 @@
     "unlinked": "Content unlinked from photo",
     "needsProject": "Link this capture to a project first to add checklist items",
     "linkToPhoto": "Link to Photo"
+  },
+  "gettingStarted": {
+    "title": "Getting Started",
+    "subtitle": "Follow these steps to make the most of your app",
+    "step1Title": "Create a Project",
+    "step1Desc": "Start by creating a new project with your job details, customer info, and job number.",
+    "step2Title": "Take a Photo, Video, or Note",
+    "step2Desc": "Capture on-site photos, record videos, or dictate voice notes — all organized automatically.",
+    "step3Title": "Choose a Report Template & Create a Report",
+    "step3Desc": "Pick from Field, Daily, Weekly, Monthly, or Site Survey templates — AI generates your report instantly.",
+    "step4Title": "Share with Your Team",
+    "step4Desc": "Email PDF reports, generate shareable links, export to Word, or invite team members to collaborate."
   }
 }
