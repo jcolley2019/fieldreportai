@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { UserCheck, FolderOpen, Camera, FileText, Share2, ChevronRight, X, Lightbulb } from 'lucide-react';
+import { UserCheck, FolderOpen, Camera, FileText, Share2, ChevronRight, ChevronDown, ChevronUp, X, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const steps = [
@@ -53,6 +53,9 @@ const GettingStartedGuide: React.FC = () => {
   const [dismissed, setDismissed] = useState(() => {
     return localStorage.getItem('gettingStartedDismissed') === 'true';
   });
+  const [collapsed, setCollapsed] = useState(() => {
+    return localStorage.getItem('gettingStartedCollapsed') === 'true';
+  });
 
   if (dismissed) return null;
 
@@ -61,11 +64,20 @@ const GettingStartedGuide: React.FC = () => {
     setDismissed(true);
   };
 
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem('gettingStartedCollapsed', String(next));
+  };
+
   return (
     <section className="mb-8">
       <div className="glass-card p-6">
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-3">
+        <div className={`flex items-center justify-between ${collapsed ? '' : 'mb-5'}`}>
+          <button
+            onClick={toggleCollapsed}
+            className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity"
+          >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15">
               <Lightbulb className="h-5 w-5 text-primary" />
             </div>
@@ -73,53 +85,62 @@ const GettingStartedGuide: React.FC = () => {
               <h2 className="text-lg font-semibold text-foreground">
                 {t('gettingStarted.title', 'Getting Started')}
               </h2>
-              <p className="text-sm text-muted-foreground">
-                {t('gettingStarted.subtitle', 'Follow these steps to make the most of your app')}
-              </p>
+              {!collapsed && (
+                <p className="text-sm text-muted-foreground">
+                  {t('gettingStarted.subtitle', 'Follow these steps to make the most of your app')}
+                </p>
+              )}
             </div>
-          </div>
+            {collapsed ? (
+              <ChevronDown className="h-5 w-5 text-muted-foreground ml-2" />
+            ) : (
+              <ChevronUp className="h-5 w-5 text-muted-foreground ml-2" />
+            )}
+          </button>
           <Button
             variant="ghost"
             size="icon"
             onClick={handleDismiss}
-            className="rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/40 h-8 w-8"
+            className="rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/40 h-8 w-8 flex-shrink-0"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
 
-        <div className="space-y-3">
-          {steps.map((step, index) => {
-            const Icon = step.icon;
-            return (
-              <div
-                key={index}
-                className={`flex items-start gap-4 rounded-xl border border-border/40 bg-card/50 p-4 transition-all duration-200 ${step.link ? 'cursor-pointer hover:bg-card hover:border-border' : ''}`}
-                onClick={() => step.link && navigate(step.link)}
-              >
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
-                    {index + 1}
-                  </span>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                    <Icon className="h-5 w-5 text-primary" />
+        {!collapsed && (
+          <div className="space-y-3">
+            {steps.map((step, index) => {
+              const Icon = step.icon;
+              return (
+                <div
+                  key={index}
+                  className={`flex items-start gap-4 rounded-xl border border-border/40 bg-card/50 p-4 transition-all duration-200 ${step.link ? 'cursor-pointer hover:bg-card hover:border-border' : ''}`}
+                  onClick={() => step.link && navigate(step.link)}
+                >
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
+                      {index + 1}
+                    </span>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                      <Icon className="h-5 w-5 text-primary" />
+                    </div>
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground text-sm mb-0.5">
+                      {t(step.titleKey, step.titleFallback)}
+                    </h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {t(step.descKey, step.descFallback)}
+                    </p>
+                  </div>
+                  {step.link && (
+                    <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-1" />
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground text-sm mb-0.5">
-                    {t(step.titleKey, step.titleFallback)}
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {t(step.descKey, step.descFallback)}
-                  </p>
-                </div>
-                {step.link && (
-                  <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-1" />
-                )}
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
