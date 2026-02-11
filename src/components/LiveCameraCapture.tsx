@@ -631,7 +631,7 @@ export const LiveCameraCapture = ({
                     <div className={`px-4 py-1.5 rounded-full text-sm font-semibold backdrop-blur-sm ${
                       isPaused 
                         ? 'bg-transparent' 
-                        : 'bg-red-500/90'
+                        : 'bg-green-500/90'
                     }`}>
                       <span className={`font-mono ${isPaused ? 'text-white' : 'text-white'}`}>
                         {formatDuration(recordingDuration)}
