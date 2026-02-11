@@ -304,6 +304,8 @@ const Checklist = () => {
     toast.success(t('checklist.allDiscarded'));
   };
 
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+
   const handleVoiceRecord = async () => {
     if (!isRecording) {
       // Start recording
@@ -319,9 +321,8 @@ const Checklist = () => {
         };
 
         recorder.onstop = async () => {
-          const audioBlob = new Blob(chunks, { type: 'audio/webm' });
-          await transcribeAudio(audioBlob);
           stream.getTracks().forEach(track => track.stop());
+          await transcribeAndGenerateChecklist(new Blob(chunks, { type: recorder.mimeType || 'audio/webm' }));
         };
 
         recorder.start();
@@ -344,35 +345,93 @@ const Checklist = () => {
     }
   };
 
-  const transcribeAudio = async (audioBlob: Blob) => {
+  const transcribeAndGenerateChecklist = async (audioBlob: Blob) => {
+    setIsProcessingVoice(true);
+
+    // Safety timeout — force reset after 60s
+    const safetyTimeout = setTimeout(() => {
+      setIsProcessingVoice(false);
+      toast.error(t('checklist.audioProcessFailed') || 'Processing timed out. Please try again.');
+    }, 60000);
+
     try {
-      // Convert blob to base64
-      const reader = new FileReader();
-      reader.readAsDataURL(audioBlob);
-      
-      reader.onloadend = async () => {
-        const base64Audio = reader.result as string;
-        const base64Data = base64Audio.split(',')[1];
+      // Convert blob to base64 using Promise wrapper
+      const base64Audio = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Failed to read audio file'));
+        reader.readAsDataURL(audioBlob);
+      });
 
-        // Call transcribe-audio edge function
-        const { data, error } = await supabase.functions.invoke('transcribe-audio', {
-          body: { audio: base64Data }
+      const base64Data = base64Audio.split(',')[1];
+
+      // Step 1: Transcribe the audio
+      const { data: transcriptionData, error: transcriptionError } = await supabase.functions.invoke('transcribe-audio', {
+        body: { audio: base64Data }
+      });
+
+      if (transcriptionError) {
+        console.error("Transcription error:", transcriptionError);
+        toast.error(t('checklist.transcribeFailed'));
+        return;
+      }
+
+      if (!transcriptionData?.text) {
+        toast.error(t('checklist.audioProcessFailed') || 'No voice detected. Please try again.');
+        return;
+      }
+
+      toast.success(t('checklist.audioTranscribed'));
+
+      // Step 2: Generate checklist from transcribed text
+      const imageData: string[] = [];
+      for (const img of images.filter(i => !i.deleted)) {
+        if (img.file) {
+          const b64 = await new Promise<string>((resolve, reject) => {
+            const r = new FileReader();
+            r.onloadend = () => resolve(r.result as string);
+            r.onerror = reject;
+            r.readAsDataURL(img.file!);
+          });
+          imageData.push(b64);
+        }
+      }
+
+      toast.success(t('checklist.generatingChecklist'));
+
+      const { data: checklistData, error: checklistError } = await supabase.functions.invoke('generate-checklist', {
+        body: {
+          description: transcriptionData.text,
+          images: imageData.length > 0 ? imageData : undefined
+        }
+      });
+
+      if (checklistError) {
+        console.error("Checklist generation error:", checklistError);
+        toast.error(t('checklist.generateFailed'));
+        return;
+      }
+
+      if (checklistData?.checklist) {
+        toast.success(t('checklist.checklistGenerated'));
+        const projectReportId = location.state?.reportId || null;
+        navigate("/checklist-confirmation", {
+          state: {
+            checklist: checklistData.checklist,
+            images: images.filter(img => !img.deleted).map(img => img.url),
+            simpleMode: isSimpleMode,
+            reportId: projectReportId
+          }
         });
-
-        if (error) {
-          console.error("Transcription error:", error);
-          toast.error(t('checklist.transcribeFailed'));
-          return;
-        }
-
-        if (data?.text) {
-          // Append transcribed text to description
-          toast.success(t('checklist.audioTranscribed'));
-        }
-      };
+      } else {
+        toast.error(t('checklist.generateFailed'));
+      }
     } catch (error) {
       console.error("Error transcribing audio:", error);
       toast.error(t('checklist.audioProcessFailed'));
+    } finally {
+      clearTimeout(safetyTimeout);
+      setIsProcessingVoice(false);
     }
   };
 
@@ -630,6 +689,7 @@ const Checklist = () => {
             <div className="w-full">
               <button
                 onClick={handleVoiceRecord}
+                disabled={isProcessingVoice}
                 className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl p-6 text-center transition-all ${
                   isRecording 
                     ? 'bg-destructive/20 ring-4 ring-destructive/30 animate-pulse' 
@@ -639,6 +699,8 @@ const Checklist = () => {
                 <div className="flex items-center gap-3">
                   {isRecording ? (
                     <MicOff className="h-12 w-12 text-destructive" />
+                  ) : isProcessingVoice ? (
+                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
                   ) : (
                     <Mic className="h-12 w-12 text-primary" />
                   )}
@@ -646,6 +708,8 @@ const Checklist = () => {
                 <p className="text-sm font-bold text-foreground">
                   {isRecording 
                     ? t('checklist.tapToStop')
+                    : isProcessingVoice
+                    ? t('checklist.processingAudio')
                     : t('checklist.tapToRecord')
                   }
                 </p>
