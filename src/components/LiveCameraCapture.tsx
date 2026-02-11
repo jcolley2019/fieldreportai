@@ -22,6 +22,8 @@ interface LiveCameraCaptureProps {
   onStartRecording?: () => void;
   maxRecordingSeconds?: number;
   onRecordingLimitReached?: () => void;
+  isAudioRecording?: boolean;
+  onAudioToggle?: () => void;
 }
 
 export const LiveCameraCapture = ({
@@ -35,6 +37,8 @@ export const LiveCameraCapture = ({
   onStartRecording,
   maxRecordingSeconds = 300,
   onRecordingLimitReached,
+  isAudioRecording = false,
+  onAudioToggle,
 }: LiveCameraCaptureProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -823,7 +827,7 @@ export const LiveCameraCapture = ({
                 </>
               ) : (
                 <>
-                  {/* Photo mode: Gallery / Shutter / empty */}
+                  {/* Photo mode: Gallery / Shutter / Audio */}
                   <div className="relative flex flex-col items-center gap-1">
                     <button
                       onClick={handleDone}
@@ -860,7 +864,30 @@ export const LiveCameraCapture = ({
                     </div>
                   </button>
 
-                  <div className="w-16"></div>
+                  {/* Audio record button */}
+                  {onAudioToggle ? (
+                    <div className="flex flex-col items-center gap-1">
+                      <button
+                        onClick={onAudioToggle}
+                        className={`flex h-16 w-16 items-center justify-center rounded-full transition-all ${
+                          isAudioRecording
+                            ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+                            : 'bg-white/20 backdrop-blur-sm hover:bg-white/30'
+                        }`}
+                      >
+                        {isAudioRecording ? (
+                          <MicOff className="h-7 w-7 text-white" />
+                        ) : (
+                          <Mic className="h-7 w-7 text-white" />
+                        )}
+                      </button>
+                      <span className="text-white text-[10px] font-medium">
+                        {isAudioRecording ? 'Stop' : 'Audio'}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="w-16"></div>
+                  )}
                 </>
               )}
             </div>

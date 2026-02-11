@@ -234,67 +234,15 @@ const CaptureScreen = () => {
     toast.success("Annotation saved");
   };
 
+  const handleOpenCamera = () => {
+    // Just open the camera without starting audio recording
+    setShowLiveCamera(true);
+  };
+
   const handleVoiceRecord = async () => {
     if (!isRecording) {
-      // Start recording and open camera
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        
-        const mimeTypes = [
-          'audio/webm',
-          'audio/webm;codecs=opus',
-          'audio/mp4',
-          'audio/mpeg',
-          'audio/wav'
-        ];
-        
-        let selectedMimeType = '';
-        for (const mimeType of mimeTypes) {
-          if (MediaRecorder.isTypeSupported(mimeType)) {
-            selectedMimeType = mimeType;
-            console.log('Selected MIME type:', mimeType);
-            break;
-          }
-        }
-        
-        if (!selectedMimeType) {
-          console.warn('No preferred MIME type supported, using browser default');
-        }
-        
-        const recorderOptions = selectedMimeType ? { mimeType: selectedMimeType } : {};
-        const recorder = new MediaRecorder(stream, recorderOptions);
-        const chunks: Blob[] = [];
-
-        recorder.ondataavailable = (e) => {
-          if (e.data.size > 0) {
-            chunks.push(e.data);
-          }
-        };
-
-        recorder.onstop = async () => {
-          const audioBlob = new Blob(chunks, { type: recorder.mimeType });
-          
-          console.log('Recorded audio details:', {
-            mimeType: audioBlob.type,
-            size: audioBlob.size,
-            sizeKB: (audioBlob.size / 1024).toFixed(2),
-            recorderMimeType: recorder.mimeType
-          });
-          
-          await transcribeAudio(audioBlob);
-          stream.getTracks().forEach(track => track.stop());
-        };
-
-        recorder.start();
-        setMediaRecorder(recorder);
-        setAudioChunks(chunks);
-        setIsRecording(true);
-        setIsPaused(false);
-        setShowLiveCamera(true);
-      } catch (error) {
-        console.error("Error accessing microphone:", error);
-        toast.error(t('common.microphoneError'));
-      }
+      // Start recording
+      await handleStartNewRecording();
     } else {
       // Stop recording
       if (mediaRecorder) {
@@ -762,7 +710,7 @@ const CaptureScreen = () => {
           {/* Upload/Camera Section with Auto Voice Recording */}
           <div className="flex flex-col items-center gap-4">
             <button
-              onClick={handleVoiceRecord}
+              onClick={handleOpenCamera}
               className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-all hover:bg-primary/30 shadow-xl shadow-primary/50 ring-4 ring-primary/30"
             >
               <div className="flex items-center gap-3">
@@ -938,6 +886,8 @@ const CaptureScreen = () => {
         onRecordingLimitReached={() => {
           toast.info(t('captureScreen.upgradeToPremium'));
         }}
+        isAudioRecording={isRecording}
+        onAudioToggle={handleVoiceRecord}
       />
 
       {/* Full-size Image Viewer */}
