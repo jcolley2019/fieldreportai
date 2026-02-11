@@ -26,10 +26,12 @@ interface ImageItem {
   file?: File;
   deleted: boolean;
   caption?: string;
+  voiceNote?: string;
   latitude?: number;
   longitude?: number;
   capturedAt?: Date;
   locationName?: string;
+  isVideo?: boolean;
 }
 
 const CaptureScreen = () => {
@@ -57,6 +59,8 @@ const CaptureScreen = () => {
   const [isLabelingImage, setIsLabelingImage] = useState<string | null>(null);
   const [annotatingImageId, setAnnotatingImageId] = useState<string | null>(null);
   const [gpsStampingEnabled, setGpsStampingEnabled] = useState(false);
+  const [recordingForPhotoId, setRecordingForPhotoId] = useState<string | null>(null);
+  const [photoMediaRecorder, setPhotoMediaRecorder] = useState<MediaRecorder | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -79,10 +83,9 @@ const CaptureScreen = () => {
   }, []);
 
   // Generate AI label for a photo
-  const generateAILabel = async (imageId: string, file: File) => {
+  const generateAILabel = async (imageId: string, file: File, voiceNote?: string) => {
     setIsLabelingImage(imageId);
     try {
-      // Convert file to base64
       const reader = new FileReader();
       reader.readAsDataURL(file);
       
@@ -90,19 +93,24 @@ const CaptureScreen = () => {
         const base64Data = reader.result as string;
         
         const { data, error } = await supabase.functions.invoke('label-photo', {
-          body: { imageBase64: base64Data }
+          body: { imageBase64: base64Data, voiceNote }
         });
 
         if (error) {
           console.error("Label generation error:", error);
-          // Silently fail - don't show error to user, they can add manually
+          // If we have a voice note, use it as fallback
+          if (voiceNote) {
+            setImages(prev => prev.map(img =>
+              img.id === imageId ? { ...img, caption: voiceNote, voiceNote } : img
+            ));
+          }
           setIsLabelingImage(null);
           return;
         }
 
         if (data?.label) {
           setImages(prev => prev.map(img =>
-            img.id === imageId ? { ...img, caption: data.label } : img
+            img.id === imageId ? { ...img, caption: data.label, voiceNote: voiceNote || img.voiceNote } : img
           ));
         }
         setIsLabelingImage(null);
@@ -161,22 +169,26 @@ const CaptureScreen = () => {
     // Get GPS data only if enabled in settings
     const geoData = gpsStampingEnabled ? await getCurrentPosition() : null;
 
-    const newImages: ImageItem[] = files.map(file => ({
-      id: Math.random().toString(36).substr(2, 9),
-      url: URL.createObjectURL(file),
-      file,
-      deleted: false,
-      latitude: geoData?.latitude,
-      longitude: geoData?.longitude,
-      capturedAt: gpsStampingEnabled ? new Date() : undefined,
-      locationName: geoData?.locationName
-    }));
+    const newImages: ImageItem[] = files.map(file => {
+      const isVideo = file.type.startsWith('video/');
+      return {
+        id: Math.random().toString(36).substr(2, 9),
+        url: URL.createObjectURL(file),
+        file,
+        deleted: false,
+        latitude: geoData?.latitude,
+        longitude: geoData?.longitude,
+        capturedAt: gpsStampingEnabled ? new Date() : undefined,
+        locationName: geoData?.locationName,
+        isVideo,
+      };
+    });
 
     setImages(prev => [...prev, ...newImages]);
     
-    // Generate AI labels for captured images
+    // Generate AI labels for captured images (not videos)
     newImages.forEach(img => {
-      if (img.file) {
+      if (img.file && !img.isVideo) {
         generateAILabel(img.id, img.file);
       }
     });
@@ -232,6 +244,70 @@ const CaptureScreen = () => {
     
     setAnnotatingImageId(null);
     toast.success("Annotation saved");
+  };
+
+  // Per-photo voice note recording
+  const startPhotoVoiceNote = async (imageId: string) => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeTypes = ['audio/webm', 'audio/webm;codecs=opus', 'audio/mp4', 'audio/wav'];
+      let selectedMimeType = '';
+      for (const mt of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mt)) { selectedMimeType = mt; break; }
+      }
+      const recorder = new MediaRecorder(stream, selectedMimeType ? { mimeType: selectedMimeType } : {});
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(track => track.stop());
+        const audioBlob = new Blob(chunks, { type: recorder.mimeType });
+        setRecordingForPhotoId(null);
+        setPhotoMediaRecorder(null);
+        
+        // Transcribe the audio
+        try {
+          const reader = new FileReader();
+          reader.readAsDataURL(audioBlob);
+          reader.onloadend = async () => {
+            const base64Data = (reader.result as string).split(',')[1];
+            const { data, error } = await supabase.functions.invoke('transcribe-audio', {
+              body: { audio: base64Data, mimeType: audioBlob.type }
+            });
+            if (error || !data?.text) {
+              toast.error("Failed to transcribe voice note");
+              return;
+            }
+            // Set voice note and regenerate AI label with user context
+            const image = images.find(img => img.id === imageId);
+            if (image?.file) {
+              setImages(prev => prev.map(img =>
+                img.id === imageId ? { ...img, voiceNote: data.text } : img
+              ));
+              generateAILabel(imageId, image.file, data.text);
+              toast.success("Voice note added to photo");
+            }
+          };
+        } catch (err) {
+          console.error("Error transcribing photo voice note:", err);
+          toast.error("Error processing voice note");
+        }
+      };
+
+      recorder.start();
+      setRecordingForPhotoId(imageId);
+      setPhotoMediaRecorder(recorder);
+      toast.info("Recording voice note for photo...");
+    } catch (error) {
+      console.error("Error recording voice note:", error);
+      toast.error("Could not access microphone");
+    }
+  };
+
+  const stopPhotoVoiceNote = () => {
+    if (photoMediaRecorder && photoMediaRecorder.state !== 'inactive') {
+      photoMediaRecorder.stop();
+    }
   };
 
   const handleOpenCamera = () => {
@@ -439,10 +515,13 @@ const CaptureScreen = () => {
         .map(img => img.base64)
         .filter(url => url !== null) as string[];
 
+      const imageCaptions = imageWithBase64.map(img => img.caption || img.voiceNote || "");
+
       const { data, error } = await supabase.functions.invoke('generate-report-summary', {
         body: { 
           description: description || "",
-          imageDataUrls: validImageDataUrls
+          imageDataUrls: validImageDataUrls,
+          imageCaptions
         }
       });
 
@@ -479,11 +558,13 @@ const CaptureScreen = () => {
               url: img.url, 
               id: img.id, 
               caption: img.caption, 
+              voiceNote: img.voiceNote,
               base64: img.base64,
               latitude: img.latitude,
               longitude: img.longitude,
               capturedAt: img.capturedAt?.toISOString(),
-              locationName: img.locationName
+              locationName: img.locationName,
+              isVideo: img.isVideo || false,
             }))
           } 
         });
@@ -767,62 +848,56 @@ const CaptureScreen = () => {
                       </div>
                     ) : (
                       <>
-                        <img
-                          src={image.url}
-                          alt="Captured content"
-                          className="h-full w-full object-cover cursor-pointer"
-                          onClick={() => setSelectedImageIndex(activeIndex)}
-                        />
-                        {/* AI Labeling indicator */}
+                        {image.isVideo ? (
+                          <div className="relative h-full w-full bg-secondary cursor-pointer" onClick={() => setSelectedImageIndex(activeIndex)}>
+                            <video src={image.url} className="h-full w-full object-cover" muted />
+                            <div className="absolute top-1 left-1 rounded bg-red-500 px-1 py-0.5 text-[8px] font-bold text-white">VIDEO</div>
+                          </div>
+                        ) : (
+                          <img
+                            src={image.url}
+                            alt="Captured content"
+                            className="h-full w-full object-cover cursor-pointer"
+                            onClick={() => setSelectedImageIndex(activeIndex)}
+                          />
+                        )}
                         {isLabelingImage === image.id && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                             <Loader2 className="h-5 w-5 text-white animate-spin" />
                           </div>
                         )}
-                        {/* Caption display */}
-                        {image.caption && (
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1.5 py-1 backdrop-blur-sm">
-                            <p className="text-[9px] text-white leading-tight line-clamp-2">
-                              {image.caption}
-                            </p>
+                        {recordingForPhotoId === image.id && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+                            <div className="flex flex-col items-center gap-1">
+                              <Mic className="h-5 w-5 text-red-500 animate-pulse" />
+                              <button onClick={(e) => { e.stopPropagation(); stopPhotoVoiceNote(); }} className="rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-bold text-white">Stop</button>
+                            </div>
                           </div>
                         )}
-                        {/* Edit caption button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditCaption(image.id);
-                          }}
-                          className="absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70"
-                        >
+                        {image.caption && (
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1.5 py-1 backdrop-blur-sm">
+                            <p className="text-[9px] text-white leading-tight line-clamp-2">{image.voiceNote ? '🎙 ' : ''}{image.caption}</p>
+                          </div>
+                        )}
+                        {!image.isVideo && recordingForPhotoId !== image.id && (
+                          <button onClick={(e) => { e.stopPropagation(); startPhotoVoiceNote(image.id); }}
+                            className={`absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-full backdrop-blur-sm ${image.voiceNote ? 'bg-green-500 text-white' : 'bg-black/50 text-white/90 hover:bg-black/70'}`}
+                            title="Record voice note">
+                            <Mic className="h-3 w-3" />
+                          </button>
+                        )}
+                        <button onClick={(e) => { e.stopPropagation(); handleEditCaption(image.id); }}
+                          className="absolute top-1 left-7 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70">
                           <Pencil className="h-3 w-3" />
                         </button>
-                        {/* Annotate button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setAnnotatingImageId(image.id);
-                          }}
-                          className="absolute top-1 left-7 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white backdrop-blur-sm hover:bg-primary/80"
-                          title="Annotate photo"
-                        >
-                          <PenTool className="h-3 w-3" />
-                        </button>
-                        {/* Link content button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toast.info(t('mediaLink.linkToPhoto') + " - " + t('mediaLink.needsProject'));
-                          }}
-                          className="absolute top-1 left-[52px] flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-foreground backdrop-blur-sm hover:bg-secondary/80"
-                          title={t('mediaLink.linkToPhoto')}
-                        >
-                          <Link2 className="h-3 w-3" />
-                        </button>
-                        <button
-                          onClick={() => deleteImage(image.id)}
-                          className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70"
-                        >
+                        {!image.isVideo && (
+                          <button onClick={(e) => { e.stopPropagation(); setAnnotatingImageId(image.id); }}
+                            className="absolute top-1 left-[52px] flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white backdrop-blur-sm hover:bg-primary/80" title="Annotate photo">
+                            <PenTool className="h-3 w-3" />
+                          </button>
+                        )}
+                        <button onClick={() => deleteImage(image.id)}
+                          className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70">
                           <Trash2 className="h-3 w-3" />
                         </button>
                       </>

@@ -10,6 +10,7 @@ const corsHeaders = {
 // Input validation schema - ~7MB max for base64 image
 const requestSchema = z.object({
   imageBase64: z.string().min(1, "Image data is required").max(10_000_000, "Image is too large (max ~7MB)"),
+  voiceNote: z.string().max(5000).optional(),
 });
 
 // Retry configuration
@@ -32,10 +33,7 @@ async function logMetrics(params: {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (!supabaseUrl || !supabaseKey) {
-      console.warn('Supabase credentials not configured for metrics logging');
-      return;
-    }
+    if (!supabaseUrl || !supabaseKey) return;
 
     const supabase = createClient(supabaseUrl, supabaseKey);
     await supabase.from('ai_metrics').insert({
@@ -62,7 +60,7 @@ async function callAI(apiKey: string, messages: any[], model: string): Promise<R
     body: JSON.stringify({
       model,
       messages,
-      max_tokens: 100,
+      max_tokens: 150,
       temperature: 0.3,
     }),
   });
@@ -72,16 +70,14 @@ async function callWithRetryAndFallback(
   apiKey: string, 
   messages: any[]
 ): Promise<{ response: Response; modelUsed: string; usedFallback: boolean }> {
-  // Try primary model
   let response = await callAI(apiKey, messages, PRIMARY_MODEL);
   
   if (response.ok) {
     return { response, modelUsed: PRIMARY_MODEL, usedFallback: false };
   }
   
-  // If rate limited or timeout, retry once after delay
   if (response.status === 429 || response.status === 504 || response.status === 408) {
-    console.log(`Primary model ${PRIMARY_MODEL} failed with ${response.status}, retrying after delay...`);
+    console.log(`Primary model failed with ${response.status}, retrying...`);
     await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
     
     response = await callAI(apiKey, messages, PRIMARY_MODEL);
@@ -89,8 +85,7 @@ async function callWithRetryAndFallback(
       return { response, modelUsed: PRIMARY_MODEL, usedFallback: false };
     }
     
-    // If still failing, try fallback model
-    console.log(`Primary model retry failed, switching to fallback model ${FALLBACK_MODEL}...`);
+    console.log(`Switching to fallback model ${FALLBACK_MODEL}...`);
     response = await callAI(apiKey, messages, FALLBACK_MODEL);
     return { response, modelUsed: FALLBACK_MODEL, usedFallback: true };
   }
@@ -99,7 +94,6 @@ async function callWithRetryAndFallback(
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -111,7 +105,6 @@ serve(async (req) => {
   try {
     const body = await req.json();
     
-    // Validate input
     const validationResult = requestSchema.safeParse(body);
     if (!validationResult.success) {
       console.error("Validation error:", validationResult.error.flatten());
@@ -121,24 +114,36 @@ serve(async (req) => {
       );
     }
     
-    const { imageBase64 } = validationResult.data;
+    const { imageBase64, voiceNote } = validationResult.data;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY is not configured');
       return new Response(
         JSON.stringify({ error: 'AI service not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Generating label for photo...');
+    console.log('Generating label for photo...', { hasVoiceNote: !!voiceNote });
 
-    const messages = [
-      {
-        role: 'system',
-        content: `You are a field report photo labeling assistant. Generate a brief, descriptive label for construction/field work photos. 
-        
+    // Choose prompt based on whether a voice note was provided
+    const systemPrompt = voiceNote
+      ? `You are a field report photo labeling assistant. The user has recorded a voice note describing this photo. 
+Your job is to create a refined, professional label based PRIMARILY on the user's spoken description.
+
+CRITICAL RULES:
+- Use the user's voice note as the PRIMARY source of information
+- You may enhance clarity, grammar, or add minor visual details from the photo that support the user's description
+- DO NOT add observations that are outside the scope of what the user described
+- DO NOT mention objects or features in the photo that the user did not reference
+- Keep the label concise (5-20 words)
+- Be professional and factual
+
+The user's voice note: "${voiceNote}"
+
+Respond with ONLY the refined label text, no quotes or additional formatting.`
+      : `You are a field report photo labeling assistant. Generate a brief, descriptive label for construction/field work photos. 
+
 Your label should:
 - Be concise (5-15 words maximum)
 - Describe what's visible in the photo
@@ -146,30 +151,26 @@ Your label should:
 - Focus on the main subject or work being documented
 - Include location details if visible (e.g., "north wall", "roof section")
 
-Examples of good labels:
-- "Electrical panel installation in basement utility room"
-- "Foundation concrete pour, section A complete"
-- "HVAC ductwork routing through ceiling joists"
-- "Water damage on south wall near window frame"
-- "Completed drywall installation in master bedroom"
+Respond with ONLY the label text, no quotes or additional formatting.`;
 
-Respond with ONLY the label text, no quotes or additional formatting.`
+    const userContent: any[] = [
+      {
+        type: 'text',
+        text: voiceNote 
+          ? 'Refine this voice note into a professional photo label based on the image:'
+          : 'Generate a brief descriptive label for this field work photo:'
       },
       {
-        role: 'user',
-        content: [
-          {
-            type: 'text',
-            text: 'Generate a brief descriptive label for this field work photo:'
-          },
-          {
-            type: 'image_url',
-            image_url: {
-              url: imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`
-            }
-          }
-        ]
+        type: 'image_url',
+        image_url: {
+          url: imageBase64.startsWith('data:') ? imageBase64 : `data:image/jpeg;base64,${imageBase64}`
+        }
       }
+    ];
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userContent }
     ];
 
     const result = await callWithRetryAndFallback(LOVABLE_API_KEY, messages);
@@ -181,44 +182,29 @@ Respond with ONLY the label text, no quotes or additional formatting.`
       const errorText = await response.text();
       console.error('AI gateway error:', response.status, errorText);
       
-      await logMetrics({
-        modelUsed,
-        usedFallback,
-        latencyMs: Date.now() - startTime,
-        status: 'error',
-        errorMessage: `AI gateway error: ${response.status}`,
-      });
+      await logMetrics({ modelUsed, usedFallback, latencyMs: Date.now() - startTime, status: 'error', errorMessage: `AI gateway error: ${response.status}` });
       
       if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
       if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'AI credits depleted. Please add credits to continue.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return new Response(JSON.stringify({ error: 'AI credits depleted. Please add credits to continue.' }), { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
       
-      return new Response(
-        JSON.stringify({ error: 'Failed to generate label' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // If AI fails but we have a voice note, use it directly
+      if (voiceNote) {
+        return new Response(JSON.stringify({ label: voiceNote }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      
+      return new Response(JSON.stringify({ error: 'Failed to generate label' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const data = await response.json();
-    const label = data.choices?.[0]?.message?.content?.trim() || 'Field photo';
+    const label = data.choices?.[0]?.message?.content?.trim() || voiceNote || 'Field photo';
 
     console.log('Generated label using model:', modelUsed, '- Label:', label);
 
-    await logMetrics({
-      modelUsed,
-      usedFallback,
-      latencyMs: Date.now() - startTime,
-      status: 'success',
-    });
+    await logMetrics({ modelUsed, usedFallback, latencyMs: Date.now() - startTime, status: 'success' });
 
     return new Response(
       JSON.stringify({ label }),
@@ -227,17 +213,10 @@ Respond with ONLY the label text, no quotes or additional formatting.`
   } catch (error: unknown) {
     console.error('Error in label-photo function:', error);
     
-    await logMetrics({
-      modelUsed,
-      usedFallback,
-      latencyMs: Date.now() - startTime,
-      status: 'error',
-      errorMessage: error instanceof Error ? error.message : 'Unknown error',
-    });
+    await logMetrics({ modelUsed, usedFallback, latencyMs: Date.now() - startTime, status: 'error', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

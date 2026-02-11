@@ -13,6 +13,7 @@ const reportTypeSchema = z.enum(['field', 'daily', 'weekly', 'monthly', 'site_su
 const requestSchema = z.object({
   description: z.string().max(50000).optional(),
   imageDataUrls: z.array(z.string().max(10_000_000)).max(20).optional(),
+  imageCaptions: z.array(z.string().max(2000)).max(20).optional(),
   reportType: reportTypeSchema.optional().default('daily'),
   includedDailyReports: z.array(z.string().max(50000)).max(7).optional(),
   includedWeeklyReports: z.array(z.string().max(100000)).max(5).optional(),
@@ -348,13 +349,12 @@ serve(async (req) => {
       );
     }
     
-    const { description, imageDataUrls, reportType, includedDailyReports, includedWeeklyReports } = validationResult.data;
+    const { description, imageDataUrls, imageCaptions, reportType, includedDailyReports, includedWeeklyReports } = validationResult.data;
     console.log("Generating report summary", { 
       descriptionLength: description?.length,
       imageCount: imageDataUrls?.length,
+      captionCount: imageCaptions?.length,
       reportType,
-      includedDailyReportsCount: includedDailyReports?.length,
-      includedWeeklyReportsCount: includedWeeklyReports?.length,
       timestamp: new Date().toISOString() 
     });
 
@@ -387,6 +387,21 @@ serve(async (req) => {
         type: "text",
         text: `Field Notes: ${description}`
       });
+    }
+
+    // Add per-photo voice notes/captions as context
+    if (imageCaptions && imageCaptions.length > 0) {
+      const captionList = imageCaptions
+        .map((caption, i) => caption ? `Photo ${i + 1}: ${caption}` : null)
+        .filter(Boolean)
+        .join('\n');
+      
+      if (captionList) {
+        content.push({
+          type: "text",
+          text: `User's spoken descriptions for each photo (use these as the PRIMARY source for photo descriptions - do NOT add observations outside the scope of these notes):\n${captionList}`
+        });
+      }
     }
 
     if (imageDataUrls && imageDataUrls.length > 0) {
