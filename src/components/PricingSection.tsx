@@ -394,7 +394,9 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
                     <span className="text-4xl font-bold">{displayPrice}</span>
                     <span className="text-muted-foreground">{plan.period}</span>
                     <div className="text-sm text-muted-foreground mt-1 h-5">
-                      {plan.period && (billingPeriod === "annual" ? "Billed annually" : "Billed monthly")}
+                      {plan.period && billingPeriod === "annual" 
+                        ? `$${parseInt(displayPrice.replace('$', '')) * 12}/year billed annually`
+                        : plan.period ? "Billed monthly" : ""}
                     </div>
                     {plan.name === "Pro Plan 14-day Trial" && (
                       <div className="text-xs text-muted-foreground mt-3 leading-relaxed">
