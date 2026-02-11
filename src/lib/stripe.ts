@@ -1,25 +1,25 @@
 // Stripe price configuration
-// NOTE: These are TEST MODE price IDs. Update to live price IDs for production.
+// NOTE: Price IDs removed until March 1st 2026 launch. Do NOT add IDs before then.
 export const STRIPE_PRICES = {
   pro: {
     monthly: {
-      priceId: "price_1Sw6tQ2cM0XKZQKCq1umVb9p", // TEST: $1 Pro Plan
-      amount: 1,
+      priceId: "", // TODO: Add live price ID for March 1st 2026 launch
+      amount: 29,
     },
     annual: {
-      priceId: "price_1Sw6tQ2cM0XKZQKCq1umVb9p", // TEST: $1 Pro Plan
-      amount: 1,
+      priceId: "", // TODO: Add live price ID for March 1st 2026 launch
+      amount: 24,
     },
     name: "Pro",
   },
   premium: {
     monthly: {
-      priceId: "price_1Sw6tx2cM0XKZQKC3prvNFZp", // TEST: $1 Premium Plan
-      amount: 1,
+      priceId: "", // TODO: Add live price ID for March 1st 2026 launch
+      amount: 79,
     },
     annual: {
-      priceId: "price_1Sw6tx2cM0XKZQKC3prvNFZp", // TEST: $1 Premium Plan
-      amount: 1,
+      priceId: "", // TODO: Add live price ID for March 1st 2026 launch
+      amount: 64,
     },
     name: "Premium",
   },

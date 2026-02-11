@@ -13,9 +13,10 @@ const logStep = (step: string, details?: any) => {
 };
 
 // Price ID to plan mapping
+// TODO: Add live price ID mappings for March 1st 2026 launch
 const PRICE_TO_PLAN: Record<string, string> = {
-  "price_1Sw6tQ2cM0XKZQKCq1umVb9p": "pro",
-  "price_1Sw6tx2cM0XKZQKC3prvNFZp": "premium",
+  // "price_LIVE_PRO_ID": "pro",
+  // "price_LIVE_PREMIUM_ID": "premium",
 };
 
 serve(async (req) => {
