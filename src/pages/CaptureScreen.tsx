@@ -324,7 +324,54 @@ const CaptureScreen = () => {
       setMediaRecorder(null);
       setIsRecording(false);
       setIsPaused(false);
-      setShowLiveCamera(false);
+      // Camera stays open — user can start a new recording
+    }
+  };
+
+  const handleStartNewRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      const mimeTypes = [
+        'audio/webm',
+        'audio/webm;codecs=opus',
+        'audio/mp4',
+        'audio/mpeg',
+        'audio/wav'
+      ];
+      
+      let selectedMimeType = '';
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          selectedMimeType = mimeType;
+          break;
+        }
+      }
+      
+      const recorderOptions = selectedMimeType ? { mimeType: selectedMimeType } : {};
+      const recorder = new MediaRecorder(stream, recorderOptions);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(chunks, { type: recorder.mimeType });
+        await transcribeAudio(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setAudioChunks(chunks);
+      setIsRecording(true);
+      setIsPaused(false);
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      toast.error(t('common.microphoneError'));
     }
   };
 
@@ -886,6 +933,7 @@ const CaptureScreen = () => {
         isPaused={isPaused}
         onPauseRecording={handlePauseRecording}
         onStopRecording={handleStopRecording}
+        onStartRecording={handleStartNewRecording}
         maxRecordingSeconds={features.maxRecordingSeconds}
         onRecordingLimitReached={() => {
           toast.info(t('captureScreen.upgradeToPremium'));

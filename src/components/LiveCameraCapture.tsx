@@ -19,6 +19,7 @@ interface LiveCameraCaptureProps {
   isPaused?: boolean;
   onPauseRecording?: () => void;
   onStopRecording?: () => void;
+  onStartRecording?: () => void;
   maxRecordingSeconds?: number;
   onRecordingLimitReached?: () => void;
 }
@@ -31,7 +32,8 @@ export const LiveCameraCapture = ({
   isPaused = false,
   onPauseRecording,
   onStopRecording,
-  maxRecordingSeconds = 300, // Default 5 minutes
+  onStartRecording,
+  maxRecordingSeconds = 300,
   onRecordingLimitReached,
 }: LiveCameraCaptureProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -781,7 +783,7 @@ export const LiveCameraCapture = ({
                 </>
               ) : (
                 <>
-                  {/* Gallery preview thumbnail */}
+                  {/* Left: Gallery preview / Done */}
                   <div className="relative flex flex-col items-center gap-1">
                     <button
                       onClick={handleDone}
@@ -808,18 +810,41 @@ export const LiveCameraCapture = ({
                     )}
                   </div>
 
-                  {/* Capture button */}
-                  <button
-                    onClick={capturePhoto}
-                    disabled={!isReady}
-                    className="flex h-20 w-20 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-2xl"
-                  >
-                    <div className="h-16 w-16 rounded-full border-4 border-black/10 bg-white flex items-center justify-center">
-                      <Camera className="h-10 w-10 text-black" />
-                    </div>
-                  </button>
+                  {/* Center: Record button (red circle) to start new recording */}
+                  {onStartRecording ? (
+                    <button
+                      onClick={onStartRecording}
+                      className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all border-2 border-white/30"
+                    >
+                      <div className="h-16 w-16 rounded-full bg-red-500 hover:bg-red-600 transition-colors" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={capturePhoto}
+                      disabled={!isReady}
+                      className="flex h-20 w-20 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-2xl"
+                    >
+                      <div className="h-16 w-16 rounded-full border-4 border-black/10 bg-white flex items-center justify-center">
+                        <Camera className="h-10 w-10 text-black" />
+                      </div>
+                    </button>
+                  )}
 
-                  <div className="w-16"></div>
+                  {/* Right: Shutter button for snapshots */}
+                  <div className="relative flex flex-col items-center gap-1">
+                    <button
+                      onClick={capturePhoto}
+                      disabled={!isReady}
+                      className="flex h-16 w-16 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-lg border-2 border-white/80"
+                    >
+                      <div className="h-12 w-12 rounded-full bg-white" />
+                    </button>
+                    {capturedImages.length > 0 && (
+                      <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
+                        {capturedImages.length}
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
             </div>
