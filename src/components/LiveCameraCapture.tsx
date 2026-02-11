@@ -856,6 +856,7 @@ export const LiveCameraCapture = ({
                         <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
                           {capturedImages.length}
                         </div>
+                        <span className="text-sm font-semibold uppercase tracking-wider text-white">Gallery</span>
                       </div>
                     ) : (
                       <div className="w-16"></div>
