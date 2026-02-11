@@ -786,12 +786,14 @@ export const LiveCameraCapture = ({
                     )}
                   </div>
 
-                  {/* Center: Stop recording button (red square in circle) */}
+                  {/* Center: Stop recording button — shrinks when paused (iPhone-style) */}
                   <button
                     onClick={onStopRecording}
-                    className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all border-2 border-white/30"
+                    className={`flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300 border-2 border-white/30 ${
+                      isPaused ? 'h-16 w-16' : 'h-20 w-20'
+                    }`}
                   >
-                    <div className="h-8 w-8 rounded-md bg-red-500" />
+                    <div className="h-7 w-7 rounded-[5px] bg-red-500 transition-all duration-300" />
                   </button>
 
                   {/* Right: Shutter button for photo snapshots */}
@@ -843,9 +845,9 @@ export const LiveCameraCapture = ({
                   {cameraMode === 'video' && onStartRecording ? (
                     <button
                       onClick={onStartRecording}
-                      className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all border-2 border-white/30"
+                      className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300 border-2 border-white/30"
                     >
-                      <div className="h-16 w-16 rounded-full bg-red-500 hover:bg-red-600 transition-colors" />
+                      <div className="h-16 w-16 rounded-full bg-red-500 hover:bg-red-600 transition-all duration-300" />
                     </button>
                   ) : (
                     <button
