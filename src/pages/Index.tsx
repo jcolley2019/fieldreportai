@@ -129,20 +129,13 @@ const Index = () => {
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('first_name, last_name, company_name, trial_start_date, current_plan')
+      .select('trial_start_date, current_plan')
       .eq('id', user.id)
       .maybeSingle();
 
     if (profileError) {
       console.error('Error fetching profile:', profileError);
       return;
-    }
-
-    const isProfileComplete = profile?.first_name && profile?.last_name && profile?.company_name;
-    const skipOnboarding = localStorage.getItem('skipOnboarding') === 'true';
-    
-    if (!isProfileComplete && !skipOnboarding) {
-      navigate("/onboarding");
     }
 
     // Check if user is on trial and set trial start date
