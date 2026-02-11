@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
-import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff, Grid3x3, Sparkles, Maximize2, Minimize2, ChevronDown, Pause, Square } from "lucide-react";
+import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff, Grid3x3, Sparkles, Maximize2, Minimize2, ChevronDown, Pause, Square, Video } from "lucide-react";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -42,6 +42,7 @@ export const LiveCameraCapture = ({
   const [capturedImages, setCapturedImages] = useState<File[]>([]);
   const [isReady, setIsReady] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [cameraMode, setCameraMode] = useState<'photo' | 'video'>('photo');
   
   // Detect if device is desktop/laptop (no touch or large screen without touch)
   const isDesktop = typeof window !== 'undefined' && (
@@ -732,6 +733,34 @@ export const LiveCameraCapture = ({
             </div>
           )}
 
+          {/* Mode Toggle (VIDEO / PHOTO) */}
+          {!isRecording && (
+            <div className="shrink-0 flex items-center justify-center py-2 bg-black/90">
+              <div className="flex items-center gap-6">
+                <button
+                  onClick={() => setCameraMode('video')}
+                  className={`text-sm font-semibold uppercase tracking-wider transition-all ${
+                    cameraMode === 'video'
+                      ? 'text-yellow-500'
+                      : 'text-white/50 hover:text-white/80'
+                  }`}
+                >
+                  Video
+                </button>
+                <button
+                  onClick={() => setCameraMode('photo')}
+                  className={`text-sm font-semibold uppercase tracking-wider transition-all ${
+                    cameraMode === 'photo'
+                      ? 'text-yellow-500'
+                      : 'text-white/50 hover:text-white/80'
+                  }`}
+                >
+                  Photo
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Bottom Controls */}
           <div className="shrink-0 bg-black/95 backdrop-blur-sm p-6">
             <div className="flex items-center justify-between max-w-[600px] mx-auto">
@@ -810,8 +839,8 @@ export const LiveCameraCapture = ({
                     )}
                   </div>
 
-                  {/* Center: Record button (red circle) to start new recording */}
-                  {onStartRecording ? (
+                  {/* Center: Shutter (photo mode) or Record (video mode) */}
+                  {cameraMode === 'video' && onStartRecording ? (
                     <button
                       onClick={onStartRecording}
                       className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all border-2 border-white/30"
@@ -830,21 +859,25 @@ export const LiveCameraCapture = ({
                     </button>
                   )}
 
-                  {/* Right: Shutter button for snapshots */}
-                  <div className="relative flex flex-col items-center gap-1">
-                    <button
-                      onClick={capturePhoto}
-                      disabled={!isReady}
-                      className="flex h-16 w-16 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-lg border-2 border-white/80"
-                    >
-                      <div className="h-12 w-12 rounded-full bg-white" />
-                    </button>
-                    {capturedImages.length > 0 && (
-                      <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
-                        {capturedImages.length}
-                      </div>
-                    )}
-                  </div>
+                  {/* Right: Shutter in video mode, empty in photo mode */}
+                  {cameraMode === 'video' ? (
+                    <div className="relative flex flex-col items-center gap-1">
+                      <button
+                        onClick={capturePhoto}
+                        disabled={!isReady}
+                        className="flex h-16 w-16 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-lg border-2 border-white/80"
+                      >
+                        <div className="h-12 w-12 rounded-full bg-white" />
+                      </button>
+                      {capturedImages.length > 0 && (
+                        <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
+                          {capturedImages.length}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="w-16"></div>
+                  )}
                 </>
               )}
             </div>
