@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Building2, Download, Edit2, Save, X, Link2, FileText, Printer, Cloud, Loader2, Check, ChevronDown, Link } from "lucide-react";
+import { Building2, Download, Edit2, Save, X, Link2, FileText, Printer, Cloud, Loader2, Check, ChevronDown, Link, Mic, MicOff } from "lucide-react";
+import { useVoiceTranscription } from "@/hooks/useVoiceTranscription";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
@@ -53,7 +54,17 @@ const FinalReport = () => {
   const [isLoading, setIsLoading] = useState(!reportData);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editedContent, setEditedContent] = useState<{ [key: string]: string }>({});
-const [isSaving, setIsSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Voice transcription for inline editing
+  const voiceTranscription = useVoiceTranscription((text: string) => {
+    if (editingSection) {
+      setEditedContent(prev => ({
+        ...prev,
+        [editingSection]: prev[editingSection] ? `${prev[editingSection]}\n${text}` : text
+      }));
+    }
+  });
   const [showSuccess, setShowSuccess] = useState(false);
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
 
@@ -820,7 +831,7 @@ const [isSaving, setIsSaving] = useState(false);
                                 content={editedContent['summary'] || ''}
                                 onChange={(content) => setEditedContent({ ...editedContent, summary: content })}
                               />
-                              <div className="flex gap-2">
+                              <div className="flex items-center gap-2">
                                 <Button
                                   size="sm"
                                   onClick={() => handleSaveSection('summary')}
@@ -838,6 +849,27 @@ const [isSaving, setIsSaving] = useState(false);
                                   <X className="h-4 w-4 mr-1" />
                                   {t('finalReport.cancel')}
                                 </Button>
+                                <div className="ml-auto flex items-center gap-2">
+                                  {voiceTranscription.isRecording && (
+                                    <span className="text-xs text-red-400 animate-pulse">
+                                      ● {voiceTranscription.formatTime(voiceTranscription.recordingTime)}
+                                    </span>
+                                  )}
+                                  {voiceTranscription.isTranscribing && (
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                      <Loader2 className="h-3 w-3 animate-spin" /> Transcribing...
+                                    </span>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant={voiceTranscription.isRecording ? "destructive" : "outline"}
+                                    onClick={voiceTranscription.isRecording ? voiceTranscription.stopRecording : voiceTranscription.startRecording}
+                                    disabled={voiceTranscription.isTranscribing}
+                                    className={voiceTranscription.isRecording ? "animate-pulse" : ""}
+                                  >
+                                    {voiceTranscription.isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                           ) : (
@@ -869,7 +901,7 @@ const [isSaving, setIsSaving] = useState(false);
                                 content={editedContent['keypoints'] || ''}
                                 onChange={(content) => setEditedContent({ ...editedContent, keypoints: content })}
                               />
-                              <div className="flex gap-2">
+                              <div className="flex items-center gap-2">
                                 <Button
                                   size="sm"
                                   onClick={() => handleSaveSection('keypoints')}
@@ -887,6 +919,27 @@ const [isSaving, setIsSaving] = useState(false);
                                   <X className="h-4 w-4 mr-1" />
                                   {t('finalReport.cancel')}
                                 </Button>
+                                <div className="ml-auto flex items-center gap-2">
+                                  {voiceTranscription.isRecording && (
+                                    <span className="text-xs text-red-400 animate-pulse">
+                                      ● {voiceTranscription.formatTime(voiceTranscription.recordingTime)}
+                                    </span>
+                                  )}
+                                  {voiceTranscription.isTranscribing && (
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                      <Loader2 className="h-3 w-3 animate-spin" /> Transcribing...
+                                    </span>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant={voiceTranscription.isRecording ? "destructive" : "outline"}
+                                    onClick={voiceTranscription.isRecording ? voiceTranscription.stopRecording : voiceTranscription.startRecording}
+                                    disabled={voiceTranscription.isTranscribing}
+                                    className={voiceTranscription.isRecording ? "animate-pulse" : ""}
+                                  >
+                                    {voiceTranscription.isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                           ) : (
@@ -918,7 +971,7 @@ const [isSaving, setIsSaving] = useState(false);
                                 content={editedContent['actions'] || ''}
                                 onChange={(content) => setEditedContent({ ...editedContent, actions: content })}
                               />
-                              <div className="flex gap-2">
+                              <div className="flex items-center gap-2">
                                 <Button
                                   size="sm"
                                   onClick={() => handleSaveSection('actions')}
@@ -936,6 +989,27 @@ const [isSaving, setIsSaving] = useState(false);
                                   <X className="h-4 w-4 mr-1" />
                                   {t('finalReport.cancel')}
                                 </Button>
+                                <div className="ml-auto flex items-center gap-2">
+                                  {voiceTranscription.isRecording && (
+                                    <span className="text-xs text-red-400 animate-pulse">
+                                      ● {voiceTranscription.formatTime(voiceTranscription.recordingTime)}
+                                    </span>
+                                  )}
+                                  {voiceTranscription.isTranscribing && (
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                      <Loader2 className="h-3 w-3 animate-spin" /> Transcribing...
+                                    </span>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant={voiceTranscription.isRecording ? "destructive" : "outline"}
+                                    onClick={voiceTranscription.isRecording ? voiceTranscription.stopRecording : voiceTranscription.startRecording}
+                                    disabled={voiceTranscription.isTranscribing}
+                                    className={voiceTranscription.isRecording ? "animate-pulse" : ""}
+                                  >
+                                    {voiceTranscription.isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                           ) : (

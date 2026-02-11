@@ -103,7 +103,8 @@ async function callWithRetryAndFallback(
 }
 
 const getSystemPrompt = (reportType: ReportType, includedDailyReports?: string[], includedWeeklyReports?: string[]): string => {
-  const baseInstructions = "You are a professional field report assistant. Analyze the provided field notes and images to create a clear, structured report.";
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const baseInstructions = `You are a professional field report assistant. Analyze the provided field notes and images to create a clear, structured report. Today's date is ${today}.`;
   
   // Field Report - Quick jobsite documentation
   if (reportType === 'field') {
@@ -147,7 +148,7 @@ Keep the tone professional and concise. Focus on observable facts and field cond
 Format your response EXACTLY as follows for a DAILY REPORT:
 
 DATE & WEATHER:
-[Date and weather conditions if mentioned, otherwise state "Not specified"]
+[Always include today's date: ${today}. Include weather conditions if mentioned by the user, otherwise state "Weather: Not specified"]
 
 WORK COMPLETED TODAY:
 • [Specific task or activity completed]
