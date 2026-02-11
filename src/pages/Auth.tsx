@@ -120,16 +120,35 @@ const Auth = () => {
   };
 
   useEffect(() => {
-    // Check if user is already logged in
+    // Listen for auth state changes to handle redirects reliably
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+          // If coming from guest checkout, link the subscription
+          if (sessionId) {
+            await linkSubscriptionToAccount();
+          }
+          
+          // If there's a redirect URL, go there instead of dashboard
+          if (redirectUrl) {
+            const fullRedirect = pendingPlan && pendingBilling 
+              ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
+              : redirectUrl;
+            navigate(fullRedirect);
+          } else {
+            navigate("/dashboard");
+          }
+        }
+      }
+    );
+
+    // Also check on mount for existing session
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // If coming from guest checkout, link the subscription
         if (sessionId) {
           await linkSubscriptionToAccount();
         }
-        
-        // If there's a redirect URL, go there instead of dashboard
         if (redirectUrl) {
           const fullRedirect = pendingPlan && pendingBilling 
             ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
@@ -141,6 +160,10 @@ const Auth = () => {
       }
     };
     checkUser();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate, redirectUrl, pendingPlan, pendingBilling, sessionId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
