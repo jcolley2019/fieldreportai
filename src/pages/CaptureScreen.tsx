@@ -971,15 +971,23 @@ const CaptureScreen = () => {
           <div className="relative w-full h-full flex items-center justify-center">
             {selectedImageIndex !== null && activeImages[selectedImageIndex] && (
               <>
-                <img
-                  src={activeImages[selectedImageIndex].url}
-                  alt="Full size view"
-                  className="max-w-full max-h-[95vh] object-contain transition-transform duration-200"
-                  style={{
-                    transform: `scale(${imageScale}) translate(${imagePosition.x}px, ${imagePosition.y}px)`,
-                    touchAction: 'none'
-                  }}
-                />
+                {activeImages[selectedImageIndex].isVideo ? (
+                  <video
+                    src={activeImages[selectedImageIndex].url}
+                    controls
+                    className="max-w-full max-h-[80vh] object-contain"
+                  />
+                ) : (
+                  <img
+                    src={activeImages[selectedImageIndex].url}
+                    alt="Full size view"
+                    className="max-w-full max-h-[80vh] object-contain transition-transform duration-200"
+                    style={{
+                      transform: `scale(${imageScale}) translate(${imagePosition.x}px, ${imagePosition.y}px)`,
+                      touchAction: 'none'
+                    }}
+                  />
+                )}
                 
                 {/* GPS & Timestamp overlay */}
                 <PhotoTimestamp
@@ -991,14 +999,61 @@ const CaptureScreen = () => {
                   className="pointer-events-none"
                 />
                 
-                {/* Annotate button in top-right */}
-                <button
-                  onClick={() => setAnnotatingImageId(activeImages[selectedImageIndex].id)}
-                  className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white backdrop-blur-sm hover:bg-primary/80 transition-all"
-                  title="Annotate photo"
-                >
-                  <PenTool className="h-5 w-5" />
-                </button>
+                {/* Top action bar */}
+                <div className="absolute top-4 right-4 flex items-center gap-2">
+                  {/* Voice note button */}
+                  {!activeImages[selectedImageIndex].isVideo && recordingForPhotoId !== activeImages[selectedImageIndex].id && (
+                    <button
+                      onClick={() => startPhotoVoiceNote(activeImages[selectedImageIndex].id)}
+                      className={`flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-sm transition-all ${activeImages[selectedImageIndex].voiceNote ? 'bg-green-500 text-white' : 'bg-black/50 text-white hover:bg-black/70'}`}
+                      title="Record voice note"
+                    >
+                      <Mic className="h-5 w-5" />
+                    </button>
+                  )}
+                  {recordingForPhotoId === activeImages[selectedImageIndex].id && (
+                    <button
+                      onClick={() => stopPhotoVoiceNote()}
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-white animate-pulse backdrop-blur-sm"
+                      title="Stop recording"
+                    >
+                      <Mic className="h-5 w-5" />
+                    </button>
+                  )}
+                  {/* Edit caption button */}
+                  <button
+                    onClick={() => handleEditCaption(activeImages[selectedImageIndex].id)}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70 transition-all"
+                    title="Edit caption"
+                  >
+                    <Pencil className="h-5 w-5" />
+                  </button>
+                  {/* Annotate button */}
+                  {!activeImages[selectedImageIndex].isVideo && (
+                    <button
+                      onClick={() => setAnnotatingImageId(activeImages[selectedImageIndex].id)}
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white backdrop-blur-sm hover:bg-primary/80 transition-all"
+                      title="Annotate photo"
+                    >
+                      <PenTool className="h-5 w-5" />
+                    </button>
+                  )}
+                  {/* Delete button */}
+                  <button
+                    onClick={() => { deleteImage(activeImages[selectedImageIndex].id); setSelectedImageIndex(null); }}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive text-white backdrop-blur-sm hover:bg-destructive/80 transition-all"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Caption overlay at bottom */}
+                {activeImages[selectedImageIndex].caption && (
+                  <div className="absolute bottom-20 left-4 right-4 bg-black/70 px-4 py-3 rounded-xl backdrop-blur-sm">
+                    <p className="text-sm text-white">{activeImages[selectedImageIndex].voiceNote ? '🎙 ' : ''}{activeImages[selectedImageIndex].caption}</p>
+                  </div>
+                )}
                 
                 {/* Navigation Arrows */}
                 {activeImages.length > 1 && (
@@ -1017,7 +1072,7 @@ const CaptureScreen = () => {
                     </button>
                     
                     {/* Image Counter */}
-                    <div className="absolute bottom-16 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
                       {selectedImageIndex + 1} / {activeImages.length}
                       {imageScale > 1 && ` • ${imageScale.toFixed(1)}x`}
                     </div>
