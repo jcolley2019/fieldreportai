@@ -21,7 +21,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import StepPreviewDialog from "@/components/StepPreviewDialog";
-
+import BetaCountdownBanner from "@/components/BetaCountdownBanner";
 const Landing = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [previewStep, setPreviewStep] = useState<'capture' | 'generate' | 'share' | null>(null);
@@ -158,6 +158,9 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-background dark">
+      {/* Beta Countdown Banner */}
+      <BetaCountdownBanner />
+
       {/* Header */}
       <header className="border-b border-border sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
