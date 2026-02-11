@@ -340,39 +340,65 @@ const ReviewSummary = () => {
 
       // Upload captured images to storage and save to media table
       if (capturedImages.length > 0) {
-        for (const image of capturedImages) {
+        console.log(`Processing ${capturedImages.length} images for upload...`);
+        for (let i = 0; i < capturedImages.length; i++) {
+          const image = capturedImages[i];
           try {
             let storagePath = '';
+            console.log(`Image ${i + 1}: base64=${!!image.base64}, url=${image.url?.substring(0, 30)}, isVideo=${image.isVideo}`);
             
             // If we have base64 data, convert to blob and upload
             if (image.base64 && image.base64.startsWith('data:')) {
-              // Convert base64 to blob
               const response = await fetch(image.base64);
               const blob = await response.blob();
+              console.log(`Image ${i + 1}: blob size=${blob.size}, type=${blob.type}`);
               
               const fileExt = image.isVideo 
                 ? 'webm' 
                 : (image.base64.includes('image/png') ? 'png' : 'jpg');
-              const fileName = `${currentReportId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+              const filePath = `${currentReportId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
               
               const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('media')
-                .upload(fileName, blob, {
-                  contentType: blob.type || 'image/jpeg',
+                .upload(filePath, blob, {
+                  contentType: blob.type || (image.isVideo ? 'video/webm' : 'image/jpeg'),
                   upsert: false
                 });
               
               if (uploadError) {
-                console.error("Error uploading image:", uploadError);
+                console.error(`Error uploading image ${i + 1}:`, uploadError);
                 continue;
               }
               
               storagePath = uploadData.path;
+            } else if (image.base64 && image.base64.startsWith('blob:')) {
+              // blob: URLs from previous page - try to fetch
+              try {
+                const response = await fetch(image.base64);
+                const blob = await response.blob();
+                const fileExt = image.isVideo ? 'webm' : 'jpg';
+                const filePath = `${currentReportId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+                
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                  .from('media')
+                  .upload(filePath, blob, {
+                    contentType: blob.type || (image.isVideo ? 'video/webm' : 'image/jpeg'),
+                    upsert: false
+                  });
+                
+                if (uploadError) {
+                  console.error(`Error uploading blob image ${i + 1}:`, uploadError);
+                  continue;
+                }
+                storagePath = uploadData.path;
+              } catch (blobErr) {
+                console.error(`Blob URL expired for image ${i + 1}, skipping:`, blobErr);
+                continue;
+              }
             } else if (image.url && !image.url.startsWith('blob:')) {
-              // If it's already a valid URL (not blob), use it
               storagePath = image.url;
             } else {
-              console.warn("Skipping image without valid data:", image.id);
+              console.warn(`Skipping image ${i + 1} without valid data`);
               continue;
             }
             
@@ -392,10 +418,12 @@ const ReviewSummary = () => {
               });
             
             if (mediaError) {
-              console.error("Error saving media record:", mediaError);
+              console.error(`Error saving media record ${i + 1}:`, mediaError);
+            } else {
+              console.log(`Image ${i + 1} saved successfully`);
             }
           } catch (err) {
-            console.error("Error processing image:", err);
+            console.error(`Error processing image ${i + 1}:`, err);
           }
         }
       }
@@ -411,17 +439,23 @@ const ReviewSummary = () => {
   const handleContinueToReport = async () => {
     setIsSaving(true);
     
-    // If in Simple Mode and no project selected, show selector
-    if (isSimpleMode && !selectedProjectId && !projectReportId) {
-      await fetchProjects();
-      setShowProjectSelector(true);
-      setIsSaving(false);
-      return;
-    }
+    try {
+      // If in Simple Mode and no project selected, show selector
+      if (isSimpleMode && !selectedProjectId && !projectReportId) {
+        await fetchProjects();
+        setShowProjectSelector(true);
+        setIsSaving(false);
+        return;
+      }
 
-    // Use selected project or existing project from state
-    await saveReportToProject(selectedProjectId || projectReportId);
-    setIsSaving(false);
+      // Use selected project or existing project from state
+      await saveReportToProject(selectedProjectId || projectReportId);
+    } catch (error) {
+      console.error("Error in handleContinueToReport:", error);
+      toast.error(t('reviewSummary.errorOccurred'));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePrint = () => {
