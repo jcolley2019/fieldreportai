@@ -53,7 +53,20 @@ const Notes = () => {
       // Start recording
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recorder = new MediaRecorder(stream);
+        
+        // Determine supported mimeType
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : MediaRecorder.isTypeSupported('audio/webm')
+            ? 'audio/webm'
+            : MediaRecorder.isTypeSupported('audio/mp4')
+              ? 'audio/mp4'
+              : '';
+        
+        const recorderOptions: MediaRecorderOptions = {};
+        if (mimeType) recorderOptions.mimeType = mimeType;
+        
+        const recorder = new MediaRecorder(stream, recorderOptions);
         const chunks: Blob[] = [];
 
         recorder.ondataavailable = (e) => {
@@ -63,7 +76,7 @@ const Notes = () => {
         };
 
         recorder.onstop = async () => {
-          const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+          const audioBlob = new Blob(chunks, { type: recorder.mimeType });
           await transcribeAudio(audioBlob);
           stream.getTracks().forEach(track => track.stop());
         };
@@ -97,10 +110,11 @@ const Notes = () => {
       reader.onloadend = async () => {
         const base64Audio = reader.result as string;
         const base64Data = base64Audio.split(',')[1];
+        const detectedMimeType = audioBlob.type || 'audio/webm';
 
         // Call transcribe-audio edge function
         const { data, error } = await supabase.functions.invoke('transcribe-audio', {
-          body: { audio: base64Data }
+          body: { audio: base64Data, mimeType: detectedMimeType }
         });
 
         if (error) {
