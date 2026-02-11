@@ -921,34 +921,32 @@ export const LiveCameraCapture = ({
                   {/* Right: Audio */}
                   <div className="flex justify-center">
                     {onAudioToggle ? (
-                      <div className="flex items-end gap-3">
-                        <div className="flex flex-col items-center gap-1">
-                          <button
-                            onClick={onAudioToggle}
-                            className={`flex h-16 w-16 items-center justify-center rounded-full transition-all ${
-                              isAudioRecording && !isPaused
-                                ? 'bg-green-500 hover:bg-green-600 animate-pulse'
-                                : isAudioRecording && isPaused
-                                  ? 'bg-red-500 hover:bg-red-600'
-                                  : 'bg-white/20 backdrop-blur-sm hover:bg-white/30'
-                            }`}
-                          >
-                            {isAudioRecording ? (
-                              isPaused ? (
-                                <MicOff className="h-7 w-7 text-white" />
-                              ) : (
-                                <Mic className="h-7 w-7 text-white" />
-                              )
+                      <div className="relative flex flex-col items-center gap-1">
+                        <button
+                          onClick={onAudioToggle}
+                          className={`flex h-16 w-16 items-center justify-center rounded-full transition-all ${
+                            isAudioRecording && !isPaused
+                              ? 'bg-green-500 hover:bg-green-600 animate-pulse'
+                              : isAudioRecording && isPaused
+                                ? 'bg-red-500 hover:bg-red-600'
+                                : 'bg-white/20 backdrop-blur-sm hover:bg-white/30'
+                          }`}
+                        >
+                          {isAudioRecording ? (
+                            isPaused ? (
+                              <MicOff className="h-7 w-7 text-white" />
                             ) : (
                               <Mic className="h-7 w-7 text-white" />
-                            )}
-                          </button>
-                          <span className="text-sm font-semibold uppercase tracking-wider text-white">
-                            AI Notes
-                          </span>
-                        </div>
+                            )
+                          ) : (
+                            <Mic className="h-7 w-7 text-white" />
+                          )}
+                        </button>
+                        <span className="text-sm font-semibold uppercase tracking-wider text-white">
+                          AI Notes
+                        </span>
                         {isAudioRecording && onStopRecording && (
-                          <div className="flex flex-col items-center gap-1">
+                          <div className="absolute -right-16 top-0 flex flex-col items-center gap-1">
                             <button
                               onClick={onStopRecording}
                               className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all border-2 border-white/30"
