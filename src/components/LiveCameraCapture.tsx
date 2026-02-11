@@ -927,17 +927,17 @@ export const LiveCameraCapture = ({
                             onClick={onAudioToggle}
                             className={`flex h-16 w-16 items-center justify-center rounded-full transition-all ${
                               isAudioRecording && !isPaused
-                                ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+                                ? 'bg-green-500 hover:bg-green-600 animate-pulse'
                                 : isAudioRecording && isPaused
-                                  ? 'bg-yellow-500 hover:bg-yellow-600'
+                                  ? 'bg-red-500 hover:bg-red-600'
                                   : 'bg-white/20 backdrop-blur-sm hover:bg-white/30'
                             }`}
                           >
                             {isAudioRecording ? (
                               isPaused ? (
-                                <Mic className="h-7 w-7 text-white" />
-                              ) : (
                                 <MicOff className="h-7 w-7 text-white" />
+                              ) : (
+                                <Mic className="h-7 w-7 text-white" />
                               )
                             ) : (
                               <Mic className="h-7 w-7 text-white" />
