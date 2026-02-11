@@ -806,7 +806,7 @@ export const LiveCameraCapture = ({
                         className={`flex h-14 w-14 items-center justify-center rounded-full transition-all ${
                           isPaused
                             ? 'bg-red-500 hover:bg-red-600'
-                            : 'bg-white/20 backdrop-blur-sm hover:bg-white/30'
+                            : 'bg-green-500 hover:bg-green-600'
                         }`}
                       >
                         {isPaused ? (
