@@ -764,29 +764,31 @@ export const LiveCameraCapture = ({
 
           {/* Bottom Controls */}
           <div className="shrink-0 bg-black/95 backdrop-blur-sm p-6">
-            <div className="flex items-center justify-between max-w-[600px] mx-auto">
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center max-w-[600px] mx-auto">
               {isRecording && cameraMode === 'video' ? (
                 <>
                   {/* Left: Gallery */}
-                  {capturedImages.length > 0 ? (
-                    <div className="relative flex flex-col items-center gap-1">
-                      <button
-                        onClick={() => setShowGalleryReview(true)}
-                        className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all overflow-hidden border-2 border-white/20"
-                      >
-                        <img 
-                          src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} 
-                          alt="Gallery"
-                          className="w-full h-full object-cover"
-                        />
-                      </button>
-                      <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
-                        {capturedImages.length}
+                  <div className="flex justify-center">
+                    {capturedImages.length > 0 ? (
+                      <div className="relative flex flex-col items-center gap-1">
+                        <button
+                          onClick={() => setShowGalleryReview(true)}
+                          className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all overflow-hidden border-2 border-white/20"
+                        >
+                          <img 
+                            src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} 
+                            alt="Gallery"
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                        <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
+                          {capturedImages.length}
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="w-16"></div>
-                  )}
+                    ) : (
+                      <div className="w-16"></div>
+                    )}
+                  </div>
 
                   {/* Center: Stop recording button */}
                   <button
@@ -797,7 +799,7 @@ export const LiveCameraCapture = ({
                   </button>
 
                   {/* Right: Pause + Shutter */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center gap-3">
                     {onPauseRecording && (
                       <button
                         onClick={onPauseRecording}
@@ -828,25 +830,27 @@ export const LiveCameraCapture = ({
               ) : cameraMode === 'video' && onStartRecording ? (
                 <>
                   {/* Left: Gallery */}
-                  {capturedImages.length > 0 ? (
-                    <div className="relative flex flex-col items-center gap-1">
-                      <button
-                        onClick={() => setShowGalleryReview(true)}
-                        className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all overflow-hidden border-2 border-white/20"
-                      >
-                        <img 
-                          src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} 
-                          alt="Gallery"
-                          className="w-full h-full object-cover"
-                        />
-                      </button>
-                      <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
-                        {capturedImages.length}
+                  <div className="flex justify-center">
+                    {capturedImages.length > 0 ? (
+                      <div className="relative flex flex-col items-center gap-1">
+                        <button
+                          onClick={() => setShowGalleryReview(true)}
+                          className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all overflow-hidden border-2 border-white/20"
+                        >
+                          <img 
+                            src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} 
+                            alt="Gallery"
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                        <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
+                          {capturedImages.length}
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="w-16"></div>
-                  )}
+                    ) : (
+                      <div className="w-16"></div>
+                    )}
+                  </div>
 
                   {/* Center: Record button */}
                   <button
@@ -857,7 +861,7 @@ export const LiveCameraCapture = ({
                   </button>
 
                   {/* Right: spacer */}
-                  <div className="w-16"></div>
+                  <div></div>
                 </>
               ) : (
                 <>
