@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { ChevronDown, ChevronUp, Pencil, Printer, Download, FolderPlus, Plus, RefreshCw } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Printer, Download, FolderPlus, Plus, RefreshCw, Save, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -106,6 +107,8 @@ const ReviewSummary = () => {
   };
 
   const [sections, setSections] = useState<SummarySection[]>(() => parseSummary(summaryText));
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+  const [editingSectionText, setEditingSectionText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   // Fetch daily reports when weekly mode is selected
@@ -201,6 +204,32 @@ const ReviewSummary = () => {
         section.id === id ? { ...section, isOpen: !section.isOpen } : section
       )
     );
+  };
+
+  const handleStartEditSection = (sectionId: string, content: string) => {
+    setEditingSectionId(sectionId);
+    setEditingSectionText(content);
+  };
+
+  const handleSaveEditSection = () => {
+    if (!editingSectionId) return;
+    setSections(prev => prev.map(s =>
+      s.id === editingSectionId ? { ...s, content: editingSectionText } : s
+    ));
+    // Rebuild summaryText from updated sections
+    const updatedSections = sections.map(s =>
+      s.id === editingSectionId ? { ...s, content: editingSectionText } : s
+    );
+    const newSummary = updatedSections.map(s => `${s.title.toUpperCase()}:\n${s.content}`).join('\n\n');
+    setSummaryText(newSummary);
+    setEditingSectionId(null);
+    setEditingSectionText("");
+    toast.success(t('reviewSummary.sectionUpdated', 'Section updated'));
+  };
+
+  const handleCancelEditSection = () => {
+    setEditingSectionId(null);
+    setEditingSectionText("");
   };
 
   const handleRegenerateSummary = async () => {
@@ -519,21 +548,43 @@ const ReviewSummary = () => {
                   <ChevronDown className="h-5 w-5 text-muted-foreground" />
                 )}
               </CollapsibleTrigger>
-              {section.content && (
-                <CollapsibleContent className="px-4 pb-4">
-                  <div className="relative rounded-lg bg-secondary p-4">
-                    <p className="pr-8 text-sm leading-relaxed text-muted-foreground">
-                      {section.content}
-                    </p>
-                    <button
-                      onClick={() => toast.success(t('reviewSummary.editModeActivated'))}
-                      className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                  </div>
-                </CollapsibleContent>
-              )}
+               {section.content && (
+                 <CollapsibleContent className="px-4 pb-4">
+                   <div className="relative rounded-lg bg-secondary p-4">
+                     {editingSectionId === section.id ? (
+                       <div className="space-y-3">
+                         <Textarea
+                           value={editingSectionText}
+                           onChange={(e) => setEditingSectionText(e.target.value)}
+                           className="min-h-[150px] resize-y rounded-lg border-none bg-muted text-sm leading-relaxed text-foreground focus-visible:ring-2 focus-visible:ring-primary"
+                         />
+                         <div className="flex gap-2">
+                           <Button size="sm" onClick={handleSaveEditSection}>
+                             <Save className="h-4 w-4 mr-1" />
+                             {t('common.save', 'Save')}
+                           </Button>
+                           <Button size="sm" variant="outline" onClick={handleCancelEditSection}>
+                             <X className="h-4 w-4 mr-1" />
+                             {t('common.cancel', 'Cancel')}
+                           </Button>
+                         </div>
+                       </div>
+                     ) : (
+                       <>
+                         <p className="pr-8 text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">
+                           {section.content}
+                         </p>
+                         <button
+                           onClick={() => handleStartEditSection(section.id, section.content!)}
+                           className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                         >
+                           <Pencil className="h-4 w-4" />
+                         </button>
+                       </>
+                     )}
+                   </div>
+                 </CollapsibleContent>
+               )}
             </Collapsible>
           ))}
         </div>
