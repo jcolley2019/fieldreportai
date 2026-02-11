@@ -25,6 +25,7 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [isLinkingSubscription, setIsLinkingSubscription] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Prevents listener double-navigation
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectUrl = searchParams.get("redirect");
@@ -123,6 +124,9 @@ const Auth = () => {
     // Listen for auth state changes to handle redirects reliably
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Skip if handleSubmit is actively running — it handles its own navigation
+        if (isSubmitting) return;
+        
         if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
           // If coming from guest checkout, link the subscription
           if (sessionId) {
@@ -164,11 +168,12 @@ const Auth = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, redirectUrl, pendingPlan, pendingBilling, sessionId]);
+  }, [navigate, redirectUrl, pendingPlan, pendingBilling, sessionId, isSubmitting]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setIsSubmitting(true);
 
     // Safety timeout to prevent infinite "Please Wait..." state
     const safetyTimeout = setTimeout(() => {
@@ -352,6 +357,7 @@ const Auth = () => {
     } finally {
       clearTimeout(safetyTimeout);
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
