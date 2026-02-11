@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
-import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff, Grid3x3, Sparkles, Maximize2, Minimize2, ChevronDown, Pause, Square, Video } from "lucide-react";
+import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff, Grid3x3, Sparkles, Maximize2, Minimize2, ChevronDown, Pause, Square, Video, Trash2, CheckSquare } from "lucide-react";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -45,6 +45,7 @@ export const LiveCameraCapture = ({
   const streamRef = useRef<MediaStream | null>(null);
   const [capturedImages, setCapturedImages] = useState<File[]>([]);
   const [showGalleryReview, setShowGalleryReview] = useState(false);
+  const [selectedGalleryItems, setSelectedGalleryItems] = useState<Set<number>>(new Set());
   const [isReady, setIsReady] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [cameraMode, setCameraMode] = useState<'photo' | 'video'>('photo');
@@ -973,7 +974,10 @@ export const LiveCameraCapture = ({
 
     {/* Gallery Review Dialog */}
     {showGalleryReview && (
-      <Dialog open={showGalleryReview} onOpenChange={setShowGalleryReview}>
+      <Dialog open={showGalleryReview} onOpenChange={(open) => {
+        setShowGalleryReview(open);
+        if (!open) setSelectedGalleryItems(new Set());
+      }}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto bg-black border-border">
           <VisuallyHidden>
             <DialogTitle>Photo Gallery</DialogTitle>
@@ -984,26 +988,109 @@ export const LiveCameraCapture = ({
               <h2 className="text-lg font-semibold text-white">
                 {capturedImages.length} Photo{capturedImages.length !== 1 ? 's' : ''} Captured
               </h2>
+              <div className="flex items-center gap-2">
+                {/* Select All / Deselect All */}
+                <button
+                  onClick={() => {
+                    if (selectedGalleryItems.size === capturedImages.length) {
+                      setSelectedGalleryItems(new Set());
+                    } else {
+                      setSelectedGalleryItems(new Set(capturedImages.map((_, i) => i)));
+                    }
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all ${
+                    selectedGalleryItems.size === capturedImages.length
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-white/10 text-white hover:bg-white/20'
+                  }`}
+                >
+                  <CheckSquare className="h-3.5 w-3.5" />
+                  {selectedGalleryItems.size === capturedImages.length ? 'Deselect All' : 'Select All'}
+                </button>
+              </div>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              {capturedImages.map((file, index) => (
-                <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-white/20 group">
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt={`Photo ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white text-[10px] font-bold">
-                    {index + 1}
-                  </div>
+
+            {/* Bulk actions bar */}
+            {selectedGalleryItems.size > 0 && (
+              <div className="flex items-center justify-between bg-white/10 rounded-xl px-4 py-2.5 backdrop-blur-sm">
+                <span className="text-sm font-medium text-white">
+                  {selectedGalleryItems.size} selected
+                </span>
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setCapturedImages(prev => prev.filter((_, i) => i !== index))}
-                    className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500/80 hover:bg-red-500 text-white transition-all"
+                    onClick={() => {
+                      setCapturedImages(prev => prev.filter((_, i) => !selectedGalleryItems.has(i)));
+                      setSelectedGalleryItems(new Set());
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/80 hover:bg-red-500 text-white text-xs font-semibold uppercase tracking-wider transition-all"
                   >
-                    <X className="h-3.5 w-3.5" />
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
                   </button>
                 </div>
-              ))}
+              </div>
+            )}
+
+            {/* Delete All button (when nothing selected) */}
+            {selectedGalleryItems.size === 0 && capturedImages.length > 1 && (
+              <button
+                onClick={() => {
+                  setCapturedImages([]);
+                  setShowGalleryReview(false);
+                }}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/40 text-red-400 text-xs font-semibold uppercase tracking-wider transition-all"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete All Photos
+              </button>
+            )}
+
+            <div className="grid grid-cols-3 gap-2">
+              {capturedImages.map((file, index) => {
+                const isSelected = selectedGalleryItems.has(index);
+                return (
+                  <div
+                    key={index}
+                    onClick={() => {
+                      setSelectedGalleryItems(prev => {
+                        const next = new Set(prev);
+                        if (next.has(index)) {
+                          next.delete(index);
+                        } else {
+                          next.add(index);
+                        }
+                        return next;
+                      });
+                    }}
+                    className={`relative aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
+                      isSelected
+                        ? 'border-primary ring-2 ring-primary/50'
+                        : 'border-white/20 hover:border-white/40'
+                    }`}
+                  >
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={`Photo ${index + 1}`}
+                      className={`w-full h-full object-cover transition-all ${isSelected ? 'opacity-70' : ''}`}
+                    />
+                    <div className="absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white text-[10px] font-bold">
+                      {index + 1}
+                    </div>
+                    {/* Selection checkbox */}
+                    <div className={`absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full transition-all ${
+                      isSelected
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-black/40 text-white/60'
+                    }`}>
+                      {isSelected ? (
+                        <Check className="h-3.5 w-3.5" />
+                      ) : (
+                        <div className="h-3.5 w-3.5 rounded-full border-2 border-white/60" />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </DialogContent>
