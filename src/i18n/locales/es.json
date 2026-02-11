@@ -848,5 +848,17 @@
     "unlinked": "Contenido desvinculado de la foto",
     "needsProject": "Vincula esta captura a un proyecto primero para agregar elementos de lista",
     "linkToPhoto": "Vincular a Foto"
+  },
+  "gettingStarted": {
+    "title": "Primeros Pasos",
+    "subtitle": "Sigue estos pasos para aprovechar al máximo tu app",
+    "step1Title": "Crear un Proyecto",
+    "step1Desc": "Comienza creando un nuevo proyecto con los detalles del trabajo, información del cliente y número de trabajo.",
+    "step2Title": "Tomar una Foto, Video o Nota",
+    "step2Desc": "Captura fotos en sitio, graba videos o dicta notas de voz — todo se organiza automáticamente.",
+    "step3Title": "Elegir una Plantilla de Reporte y Crear un Reporte",
+    "step3Desc": "Elige entre plantillas de Reporte de Campo, Diario, Semanal, Mensual o Inspección de Sitio — la IA genera tu reporte al instante.",
+    "step4Title": "Compartir con Tu Equipo",
+    "step4Desc": "Envía reportes PDF por correo, genera enlaces compartibles, exporta a Word o invita a miembros del equipo a colaborar."
   }
 }
