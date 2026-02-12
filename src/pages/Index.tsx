@@ -385,7 +385,7 @@ const Index = () => {
         )}
         
         {/* Getting Started Guide */}
-        <GettingStartedGuide />
+        <GettingStartedGuide userId={user?.id} />
 
         {/* Mode Selection Section */}
         <section className="mb-8">
