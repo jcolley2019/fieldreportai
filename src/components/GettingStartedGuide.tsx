@@ -47,27 +47,35 @@ const steps = [
   },
 ];
 
-const GettingStartedGuide: React.FC = () => {
+interface GettingStartedGuideProps {
+  userId?: string;
+}
+
+const GettingStartedGuide: React.FC<GettingStartedGuideProps> = ({ userId }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const dismissKey = userId ? `gettingStartedDismissed_${userId}` : 'gettingStartedDismissed';
+  const collapseKey = userId ? `gettingStartedCollapsed_${userId}` : 'gettingStartedCollapsed';
+
   const [dismissed, setDismissed] = useState(() => {
-    return localStorage.getItem('gettingStartedDismissed') === 'true';
+    return localStorage.getItem(dismissKey) === 'true';
   });
   const [collapsed, setCollapsed] = useState(() => {
-    return localStorage.getItem('gettingStartedCollapsed') === 'true';
+    return localStorage.getItem(collapseKey) === 'true';
   });
 
   if (dismissed) return null;
 
   const handleDismiss = () => {
-    localStorage.setItem('gettingStartedDismissed', 'true');
+    localStorage.setItem(dismissKey, 'true');
     setDismissed(true);
   };
 
   const toggleCollapsed = () => {
     const next = !collapsed;
     setCollapsed(next);
-    localStorage.setItem('gettingStartedCollapsed', String(next));
+    localStorage.setItem(collapseKey, String(next));
   };
 
   return (
