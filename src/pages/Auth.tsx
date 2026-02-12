@@ -200,11 +200,10 @@ const Auth = () => {
 
         if (error) {
           if (error.message.includes("Invalid login credentials")) {
-            // Auto-switch to signup mode so user can easily create an account
-            setIsLogin(false);
             toast({
-              title: t('auth.errors.noAccountFound') || "No account found",
-              description: t('auth.errors.switchedToSignup') || "We switched to Sign Up mode. Click the button to create your account.",
+              title: "Incorrect email or password",
+              description: "Please check your credentials and try again, or use 'Forgot Password' to reset.",
+              variant: "destructive",
             });
           } else {
             toast({
