@@ -19,6 +19,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from '@/lib/dateFormat';
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { queueMedia, fileToArrayBuffer, type PendingMediaItem } from "@/lib/offlineQueue";
 
 interface ImageItem {
   id: string;
@@ -40,6 +42,7 @@ const CaptureScreen = () => {
   const { t } = useTranslation();
   const { features } = usePlanFeatures();
   const { getCurrentPosition } = useGeolocation();
+  const isOnline = useOnlineStatus();
   const isSimpleMode = location.state?.simpleMode || false;
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<ImageItem[]>([]);
@@ -86,6 +89,15 @@ const CaptureScreen = () => {
 
   // Generate AI label for a photo
   const generateAILabel = async (imageId: string, file: File, voiceNote?: string) => {
+    // Skip AI labeling when offline — use voice note as caption fallback
+    if (!navigator.onLine) {
+      if (voiceNote) {
+        setImages(prev => prev.map(img =>
+          img.id === imageId ? { ...img, caption: voiceNote, voiceNote } : img
+        ));
+      }
+      return;
+    }
     setIsLabelingImage(imageId);
     try {
       const reader = new FileReader();
@@ -397,6 +409,10 @@ const CaptureScreen = () => {
   };
 
   const transcribeAudio = async (audioBlob: Blob) => {
+    if (!navigator.onLine) {
+      toast.info("You're offline — audio will be transcribed when you're back online.");
+      return;
+    }
     try {
       // Convert blob to base64
       const reader = new FileReader();
@@ -482,6 +498,52 @@ const CaptureScreen = () => {
     
     if (!description && activeImgs.length === 0) {
       toast.error(t('captureScreen.addContentFirst'));
+      return;
+    }
+
+    // ─── Offline: queue media locally ───
+    if (!isOnline) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          toast.error("You must be logged in to save offline content.");
+          return;
+        }
+        const reportId = location.state?.reportId || 'draft-' + Date.now();
+
+        let queued = 0;
+        for (const img of activeImgs) {
+          if (!img.file) continue;
+          const buffer = await fileToArrayBuffer(img.file);
+          const item: PendingMediaItem = {
+            id: img.id,
+            reportId,
+            userId: user.id,
+            fileData: buffer,
+            fileName: img.file.name,
+            mimeType: img.file.type,
+            fileType: img.isVideo ? 'video' : 'photo',
+            fileSize: img.file.size,
+            caption: img.caption,
+            voiceNote: img.voiceNote,
+            latitude: img.latitude,
+            longitude: img.longitude,
+            capturedAt: img.capturedAt?.toISOString(),
+            locationName: img.locationName,
+            createdAt: new Date().toISOString(),
+          };
+          await queueMedia(item);
+          queued++;
+        }
+
+        toast.success(
+          `Saved ${queued} item${queued > 1 ? 's' : ''} offline. They'll upload and process automatically when you're back online.`
+        );
+        navigate(-1);
+      } catch (err) {
+        console.error("Offline queue error:", err);
+        toast.error("Failed to save offline. Please try again.");
+      }
       return;
     }
 
