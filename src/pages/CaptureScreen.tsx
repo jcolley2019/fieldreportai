@@ -19,7 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from '@/lib/dateFormat';
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import { useGeolocation } from "@/hooks/useGeolocation";
-import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useEffectiveOffline } from "@/hooks/useEffectiveOffline";
 import { queueMedia, fileToArrayBuffer, type PendingMediaItem } from "@/lib/offlineQueue";
 
 interface ImageItem {
@@ -42,7 +42,7 @@ const CaptureScreen = () => {
   const { t } = useTranslation();
   const { features } = usePlanFeatures();
   const { getCurrentPosition } = useGeolocation();
-  const isOnline = useOnlineStatus();
+  const { isEffectivelyOffline: isOffline } = useEffectiveOffline();
   const isSimpleMode = location.state?.simpleMode || false;
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<ImageItem[]>([]);
@@ -90,7 +90,7 @@ const CaptureScreen = () => {
   // Generate AI label for a photo
   const generateAILabel = async (imageId: string, file: File, voiceNote?: string) => {
     // Skip AI labeling when offline — use voice note as caption fallback
-    if (!navigator.onLine) {
+    if (isOffline) {
       if (voiceNote) {
         setImages(prev => prev.map(img =>
           img.id === imageId ? { ...img, caption: voiceNote, voiceNote } : img
@@ -409,7 +409,7 @@ const CaptureScreen = () => {
   };
 
   const transcribeAudio = async (audioBlob: Blob) => {
-    if (!navigator.onLine) {
+    if (isOffline) {
       toast.info("You're offline — audio will be transcribed when you're back online.");
       return;
     }
@@ -502,7 +502,7 @@ const CaptureScreen = () => {
     }
 
     // ─── Offline: queue media locally ───
-    if (!isOnline) {
+    if (isOffline) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
