@@ -64,22 +64,24 @@ const CaptureScreen = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  // Load GPS stamping preference
+  // Load user preferences
+  const [photoDescriptionMode, setPhotoDescriptionMode] = useState("ai_enhanced");
   useEffect(() => {
-    const loadGpsSetting = async () => {
+    const loadPreferences = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('gps_stamping_enabled')
+          .select('gps_stamping_enabled, photo_description_mode')
           .eq('id', user.id)
           .maybeSingle();
         if (profile) {
           setGpsStampingEnabled(profile.gps_stamping_enabled || false);
+          setPhotoDescriptionMode(profile.photo_description_mode || "ai_enhanced");
         }
       }
     };
-    loadGpsSetting();
+    loadPreferences();
   }, []);
 
   // Generate AI label for a photo
@@ -521,7 +523,8 @@ const CaptureScreen = () => {
         body: { 
           description: description || "",
           imageDataUrls: validImageDataUrls,
-          imageCaptions
+          imageCaptions,
+          photoDescriptionMode
         }
       });
 

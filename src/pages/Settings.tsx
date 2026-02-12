@@ -106,6 +106,7 @@ const Settings = () => {
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useState<number | null>(null);
   const [gpsStampingEnabled, setGpsStampingEnabled] = useState(false);
+  const [photoDescriptionMode, setPhotoDescriptionMode] = useState("ai_enhanced");
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -163,6 +164,7 @@ const Settings = () => {
         setEmailTemplateMessage(profile.email_template_message || "");
         setIdleTimeoutMinutes(profile.idle_timeout_minutes);
         setGpsStampingEnabled(profile.gps_stamping_enabled || false);
+        setPhotoDescriptionMode(profile.photo_description_mode || "ai_enhanced");
         
         // Set language from profile
         if (profile.preferred_language) {
@@ -1165,13 +1167,62 @@ const Settings = () => {
                     .eq("id", userId);
                   if (error) {
                     toast.error(t('settings.saveError'));
-                    setGpsStampingEnabled(!checked); // Revert on error
+                    setGpsStampingEnabled(!checked);
                   } else {
                     toast.success(t('settings.gpsSaved'));
                   }
                 }
               }}
             />
+          </div>
+
+          {/* Photo Description Mode */}
+          <div className="flex items-center justify-between border-b border-border py-4">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-4">
+                <Camera className="h-5 w-5 text-foreground" />
+                <span className="text-base font-medium text-foreground">
+                  Photo Descriptions
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground ml-9">
+                How photo descriptions are generated in Field Reports & Site Surveys.
+              </p>
+            </div>
+          </div>
+          <div className="pl-9 pb-4">
+            <Select 
+              value={photoDescriptionMode} 
+              onValueChange={async (value) => {
+                setPhotoDescriptionMode(value);
+                if (userId) {
+                  const { error } = await supabase
+                    .from("profiles")
+                    .update({ photo_description_mode: value })
+                    .eq("id", userId);
+                  if (error) {
+                    toast.error("Failed to update photo description mode");
+                    setPhotoDescriptionMode(photoDescriptionMode);
+                  } else {
+                    const labels: Record<string, string> = {
+                      voice_only: "Voice notes only",
+                      ai_enhanced: "AI-enhanced from voice notes",
+                      ai_visual: "AI visual analysis + voice notes",
+                    };
+                    toast.success(`Photo descriptions set to: ${labels[value]}`);
+                  }
+                }
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="voice_only">Voice notes only</SelectItem>
+                <SelectItem value="ai_enhanced">AI-enhanced from voice notes</SelectItem>
+                <SelectItem value="ai_visual">AI visual analysis + voice notes</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
         </div>

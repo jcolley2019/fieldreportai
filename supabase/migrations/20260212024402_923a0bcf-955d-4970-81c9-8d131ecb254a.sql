@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN photo_description_mode text NOT NULL DEFAULT 'ai_enhanced';

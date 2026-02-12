@@ -17,6 +17,7 @@ const requestSchema = z.object({
   reportType: reportTypeSchema.optional().default('daily'),
   includedDailyReports: z.array(z.string().max(50000)).max(7).optional(),
   includedWeeklyReports: z.array(z.string().max(100000)).max(5).optional(),
+  photoDescriptionMode: z.enum(['voice_only', 'ai_enhanced', 'ai_visual']).optional().default('ai_enhanced'),
 });
 
 type ReportType = z.infer<typeof reportTypeSchema>;
@@ -102,10 +103,16 @@ async function callWithRetryAndFallback(
   return { response, modelUsed: PRIMARY_MODEL, usedFallback: false };
 }
 
-const getSystemPrompt = (reportType: ReportType, includedDailyReports?: string[], includedWeeklyReports?: string[]): string => {
+const getSystemPrompt = (reportType: ReportType, includedDailyReports?: string[], includedWeeklyReports?: string[], photoDescriptionMode?: string): string => {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const baseInstructions = `You are a professional field report assistant. Analyze the provided field notes and images to create a clear, structured report. Today's date is ${today}.`;
   
+  const photoModeInstructions = photoDescriptionMode === 'voice_only'
+    ? `For each photo, use ONLY the user's exact spoken description. Do not add any AI interpretation or visual analysis.`
+    : photoDescriptionMode === 'ai_visual'
+    ? `For each photo, analyze the image visually AND incorporate the user's spoken notes to create a comprehensive professional description.`
+    : `For each photo, take the user's spoken notes and enhance them into professional, detailed descriptions while staying true to what the user described. Do not add observations the user did not mention.`;
+
   // Field Report - Quick jobsite documentation
   if (reportType === 'field') {
     return `${baseInstructions}
@@ -132,8 +139,10 @@ ISSUES FOUND:
 • [Issue or concern 2] - [Severity: Low/Medium/High]
 • [Add more as needed, or "No issues observed" if none]
 
-PHOTOS DOCUMENTED:
-[Brief description of what the photos capture]
+PHOTO DOCUMENTATION:
+For each photo provided, create a separate entry in this format:
+Photo [number]:
+[Professional narrative description of what is shown. ${photoModeInstructions}]
 
 FOLLOW-UP REQUIRED:
 • [Action needed and responsible party]
@@ -323,7 +332,9 @@ REQUIRED FOLLOW-UP:
 • [Add more as needed]
 
 PHOTO DOCUMENTATION:
-[Brief description of what the photos capture]
+For each photo provided, create a separate entry in this format:
+Photo [number]:
+[Professional narrative description of what is shown. ${photoModeInstructions}]
 
 Keep the tone professional and thorough. Document all relevant site characteristics.`;
 };
@@ -350,7 +361,7 @@ serve(async (req) => {
       );
     }
     
-    const { description, imageDataUrls, imageCaptions, reportType, includedDailyReports, includedWeeklyReports } = validationResult.data;
+    const { description, imageDataUrls, imageCaptions, reportType, includedDailyReports, includedWeeklyReports, photoDescriptionMode } = validationResult.data;
     console.log("Generating report summary", { 
       descriptionLength: description?.length,
       imageCount: imageDataUrls?.length,
@@ -398,9 +409,20 @@ serve(async (req) => {
         .join('\n');
       
       if (captionList) {
+        const isPhotoDocType = reportType === 'field' || reportType === 'site_survey';
+        let captionInstruction: string;
+        
+        if (isPhotoDocType && photoDescriptionMode === 'voice_only') {
+          captionInstruction = `User's spoken descriptions for each photo:\n${captionList}\n\nUse these EXACT descriptions as-is for each photo in the PHOTO DOCUMENTATION section. Do not modify, enhance, or add to them.`;
+        } else if (isPhotoDocType && photoDescriptionMode === 'ai_visual') {
+          captionInstruction = `User's spoken descriptions for each photo:\n${captionList}\n\nFor the PHOTO DOCUMENTATION section, analyze each image visually AND incorporate these spoken notes to create comprehensive professional descriptions. You may add relevant visual observations beyond what the user mentioned.`;
+        } else {
+          captionInstruction = `CRITICAL INSTRUCTION - User's spoken descriptions for each photo:\n${captionList}\n\nYou MUST use ONLY these spoken descriptions when writing about the photos. DO NOT add any visual observations from the images that the user did not mention. If the user says "damaged post" do NOT also mention solar panels, roofing materials, or other objects visible in the photo. Stick strictly to what the user described.`;
+        }
+        
         content.push({
           type: "text",
-          text: `CRITICAL INSTRUCTION - User's spoken descriptions for each photo:\n${captionList}\n\nYou MUST use ONLY these spoken descriptions when writing about the photos. DO NOT add any visual observations from the images that the user did not mention. If the user says "damaged post" do NOT also mention solar panels, roofing materials, or other objects visible in the photo. Stick strictly to what the user described.`
+          text: captionInstruction
         });
       }
     }
@@ -418,7 +440,7 @@ serve(async (req) => {
       throw new Error("No content provided for summary generation");
     }
 
-    const systemPrompt = getSystemPrompt(reportType, includedDailyReports, includedWeeklyReports);
+    const systemPrompt = getSystemPrompt(reportType, includedDailyReports, includedWeeklyReports, photoDescriptionMode);
 
     const messages = [
       { role: 'system', content: systemPrompt },
