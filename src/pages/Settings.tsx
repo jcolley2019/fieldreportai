@@ -85,7 +85,9 @@ type PasswordFormValues = z.infer<typeof passwordSchema>;
 const Settings = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const [offlineMode, setOfflineMode] = useState(true);
+  const [offlineMode, setOfflineMode] = useState(() => {
+    try { return localStorage.getItem('fieldreport-work-offline') === 'true'; } catch { return false; }
+  });
   
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState(i18n.language);
@@ -1132,15 +1134,30 @@ const Settings = () => {
             {t('settings.dataCapture')}
           </h3>
 
-          {/* Offline Mode Toggle */}
+          {/* Work Offline Toggle */}
           <div className="flex items-center justify-between border-b border-border py-4">
-            <div className="flex items-center gap-4">
-              <CloudOff className="h-5 w-5 text-foreground" />
-              <span className="text-base font-medium text-foreground">
-                {t('settings.offlineMode')}
-              </span>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-4">
+                <CloudOff className="h-5 w-5 text-foreground" />
+                <span className="text-base font-medium text-foreground">
+                  {t('settings.offlineMode')}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground ml-9">
+                Skip network calls and queue everything locally
+              </p>
             </div>
-            <Switch checked={offlineMode} onCheckedChange={setOfflineMode} />
+            <Switch 
+              checked={offlineMode} 
+              onCheckedChange={(checked) => {
+                setOfflineMode(checked);
+                try { 
+                  localStorage.setItem('fieldreport-work-offline', checked ? 'true' : 'false');
+                  window.dispatchEvent(new CustomEvent('work-offline-changed', { detail: checked }));
+                } catch {}
+                toast.success(checked ? "Work Offline mode enabled" : "Work Offline mode disabled");
+              }} 
+            />
           </div>
 
           {/* GPS Stamping Toggle */}

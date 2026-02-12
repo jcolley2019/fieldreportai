@@ -14,6 +14,7 @@ import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from 
 import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import BetaCountdownBanner from "@/components/BetaCountdownBanner";
 import GettingStartedGuide from "@/components/GettingStartedGuide";
+import OfflineQueueCard from "@/components/OfflineQueueCard";
 import {
   Select,
   SelectContent,
@@ -386,6 +387,9 @@ const Index = () => {
         
         {/* Getting Started Guide */}
         <GettingStartedGuide userId={user?.id} />
+
+        {/* Offline Queue */}
+        <OfflineQueueCard />
 
         {/* Mode Selection Section */}
         <section className="mb-8">
