@@ -366,6 +366,7 @@ export type Database = {
           idle_timeout_minutes: number | null
           last_name: string | null
           letterhead_url: string | null
+          photo_description_mode: string
           preferred_language: string | null
           trial_start_date: string | null
           updated_at: string
@@ -385,6 +386,7 @@ export type Database = {
           idle_timeout_minutes?: number | null
           last_name?: string | null
           letterhead_url?: string | null
+          photo_description_mode?: string
           preferred_language?: string | null
           trial_start_date?: string | null
           updated_at?: string
@@ -404,6 +406,7 @@ export type Database = {
           idle_timeout_minutes?: number | null
           last_name?: string | null
           letterhead_url?: string | null
+          photo_description_mode?: string
           preferred_language?: string | null
           trial_start_date?: string | null
           updated_at?: string

@@ -61,6 +61,25 @@ const ReviewSummary = () => {
   const [isLoadingWeeklyReports, setIsLoadingWeeklyReports] = useState(false);
   const [summaryText, setSummaryText] = useState(initialSummary);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [photoDescriptionMode, setPhotoDescriptionMode] = useState("ai_enhanced");
+
+  // Load photo description mode preference
+  useEffect(() => {
+    const loadPhotoMode = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('photo_description_mode')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (profile?.photo_description_mode) {
+          setPhotoDescriptionMode(profile.photo_description_mode);
+        }
+      }
+    };
+    loadPhotoMode();
+  }, []);
   
   // Parse the AI-generated summary into sections
   const parseSummary = (text: string) => {
@@ -265,6 +284,7 @@ const ReviewSummary = () => {
           description: initialSummary,
           imageDataUrls,
           reportType,
+          photoDescriptionMode,
           includedDailyReports: includedDailyReports.length > 0 ? includedDailyReports : undefined,
           includedWeeklyReports: includedWeeklyReports.length > 0 ? includedWeeklyReports : undefined
         }
