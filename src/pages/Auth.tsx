@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -362,43 +363,16 @@ const Auth = () => {
 
   const handleGoogleLogin = async () => {
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`,
-          skipBrowserRedirect: true,
-        },
+      const { error } = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
       });
 
       if (error) {
         toast({
           title: "Error",
-          description: error.message,
+          description: error.message || "Failed to sign in with Google",
           variant: "destructive",
         });
-        return;
-      }
-
-      const url = data?.url;
-      if (!url) {
-        toast({
-          title: "Error",
-          description: "Unable to start Google sign-in. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Break out of the editor iframe to avoid accounts.google.com iframe refusal
-      try {
-        if (window.top) {
-          (window.top as Window).location.href = url;
-        } else {
-          window.location.href = url;
-        }
-      } catch {
-        // Fallback if cross-origin prevents accessing window.top
-        window.location.href = url;
       }
     } catch (error) {
       toast({
