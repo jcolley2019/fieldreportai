@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,8 +25,28 @@ import {
 import StepPreviewDialog from "@/components/StepPreviewDialog";
 import BetaCountdownBanner from "@/components/BetaCountdownBanner";
 const Landing = () => {
+  const navigate = useNavigate();
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [previewStep, setPreviewStep] = useState<'capture' | 'generate' | 'share' | null>(null);
+
+  // Redirect authenticated users to dashboard (handles post-OAuth redirect)
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/dashboard", { replace: true });
+      }
+    };
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+        navigate("/dashboard", { replace: true });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   useEffect(() => {
     const handleScroll = () => {
