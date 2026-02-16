@@ -858,5 +858,49 @@
     "step3Desc": "Pick from Field, Daily, Weekly, Monthly, or Site Survey templates — AI generates your report instantly.",
     "step4Title": "Share with Your Team",
     "step4Desc": "Email PDF reports, generate shareable links, export to Word, or invite team members to collaborate."
+  },
+  "coachMarks": {
+    "capture": {
+      "cameraTitle": "📸 Take Photos & Record",
+      "cameraDesc": "Tap here to open the camera. Take photos and record voice notes to document your work.",
+      "notesTitle": "📝 AI Notes",
+      "notesDesc": "Your voice recordings and notes appear here. You can also type directly. Add more notes anytime!",
+      "generateTitle": "✨ Generate Summary",
+      "generateDesc": "When you're done capturing, tap here to generate an AI-powered report from your photos and notes."
+    },
+    "toolbar": {
+      "flashTitle": "⚡ Flash",
+      "flashDesc": "Cycle through flash modes: Off → Auto → On. Great for low-light conditions.",
+      "hdrTitle": "✨ HDR",
+      "hdrDesc": "Toggle High Dynamic Range for better detail in bright and dark areas.",
+      "gridTitle": "📐 Grid Overlay",
+      "gridDesc": "Show a rule-of-thirds grid to help compose your shots.",
+      "fullscreenTitle": "🔲 Fullscreen",
+      "fullscreenDesc": "Expand the camera to fill your entire screen for a better view.",
+      "switchCameraTitle": "🔄 Switch Camera",
+      "switchCameraDesc": "Toggle between front and back cameras, or choose from available devices.",
+      "modeToggleTitle": "🎬 Photo / Video Mode",
+      "modeToggleDesc": "Switch between Photo and Video modes. Video mode lets you record audio notes while capturing."
+    },
+    "photo": {
+      "shutterTitle": "📸 Take a Photo",
+      "shutterDesc": "Tap this button to capture a photo. You can take multiple photos before closing.",
+      "aiNotesTitle": "🎙️ AI Notes",
+      "aiNotesDesc": "Tap to start recording voice notes. Your speech is transcribed and added to your report.",
+      "stopTitle": "⏹️ Stop & Save",
+      "stopDesc": "Tap Stop to save your voice notes. You can start a new recording anytime."
+    },
+    "video": {
+      "recordTitle": "🔴 Start Recording",
+      "recordDesc": "Tap to begin recording audio notes while you work. Photos can be taken during recording.",
+      "pauseTitle": "⏸️ Pause / Resume",
+      "pauseDesc": "Pause your recording when you need a break, then resume when ready.",
+      "photoTitle": "📸 Snap a Photo",
+      "photoDesc": "Take photos while recording — great for documenting as you narrate.",
+      "stopTitle": "⏹️ Stop & Save",
+      "stopDesc": "Tap Stop to finish and save your recording. Notes are transcribed automatically."
+    },
+    "next": "Next",
+    "gotIt": "Got it!"
   }
 }

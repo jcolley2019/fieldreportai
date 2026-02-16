@@ -778,18 +778,18 @@ const CaptureScreen = () => {
         steps={[
           {
             targetSelector: '[data-coach="camera-button"]',
-            title: "📸 Take Photos & Record",
-            description: "Tap here to open the camera. Take photos and record voice notes to document your work.",
+            title: t("coachMarks.capture.cameraTitle"),
+            description: t("coachMarks.capture.cameraDesc"),
           },
           {
             targetSelector: '[data-coach="field-notes"]',
-            title: "📝 AI Notes",
-            description: "Your voice recordings and notes appear here. You can also type directly. Add more notes anytime!",
+            title: t("coachMarks.capture.notesTitle"),
+            description: t("coachMarks.capture.notesDesc"),
           },
           {
             targetSelector: '[data-coach="generate-button"]',
-            title: "✨ Generate Summary",
-            description: "When you're done capturing, tap here to generate an AI-powered report from your photos and notes.",
+            title: t("coachMarks.capture.generateTitle"),
+            description: t("coachMarks.capture.generateDesc"),
           },
         ]}
       />
