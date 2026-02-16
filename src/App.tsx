@@ -48,9 +48,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/shared/:token" element={<SharedProject />} />
 
-            {/* Protected routes */}
+            {/* Protected routes — TODO: re-enable guard on /dashboard before publishing */}
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<Index />} />
             <Route path="/new-project" element={<ProtectedRoute><NewProject /></ProtectedRoute>} />
             <Route path="/projects" element={<ProtectedRoute><ProjectsCustomers /></ProtectedRoute>} />
             <Route path="/project/:projectId" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
