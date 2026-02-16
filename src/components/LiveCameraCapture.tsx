@@ -509,7 +509,43 @@ export const LiveCameraCapture = ({
         <VisuallyHidden>
           <DialogTitle>Camera Capture</DialogTitle>
         </VisuallyHidden>
-        {/* Coach Marks for camera controls */}
+        {/* Coach Marks for camera toolbar (shared across modes) */}
+        <CoachMarks
+          storageKey="cameraToolbarCoachDismissed"
+          steps={[
+            {
+              targetSelector: '[data-coach="flash-button"]',
+              title: "⚡ Flash",
+              description: "Cycle through flash modes: Off → Auto → On. Great for low-light conditions.",
+            },
+            {
+              targetSelector: '[data-coach="hdr-button"]',
+              title: "✨ HDR",
+              description: "Toggle High Dynamic Range for better detail in bright and dark areas.",
+            },
+            {
+              targetSelector: '[data-coach="grid-button"]',
+              title: "📐 Grid Overlay",
+              description: "Show a rule-of-thirds grid to help compose your shots.",
+            },
+            {
+              targetSelector: '[data-coach="fullscreen-button"]',
+              title: "🔲 Fullscreen",
+              description: "Expand the camera to fill your entire screen for a better view.",
+            },
+            {
+              targetSelector: '[data-coach="camera-switch-button"]',
+              title: "🔄 Switch Camera",
+              description: "Toggle between front and back cameras, or choose from available devices.",
+            },
+            {
+              targetSelector: '[data-coach="mode-toggle"]',
+              title: "🎬 Photo / Video Mode",
+              description: "Switch between Photo and Video modes. Video mode lets you record audio notes while capturing.",
+            },
+          ]}
+        />
+        {/* Coach Marks for bottom controls (mode-specific) */}
         <CoachMarks
           storageKey={cameraMode === 'photo' ? 'cameraPhotoCoachDismissed' : 'cameraVideoCoachDismissed'}
           steps={cameraMode === 'photo' ? [
@@ -533,6 +569,11 @@ export const LiveCameraCapture = ({
               targetSelector: '[data-coach="record-button"]',
               title: "🔴 Start Recording",
               description: "Tap to begin recording audio notes while you work. Photos can be taken during recording.",
+            },
+            {
+              targetSelector: '[data-coach="video-pause-button"]',
+              title: "⏸️ Pause / Resume",
+              description: "Pause your recording when you need a break, then resume when ready.",
             },
             {
               targetSelector: '[data-coach="video-photo-button"]',
@@ -622,6 +663,7 @@ export const LiveCameraCapture = ({
 
                 {/* Flash toggle button */}
                 <button
+                  data-coach="flash-button"
                   onClick={toggleFlash}
                   className={`relative flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
                     flashMode === 'on'
@@ -645,6 +687,7 @@ export const LiveCameraCapture = ({
 
                 {/* HDR toggle button */}
                 <button
+                  data-coach="hdr-button"
                   onClick={toggleHDR}
                   className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
                     hdrEnabled
@@ -657,6 +700,7 @@ export const LiveCameraCapture = ({
 
                 {/* Grid toggle button */}
                 <button
+                  data-coach="grid-button"
                   onClick={() => setGridEnabled(!gridEnabled)}
                   className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
                     gridEnabled
@@ -703,6 +747,7 @@ export const LiveCameraCapture = ({
               {/* Camera flip button */}
               <div className="flex items-center gap-2">
                 <button
+                  data-coach="fullscreen-button"
                   onClick={() => setIsFullscreen(!isFullscreen)}
                   className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
                   title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
@@ -719,6 +764,7 @@ export const LiveCameraCapture = ({
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
+                        data-coach="camera-switch-button"
                         className="flex h-12 items-center gap-1 px-3 rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
                       >
                         <SwitchCamera className="h-5 w-5" />
@@ -744,6 +790,7 @@ export const LiveCameraCapture = ({
                   </DropdownMenu>
                 ) : (
                   <button
+                    data-coach="camera-switch-button"
                     onClick={toggleCamera}
                     className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
                   >
@@ -776,7 +823,7 @@ export const LiveCameraCapture = ({
           )}
 
           {/* Mode Toggle (VIDEO / PHOTO) */}
-          <div className="shrink-0 flex items-center justify-center py-2 bg-black/90">
+          <div data-coach="mode-toggle" className="shrink-0 flex items-center justify-center py-2 bg-black/90">
             <div className="flex items-center gap-6">
               <button
                 onClick={() => setCameraMode('video')}
@@ -848,6 +895,7 @@ export const LiveCameraCapture = ({
                       {onPauseRecording && (
                         <div className="flex flex-col items-center gap-1">
                           <button
+                            data-coach="video-pause-button"
                             onClick={onPauseRecording}
                             className={`flex h-14 w-14 items-center justify-center rounded-full transition-all ${
                               isPaused
