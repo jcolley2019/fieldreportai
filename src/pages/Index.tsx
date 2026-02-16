@@ -448,69 +448,71 @@ const Index = () => {
             )}
           </div>
           
-          {projects.length === 0 ? (
-            <div className="glass-card p-8 text-center">
-              <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-              <p className="text-muted-foreground">{t('dashboard.noProjects')}</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredProjects.slice(0, 5).map((project) => (
-                <div
-                  key={project.id}
-                  className="glass-card flex items-start gap-4 p-4 hover-lift cursor-pointer group"
-                  onClick={() => navigate(`/project/${project.id}`)}
-                >
-                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
-                    <Building2 className="h-7 w-7 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground text-lg mb-1">{project.project_name}</h3>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <UserIcon className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">{project.customer_name}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Hash className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">{project.job_number}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <ListChecks className="h-4 w-4 flex-shrink-0" />
-                        <span>{project.checklist_count} {project.checklist_count !== 1 ? t('dashboard.checklists') : t('dashboard.checklist')}</span>
+          <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm">
+            {projects.length === 0 ? (
+              <div className="p-8 text-center">
+                <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                <p className="text-muted-foreground">{t('dashboard.noProjects')}</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border/30">
+                {filteredProjects.slice(0, 5).map((project) => (
+                  <div
+                    key={project.id}
+                    className="flex items-start gap-4 p-4 hover:bg-muted/20 cursor-pointer group transition-colors duration-200"
+                    onClick={() => navigate(`/project/${project.id}`)}
+                  >
+                    <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
+                      <Building2 className="h-7 w-7 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground text-lg mb-1">{project.project_name}</h3>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <UserIcon className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">{project.customer_name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Hash className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">{project.job_number}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <ListChecks className="h-4 w-4 flex-shrink-0" />
+                          <span>{project.checklist_count} {project.checklist_count !== 1 ? t('dashboard.checklists') : t('dashboard.checklist')}</span>
+                        </div>
                       </div>
                     </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/project/${project.id}`);
+                        }}
+                        className="rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                      >
+                        <Eye className="h-5 w-5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`${t('dashboard.deleteConfirm')} "${project.project_name}"?`)) {
+                            handleDeleteProject(project.id);
+                          }
+                        }}
+                        className="rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/project/${project.id}`);
-                      }}
-                      className="rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/40"
-                    >
-                      <Eye className="h-5 w-5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm(`${t('dashboard.deleteConfirm')} "${project.project_name}"?`)) {
-                          handleDeleteProject(project.id);
-                        }
-                      }}
-                      className="rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </section>
       </main>
 

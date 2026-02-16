@@ -520,18 +520,19 @@ const SavedReports = () => {
         </div>
         
         {/* Reports List */}
+        <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm">
         {reports.length === 0 ? (
-          <div className="rounded-lg bg-card p-8 text-center">
+          <div className="p-8 text-center">
             <Cloud className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
             <p className="text-muted-foreground">{t('savedReports.emptyState')}</p>
           </div>
         ) : filteredReports.length === 0 ? (
-          <div className="rounded-lg bg-card p-8 text-center">
+          <div className="p-8 text-center">
             <Search className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
             <p className="text-muted-foreground">No reports found matching "{searchQuery}"</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="divide-y divide-border/30">
             {filteredReports.map((report) => {
               const badgeInfo = getReportTypeBadge(report.report_type);
               const BadgeIcon = badgeInfo?.icon;
@@ -540,7 +541,7 @@ const SavedReports = () => {
                 <div
                   key={report.id}
                   onClick={() => selectionMode ? toggleReportSelection(report.id, { stopPropagation: () => {} } as React.MouseEvent) : handleDownload(report, { stopPropagation: () => {} } as React.MouseEvent)}
-                  className={`flex items-start gap-4 rounded-lg bg-card p-4 hover:bg-secondary/50 transition-colors cursor-pointer ${selectedReports.has(report.id) ? 'ring-2 ring-primary bg-primary/5' : ''}`}
+                  className={`flex items-start gap-4 p-4 hover:bg-muted/20 transition-colors cursor-pointer ${selectedReports.has(report.id) ? 'ring-2 ring-primary bg-primary/5' : ''}`}
                 >
                   {selectionMode && (
                     <div 
@@ -607,7 +608,7 @@ const SavedReports = () => {
             })}
           </div>
         )}
-
+        </div>
         {/* Email Dialog */}
         <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
           <DialogContent className="sm:max-w-md">

@@ -364,6 +364,10 @@ const SavedNotes = () => {
         </div>
 
         {/* Notes List */}
+        <h3 className="mb-4 text-lg font-bold text-foreground">
+          {t('savedNotes.title')}
+        </h3>
+        <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm">
         {isLoading ? (
           <div className="text-center text-muted-foreground py-8">
             {t('savedNotes.loading')}
@@ -373,11 +377,11 @@ const SavedNotes = () => {
             {searchQuery ? t('savedNotes.noNotesFound') : t('savedNotes.noSavedNotes')}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="divide-y divide-border/30">
             {filteredNotes.map((note) => (
               <div
                 key={note.id}
-                className="bg-card rounded-lg p-4 border border-border space-y-3"
+                className="p-4 space-y-3"
               >
                 {/* Note Header */}
                 <div className="flex items-start justify-between gap-4">
@@ -451,6 +455,7 @@ const SavedNotes = () => {
             ))}
           </div>
         )}
+        </div>
       </main>
 
       {/* Edit Dialog */}
