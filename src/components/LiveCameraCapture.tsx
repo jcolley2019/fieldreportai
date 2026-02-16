@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
 import { Camera, X, Check, Mic, MicOff, SwitchCamera, Image, Zap, ZapOff, Grid3x3, Sparkles, Maximize2, Minimize2, ChevronDown, Pause, Square, Video, VideoOff, Trash2, CheckSquare } from "lucide-react";
+import CoachMarks from "@/components/CoachMarks";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -508,6 +509,43 @@ export const LiveCameraCapture = ({
         <VisuallyHidden>
           <DialogTitle>Camera Capture</DialogTitle>
         </VisuallyHidden>
+        {/* Coach Marks for camera controls */}
+        <CoachMarks
+          storageKey={cameraMode === 'photo' ? 'cameraPhotoCoachDismissed' : 'cameraVideoCoachDismissed'}
+          steps={cameraMode === 'photo' ? [
+            {
+              targetSelector: '[data-coach="shutter-button"]',
+              title: "📸 Take a Photo",
+              description: "Tap this button to capture a photo. You can take multiple photos before closing.",
+            },
+            {
+              targetSelector: '[data-coach="ai-notes-button"]',
+              title: "🎙️ AI Notes",
+              description: "Tap to start recording voice notes. Your speech is transcribed and added to your report.",
+            },
+            {
+              targetSelector: '[data-coach="stop-notes-button"]',
+              title: "⏹️ Stop & Save",
+              description: "Tap Stop to save your voice notes. You can start a new recording anytime.",
+            },
+          ] : [
+            {
+              targetSelector: '[data-coach="record-button"]',
+              title: "🔴 Start Recording",
+              description: "Tap to begin recording audio notes while you work. Photos can be taken during recording.",
+            },
+            {
+              targetSelector: '[data-coach="video-photo-button"]',
+              title: "📸 Snap a Photo",
+              description: "Take photos while recording — great for documenting as you narrate.",
+            },
+            {
+              targetSelector: '[data-coach="video-stop-button"]',
+              title: "⏹️ Stop & Save",
+              description: "Tap Stop to finish and save your recording. Notes are transcribed automatically.",
+            },
+          ]}
+        />
         <div className="relative w-full h-full flex flex-col flex-1 min-h-0">
           {/* Camera viewfinder */}
           <div className="relative flex-1 min-h-0 flex items-center justify-center bg-black overflow-hidden" style={{ minHeight: '200px' }}>
@@ -795,6 +833,7 @@ export const LiveCameraCapture = ({
                   {/* Center: Stop recording button */}
                   <div className="flex flex-col items-center gap-1">
                     <button
+                      data-coach="video-stop-button"
                       onClick={onStopRecording}
                       className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300 border-2 border-white/30"
                     >
@@ -830,6 +869,7 @@ export const LiveCameraCapture = ({
                       {/* Photo snapshot button */}
                       <div className="flex flex-col items-center gap-1">
                         <button
+                          data-coach="video-photo-button"
                           onClick={capturePhoto}
                           disabled={!isReady}
                           className="flex h-14 w-14 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-lg border-2 border-white/80"
@@ -870,6 +910,7 @@ export const LiveCameraCapture = ({
                   {/* Center: Record button */}
                   <div className="flex flex-col items-center gap-1">
                     <button
+                      data-coach="record-button"
                       onClick={onStartRecording}
                       className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300 border-2 border-white/30"
                     >
@@ -911,6 +952,7 @@ export const LiveCameraCapture = ({
                   {/* Center: Shutter */}
                   <div className="flex flex-col items-center gap-1">
                     <button
+                      data-coach="shutter-button"
                       onClick={capturePhoto}
                       disabled={!isReady}
                       className="flex h-20 w-20 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-2xl"
@@ -928,6 +970,7 @@ export const LiveCameraCapture = ({
                       {onAudioToggle && (
                         <div className="flex flex-col items-center gap-1">
                           <button
+                            data-coach="ai-notes-button"
                             onClick={onAudioToggle}
                             className={`flex h-14 w-14 items-center justify-center rounded-full transition-all ${
                               isAudioRecording && !isPaused
@@ -955,6 +998,7 @@ export const LiveCameraCapture = ({
                       {isAudioRecording && onStopRecording && (
                         <div className="flex flex-col items-center gap-1">
                           <button
+                            data-coach="stop-notes-button"
                             onClick={onStopRecording}
                             className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all border-2 border-white/30"
                           >
