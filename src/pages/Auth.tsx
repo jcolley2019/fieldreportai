@@ -201,10 +201,11 @@ const Auth = () => {
 
         if (error) {
           if (error.message.includes("Invalid login credentials")) {
+            // Auto-switch to signup for likely new users
+            setIsLogin(false);
             toast({
-              title: "Incorrect email or password",
-              description: "Please check your credentials and try again, or use 'Forgot Password' to reset.",
-              variant: "destructive",
+              title: "No account found",
+              description: "It looks like you're new! We've switched to Sign Up — just set a password to create your account.",
             });
           } else {
             toast({
