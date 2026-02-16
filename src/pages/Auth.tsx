@@ -300,20 +300,18 @@ const Auth = () => {
             console.error("Zapier webhook failed:", zapierError);
           });
 
-          // Auto-login after successful signup
-          const { error: loginError } = await supabase.auth.signInWithPassword({
-            email: validatedData.email,
-            password: validatedData.password,
-          });
+          // Check if signup auto-logged in (auto-confirm enabled)
+          const isAutoLoggedIn = !!data.session;
 
-          if (loginError) {
-            // If auto-login fails (e.g., email confirmation required), show message and switch to login
+          if (!isAutoLoggedIn) {
+            // Email confirmation required — user must verify first
             toast({
               title: t('auth.success.accountCreated').split('!')[0],
               description: t('auth.success.accountCreated'),
             });
             setIsLogin(true);
           } else {
+            // Already logged in from signup — no need for redundant signInWithPassword
             // Link subscription if coming from guest checkout
             if (sessionId) {
               await linkSubscriptionToAccount();
@@ -329,7 +327,7 @@ const Auth = () => {
               description: startTrial === 'true' ? "Your 14-day Pro trial is now active!" : "You're now logged in!",
             });
             
-            // Redirect to onboarding for new users
+            // Redirect
             if (redirectUrl) {
               const fullRedirect = pendingPlan && pendingBilling 
                 ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
