@@ -10,7 +10,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
 
-
 const authSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255),
   password: z.string()
@@ -25,15 +24,14 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [isLinkingSubscription, setIsLinkingSubscription] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectUrl = searchParams.get("redirect");
   const pendingPlan = searchParams.get("plan");
   const pendingBilling = searchParams.get("billing");
-  const sessionId = searchParams.get("session_id"); // For guest checkout linking
-  const mode = searchParams.get("mode"); // 'signup' for guest checkout flow
-  const startTrial = searchParams.get("startTrial"); // For starting trial from landing page
+  const sessionId = searchParams.get("session_id");
+  const mode = searchParams.get("mode");
+  const startTrial = searchParams.get("startTrial");
 
   // Set signup mode if coming from guest checkout or trial start
   useEffect(() => {
@@ -42,44 +40,45 @@ const Auth = () => {
     }
   }, [mode, startTrial]);
 
-  // Activate trial for the current user
-  // Note: current_plan is auto-set to 'trial' by database trigger on profile creation
-  // We only need to set trial_start_date here
+  // Redirect if already logged in
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigateToDestination();
+      }
+    };
+    checkUser();
+  }, []);
+
+  const navigateToDestination = () => {
+    if (redirectUrl) {
+      const fullRedirect = pendingPlan && pendingBilling
+        ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
+        : redirectUrl;
+      navigate(fullRedirect);
+    } else {
+      navigate("/dashboard");
+    }
+  };
+
   const activateTrial = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Check if user already has a trial - use maybeSingle to avoid throwing on no rows
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile } = await supabase
         .from('profiles')
         .select('trial_start_date')
         .eq('id', user.id)
         .maybeSingle();
 
-      if (profileError) {
-        console.error('Error checking trial status:', profileError);
-        return;
-      }
+      if (profile?.trial_start_date) return;
 
-      if (profile?.trial_start_date) {
-        // Already has trial, skip activation
-        return;
-      }
-
-      // Activate trial by setting start date
-      // current_plan is already 'trial' from the database trigger
-      const { error } = await supabase
+      await supabase
         .from('profiles')
-        .update({
-          trial_start_date: new Date().toISOString(),
-        })
+        .update({ trial_start_date: new Date().toISOString() })
         .eq('id', user.id);
-
-      if (error) {
-        console.error('Error activating trial:', error);
-        return;
-      }
 
       toast({
         title: "Trial Activated!",
@@ -90,18 +89,13 @@ const Auth = () => {
     }
   };
 
-  // Link subscription after signup/login if coming from guest checkout
   const linkSubscriptionToAccount = async () => {
     if (!sessionId) return;
-    
-    setIsLinkingSubscription(true);
     try {
-      const { data, error } = await supabase.functions.invoke('link-subscription', {
+      const { error } = await supabase.functions.invoke('link-subscription', {
         body: { sessionId },
       });
-
       if (error) {
-        console.error('Error linking subscription:', error);
         toast({
           title: "Subscription Linking Failed",
           description: "Please contact support to link your subscription.",
@@ -115,106 +109,55 @@ const Auth = () => {
       }
     } catch (error) {
       console.error('Error:', error);
-    } finally {
-      setIsLinkingSubscription(false);
     }
   };
 
-  const navigateAfterAuth = async () => {
-    // Link subscription if coming from guest checkout
+  const handlePostAuth = async () => {
+    // Run post-auth tasks (non-blocking for navigation)
     if (sessionId) {
-      await linkSubscriptionToAccount();
+      linkSubscriptionToAccount();
     }
-    // Activate trial if requested
     if (startTrial === 'true') {
-      await activateTrial();
+      activateTrial();
     }
-    // Navigate to redirect or dashboard
-    if (redirectUrl) {
-      const fullRedirect = pendingPlan && pendingBilling 
-        ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
-        : redirectUrl;
-      navigate(fullRedirect);
-    } else {
-      navigate("/dashboard");
-    }
+    navigateToDestination();
   };
-
-  useEffect(() => {
-    // Listen for auth state changes to handle ALL post-auth navigation
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-          // Small delay to let Supabase client fully establish the session
-          setTimeout(() => {
-            navigateAfterAuth();
-          }, 100);
-        }
-      }
-    );
-
-    // Also check on mount for existing session
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigateAfterAuth();
-      }
-    };
-    checkUser();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate, redirectUrl, pendingPlan, pendingBilling, sessionId, startTrial]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const safetyTimeout = setTimeout(() => {
-      setLoading(false);
-      toast({
-        title: "Request timed out",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    }, 30000);
 
     try {
-      // For login, only validate email format (password was created before, might not meet current rules)
-      // For signup, validate both email and password
-      const validatedData = isLogin 
-        ? { email: z.string().trim().email().max(255).parse(email), password }
-        : authSchema.parse({ email, password });
-
       if (isLogin) {
-        const { error, data } = await supabase.auth.signInWithPassword({
-          email: validatedData.email,
-          password: validatedData.password,
+        // --- LOGIN ---
+        const validatedEmail = z.string().trim().email().max(255).parse(email);
+
+        const { error } = await supabase.auth.signInWithPassword({
+          email: validatedEmail,
+          password,
         });
 
         if (error) {
           if (error.message.includes("Invalid login credentials")) {
-            // Auto-switch to signup for likely new users
             setIsLogin(false);
             toast({
               title: "No account found",
               description: "It looks like you're new! We've switched to Sign Up — just set a password to create your account.",
             });
           } else {
-            toast({
-              title: "Error",
-              description: error.message,
-              variant: "destructive",
-            });
+            toast({ title: "Error", description: error.message, variant: "destructive" });
           }
         } else {
-          // Login successful — show toast, listener handles navigation
           toast({
             title: t('auth.success.loggedIn').split('!')[0],
             description: t('auth.success.loggedIn'),
           });
+          handlePostAuth();
         }
       } else {
+        // --- SIGNUP ---
+        const validatedData = authSchema.parse({ email, password });
+
         const { error, data } = await supabase.auth.signUp({
           email: validatedData.email,
           password: validatedData.password,
@@ -231,77 +174,49 @@ const Auth = () => {
               variant: "destructive",
             });
           } else {
-            toast({
-              title: "Error",
-              description: error.message,
-              variant: "destructive",
-            });
+            toast({ title: "Error", description: error.message, variant: "destructive" });
           }
         } else {
-          // Capture lead in database (non-blocking)
+          // Fire-and-forget lead capture & Zapier
           supabase.functions.invoke("capture-lead", {
-            body: {
-              email: validatedData.email,
-              source: "trial_signup",
-              sequence: "trial",
-            },
-          }).catch((leadError) => {
-            console.error("Lead capture failed:", leadError);
-          });
+            body: { email: validatedData.email, source: "trial_signup", sequence: "trial" },
+          }).catch(console.error);
 
-          // Send to Zapier webhook for Google Sheets (non-blocking)
           fetch("https://hooks.zapier.com/hooks/catch/25475428/uzqf7vv/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             mode: "no-cors",
             body: JSON.stringify({
-              email: validatedData.email,
-              source: "trial_signup",
-              type: "user_signup",
-              timestamp: new Date().toISOString(),
-              plan: "trial",
-              sequence: "trial",
+              email: validatedData.email, source: "trial_signup", type: "user_signup",
+              timestamp: new Date().toISOString(), plan: "trial", sequence: "trial",
             }),
-          }).catch((zapierError) => {
-            console.error("Zapier webhook failed:", zapierError);
-          });
+          }).catch(console.error);
 
-          // Check if signup auto-logged in (auto-confirm enabled)
           const isAutoLoggedIn = !!data.session;
 
-          if (!isAutoLoggedIn) {
-            // Email confirmation required — user must verify first
+          if (isAutoLoggedIn) {
+            toast({
+              title: "Account Created",
+              description: startTrial === 'true' ? "Your 14-day Pro trial is now active!" : "You're now logged in!",
+            });
+            handlePostAuth();
+          } else {
+            // Email confirmation required — switch to login
             toast({
               title: t('auth.success.accountCreated').split('!')[0],
               description: t('auth.success.accountCreated'),
             });
             setIsLogin(true);
-          } else {
-            // Already logged in from signup — listener handles navigation
-            toast({
-              title: t('auth.success.accountCreated').split('!')[0],
-              description: startTrial === 'true' ? "Your 14-day Pro trial is now active!" : "You're now logged in!",
-            });
-            // Navigation is handled by onAuthStateChange listener
           }
         }
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
-        toast({
-          title: t('auth.errors.validationError'),
-          description: error.errors[0].message,
-          variant: "destructive",
-        });
+        toast({ title: t('auth.errors.validationError'), description: error.errors[0].message, variant: "destructive" });
       } else {
-        toast({
-          title: t('auth.errors.validationError'),
-          description: t('auth.errors.unexpectedError'),
-          variant: "destructive",
-        });
+        toast({ title: t('auth.errors.validationError'), description: t('auth.errors.unexpectedError'), variant: "destructive" });
       }
     } finally {
-      clearTimeout(safetyTimeout);
       setLoading(false);
     }
   };
@@ -311,20 +226,11 @@ const Auth = () => {
       const { error } = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
       });
-
       if (error) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to sign in with Google",
-          variant: "destructive",
-        });
+        toast({ title: "Error", description: error.message || "Failed to sign in with Google", variant: "destructive" });
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to sign in with Google",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to sign in with Google", variant: "destructive" });
     }
   };
 
@@ -337,38 +243,23 @@ const Auth = () => {
 
   const handlePasswordReset = async () => {
     if (!email) {
-      toast({
-        title: t('auth.errors.validationError'),
-        description: t('auth.errors.emailRequired'),
-        variant: "destructive",
-      });
+      toast({ title: t('auth.errors.validationError'), description: t('auth.errors.emailRequired'), variant: "destructive" });
       return;
     }
-
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth?reset=true`,
       });
-
       if (error) throw error;
-
-      toast({
-        title: t('auth.success.resetEmailSent'),
-        description: t('auth.success.checkEmail'),
-      });
+      toast({ title: t('auth.success.resetEmailSent'), description: t('auth.success.checkEmail') });
     } catch (error: any) {
-      toast({
-        title: t('auth.errors.validationError'),
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: t('auth.errors.validationError'), description: error.message, variant: "destructive" });
     }
   };
 
   return (
     <div className="dark min-h-screen">
       <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4 animate-fade-in">
-
         <div className="w-full max-w-sm">
           {/* Logo */}
           <div className="flex justify-center pb-8">
@@ -387,7 +278,6 @@ const Auth = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {/* Email Field */}
             <div className="flex w-full flex-col">
               <Label htmlFor="email" className="pb-2 text-base font-medium text-foreground/90">
                 {t('auth.emailAddress')}
@@ -403,7 +293,6 @@ const Auth = () => {
               />
             </div>
 
-            {/* Password Field */}
             <div className="flex w-full flex-col">
               <Label htmlFor="password" className="pb-2 text-base font-medium text-foreground/90">
                 {t('auth.password')}
@@ -424,29 +313,19 @@ const Auth = () => {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
 
-            {/* Forgot Password Link (only show on login) */}
             {isLogin && (
               <div className="flex justify-end">
-                <button
-                  type="button"
-                  className="text-sm font-medium text-primary hover:underline"
-                  onClick={handlePasswordReset}
-                >
+                <button type="button" className="text-sm font-medium text-primary hover:underline" onClick={handlePasswordReset}>
                   {t('auth.forgotPassword')}
                 </button>
               </div>
             )}
 
-            {/* Submit Button */}
             <Button
               type="submit"
               disabled={loading}
@@ -455,7 +334,6 @@ const Auth = () => {
               {loading ? t('auth.pleaseWait') : isLogin ? t('auth.logIn') : t('auth.signUp')}
             </Button>
 
-            {/* Toggle between login and signup */}
             <div className="text-center text-sm text-muted-foreground">
               {isLogin ? t('auth.dontHaveAccount') : t('auth.alreadyHaveAccount')}
               {' '}
@@ -468,19 +346,15 @@ const Auth = () => {
               </button>
             </div>
 
-            {/* Divider */}
             <div className="relative py-4">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-border"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="bg-background px-2 text-muted-foreground">
-                  {t('auth.orContinueWith')}
-                </span>
+                <span className="bg-background px-2 text-muted-foreground">{t('auth.orContinueWith')}</span>
               </div>
             </div>
 
-            {/* Google Login Button */}
             <Button
               type="button"
               onClick={handleGoogleLogin}
@@ -488,27 +362,14 @@ const Auth = () => {
               className="h-12 w-full rounded-lg border-input bg-transparent text-base font-medium text-foreground hover:bg-input/30 transition-colors"
             >
               <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
               {t('auth.continueWithGoogle')}
             </Button>
 
-            {/* Biometric Login Button (only show on login) */}
             {isLogin && (
               <Button
                 type="button"
