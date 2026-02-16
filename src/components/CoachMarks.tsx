@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 
 interface CoachStep {
@@ -14,6 +15,7 @@ interface CoachMarksProps {
 }
 
 const CoachMarks = ({ steps, storageKey }: CoachMarksProps) => {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
   const [visible, setVisible] = useState(false);
   const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
@@ -162,7 +164,7 @@ const CoachMarks = ({ steps, storageKey }: CoachMarksProps) => {
             onClick={handleNext}
             className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
           >
-            {currentStep < steps.length - 1 ? "Next" : "Got it!"}
+            {currentStep < steps.length - 1 ? t("coachMarks.next") : t("coachMarks.gotIt")}
           </button>
         </div>
       </div>

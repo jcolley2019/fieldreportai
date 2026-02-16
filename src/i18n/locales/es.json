@@ -862,5 +862,49 @@
     "step3Desc": "Elige entre plantillas de Reporte de Campo, Diario, Semanal, Mensual o Inspección de Sitio — la IA genera tu reporte al instante.",
     "step4Title": "Compartir con Tu Equipo",
     "step4Desc": "Envía reportes PDF por correo, genera enlaces compartibles, exporta a Word o invita a miembros del equipo a colaborar."
+  },
+  "coachMarks": {
+    "capture": {
+      "cameraTitle": "📸 Tomar Fotos y Grabar",
+      "cameraDesc": "Toca aquí para abrir la cámara. Toma fotos y graba notas de voz para documentar tu trabajo.",
+      "notesTitle": "📝 Notas con IA",
+      "notesDesc": "Tus grabaciones de voz y notas aparecen aquí. También puedes escribir directamente. ¡Agrega más notas en cualquier momento!",
+      "generateTitle": "✨ Generar Resumen",
+      "generateDesc": "Cuando termines de capturar, toca aquí para generar un informe con IA a partir de tus fotos y notas."
+    },
+    "toolbar": {
+      "flashTitle": "⚡ Flash",
+      "flashDesc": "Alterna entre modos de flash: Apagado → Automático → Encendido. Ideal para condiciones de poca luz.",
+      "hdrTitle": "✨ HDR",
+      "hdrDesc": "Activa el Alto Rango Dinámico para mejor detalle en áreas brillantes y oscuras.",
+      "gridTitle": "📐 Cuadrícula",
+      "gridDesc": "Muestra una cuadrícula de regla de tercios para ayudarte a componer tus tomas.",
+      "fullscreenTitle": "🔲 Pantalla Completa",
+      "fullscreenDesc": "Expande la cámara para llenar toda tu pantalla y tener una mejor vista.",
+      "switchCameraTitle": "🔄 Cambiar Cámara",
+      "switchCameraDesc": "Alterna entre cámaras frontal y trasera, o elige entre los dispositivos disponibles.",
+      "modeToggleTitle": "🎬 Modo Foto / Video",
+      "modeToggleDesc": "Cambia entre los modos Foto y Video. El modo Video te permite grabar notas de audio mientras capturas."
+    },
+    "photo": {
+      "shutterTitle": "📸 Tomar una Foto",
+      "shutterDesc": "Toca este botón para capturar una foto. Puedes tomar varias fotos antes de cerrar.",
+      "aiNotesTitle": "🎙️ Notas con IA",
+      "aiNotesDesc": "Toca para comenzar a grabar notas de voz. Tu voz se transcribe y se agrega a tu informe.",
+      "stopTitle": "⏹️ Detener y Guardar",
+      "stopDesc": "Toca Detener para guardar tus notas de voz. Puedes iniciar una nueva grabación en cualquier momento."
+    },
+    "video": {
+      "recordTitle": "🔴 Iniciar Grabación",
+      "recordDesc": "Toca para comenzar a grabar notas de audio mientras trabajas. Puedes tomar fotos durante la grabación.",
+      "pauseTitle": "⏸️ Pausar / Reanudar",
+      "pauseDesc": "Pausa tu grabación cuando necesites un descanso, luego reanuda cuando estés listo.",
+      "photoTitle": "📸 Tomar una Foto",
+      "photoDesc": "Toma fotos mientras grabas — ideal para documentar mientras narras.",
+      "stopTitle": "⏹️ Detener y Guardar",
+      "stopDesc": "Toca Detener para finalizar y guardar tu grabación. Las notas se transcriben automáticamente."
+    },
+    "next": "Siguiente",
+    "gotIt": "¡Entendido!"
   }
 }

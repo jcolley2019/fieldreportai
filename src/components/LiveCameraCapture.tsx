@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
@@ -28,19 +29,23 @@ interface LiveCameraCaptureProps {
 }
 
 export const LiveCameraCapture = ({
-  open,
-  onOpenChange,
-  onCapture,
-  isRecording = false,
-  isPaused = false,
-  onPauseRecording,
-  onStopRecording,
-  onStartRecording,
-  maxRecordingSeconds = 300,
-  onRecordingLimitReached,
-  isAudioRecording = false,
-  onAudioToggle,
+  ...props
 }: LiveCameraCaptureProps) => {
+  const { t } = useTranslation();
+  const {
+    open,
+    onOpenChange,
+    onCapture,
+    isRecording = false,
+    isPaused = false,
+    onPauseRecording,
+    onStopRecording,
+    onStartRecording,
+    maxRecordingSeconds = 300,
+    onRecordingLimitReached,
+    isAudioRecording = false,
+    onAudioToggle,
+  } = props;
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -515,33 +520,33 @@ export const LiveCameraCapture = ({
           steps={[
             {
               targetSelector: '[data-coach="flash-button"]',
-              title: "⚡ Flash",
-              description: "Cycle through flash modes: Off → Auto → On. Great for low-light conditions.",
+              title: t("coachMarks.toolbar.flashTitle"),
+              description: t("coachMarks.toolbar.flashDesc"),
             },
             {
               targetSelector: '[data-coach="hdr-button"]',
-              title: "✨ HDR",
-              description: "Toggle High Dynamic Range for better detail in bright and dark areas.",
+              title: t("coachMarks.toolbar.hdrTitle"),
+              description: t("coachMarks.toolbar.hdrDesc"),
             },
             {
               targetSelector: '[data-coach="grid-button"]',
-              title: "📐 Grid Overlay",
-              description: "Show a rule-of-thirds grid to help compose your shots.",
+              title: t("coachMarks.toolbar.gridTitle"),
+              description: t("coachMarks.toolbar.gridDesc"),
             },
             {
               targetSelector: '[data-coach="fullscreen-button"]',
-              title: "🔲 Fullscreen",
-              description: "Expand the camera to fill your entire screen for a better view.",
+              title: t("coachMarks.toolbar.fullscreenTitle"),
+              description: t("coachMarks.toolbar.fullscreenDesc"),
             },
             {
               targetSelector: '[data-coach="camera-switch-button"]',
-              title: "🔄 Switch Camera",
-              description: "Toggle between front and back cameras, or choose from available devices.",
+              title: t("coachMarks.toolbar.switchCameraTitle"),
+              description: t("coachMarks.toolbar.switchCameraDesc"),
             },
             {
               targetSelector: '[data-coach="mode-toggle"]',
-              title: "🎬 Photo / Video Mode",
-              description: "Switch between Photo and Video modes. Video mode lets you record audio notes while capturing.",
+              title: t("coachMarks.toolbar.modeToggleTitle"),
+              description: t("coachMarks.toolbar.modeToggleDesc"),
             },
           ]}
         />
@@ -551,39 +556,39 @@ export const LiveCameraCapture = ({
           steps={cameraMode === 'photo' ? [
             {
               targetSelector: '[data-coach="shutter-button"]',
-              title: "📸 Take a Photo",
-              description: "Tap this button to capture a photo. You can take multiple photos before closing.",
+              title: t("coachMarks.photo.shutterTitle"),
+              description: t("coachMarks.photo.shutterDesc"),
             },
             {
               targetSelector: '[data-coach="ai-notes-button"]',
-              title: "🎙️ AI Notes",
-              description: "Tap to start recording voice notes. Your speech is transcribed and added to your report.",
+              title: t("coachMarks.photo.aiNotesTitle"),
+              description: t("coachMarks.photo.aiNotesDesc"),
             },
             {
               targetSelector: '[data-coach="stop-notes-button"]',
-              title: "⏹️ Stop & Save",
-              description: "Tap Stop to save your voice notes. You can start a new recording anytime.",
+              title: t("coachMarks.photo.stopTitle"),
+              description: t("coachMarks.photo.stopDesc"),
             },
           ] : [
             {
               targetSelector: '[data-coach="record-button"]',
-              title: "🔴 Start Recording",
-              description: "Tap to begin recording audio notes while you work. Photos can be taken during recording.",
+              title: t("coachMarks.video.recordTitle"),
+              description: t("coachMarks.video.recordDesc"),
             },
             {
               targetSelector: '[data-coach="video-pause-button"]',
-              title: "⏸️ Pause / Resume",
-              description: "Pause your recording when you need a break, then resume when ready.",
+              title: t("coachMarks.video.pauseTitle"),
+              description: t("coachMarks.video.pauseDesc"),
             },
             {
               targetSelector: '[data-coach="video-photo-button"]',
-              title: "📸 Snap a Photo",
-              description: "Take photos while recording — great for documenting as you narrate.",
+              title: t("coachMarks.video.photoTitle"),
+              description: t("coachMarks.video.photoDesc"),
             },
             {
               targetSelector: '[data-coach="video-stop-button"]',
-              title: "⏹️ Stop & Save",
-              description: "Tap Stop to finish and save your recording. Notes are transcribed automatically.",
+              title: t("coachMarks.video.stopTitle"),
+              description: t("coachMarks.video.stopDesc"),
             },
           ]}
         />
