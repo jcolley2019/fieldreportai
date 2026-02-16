@@ -806,10 +806,10 @@ const Notes = () => {
         </div>
       </main>
 
-      {/* Action Toolbar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 z-20">
-        {/* Primary Action - Quick Save (Full Width) */}
-        <div className="border-b border-zinc-800 px-4 py-3" data-coach="note-quick-save">
+      {/* Fixed Bottom Actions Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-border" data-coach="note-save-options">
+        {/* Primary Action - Quick Save */}
+        <div className="border-b border-border px-4 py-3" data-coach="note-quick-save">
           <Button
             onClick={handleQuickSave}
             variant={showSuccess ? undefined : "default"}
@@ -831,68 +831,42 @@ const Notes = () => {
           </Button>
         </div>
 
-        {/* Secondary Actions Bar (Centered) */}
-        <div className="border-t border-zinc-800 px-4 py-4">
-          <div className="flex items-center justify-center gap-2 md:gap-3">
-            {/* Clear Note */}
+        {/* Secondary Actions */}
+        <div className="px-4 py-3">
+          <div className="flex gap-2 w-full">
             <Button
               onClick={handleClearNote}
-              variant="ghost"
-              size="sm"
-              className="gap-2 text-zinc-400 hover:text-red-400 hover:bg-red-400/10"
+              variant="secondary"
+              size="default"
+              className="flex-1 gap-2"
               disabled={!noteText && !organizedNotes}
             >
               <Trash2 className="h-4 w-4" />
-              <span className="hidden md:inline">{t('notes.clear', { defaultValue: 'Clear' })}</span>
+              {t('notes.clear', { defaultValue: 'Clear' })}
             </Button>
-
-            {/* Divider */}
-            <div className="hidden md:block h-8 w-px bg-zinc-700" />
-
-            {/* Tertiary Action - Copy Link */}
-            <Button
-              onClick={handleCopyLink}
-              variant="ghost"
-              size="sm"
-              className="gap-2 text-zinc-200 hover:text-white"
-            >
-              <Link className="h-4 w-4" />
-              <span className="hidden md:inline">{t('notes.copyLink')}</span>
-            </Button>
-
-            {/* Divider */}
-            <div className="hidden md:block h-8 w-px bg-zinc-700" />
-
-            {/* Secondary Action - Print */}
             <Button
               onClick={handlePrint}
-              variant="outline"
-              size="sm"
-              className="gap-2 text-zinc-200 hover:text-white border-zinc-600"
+              variant="secondary"
+              size="default"
+              className="flex-1 gap-2"
               disabled={!noteText && !organizedNotes}
             >
               <Printer className="h-4 w-4" />
-              <span className="hidden md:inline">{t('notes.print')}</span>
+              {t('notes.print')}
             </Button>
-
-            {/* Divider */}
-            <div className="hidden md:block h-8 w-px bg-zinc-700" />
-
-            {/* Save Options Dropdown */}
-            <DropdownMenu data-coach="note-save-options">
+            <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1 md:gap-2 text-zinc-200 hover:text-white border-zinc-600"
+                  variant="secondary"
+                  size="default"
+                  className="flex-1 gap-2"
                   disabled={!noteText && !organizedNotes}
                 >
                   <Download className="h-4 w-4" />
-                  <span className="hidden sm:inline">{t('notes.saveOptions')}</span>
-                  <ChevronDown className="h-4 w-4" />
+                  {t('notes.saveOptions')}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
+              <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={handleDownloadPDF} className="gap-2 cursor-pointer">
                   <FileText className="h-4 w-4" />
                   {t('notes.savePDF')}
@@ -904,6 +878,14 @@ const Notes = () => {
                 <DropdownMenuItem onClick={handleSaveToCloud} className="gap-2 cursor-pointer" disabled={isSaving}>
                   <Cloud className="h-4 w-4" />
                   {t('notes.saveToCloud')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCopyLink} className="gap-2 cursor-pointer">
+                  <Link className="h-4 w-4" />
+                  {t('notes.copyLink')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleEmail} className="gap-2 cursor-pointer">
+                  <Mail className="h-4 w-4" />
+                  {t('notes.email', { defaultValue: 'Email' })}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
