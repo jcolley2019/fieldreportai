@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
+import CoachMarks from "@/components/CoachMarks";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Camera, Mic, MicOff, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, X, ExternalLink } from "lucide-react";
@@ -630,6 +631,33 @@ const Checklist = () => {
 
   return (
     <div className="dark min-h-screen bg-background">
+      {/* Coach Marks */}
+      <CoachMarks
+        storageKey="checklistScreenCoachDismissed"
+        steps={[
+          {
+            targetSelector: '[data-coach="checklist-voice-record"]',
+            title: t("coachMarks.checklist.voiceTitle"),
+            description: t("coachMarks.checklist.voiceDesc"),
+          },
+          {
+            targetSelector: '[data-coach="checklist-camera"]',
+            title: t("coachMarks.checklist.cameraTitle"),
+            description: t("coachMarks.checklist.cameraDesc"),
+          },
+          {
+            targetSelector: '[data-coach="checklist-generate"]',
+            title: t("coachMarks.checklist.generateTitle"),
+            description: t("coachMarks.checklist.generateDesc"),
+          },
+          {
+            targetSelector: '[data-coach="checklist-previous"]',
+            title: t("coachMarks.checklist.previousTitle"),
+            description: t("coachMarks.checklist.previousDesc"),
+          },
+        ]}
+      />
+
       {/* Glass Navbar */}
       <GlassNavbar fixed={false}>
         <NavbarLeft>
@@ -666,7 +694,7 @@ const Checklist = () => {
 
         <div className="flex flex-col gap-y-6">
           {/* Upload/Camera Section */}
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-4" data-coach="checklist-camera">
             {/* Hidden file inputs */}
             <input
               ref={fileInputRef}
@@ -686,7 +714,7 @@ const Checklist = () => {
             />
 
             {/* Voice Input Section */}
-            <div className="w-full">
+            <div className="w-full" data-coach="checklist-voice-record">
               <button
                 onClick={handleVoiceRecord}
                 disabled={isProcessingVoice}
@@ -720,7 +748,7 @@ const Checklist = () => {
             </div>
 
             {/* Previous Checklists Section */}
-            <div className="w-full mt-8">
+            <div className="w-full mt-8" data-coach="checklist-previous">
               <h3 className="text-lg font-semibold text-foreground mb-4">{t('checklist.previousChecklists')}</h3>
               <div className="space-y-3">
                 {isLoadingChecklists ? (
@@ -819,6 +847,7 @@ const Checklist = () => {
       {/* Fixed Bottom Button */}
       <div className="fixed bottom-0 left-0 right-0 z-10 w-full bg-background/80 p-4 backdrop-blur-lg">
         <Button
+          data-coach="checklist-generate"
           onClick={generateSummary}
           disabled={isRecording}
           className="w-full rounded-xl bg-primary px-4 py-6 text-base font-semibold text-white hover:bg-primary/90 disabled:opacity-50"

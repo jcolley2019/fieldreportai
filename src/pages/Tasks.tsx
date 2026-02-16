@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
+import CoachMarks from "@/components/CoachMarks";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Sparkles, Trash2, Clock, Flag, CheckCircle2, Circle, Loader2, Mic, MicOff, FolderOpen, ImageIcon } from "lucide-react";
@@ -368,6 +369,33 @@ const Tasks = () => {
 
   return (
     <div className="dark min-h-screen bg-background">
+      {/* Coach Marks */}
+      <CoachMarks
+        storageKey="tasksScreenCoachDismissed"
+        steps={[
+          {
+            targetSelector: '[data-coach="task-add-button"]',
+            title: t("coachMarks.tasks.addTitle"),
+            description: t("coachMarks.tasks.addDesc"),
+          },
+          {
+            targetSelector: '[data-coach="task-ai-suggest"]',
+            title: t("coachMarks.tasks.aiSuggestTitle"),
+            description: t("coachMarks.tasks.aiSuggestDesc"),
+          },
+          {
+            targetSelector: '[data-coach="task-voice-input"]',
+            title: t("coachMarks.tasks.voiceTitle"),
+            description: t("coachMarks.tasks.voiceDesc"),
+          },
+          {
+            targetSelector: '[data-coach="task-filters"]',
+            title: t("coachMarks.tasks.filtersTitle"),
+            description: t("coachMarks.tasks.filtersDesc"),
+          },
+        ]}
+      />
+
       <GlassNavbar fixed={false}>
         <NavbarLeft>
           <BackButton fallbackPath="/capture-screen" />
@@ -412,6 +440,7 @@ const Tasks = () => {
         {/* Action Buttons */}
         <div className="flex gap-3 mb-6">
           <Button
+            data-coach="task-add-button"
             onClick={() => setShowAddDialog(true)}
             className="flex-1 gap-2"
           >
@@ -419,6 +448,7 @@ const Tasks = () => {
             {t('tasks.addTask')}
           </Button>
           <Button
+            data-coach="task-ai-suggest"
             onClick={() => handleSuggestTasks()}
             disabled={isSuggestingTasks}
             variant="secondary"
@@ -434,7 +464,7 @@ const Tasks = () => {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2" data-coach="task-filters">
           {(['all', 'pending', 'in_progress', 'completed'] as const).map((f) => (
             <button
               key={f}
@@ -451,7 +481,7 @@ const Tasks = () => {
         </div>
 
         {/* Voice Input Section */}
-        <div className="mb-6">
+        <div className="mb-6" data-coach="task-voice-input">
           <button
             onClick={handleVoiceRecord}
             disabled={isProcessingVoice || isSuggestingTasks}
