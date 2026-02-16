@@ -928,7 +928,9 @@
       "voiceTitle": "🎙️ Entrada de Voz",
       "voiceDesc": "Dicta tus tareas por voz. La IA transcribirá y creará tareas a partir de lo que digas.",
       "filtersTitle": "🔍 Filtrar Tareas",
-      "filtersDesc": "Filtra tareas por estado: Todas, Pendientes, En Progreso o Completadas."
+      "filtersDesc": "Filtra tareas por estado: Todas, Pendientes, En Progreso o Completadas.",
+      "actionsTitle": "💾 Guardar, Imprimir y Compartir",
+      "actionsDesc": "Guarda tu lista de tareas en un proyecto, imprímela o compártela por correo o como texto copiado."
     },
     "checklist": {
       "voiceTitle": "🎙️ Dictar Lista",

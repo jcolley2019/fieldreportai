@@ -924,7 +924,9 @@
       "voiceTitle": "🎙️ Voice Input",
       "voiceDesc": "Dictate your tasks by voice. AI will transcribe and create tasks from what you say.",
       "filtersTitle": "🔍 Filter Tasks",
-      "filtersDesc": "Filter tasks by status: All, Pending, In Progress, or Completed."
+      "filtersDesc": "Filter tasks by status: All, Pending, In Progress, or Completed.",
+      "actionsTitle": "💾 Save, Print & Share",
+      "actionsDesc": "Save your task list to a project, print it, or share it via email or as copied text."
     },
     "checklist": {
       "voiceTitle": "🎙️ Dictate Checklist",
