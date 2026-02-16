@@ -127,10 +127,9 @@ const Index = () => {
     };
   }, []);
 
+  // TODO: re-enable auth guard before publishing
   useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth");
-    } else if (!loading && user) {
+    if (!loading && user) {
       checkProfileComplete();
     }
   }, [user, loading, navigate]);
