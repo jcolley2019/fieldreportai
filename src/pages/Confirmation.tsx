@@ -110,14 +110,14 @@ const Confirmation = () => {
       {/* History Section */}
       {recentReports.length > 0 && (
         <div className="px-4 pt-8 pb-8">
-          <h3 className="mb-4 text-lg font-bold text-muted-foreground">
+          <h3 className="mb-4 text-lg font-bold text-foreground">
             {t('confirmation.recentReports')}
           </h3>
-          <div className="space-y-3">
+          <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm divide-y divide-border/30">
             {recentReports.map((report) => (
               <div
                 key={report.id}
-                className="flex items-center justify-between rounded-xl bg-card p-4"
+                className="flex items-center justify-between p-4"
               >
                 <div className="flex-1">
                   <h4 className="text-base font-semibold text-foreground">
