@@ -787,6 +787,21 @@ const CaptureScreen = () => {
             description: t("coachMarks.capture.notesDesc"),
           },
           {
+            targetSelector: '[data-coach="add-note-button"]',
+            title: t("coachMarks.capture.addNoteTitle"),
+            description: t("coachMarks.capture.addNoteDesc"),
+          },
+          {
+            targetSelector: '[data-coach="tasks-button"]',
+            title: t("coachMarks.capture.tasksTitle"),
+            description: t("coachMarks.capture.tasksDesc"),
+          },
+          {
+            targetSelector: '[data-coach="checklist-button"]',
+            title: t("coachMarks.capture.checklistTitle"),
+            description: t("coachMarks.capture.checklistDesc"),
+          },
+          {
             targetSelector: '[data-coach="generate-button"]',
             title: t("coachMarks.capture.generateTitle"),
             description: t("coachMarks.capture.generateDesc"),
@@ -841,6 +856,7 @@ const CaptureScreen = () => {
           {/* Quick Actions */}
           <div className="grid grid-cols-3 gap-3">
             <button 
+              data-coach="add-note-button"
               onClick={() => navigate("/notes", { state: { simpleMode: isSimpleMode } })}
               className="flex flex-col items-center gap-3 rounded-lg bg-card p-4 transition-colors hover:bg-secondary"
             >
@@ -850,6 +866,7 @@ const CaptureScreen = () => {
               <span className="text-sm font-semibold text-foreground">{t('captureScreen.addNote')}</span>
             </button>
             <button 
+              data-coach="tasks-button"
               onClick={() => navigate("/tasks", { state: { simpleMode: isSimpleMode } })}
               className="flex flex-col items-center gap-3 rounded-lg bg-card p-4 transition-colors hover:bg-secondary"
             >
@@ -859,6 +876,7 @@ const CaptureScreen = () => {
               <span className="text-sm font-semibold text-foreground">{t('captureScreen.tasks')}</span>
             </button>
             <button 
+              data-coach="checklist-button"
               onClick={() => navigate("/checklist", { state: { simpleMode: isSimpleMode } })}
               className="flex flex-col items-center gap-3 rounded-lg bg-card p-4 transition-colors hover:bg-secondary"
             >

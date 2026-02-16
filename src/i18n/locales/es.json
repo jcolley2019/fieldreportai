@@ -870,7 +870,13 @@
       "notesTitle": "📝 Notas con IA",
       "notesDesc": "Tus grabaciones de voz y notas aparecen aquí. También puedes escribir directamente. ¡Agrega más notas en cualquier momento!",
       "generateTitle": "✨ Generar Resumen",
-      "generateDesc": "Cuando termines de capturar, toca aquí para generar un informe con IA a partir de tus fotos y notas."
+      "generateDesc": "Cuando termines de capturar, toca aquí para generar un informe con IA a partir de tus fotos y notas.",
+      "addNoteTitle": "📝 Agregar Nota",
+      "addNoteDesc": "Toca aquí para crear notas detalladas con dictado de voz o escritura. Las notas se guardan y vinculan a tu proyecto.",
+      "tasksTitle": "📋 Tareas",
+      "tasksDesc": "Crea y administra tareas para tu proyecto. Usa IA para sugerir tareas o díctalas con tu voz.",
+      "checklistTitle": "✅ Lista de Verificación",
+      "checklistDesc": "Genera listas de verificación con IA o crea las tuyas. Marca los elementos a medida que los completas en el sitio."
     },
     "toolbar": {
       "flashTitle": "⚡ Flash",
