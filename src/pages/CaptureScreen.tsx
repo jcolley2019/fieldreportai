@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, ListChecks, ClipboardList, Pencil, Loader2, PenTool, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
+import CoachMarks from "@/components/CoachMarks";
 import { LiveCameraCapture } from "@/components/LiveCameraCapture";
 import { PhotoAnnotationDialog } from "@/components/PhotoAnnotationDialog";
 import { PhotoTimestamp } from "@/components/PhotoTimestamp";
@@ -771,6 +772,27 @@ const CaptureScreen = () => {
 
   return (
     <div className="dark min-h-screen bg-background">
+      {/* Coach Marks - first visit only */}
+      <CoachMarks
+        storageKey="captureScreenCoachDismissed"
+        steps={[
+          {
+            targetSelector: '[data-coach="camera-button"]',
+            title: "📸 Take Photos & Record",
+            description: "Tap here to open the camera. Take photos and record voice notes to document your work.",
+          },
+          {
+            targetSelector: '[data-coach="field-notes"]',
+            title: "📝 AI Notes",
+            description: "Your voice recordings and notes appear here. You can also type directly. Add more notes anytime!",
+          },
+          {
+            targetSelector: '[data-coach="generate-button"]',
+            title: "✨ Generate Summary",
+            description: "When you're done capturing, tap here to generate an AI-powered report from your photos and notes.",
+          },
+        ]}
+      />
       {/* Glass Navbar */}
       <GlassNavbar fixed={false}>
         <NavbarLeft>
@@ -799,7 +821,7 @@ const CaptureScreen = () => {
 
         <div className="flex flex-col gap-y-6">
           {/* Description Textarea */}
-          <div className="relative">
+          <div className="relative" data-coach="field-notes">
             <label className="text-foreground font-medium flex items-center gap-2 mb-2">
               <FileText className="h-4 w-4 text-primary" />
               {t('captureScreen.fieldNotes')}
@@ -851,6 +873,7 @@ const CaptureScreen = () => {
           {/* Upload/Camera Section with Auto Voice Recording */}
           <div className="flex flex-col items-center gap-4">
             <button
+              data-coach="camera-button"
               onClick={handleOpenCamera}
               className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-all hover:bg-primary/30 shadow-xl shadow-primary/50 ring-4 ring-primary/30"
             >
@@ -990,6 +1013,7 @@ const CaptureScreen = () => {
       {/* Fixed Bottom Button */}
       <div className="fixed bottom-0 left-0 right-0 z-20 w-full bg-background/80 p-4 backdrop-blur-lg">
         <Button
+          data-coach="generate-button"
           onClick={generateSummary}
           disabled={isGenerating}
           className="w-full rounded-xl bg-primary px-4 py-6 text-base font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
