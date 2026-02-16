@@ -393,6 +393,11 @@ const Tasks = () => {
             title: t("coachMarks.tasks.filtersTitle"),
             description: t("coachMarks.tasks.filtersDesc"),
           },
+          {
+            targetSelector: '[data-coach="task-actions-bar"]',
+            title: t("coachMarks.tasks.actionsTitle"),
+            description: t("coachMarks.tasks.actionsDesc"),
+          },
         ]}
       />
 
@@ -410,7 +415,7 @@ const Tasks = () => {
 
       <main className="flex-1 px-4 pt-4 pb-24 animate-fade-in">
         {/* Project Badge & Actions */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col gap-3 mb-4">
           <div className="flex items-center gap-2">
             {projectName ? (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg text-sm">
@@ -429,12 +434,14 @@ const Tasks = () => {
               </Button>
             ) : null}
           </div>
-          <TaskActionsBar 
-            tasks={tasks} 
-            projectName={projectName} 
-            reportId={reportId}
-            onSaveToProject={() => setShowProjectSelector(true)}
-          />
+          <div data-coach="task-actions-bar">
+            <TaskActionsBar 
+              tasks={tasks} 
+              projectName={projectName} 
+              reportId={reportId}
+              onSaveToProject={() => setShowProjectSelector(true)}
+            />
+          </div>
         </div>
 
         {/* Action Buttons */}

@@ -258,33 +258,33 @@ export const TaskActionsBar = ({ tasks, projectName, reportId, onSaveToProject }
 
   return (
     <>
-      <div className="flex gap-2">
+      <div className="flex gap-2 w-full">
         <Button
-          variant="outline"
-          size="sm"
+          variant="secondary"
+          size="default"
           onClick={handleSaveToProject}
           disabled={tasks.length === 0}
-          className="gap-2"
+          className="flex-1 gap-2"
         >
           <Save className="h-4 w-4" />
           {reportId ? t('tasks.saved') : t('tasks.saveToProject')}
         </Button>
         <Button
-          variant="outline"
-          size="sm"
+          variant="secondary"
+          size="default"
           onClick={handlePrint}
           disabled={tasks.length === 0}
-          className="gap-2"
+          className="flex-1 gap-2"
         >
           <Printer className="h-4 w-4" />
           {t('common.print')}
         </Button>
         <Button
-          variant="outline"
-          size="sm"
+          variant="secondary"
+          size="default"
           onClick={() => setShowShareDialog(true)}
           disabled={tasks.length === 0}
-          className="gap-2"
+          className="flex-1 gap-2"
         >
           <Share2 className="h-4 w-4" />
           {t('common.share')}
