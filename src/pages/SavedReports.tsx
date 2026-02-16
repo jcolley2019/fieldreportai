@@ -74,11 +74,12 @@ const SavedReports = () => {
       setIsLoading(true);
       
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error("Please sign in to view saved reports");
-        navigate("/auth");
-        return;
-      }
+      // Auth redirect temporarily disabled for testing
+      // if (!user) {
+      //   toast.error("Please sign in to view saved reports");
+      //   navigate("/auth");
+      //   return;
+      // }
 
       // Fetch documents with their associated report's report_type
       const { data: documents, error: docError } = await supabase
