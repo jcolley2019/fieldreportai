@@ -127,6 +127,12 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
+    // Safety timeout: always clear loading after 10 seconds max
+    const safetyTimeout = setTimeout(() => {
+      setLoading(false);
+      console.warn('Auth submit safety timeout triggered');
+    }, 10000);
+
     try {
       if (isLogin) {
         // --- LOGIN ---
@@ -217,6 +223,7 @@ const Auth = () => {
         toast({ title: t('auth.errors.validationError'), description: t('auth.errors.unexpectedError'), variant: "destructive" });
       }
     } finally {
+      clearTimeout(safetyTimeout);
       setLoading(false);
     }
   };
