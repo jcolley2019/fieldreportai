@@ -7,7 +7,7 @@ import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { Textarea } from "@/components/ui/textarea";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Edit2, Trash2, Sparkles, Save, X, Search, Filter, ImageIcon } from "lucide-react";
+import { Edit2, Trash2, Sparkles, Save, X, Search, Filter, ImageIcon, FileText } from "lucide-react";
 import { PhotoPickerDialog } from "@/components/PhotoPickerDialog";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -373,8 +373,16 @@ const SavedNotes = () => {
             {t('savedNotes.loading')}
           </div>
         ) : filteredNotes.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">
-            {searchQuery ? t('savedNotes.noNotesFound') : t('savedNotes.noSavedNotes')}
+          <div className="p-8 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted/50">
+              <FileText className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-foreground font-medium mb-1">
+              {searchQuery ? t('savedNotes.noNotesFound') : t('savedNotes.noSavedNotes')}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {searchQuery ? t('savedNotes.tryDifferentSearch', { defaultValue: 'Try a different search term' }) : t('savedNotes.createNoteHint', { defaultValue: 'Create a note from the capture screen to get started' })}
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-border/30">

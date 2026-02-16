@@ -750,30 +750,40 @@ const Checklist = () => {
             {/* Previous Checklists Section */}
             <div className="w-full mt-8" data-coach="checklist-previous">
               <h3 className="text-lg font-semibold text-foreground mb-4">{t('checklist.previousChecklists')}</h3>
-              <div className="space-y-3">
+              <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm">
                 {isLoadingChecklists ? (
-                  <div className="text-center text-muted-foreground py-4">
+                  <div className="text-center text-muted-foreground py-8">
                     {t('common.loading')}
                   </div>
                 ) : previousChecklists.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-4 text-sm">
-                    {i18n.language === 'es' 
-                      ? 'No hay listas anteriores aún' 
-                      : 'No previous checklists yet'}
+                  <div className="p-8 text-center">
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted/50">
+                      <FileText className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <p className="text-foreground font-medium mb-1">
+                      {i18n.language === 'es' ? 'No hay listas aún' : 'No checklists yet'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {i18n.language === 'es' 
+                        ? 'Genera una lista de verificación para empezar' 
+                        : 'Generate a checklist to get started'}
+                    </p>
                   </div>
                 ) : (
-                  previousChecklists.map((checklist) => (
-                    <div 
-                      key={checklist.id}
-                      onClick={() => handlePreviewChecklist(checklist.id)}
-                      className="rounded-lg border border-border bg-secondary p-4 hover:bg-secondary/80 transition-colors cursor-pointer"
-                    >
-                      <h4 className="font-medium text-foreground mb-2">{checklist.title}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {formatRelativeDate(checklist.created_at)} • {checklist.item_count} {checklist.item_count === 1 ? (i18n.language === 'es' ? 'ítem' : 'item') : (i18n.language === 'es' ? 'ítems' : 'items')}
-                      </p>
-                    </div>
-                  ))
+                  <div className="divide-y divide-border/30">
+                    {previousChecklists.map((checklist) => (
+                      <div 
+                        key={checklist.id}
+                        onClick={() => handlePreviewChecklist(checklist.id)}
+                        className="p-4 hover:bg-muted/20 transition-colors cursor-pointer"
+                      >
+                        <h4 className="font-medium text-foreground mb-2">{checklist.title}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {formatRelativeDate(checklist.created_at)} • {checklist.item_count} {checklist.item_count === 1 ? (i18n.language === 'es' ? 'ítem' : 'item') : (i18n.language === 'es' ? 'ítems' : 'items')}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
