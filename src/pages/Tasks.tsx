@@ -414,34 +414,24 @@ const Tasks = () => {
       </GlassNavbar>
 
       <main className="flex-1 px-4 pt-4 pb-24 animate-fade-in">
-        {/* Project Badge & Actions */}
-        <div className="flex flex-col gap-3 mb-4">
-          <div className="flex items-center gap-2">
-            {projectName ? (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg text-sm">
-                <FolderOpen className="h-4 w-4 text-primary" />
-                <span className="text-foreground">{projectName}</span>
-              </div>
-            ) : isSimpleMode ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowProjectSelector(true)}
-                className="gap-2"
-              >
-                <FolderOpen className="h-4 w-4" />
-                {t('tasks.linkToProject')}
-              </Button>
-            ) : null}
-          </div>
-          <div data-coach="task-actions-bar">
-            <TaskActionsBar 
-              tasks={tasks} 
-              projectName={projectName} 
-              reportId={reportId}
-              onSaveToProject={() => setShowProjectSelector(true)}
-            />
-          </div>
+        {/* Project Badge */}
+        <div className="flex items-center gap-2 mb-4">
+          {projectName ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg text-sm">
+              <FolderOpen className="h-4 w-4 text-primary" />
+              <span className="text-foreground">{projectName}</span>
+            </div>
+          ) : isSimpleMode ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowProjectSelector(true)}
+              className="gap-2"
+            >
+              <FolderOpen className="h-4 w-4" />
+              {t('tasks.linkToProject')}
+            </Button>
+          ) : null}
         </div>
 
         {/* Action Buttons */}
@@ -593,6 +583,16 @@ const Tasks = () => {
           </div>
         )}
       </main>
+
+      {/* Fixed Bottom Actions Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-border px-4 py-3 safe-area-bottom" data-coach="task-actions-bar">
+        <TaskActionsBar 
+          tasks={tasks} 
+          projectName={projectName} 
+          reportId={reportId}
+          onSaveToProject={() => setShowProjectSelector(true)}
+        />
+      </div>
 
       {/* Add Task Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
