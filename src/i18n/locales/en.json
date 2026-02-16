@@ -906,6 +906,36 @@
       "stopTitle": "⏹️ Stop & Save",
       "stopDesc": "Tap Stop to finish and save your recording. Notes are transcribed automatically."
     },
+    "notes": {
+      "textareaTitle": "📝 Type Your Notes",
+      "textareaDesc": "Type or paste your notes here. Voice recordings will also appear in this area after transcription.",
+      "voiceTitle": "🎙️ Voice Recording",
+      "voiceDesc": "Tap to start recording. Speak your notes and they'll be automatically transcribed into text.",
+      "quickSaveTitle": "💾 Quick Save",
+      "quickSaveDesc": "Save your notes instantly to your project. They'll be available in your Saved Notes section.",
+      "saveOptionsTitle": "📥 Export Options",
+      "saveOptionsDesc": "Download as PDF, Word document, save to cloud storage, or email your notes."
+    },
+    "tasks": {
+      "addTitle": "➕ Add Task",
+      "addDesc": "Manually create a new task with a title, description, and priority level.",
+      "aiSuggestTitle": "✨ AI Suggest",
+      "aiSuggestDesc": "Let AI analyze your project and suggest relevant tasks automatically.",
+      "voiceTitle": "🎙️ Voice Input",
+      "voiceDesc": "Dictate your tasks by voice. AI will transcribe and create tasks from what you say.",
+      "filtersTitle": "🔍 Filter Tasks",
+      "filtersDesc": "Filter tasks by status: All, Pending, In Progress, or Completed."
+    },
+    "checklist": {
+      "voiceTitle": "🎙️ Dictate Checklist",
+      "voiceDesc": "Describe what needs to be checked and AI will generate a structured checklist from your voice.",
+      "cameraTitle": "📸 Add Photos",
+      "cameraDesc": "Optionally add photos for AI to analyze. It can generate checklist items based on what it sees.",
+      "generateTitle": "✨ Generate Checklist",
+      "generateDesc": "Tap to generate an AI-powered checklist from your photos. Add voice notes for more specific results.",
+      "previousTitle": "📋 Previous Checklists",
+      "previousDesc": "View and reuse your previously created checklists. Tap any to preview and navigate to it."
+    },
     "next": "Next",
     "gotIt": "Got it!"
   }

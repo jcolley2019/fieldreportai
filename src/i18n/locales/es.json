@@ -910,6 +910,36 @@
       "stopTitle": "⏹️ Detener y Guardar",
       "stopDesc": "Toca Detener para finalizar y guardar tu grabación. Las notas se transcriben automáticamente."
     },
+    "notes": {
+      "textareaTitle": "📝 Escribe tus Notas",
+      "textareaDesc": "Escribe o pega tus notas aquí. Las grabaciones de voz también aparecerán en esta área después de la transcripción.",
+      "voiceTitle": "🎙️ Grabación de Voz",
+      "voiceDesc": "Toca para comenzar a grabar. Habla tus notas y se transcribirán automáticamente a texto.",
+      "quickSaveTitle": "💾 Guardado Rápido",
+      "quickSaveDesc": "Guarda tus notas al instante en tu proyecto. Estarán disponibles en tu sección de Notas Guardadas.",
+      "saveOptionsTitle": "📥 Opciones de Exportación",
+      "saveOptionsDesc": "Descarga como PDF, documento Word, guarda en la nube o envía tus notas por correo."
+    },
+    "tasks": {
+      "addTitle": "➕ Agregar Tarea",
+      "addDesc": "Crea manualmente una nueva tarea con título, descripción y nivel de prioridad.",
+      "aiSuggestTitle": "✨ Sugerencias de IA",
+      "aiSuggestDesc": "Deja que la IA analice tu proyecto y sugiera tareas relevantes automáticamente.",
+      "voiceTitle": "🎙️ Entrada de Voz",
+      "voiceDesc": "Dicta tus tareas por voz. La IA transcribirá y creará tareas a partir de lo que digas.",
+      "filtersTitle": "🔍 Filtrar Tareas",
+      "filtersDesc": "Filtra tareas por estado: Todas, Pendientes, En Progreso o Completadas."
+    },
+    "checklist": {
+      "voiceTitle": "🎙️ Dictar Lista",
+      "voiceDesc": "Describe lo que necesita ser verificado y la IA generará una lista estructurada a partir de tu voz.",
+      "cameraTitle": "📸 Agregar Fotos",
+      "cameraDesc": "Opcionalmente agrega fotos para que la IA analice. Puede generar elementos de lista basándose en lo que ve.",
+      "generateTitle": "✨ Generar Lista",
+      "generateDesc": "Toca para generar una lista con IA a partir de tus fotos. Agrega notas de voz para resultados más específicos.",
+      "previousTitle": "📋 Listas Anteriores",
+      "previousDesc": "Ve y reutiliza tus listas creadas anteriormente. Toca cualquiera para previsualizarla y navegar a ella."
+    },
     "next": "Siguiente",
     "gotIt": "¡Entendido!"
   }

@@ -6,6 +6,7 @@ import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { Textarea } from "@/components/ui/textarea";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
+import CoachMarks from "@/components/CoachMarks";
 import { Mic, MicOff, Save, Download, Mail, Printer, FileText, Plus, Link2, Cloud, ChevronDown, Link, Loader2, Check, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
@@ -700,6 +701,33 @@ const Notes = () => {
 
   return (
     <div className="dark min-h-screen bg-background pb-64">
+      {/* Coach Marks */}
+      <CoachMarks
+        storageKey="notesScreenCoachDismissed"
+        steps={[
+          {
+            targetSelector: '[data-coach="note-textarea"]',
+            title: t("coachMarks.notes.textareaTitle"),
+            description: t("coachMarks.notes.textareaDesc"),
+          },
+          {
+            targetSelector: '[data-coach="note-voice-record"]',
+            title: t("coachMarks.notes.voiceTitle"),
+            description: t("coachMarks.notes.voiceDesc"),
+          },
+          {
+            targetSelector: '[data-coach="note-quick-save"]',
+            title: t("coachMarks.notes.quickSaveTitle"),
+            description: t("coachMarks.notes.quickSaveDesc"),
+          },
+          {
+            targetSelector: '[data-coach="note-save-options"]',
+            title: t("coachMarks.notes.saveOptionsTitle"),
+            description: t("coachMarks.notes.saveOptionsDesc"),
+          },
+        ]}
+      />
+
       {/* Glass Navbar */}
       <GlassNavbar fixed={false}>
         <NavbarLeft>
@@ -715,7 +743,7 @@ const Notes = () => {
 
       <main className="p-4 pb-32 animate-fade-in">
         {/* Note Text Area */}
-        <div className="mb-6">
+        <div className="mb-6" data-coach="note-textarea">
           <label className="mb-2 block text-sm font-medium text-foreground">
             {t('notes.contentLabel')}
           </label>
@@ -728,7 +756,7 @@ const Notes = () => {
         </div>
 
         {/* Voice Input Section */}
-        <div className="mb-6">
+        <div className="mb-6" data-coach="note-voice-record">
           <button
             onClick={handleVoiceRecord}
             className={`flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl p-6 text-center transition-all ${
@@ -781,7 +809,7 @@ const Notes = () => {
       {/* Action Toolbar */}
       <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 z-20">
         {/* Primary Action - Quick Save (Full Width) */}
-        <div className="border-b border-zinc-800 px-4 py-3">
+        <div className="border-b border-zinc-800 px-4 py-3" data-coach="note-quick-save">
           <Button
             onClick={handleQuickSave}
             variant={showSuccess ? undefined : "default"}
@@ -851,7 +879,7 @@ const Notes = () => {
             <div className="hidden md:block h-8 w-px bg-zinc-700" />
 
             {/* Save Options Dropdown */}
-            <DropdownMenu>
+            <DropdownMenu data-coach="note-save-options">
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
