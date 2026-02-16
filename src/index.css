@@ -254,3 +254,17 @@ All colors MUST be HSL.
     box-shadow: 0 0 0 3px hsl(211 100% 52% / 0.2);
   }
 }
+
+/* Coach marks highlight */
+.coach-mark-highlight {
+  position: relative;
+  z-index: 9999;
+  box-shadow: 0 0 0 4px hsl(211 100% 52% / 0.5), 0 0 20px hsl(211 100% 52% / 0.3);
+  border-radius: 16px;
+  animation: coach-pulse 2s ease-in-out infinite;
+}
+
+@keyframes coach-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px hsl(211 100% 52% / 0.5), 0 0 20px hsl(211 100% 52% / 0.3); }
+  50% { box-shadow: 0 0 0 6px hsl(211 100% 52% / 0.7), 0 0 30px hsl(211 100% 52% / 0.4); }
+}
