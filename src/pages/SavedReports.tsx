@@ -520,16 +520,23 @@ const SavedReports = () => {
         </div>
         
         {/* Reports List */}
+        <h3 className="mb-4 text-lg font-bold text-foreground">{t('savedReports.title')}</h3>
         <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm">
         {reports.length === 0 ? (
           <div className="p-8 text-center">
-            <Cloud className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <p className="text-muted-foreground">{t('savedReports.emptyState')}</p>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted/50">
+              <FileText className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-foreground font-medium mb-1">{t('savedReports.emptyState')}</p>
+            <p className="text-sm text-muted-foreground">{t('savedReports.emptyStateHint', { defaultValue: 'Generate a report from a project to see it here' })}</p>
           </div>
         ) : filteredReports.length === 0 ? (
           <div className="p-8 text-center">
-            <Search className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <p className="text-muted-foreground">No reports found matching "{searchQuery}"</p>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted/50">
+              <Search className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-foreground font-medium mb-1">No reports found</p>
+            <p className="text-sm text-muted-foreground">Try a different search term</p>
           </div>
         ) : (
           <div className="divide-y divide-border/30">
