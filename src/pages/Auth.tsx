@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff, Fingerprint, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,6 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [isLinkingSubscription, setIsLinkingSubscription] = useState(false);
-  const isSubmittingRef = useRef(false); // Use ref to avoid re-creating auth listener
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectUrl = searchParams.get("redirect");
@@ -121,28 +120,35 @@ const Auth = () => {
     }
   };
 
+  const navigateAfterAuth = async () => {
+    // Link subscription if coming from guest checkout
+    if (sessionId) {
+      await linkSubscriptionToAccount();
+    }
+    // Activate trial if requested
+    if (startTrial === 'true') {
+      await activateTrial();
+    }
+    // Navigate to redirect or dashboard
+    if (redirectUrl) {
+      const fullRedirect = pendingPlan && pendingBilling 
+        ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
+        : redirectUrl;
+      navigate(fullRedirect);
+    } else {
+      navigate("/dashboard");
+    }
+  };
+
   useEffect(() => {
-    // Listen for auth state changes to handle redirects reliably
+    // Listen for auth state changes to handle ALL post-auth navigation
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        // Skip if handleSubmit is actively running — it handles its own navigation
-        if (isSubmittingRef.current) return;
-        
         if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-          // If coming from guest checkout, link the subscription
-          if (sessionId) {
-            await linkSubscriptionToAccount();
-          }
-          
-          // If there's a redirect URL, go there instead of dashboard
-          if (redirectUrl) {
-            const fullRedirect = pendingPlan && pendingBilling 
-              ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
-              : redirectUrl;
-            navigate(fullRedirect);
-          } else {
-            navigate("/dashboard");
-          }
+          // Small delay to let Supabase client fully establish the session
+          setTimeout(() => {
+            navigateAfterAuth();
+          }, 100);
         }
       }
     );
@@ -151,17 +157,7 @@ const Auth = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        if (sessionId) {
-          await linkSubscriptionToAccount();
-        }
-        if (redirectUrl) {
-          const fullRedirect = pendingPlan && pendingBilling 
-            ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
-            : redirectUrl;
-          navigate(fullRedirect);
-        } else {
-          navigate("/dashboard");
-        }
+        navigateAfterAuth();
       }
     };
     checkUser();
@@ -169,14 +165,11 @@ const Auth = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, redirectUrl, pendingPlan, pendingBilling, sessionId]);
+  }, [navigate, redirectUrl, pendingPlan, pendingBilling, sessionId, startTrial]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    isSubmittingRef.current = true;
-
-    // Safety timeout to prevent infinite "Please Wait..." state
     const safetyTimeout = setTimeout(() => {
       setLoading(false);
       toast({
@@ -215,38 +208,11 @@ const Auth = () => {
             });
           }
         } else {
-          // Link subscription if coming from guest checkout
-          if (sessionId) {
-            await linkSubscriptionToAccount();
-          }
-          
-          // Check if profile is complete - use maybeSingle to avoid throwing on no rows
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('first_name, last_name, company_name')
-            .eq('id', data.user.id)
-            .maybeSingle();
-          
-          if (profileError) {
-            console.error('Error fetching profile:', profileError);
-          }
-
-          const isProfileComplete = profile?.first_name && profile?.last_name && profile?.company_name;
-
+          // Login successful — show toast, listener handles navigation
           toast({
             title: t('auth.success.loggedIn').split('!')[0],
             description: t('auth.success.loggedIn'),
           });
-          
-          // If there's a redirect URL (e.g., from pricing page), go there
-          if (redirectUrl) {
-            const fullRedirect = pendingPlan && pendingBilling 
-              ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
-              : redirectUrl;
-            navigate(fullRedirect);
-          } else {
-            navigate("/dashboard");
-          }
         }
       } else {
         const { error, data } = await supabase.auth.signUp({
@@ -311,31 +277,12 @@ const Auth = () => {
             });
             setIsLogin(true);
           } else {
-            // Already logged in from signup — no need for redundant signInWithPassword
-            // Link subscription if coming from guest checkout
-            if (sessionId) {
-              await linkSubscriptionToAccount();
-            }
-            
-            // Activate trial if coming from "Get Started Free" button
-            if (startTrial === 'true') {
-              await activateTrial();
-            }
-            
+            // Already logged in from signup — listener handles navigation
             toast({
               title: t('auth.success.accountCreated').split('!')[0],
               description: startTrial === 'true' ? "Your 14-day Pro trial is now active!" : "You're now logged in!",
             });
-            
-            // Redirect
-            if (redirectUrl) {
-              const fullRedirect = pendingPlan && pendingBilling 
-                ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
-                : redirectUrl;
-              navigate(fullRedirect);
-            } else {
-              navigate("/dashboard");
-            }
+            // Navigation is handled by onAuthStateChange listener
           }
         }
       }
@@ -356,7 +303,6 @@ const Auth = () => {
     } finally {
       clearTimeout(safetyTimeout);
       setLoading(false);
-      isSubmittingRef.current = false;
     }
   };
 
