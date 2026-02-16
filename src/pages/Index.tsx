@@ -89,11 +89,20 @@ const Index = () => {
   useEffect(() => {
     let isMounted = true;
 
+    // Safety timeout: force loading to false after 5 seconds
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted && loading) {
+        console.warn('Dashboard auth safety timeout triggered');
+        setLoading(false);
+      }
+    }, 5000);
+
     // Listener for ONGOING auth changes (does NOT control loading)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!isMounted) return;
         setUser(session?.user ?? null);
+        if (loading) setLoading(false);
       }
     );
 
@@ -113,6 +122,7 @@ const Index = () => {
 
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimeout);
       subscription.unsubscribe();
     };
   }, []);
