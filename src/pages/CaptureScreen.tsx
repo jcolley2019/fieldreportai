@@ -788,7 +788,7 @@ const CaptureScreen = () => {
         {/* Project Info Pills */}
         <div className="flex flex-wrap gap-2 pb-4">
           <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
-            <p className="text-xs font-medium text-muted-foreground">{t('captureScreen.project')}: Alpha Site</p>
+            <p className="text-xs font-medium text-muted-foreground">{t('captureScreen.project')}: {location.state?.projectName || ''}</p>
           </div>
           <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
             <p className="text-xs font-medium text-muted-foreground">
