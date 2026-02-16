@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff, Fingerprint, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [isLinkingSubscription, setIsLinkingSubscription] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Prevents listener double-navigation
+  const isSubmittingRef = useRef(false); // Use ref to avoid re-creating auth listener
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectUrl = searchParams.get("redirect");
@@ -126,7 +126,7 @@ const Auth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         // Skip if handleSubmit is actively running — it handles its own navigation
-        if (isSubmitting) return;
+        if (isSubmittingRef.current) return;
         
         if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
           // If coming from guest checkout, link the subscription
@@ -169,12 +169,12 @@ const Auth = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, redirectUrl, pendingPlan, pendingBilling, sessionId, isSubmitting]);
+  }, [navigate, redirectUrl, pendingPlan, pendingBilling, sessionId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setIsSubmitting(true);
+    isSubmittingRef.current = true;
 
     // Safety timeout to prevent infinite "Please Wait..." state
     const safetyTimeout = setTimeout(() => {
@@ -356,7 +356,7 @@ const Auth = () => {
     } finally {
       clearTimeout(safetyTimeout);
       setLoading(false);
-      setIsSubmitting(false);
+      isSubmittingRef.current = false;
     }
   };
 
