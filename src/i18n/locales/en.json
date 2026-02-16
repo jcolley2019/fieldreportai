@@ -866,7 +866,13 @@
       "notesTitle": "📝 AI Notes",
       "notesDesc": "Your voice recordings and notes appear here. You can also type directly. Add more notes anytime!",
       "generateTitle": "✨ Generate Summary",
-      "generateDesc": "When you're done capturing, tap here to generate an AI-powered report from your photos and notes."
+      "generateDesc": "When you're done capturing, tap here to generate an AI-powered report from your photos and notes.",
+      "addNoteTitle": "📝 Add Note",
+      "addNoteDesc": "Tap here to create detailed notes with voice dictation or typing. Notes are saved and linked to your project.",
+      "tasksTitle": "📋 Tasks",
+      "tasksDesc": "Create and manage tasks for your project. Use AI to suggest tasks or dictate them with your voice.",
+      "checklistTitle": "✅ Checklist",
+      "checklistDesc": "Generate AI-powered checklists or create your own. Track items as you complete them on site."
     },
     "toolbar": {
       "flashTitle": "⚡ Flash",
