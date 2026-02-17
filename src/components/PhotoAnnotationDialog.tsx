@@ -116,15 +116,44 @@ function getElementHandles(el: AnnotationElement, ctx?: CanvasRenderingContext2D
 }
 
 function drawCloudPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  // Revision-cloud style: uniform semicircular arcs along each edge
+  const arcDiameter = Math.min(Math.abs(w), Math.abs(h)) * 0.22;
+  const radius = Math.max(arcDiameter / 2, 4);
+
+  const drawArcEdge = (x1: number, y1: number, x2: number, y2: number) => {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const count = Math.max(Math.round(len / (radius * 2)), 2);
+    const stepX = dx / count;
+    const stepY = dy / count;
+
+    for (let i = 0; i < count; i++) {
+      const sx = x1 + stepX * i;
+      const sy = y1 + stepY * i;
+      const ex = x1 + stepX * (i + 1);
+      const ey = y1 + stepY * (i + 1);
+      const mx = (sx + ex) / 2;
+      const my = (sy + ey) / 2;
+      // Normal perpendicular to edge direction (outward bulge)
+      const nx = -stepY / Math.sqrt(stepX * stepX + stepY * stepY) * radius;
+      const ny = stepX / Math.sqrt(stepX * stepX + stepY * stepY) * radius;
+      const cpx = mx + nx;
+      const cpy = my + ny;
+      ctx.quadraticCurveTo(cpx, cpy, ex, ey);
+    }
+  };
+
   ctx.beginPath();
-  ctx.moveTo(x + w * 0.15, y + h * 0.85);
-  ctx.lineTo(x + w * 0.85, y + h * 0.85);
-  ctx.quadraticCurveTo(x + w * 1.08, y + h * 0.85, x + w * 0.95, y + h * 0.55);
-  ctx.quadraticCurveTo(x + w * 1.1, y + h * 0.3, x + w * 0.78, y + h * 0.2);
-  ctx.quadraticCurveTo(x + w * 0.75, y - h * 0.05, x + w * 0.5, y + h * 0.08);
-  ctx.quadraticCurveTo(x + w * 0.25, y - h * 0.08, x + w * 0.2, y + h * 0.22);
-  ctx.quadraticCurveTo(x - w * 0.08, y + h * 0.3, x + w * 0.05, y + h * 0.58);
-  ctx.quadraticCurveTo(x - w * 0.08, y + h * 0.85, x + w * 0.15, y + h * 0.85);
+  ctx.moveTo(x, y);
+  // Top edge (left to right) — bulge outward (up)
+  drawArcEdge(x, y, x + w, y);
+  // Right edge (top to bottom) — bulge outward (right)
+  drawArcEdge(x + w, y, x + w, y + h);
+  // Bottom edge (right to left) — bulge outward (down)
+  drawArcEdge(x + w, y + h, x, y + h);
+  // Left edge (bottom to top) — bulge outward (left)
+  drawArcEdge(x, y + h, x, y);
   ctx.closePath();
 }
 
