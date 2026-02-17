@@ -47,6 +47,17 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Log share access for audit trail
+    const ip = req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "unknown";
+    const userAgent = req.headers.get("user-agent") || "unknown";
+    await supabaseClient
+      .from("share_access_log")
+      .insert({
+        share_id: share.id,
+        ip_address: ip.split(",")[0].trim(),
+        user_agent: userAgent.substring(0, 500),
+      });
+
     const report = share.reports;
     const reportId = share.report_id;
 

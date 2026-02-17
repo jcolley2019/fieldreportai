@@ -56,15 +56,7 @@ export const PhotoPickerDialog = ({ open, onOpenChange, onSelect }: PhotoPickerD
     }
   };
 
-  const getPublicUrl = (filePath: string) => {
-    const { data } = supabase.storage.from("media").getPublicUrl(filePath);
-    return data.publicUrl;
-  };
 
-  const getSignedUrl = (filePath: string) => {
-    // media bucket is private, use createSignedUrl
-    return supabase.storage.from("media").createSignedUrl(filePath, 300);
-  };
 
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
