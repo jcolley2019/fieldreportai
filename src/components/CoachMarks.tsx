@@ -69,6 +69,9 @@ const CoachMarks = ({ steps, storageKey }: CoachMarksProps) => {
       setArrowDirection("bottom");
     }
 
+    // Clamp top within viewport
+    top = Math.max(12, Math.min(top, window.innerHeight - tooltipHeight - 12));
+
     // Center horizontally on target, clamp to viewport
     let left = rect.left + rect.width / 2 - tooltipWidth / 2;
     left = Math.max(12, Math.min(left, window.innerWidth - tooltipWidth - 12));
