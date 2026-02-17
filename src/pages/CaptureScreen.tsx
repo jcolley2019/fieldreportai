@@ -1042,66 +1042,67 @@ const CaptureScreen = () => {
                 </h3>
               </div>
               <div className="flex w-full snap-x snap-mandatory scroll-p-4 gap-3 overflow-x-auto pb-2 no-scrollbar">
-                {images.map((image, index) => {
+                {images.map((image) => {
                   const activeIndex = activeImages.findIndex(img => img.id === image.id);
                   return (
-                  <div
-                    key={image.id}
-                    className="relative aspect-square w-20 flex-shrink-0 snap-start overflow-hidden rounded-lg bg-secondary"
-                  >
-                        {image.isVideo ? (
-                          <div className="relative h-full w-full bg-secondary cursor-pointer" onClick={() => setSelectedImageIndex(activeIndex)}>
-                            <video src={image.url} className="h-full w-full object-cover" muted />
-                            <div className="absolute top-1 left-1 rounded bg-red-500 px-1 py-0.5 text-[8px] font-bold text-white">VIDEO</div>
+                    <div
+                      key={image.id}
+                      className="relative aspect-square w-20 flex-shrink-0 snap-start overflow-hidden rounded-lg bg-secondary"
+                    >
+                      {image.isVideo ? (
+                        <div className="relative h-full w-full bg-secondary cursor-pointer" onClick={() => setSelectedImageIndex(activeIndex)}>
+                          <video src={image.url} className="h-full w-full object-cover" muted />
+                          <div className="absolute top-1 left-1 rounded bg-red-500 px-1 py-0.5 text-[8px] font-bold text-white">VIDEO</div>
+                        </div>
+                      ) : (
+                        <img
+                          src={image.url}
+                          alt="Captured content"
+                          className="h-full w-full object-cover cursor-pointer"
+                          onClick={() => setSelectedImageIndex(activeIndex)}
+                        />
+                      )}
+                      {labelingImages.has(image.id) && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                          <Loader2 className="h-5 w-5 text-white animate-spin" />
+                        </div>
+                      )}
+                      {recordingForPhotoId === image.id && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+                          <div className="flex flex-col items-center gap-1">
+                            <Mic className="h-5 w-5 text-red-500 animate-pulse" />
+                            <button onClick={(e) => { e.stopPropagation(); stopPhotoVoiceNote(); }} className="rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-bold text-white">Stop</button>
                           </div>
-                        ) : (
-                          <img
-                            src={image.url}
-                            alt="Captured content"
-                            className="h-full w-full object-cover cursor-pointer"
-                            onClick={() => setSelectedImageIndex(activeIndex)}
-                          />
-                        )}
-                        {labelingImages.has(image.id) && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                            <Loader2 className="h-5 w-5 text-white animate-spin" />
-                          </div>
-                        )}
-                        {recordingForPhotoId === image.id && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
-                            <div className="flex flex-col items-center gap-1">
-                              <Mic className="h-5 w-5 text-red-500 animate-pulse" />
-                              <button onClick={(e) => { e.stopPropagation(); stopPhotoVoiceNote(); }} className="rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-bold text-white">Stop</button>
-                            </div>
-                          </div>
-                        )}
-                        {image.caption && (
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1.5 py-1 backdrop-blur-sm">
-                            <p className="text-[9px] text-white leading-tight line-clamp-2">{image.voiceNote ? '🎙 ' : ''}{image.caption}</p>
-                          </div>
-                        )}
-                        {!image.isVideo && recordingForPhotoId !== image.id && (
-                          <button onClick={(e) => { e.stopPropagation(); startPhotoVoiceNote(image.id); }}
-                            className={`absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-full backdrop-blur-sm ${image.voiceNote ? 'bg-green-500 text-white' : 'bg-black/50 text-white/90 hover:bg-black/70'}`}
-                            title="Record voice note">
-                            <Mic className="h-3 w-3" />
-                          </button>
-                        )}
-                        <button onClick={(e) => { e.stopPropagation(); handleEditCaption(image.id); }}
-                          className="absolute top-1 left-7 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70">
-                          <Pencil className="h-3 w-3" />
+                        </div>
+                      )}
+                      {image.caption && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1.5 py-1 backdrop-blur-sm">
+                          <p className="text-[9px] text-white leading-tight line-clamp-2">{image.voiceNote ? '🎙 ' : ''}{image.caption}</p>
+                        </div>
+                      )}
+                      {!image.isVideo && recordingForPhotoId !== image.id && (
+                        <button onClick={(e) => { e.stopPropagation(); startPhotoVoiceNote(image.id); }}
+                          className={`absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-full backdrop-blur-sm ${image.voiceNote ? 'bg-green-500 text-white' : 'bg-black/50 text-white/90 hover:bg-black/70'}`}
+                          title="Record voice note">
+                          <Mic className="h-3 w-3" />
                         </button>
-                        {!image.isVideo && (
-                          <button onClick={(e) => { e.stopPropagation(); setAnnotatingImageId(image.id); }}
-                            className="absolute top-1 left-[52px] flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white backdrop-blur-sm hover:bg-primary/80" title="Annotate photo">
-                            <PenTool className="h-3 w-3" />
-                          </button>
-                        )}
-                        <button onClick={() => deleteImage(image.id)}
-                          className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70">
-                          <Trash2 className="h-3 w-3" />
+                      )}
+                      <button onClick={(e) => { e.stopPropagation(); handleEditCaption(image.id); }}
+                        className="absolute top-1 left-7 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70">
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      {!image.isVideo && (
+                        <button onClick={(e) => { e.stopPropagation(); setAnnotatingImageId(image.id); }}
+                          className="absolute top-1 left-[52px] flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white backdrop-blur-sm hover:bg-primary/80" title="Annotate photo">
+                          <PenTool className="h-3 w-3" />
                         </button>
-                  </div>
+                      )}
+                      <button onClick={() => deleteImage(image.id)}
+                        className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  );
                 })}
               </div>
             </div>
