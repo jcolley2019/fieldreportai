@@ -842,28 +842,29 @@ export const LiveCameraCapture = ({
             <div className="grid grid-cols-[1fr_auto_1fr] items-center max-w-[600px] mx-auto">
               {isRecording && cameraMode === 'video' ? (
                 <>
-                  {/* Left: Gallery */}
+                  {/* Left: Done + Gallery */}
                   <div className="flex justify-center">
-                    {capturedImages.length > 0 ? (
-                      <div className="relative flex flex-col items-center gap-1">
-                        <button
-                          onClick={() => setShowGalleryReview(true)}
-                          className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all overflow-hidden border-2 border-white/20"
-                        >
-                          <img 
-                            src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} 
-                            alt="Gallery"
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                        <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
-                          {capturedImages.length}
+                    <div className="flex flex-col items-center gap-2">
+                      <button
+                        onClick={handleDone}
+                        className="flex h-16 w-16 items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition-all border border-white/30"
+                      >
+                        <span className="text-white text-xs font-bold uppercase tracking-widest">Done</span>
+                      </button>
+                      {capturedImages.length > 0 && (
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowGalleryReview(true)}
+                            className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all overflow-hidden border border-white/20"
+                          >
+                            <img src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} alt="Gallery" className="w-full h-full object-cover" />
+                          </button>
+                          <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg">
+                            {capturedImages.length}
+                          </div>
                         </div>
-                        <span className="text-sm font-semibold uppercase tracking-wider text-white">Gallery</span>
-                      </div>
-                    ) : (
-                      <div className="w-16"></div>
-                    )}
+                      )}
+                    </div>
                   </div>
 
                   {/* Center: Stop recording button */}
@@ -920,28 +921,29 @@ export const LiveCameraCapture = ({
                 </>
               ) : cameraMode === 'video' && onStartRecording ? (
                 <>
-                  {/* Left: Gallery */}
+                  {/* Left: Done + Gallery */}
                   <div className="flex justify-center">
-                    {capturedImages.length > 0 ? (
-                      <div className="relative flex flex-col items-center gap-1">
-                        <button
-                          onClick={() => setShowGalleryReview(true)}
-                          className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all overflow-hidden border-2 border-white/20"
-                        >
-                          <img 
-                            src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} 
-                            alt="Gallery"
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                        <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
-                          {capturedImages.length}
+                    <div className="flex flex-col items-center gap-2">
+                      <button
+                        onClick={handleDone}
+                        className="flex h-16 w-16 items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition-all border border-white/30"
+                      >
+                        <span className="text-white text-xs font-bold uppercase tracking-widest">Done</span>
+                      </button>
+                      {capturedImages.length > 0 && (
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowGalleryReview(true)}
+                            className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all overflow-hidden border border-white/20"
+                          >
+                            <img src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} alt="Gallery" className="w-full h-full object-cover" />
+                          </button>
+                          <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg">
+                            {capturedImages.length}
+                          </div>
                         </div>
-                        <span className="text-sm font-semibold uppercase tracking-wider text-white">Gallery</span>
-                      </div>
-                    ) : (
-                      <div className="w-16"></div>
-                    )}
+                      )}
+                    </div>
                   </div>
 
                   {/* Center: Record button */}
@@ -961,29 +963,30 @@ export const LiveCameraCapture = ({
                 </>
               ) : (
                 <>
-                  {/* Photo mode: Gallery / Shutter / Audio */}
-                  {/* Left: Gallery */}
+                  {/* Photo mode: Done+Gallery / Shutter / Audio */}
+                  {/* Left: Done + Gallery */}
                   <div className="flex justify-center">
-                    {capturedImages.length > 0 ? (
-                      <div className="relative flex flex-col items-center gap-1">
-                        <button
-                          onClick={() => setShowGalleryReview(true)}
-                          className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all overflow-hidden border-2 border-white/20"
-                        >
-                          <img 
-                            src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} 
-                            alt="Last captured"
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                        <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg animate-scale-in">
-                          {capturedImages.length}
+                    <div className="flex flex-col items-center gap-2">
+                      <button
+                        onClick={handleDone}
+                        className="flex h-16 w-16 items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition-all border border-white/30"
+                      >
+                        <span className="text-white text-xs font-bold uppercase tracking-widest">Done</span>
+                      </button>
+                      {capturedImages.length > 0 && (
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowGalleryReview(true)}
+                            className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all overflow-hidden border border-white/20"
+                          >
+                            <img src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} alt="Last captured" className="w-full h-full object-cover" />
+                          </button>
+                          <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg">
+                            {capturedImages.length}
+                          </div>
                         </div>
-                        <span className="text-sm font-semibold uppercase tracking-wider text-white">Gallery</span>
-                      </div>
-                    ) : (
-                      <div className="w-16"></div>
-                    )}
+                      )}
+                    </div>
                   </div>
 
                   {/* Center: Shutter */}
@@ -1054,17 +1057,6 @@ export const LiveCameraCapture = ({
                 </>
               )}
             </div>
-            {/* DONE row — photo mode only, not while recording */}
-            {cameraMode === 'photo' && !isRecording && (
-              <div className="flex justify-center mt-4">
-                <button
-                  onClick={handleDone}
-                  className="px-8 py-2 rounded-full bg-white/15 hover:bg-white/25 transition-all border border-white/30 text-white text-sm font-bold uppercase tracking-widest"
-                >
-                  Done
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </DialogContent>
