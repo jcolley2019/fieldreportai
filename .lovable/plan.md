@@ -1,43 +1,131 @@
 
-## Fix Photo Count Badge Position — Photo Mode Branch
+## Add "Image Deleted" Status with Auto-Dismiss to Gallery Review
 
-### The Problem
-There are three camera mode branches, each with a left-column "Done" button:
+### What the User Wants
+When viewing captured photos in the gallery review dialog, tapping a trash/delete icon on an individual photo should:
+1. Immediately replace that photo's tile with a red "Image Deleted" placeholder (matching the screenshot — red background, trash icon, "Image Deleted" text, and an "Undo" button)
+2. After **1 second**, automatically remove the tile permanently and clear the status
+3. If the user taps "Undo" within that 1 second, the photo is restored to its original position
 
-1. **Video recording** (line ~848) — Badge is correctly outside the button, on a wrapper `div`
-2. **Video idle** (line ~926) — Badge is correctly outside the button, on a wrapper `div`
-3. **Photo mode** (line ~968) — Badge is still INSIDE the button using `absolute top-0 right-0`, but the button has `overflow-hidden` which clips the badge so it can't fully escape the button boundary
+### Current Behavior
+Individual photos can only be deleted via:
+- Tap to select → bulk delete bar appears → tap Delete
+- No per-photo trash icon, no "Image Deleted" feedback, no undo
 
-This is why the count appears partially inside the circle — the `overflow-hidden` on the button clips the absolutely-positioned badge.
+### New Behavior
 
-### The Fix
+Each photo tile gets a **trash icon button** in a corner. Tapping it:
+- Marks that index as "pending deletion" in a new state: `deletedItems: Map<index, timeoutId>`
+- The tile at that index renders as a red placeholder instead of the photo
+- A `setTimeout` of 1000ms fires — when it completes, the image is permanently removed from `capturedImages`
+- If "Undo" is tapped before the timeout, `clearTimeout` is called and the tile restores normally
 
-**File: `src/components/LiveCameraCapture.tsx`** — Photo mode branch only (lines ~966–984)
+### Technical Changes
 
-Refactor the photo mode left-column to match the video branches exactly: wrap the button in a `relative` div, move the count badge onto that wrapper div positioned at `-top-1.5 -right-1.5`, and remove `relative` and `overflow-hidden` from the button itself (the button still needs `overflow-hidden` for the thumbnail image to fill it correctly, so keep that — but move the badge out).
+**File: `src/components/LiveCameraCapture.tsx`**
 
-Current structure (photo mode):
+1. **Add new state** near the top of the component (around line 54):
+   ```tsx
+   const [deletingItems, setDeletingItems] = useState<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+   ```
+
+2. **Add delete handler** function:
+   ```tsx
+   const handleDeletePhoto = (index: number) => {
+     const timeoutId = setTimeout(() => {
+       // Commit deletion: remove item, clear from deletingItems
+       setCapturedImages(prev => prev.filter((_, i) => i !== index));
+       setDeletingItems(prev => {
+         const next = new Map(prev);
+         next.delete(index);
+         return next;
+       });
+     }, 1000);
+     setDeletingItems(prev => new Map(prev).set(index, timeoutId));
+     // Also deselect if it was selected
+     setSelectedGalleryItems(prev => {
+       const next = new Set(prev);
+       next.delete(index);
+       return next;
+     });
+   };
+   ```
+
+3. **Add undo handler**:
+   ```tsx
+   const handleUndoDelete = (index: number) => {
+     setDeletingItems(prev => {
+       const next = new Map(prev);
+       const timeoutId = next.get(index);
+       if (timeoutId !== undefined) clearTimeout(timeoutId);
+       next.delete(index);
+       return next;
+     });
+   };
+   ```
+
+4. **Update the grid tile rendering** (lines 1135–1180) so each tile either shows the photo (with a per-item trash icon) or the red "Image Deleted" placeholder:
+
+   ```tsx
+   {capturedImages.map((file, index) => {
+     const isDeleting = deletingItems.has(index);
+     const isSelected = selectedGalleryItems.has(index);
+
+     if (isDeleting) {
+       return (
+         <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-red-500/80 flex flex-col items-center justify-center gap-1">
+           <Trash2 className="h-5 w-5 text-white" />
+           <span className="text-white text-xs font-semibold">Image Deleted</span>
+           <button
+             onClick={() => handleUndoDelete(index)}
+             className="mt-1 px-2 py-0.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-[10px] font-bold uppercase tracking-wider"
+           >
+             Undo
+           </button>
+         </div>
+       );
+     }
+
+     return (
+       <div key={index} ...>
+         <img ... />
+         {/* Number badge */}
+         {/* Per-item trash button */}
+         <button
+           onClick={(e) => { e.stopPropagation(); handleDeletePhoto(index); }}
+           className="absolute bottom-1 right-1 h-6 w-6 flex items-center justify-center rounded-full bg-red-500/80 hover:bg-red-500 text-white transition-all"
+         >
+           <Trash2 className="h-3.5 w-3.5" />
+         </button>
+         {/* Existing selection checkbox */}
+       </div>
+     );
+   })}
+   ```
+
+5. **Cleanup on dialog close** — clear all pending timeouts when `showGalleryReview` closes:
+   ```tsx
+   onOpenChange={(open) => {
+     if (!open) {
+       // Clear all pending delete timeouts
+       deletingItems.forEach(timeoutId => clearTimeout(timeoutId));
+       setDeletingItems(new Map());
+       setSelectedGalleryItems(new Set());
+     }
+     setShowGalleryReview(open);
+   }}
+   ```
+
+### Index Stability Note
+Since items are deleted by index but `capturedImages` indices shift on removal, the deletion must be careful. The `setTimeout` captures the original index, so after a deletion commits, the remaining `deletingItems` entries may reference stale indices. The safest approach: store deletion by **file identity** (the File object reference) rather than index, then filter by it.
+
+Revised approach — store the **File object** itself as the pending deletion key:
+```tsx
+const [deletingFiles, setDeletingFiles] = useState<Map<File, ReturnType<typeof setTimeout>>>(new Map());
 ```
-<button className="relative ... overflow-hidden">
-  <img ... />                          ← thumbnail fills button
-  <div className="absolute top-0 right-0 ...">3</div>  ← CLIPPED by overflow-hidden
-</button>
-```
+This avoids index-shift bugs entirely — each File reference is unique, regardless of array position.
 
-New structure (matching video branches):
-```
-<div className="relative">             ← wrapper owns the positioning context
-  <button className="... overflow-hidden">
-    <img ... />                        ← thumbnail still fills button
-  </button>
-  <div className="absolute -top-1.5 -right-1.5 ...">3</div>  ← fully outside button
-</div>
-```
-
-### Technical Details
-
-- Only the photo mode branch (lines 966–985) needs to change
-- Video recording and video idle branches are already correct
-- The badge uses `absolute -top-1.5 -right-1.5` to sit in the top-right corner, partially overlapping the button edge but fully outside its `overflow-hidden` boundary
-- No other files are touched
-- No logic changes — purely a layout/positioning fix
+### Files Changed
+- `src/components/LiveCameraCapture.tsx` only
+- No new dependencies needed
+- No database changes
