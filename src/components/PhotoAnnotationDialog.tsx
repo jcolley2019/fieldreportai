@@ -78,6 +78,9 @@ export const PhotoAnnotationDialog = ({
   const [currentElement, setCurrentElement] = useState<AnnotationElement | null>(null);
   const [loadedImage, setLoadedImage] = useState<HTMLImageElement | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+  const [draggingElementId, setDraggingElementId] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
 
   // Load image and set canvas size
   useEffect(() => {
@@ -145,13 +148,11 @@ export const PhotoAnnotationDialog = ({
             const headLength = Math.max(15, el.strokeWidth * 4);
             const angle = Math.atan2(el.endY - el.startY, el.endX - el.startX);
             
-            // Draw line
             ctx.beginPath();
             ctx.moveTo(el.startX, el.startY);
             ctx.lineTo(el.endX, el.endY);
             ctx.stroke();
             
-            // Draw arrowhead
             ctx.beginPath();
             ctx.moveTo(el.endX, el.endY);
             ctx.lineTo(
@@ -179,11 +180,29 @@ export const PhotoAnnotationDialog = ({
           if (el.startX !== undefined && el.startY !== undefined && el.text) {
             ctx.font = `bold ${el.fontSize || 24}px system-ui`;
             ctx.fillText(el.text, el.startX, el.startY);
+            
+            // Draw selection border around selected text
+            if (el.id === selectedElementId) {
+              const metrics = ctx.measureText(el.text);
+              const textHeight = (el.fontSize || 24);
+              const padding = 4;
+              ctx.save();
+              ctx.strokeStyle = "#3b82f6";
+              ctx.lineWidth = 2;
+              ctx.setLineDash([4, 4]);
+              ctx.strokeRect(
+                el.startX - padding,
+                el.startY - textHeight + padding,
+                metrics.width + padding * 2,
+                textHeight + padding * 2
+              );
+              ctx.restore();
+            }
           }
           break;
       }
     });
-  }, [elements, currentElement, loadedImage]);
+  }, [elements, currentElement, loadedImage, selectedElementId]);
 
   useEffect(() => {
     redrawCanvas();
@@ -212,7 +231,35 @@ export const PhotoAnnotationDialog = ({
   };
 
   const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
-    if (tool === "select") return;
+    if (tool === "select") {
+      const { x, y } = getCanvasCoordinates(e);
+      // Hit-test text elements (reverse order for top-most first)
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext("2d");
+      for (let i = elements.length - 1; i >= 0; i--) {
+        const el = elements[i];
+        if (el.type === "text" && el.startX !== undefined && el.startY !== undefined && el.text && ctx) {
+          ctx.font = `bold ${el.fontSize || 24}px system-ui`;
+          const metrics = ctx.measureText(el.text);
+          const textHeight = el.fontSize || 24;
+          if (
+            x >= el.startX &&
+            x <= el.startX + metrics.width &&
+            y >= el.startY - textHeight &&
+            y <= el.startY
+          ) {
+            setDraggingElementId(el.id);
+            setSelectedElementId(el.id);
+            setDragOffset({ x: x - el.startX, y: y - el.startY });
+            return;
+          }
+        }
+      }
+      // Clicked empty area — deselect
+      setSelectedElementId(null);
+      setDraggingElementId(null);
+      return;
+    }
     
     const { x, y } = getCanvasCoordinates(e);
 
@@ -241,6 +288,16 @@ export const PhotoAnnotationDialog = ({
   };
 
   const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
+    // Handle dragging a selected element
+    if (draggingElementId) {
+      const { x, y } = getCanvasCoordinates(e);
+      setElements(prev => prev.map(el => {
+        if (el.id !== draggingElementId) return el;
+        return { ...el, startX: x - dragOffset.x, startY: y - dragOffset.y };
+      }));
+      return;
+    }
+
     if (!isDrawing || !currentElement) return;
 
     const { x, y } = getCanvasCoordinates(e);
@@ -267,6 +324,16 @@ export const PhotoAnnotationDialog = ({
   };
 
   const handlePointerUp = () => {
+    // Commit drag move to history
+    if (draggingElementId) {
+      const newHistory = history.slice(0, historyIndex + 1);
+      newHistory.push([...elements]);
+      setHistory(newHistory);
+      setHistoryIndex(newHistory.length - 1);
+      setDraggingElementId(null);
+      return;
+    }
+
     if (!isDrawing || !currentElement) return;
 
     setIsDrawing(false);
@@ -438,7 +505,7 @@ export const PhotoAnnotationDialog = ({
               ref={canvasRef}
               width={canvasSize.width}
               height={canvasSize.height}
-              className="cursor-crosshair touch-none"
+              className={`touch-none ${tool === 'select' ? 'cursor-default' : 'cursor-crosshair'}`}
               onMouseDown={handlePointerDown}
               onMouseMove={handlePointerMove}
               onMouseUp={handlePointerUp}
