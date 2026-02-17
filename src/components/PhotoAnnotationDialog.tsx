@@ -588,6 +588,24 @@ export const PhotoAnnotationDialog = ({
               <Button variant="outline" size="icon" onClick={handleClear}>
                 <Trash2 className="h-4 w-4" />
               </Button>
+              {selectedElementId && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    const newElements = elements.filter(el => el.id !== selectedElementId);
+                    setElements(newElements);
+                    const newHistory = history.slice(0, historyIndex + 1);
+                    newHistory.push(newElements);
+                    setHistory(newHistory);
+                    setHistoryIndex(newHistory.length - 1);
+                    setSelectedElementId(null);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
+              )}
             </div>
           </div>
 
