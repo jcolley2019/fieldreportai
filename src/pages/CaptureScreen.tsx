@@ -647,16 +647,34 @@ const CaptureScreen = () => {
     }, 500);
 
     try {
-      // Convert files to base64 for both AI processing and navigation state
+      // Convert files to base64, compressing images for AI to keep payload small & fast
       const imageWithBase64 = await Promise.all(
         activeImgs.map(async (img) => {
           if (!img.file) return { ...img, base64: null, originalBase64: null };
-          
+
+          // Compress image before sending to AI (max 800px, 0.75 quality)
+          let fileForAI: Blob = img.file;
+          if (!img.isVideo) {
+            try {
+              const { compressImage } = await import('@/lib/imageCompression');
+              fileForAI = await compressImage(img.file, { maxWidth: 800, maxHeight: 800, quality: 0.75 });
+            } catch {
+              // fallback to original
+            }
+          }
+
           const base64 = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onloadend = () => resolve(reader.result as string);
             reader.onerror = reject;
-            reader.readAsDataURL(img.file);
+            reader.readAsDataURL(img.file!);
+          });
+
+          const aiBase64 = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(fileForAI);
           });
 
           // Convert original file to base64 if it exists (annotation preserved original)
@@ -670,21 +688,19 @@ const CaptureScreen = () => {
             });
           }
           
-          return { ...img, base64, originalBase64 };
+          return { ...img, base64, aiBase64, originalBase64 };
         })
       );
 
+      // Use compressed images for AI, full images for display
       const validImageDataUrls = imageWithBase64
-        .map(img => img.base64)
+        .map(img => (img as any).aiBase64 ?? img.base64)
         .filter(url => url !== null) as string[];
 
       const imageCaptions = imageWithBase64.map(img => img.caption || img.voiceNote || "");
 
-      // Add a 60-second timeout to prevent infinite spinning
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
-
-      const { data, error } = await supabase.functions.invoke('generate-report-summary', {
+      // Real 55-second timeout using Promise.race
+      const invokePromise = supabase.functions.invoke('generate-report-summary', {
         body: { 
           description: description || "",
           imageDataUrls: validImageDataUrls,
@@ -693,7 +709,11 @@ const CaptureScreen = () => {
         },
       });
 
-      clearTimeout(timeoutId);
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('AbortError: Request timed out')), 55000)
+      );
+
+      const { data, error } = await Promise.race([invokePromise, timeoutPromise]) as Awaited<typeof invokePromise>;
 
       if (error) {
         console.error("Summary generation error:", error);
@@ -743,7 +763,7 @@ const CaptureScreen = () => {
         });
       }, 300);
     } catch (err: any) {
-      const isTimeout = err?.name === 'AbortError' || err?.message?.includes('abort');
+      const isTimeout = err?.message?.includes('AbortError') || err?.message?.includes('timed out');
       console.error("Error generating summary:", err);
       toast.error(isTimeout 
         ? "Summary generation timed out. Your photos are saved — please try again." 
