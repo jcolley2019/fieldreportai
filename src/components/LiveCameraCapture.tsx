@@ -1054,6 +1054,17 @@ export const LiveCameraCapture = ({
                 </>
               )}
             </div>
+            {/* DONE row — photo mode only, not while recording */}
+            {cameraMode === 'photo' && !isRecording && (
+              <div className="flex justify-center mt-4">
+                <button
+                  onClick={handleDone}
+                  className="px-8 py-2 rounded-full bg-white/15 hover:bg-white/25 transition-all border border-white/30 text-white text-sm font-bold uppercase tracking-widest"
+                >
+                  Done
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
