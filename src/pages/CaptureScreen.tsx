@@ -1152,7 +1152,12 @@ const CaptureScreen = () => {
                   {/* Annotate button */}
                   {!activeImages[selectedImageIndex].isVideo && (
                     <button
-                      onClick={() => setAnnotatingImageId(activeImages[selectedImageIndex].id)}
+                      onClick={() => {
+                        const imageId = activeImages[selectedImageIndex].id;
+                        setSelectedImageIndex(null);
+                        // Small delay to let the preview dialog close before opening annotation
+                        setTimeout(() => setAnnotatingImageId(imageId), 150);
+                      }}
                       className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white backdrop-blur-sm hover:bg-primary/80 transition-all"
                       title="Annotate photo"
                     >
