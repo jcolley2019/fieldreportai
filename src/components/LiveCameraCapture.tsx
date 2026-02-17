@@ -847,10 +847,11 @@ export const LiveCameraCapture = ({
                     <div className="flex flex-col items-center gap-2">
                       <button
                         onClick={handleDone}
-                        className="flex h-16 w-16 items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition-all border border-white/30"
+                        className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all"
                       >
-                        <span className="text-white text-xs font-bold uppercase tracking-widest">Done</span>
+                        <Check className="h-6 w-6 text-white" />
                       </button>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-white">Done</span>
                       {capturedImages.length > 0 && (
                         <div className="relative">
                           <button
@@ -926,10 +927,11 @@ export const LiveCameraCapture = ({
                     <div className="flex flex-col items-center gap-2">
                       <button
                         onClick={handleDone}
-                        className="flex h-16 w-16 items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition-all border border-white/30"
+                        className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all"
                       >
-                        <span className="text-white text-xs font-bold uppercase tracking-widest">Done</span>
+                        <Check className="h-6 w-6 text-white" />
                       </button>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-white">Done</span>
                       {capturedImages.length > 0 && (
                         <div className="relative">
                           <button
@@ -969,10 +971,11 @@ export const LiveCameraCapture = ({
                     <div className="flex flex-col items-center gap-2">
                       <button
                         onClick={handleDone}
-                        className="flex h-16 w-16 items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition-all border border-white/30"
+                        className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all"
                       >
-                        <span className="text-white text-xs font-bold uppercase tracking-widest">Done</span>
+                        <Check className="h-6 w-6 text-white" />
                       </button>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-white">Done</span>
                       {capturedImages.length > 0 && (
                         <div className="relative">
                           <button
