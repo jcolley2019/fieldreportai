@@ -247,6 +247,9 @@ const CaptureScreen = () => {
     toast.success(t('common.allDiscarded'));
   };
 
+  // Track when annotation dialog just closed to prevent preview dialog from closing
+  const justClosedAnnotation = useRef(false);
+
   // Handle annotated image save - preserves original, uses annotated as display version
   const handleAnnotationSave = (imageId: string, annotatedBlob: Blob) => {
     const newUrl = URL.createObjectURL(annotatedBlob);
@@ -259,7 +262,9 @@ const CaptureScreen = () => {
       return { ...img, url: newUrl, file: newFile, originalFile };
     }));
     
+    justClosedAnnotation.current = true;
     setAnnotatingImageId(null);
+    setTimeout(() => { justClosedAnnotation.current = false; }, 500);
     toast.success("Annotation saved");
   };
 
@@ -1082,7 +1087,7 @@ const CaptureScreen = () => {
       />
 
       {/* Full-size Image Viewer */}
-      <Dialog open={selectedImageIndex !== null} onOpenChange={() => setSelectedImageIndex(null)}>
+      <Dialog open={selectedImageIndex !== null} onOpenChange={(open) => { if (!open && justClosedAnnotation.current) return; if (!open) setSelectedImageIndex(null); }}>
         <DialogContent 
           className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden bg-black/95 border-none"
           onTouchStart={handleTouchStart}
