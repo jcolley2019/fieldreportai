@@ -135,9 +135,10 @@ function drawCloudPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
       const ey = y1 + stepY * (i + 1);
       const mx = (sx + ex) / 2;
       const my = (sy + ey) / 2;
-      // Normal perpendicular to edge direction (outward bulge)
-      const nx = -stepY / Math.sqrt(stepX * stepX + stepY * stepY) * radius;
-      const ny = stepX / Math.sqrt(stepX * stepX + stepY * stepY) * radius;
+      // Normal perpendicular to edge direction (outward bulge — negate to push away from center)
+      const norm = Math.sqrt(stepX * stepX + stepY * stepY);
+      const nx = (stepY / norm) * radius;
+      const ny = (-stepX / norm) * radius;
       const cpx = mx + nx;
       const cpy = my + ny;
       ctx.quadraticCurveTo(cpx, cpy, ex, ey);
