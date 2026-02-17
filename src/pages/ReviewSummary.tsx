@@ -457,6 +457,31 @@ const ReviewSummary = () => {
               continue;
             }
             
+            // Upload original (unannotated) version if it exists
+            let originalFilePath: string | null = null;
+            if (image.originalBase64 && image.originalBase64.startsWith('data:')) {
+              try {
+                const origResponse = await fetch(image.originalBase64);
+                const origBlob = await origResponse.blob();
+                const origExt = image.originalBase64.includes('image/png') ? 'png' : 'jpg';
+                const origPath = `${currentReportId}/originals/${Date.now()}-${Math.random().toString(36).substring(7)}.${origExt}`;
+                
+                const { data: origUpload, error: origError } = await supabase.storage
+                  .from('media')
+                  .upload(origPath, origBlob, {
+                    contentType: origBlob.type || 'image/jpeg',
+                    upsert: false
+                  });
+                
+                if (!origError && origUpload) {
+                  originalFilePath = origUpload.path;
+                  console.log(`Original image ${i + 1} preserved at ${origPath}`);
+                }
+              } catch (origErr) {
+                console.error(`Failed to upload original for image ${i + 1}:`, origErr);
+              }
+            }
+
             // Save to media table with GPS data
             const { error: mediaError } = await supabase
               .from('media')
@@ -469,7 +494,8 @@ const ReviewSummary = () => {
                 latitude: image.latitude,
                 longitude: image.longitude,
                 captured_at: image.capturedAt || new Date().toISOString(),
-                location_name: image.locationName
+                location_name: image.locationName,
+                original_file_path: originalFilePath
               });
             
             if (mediaError) {

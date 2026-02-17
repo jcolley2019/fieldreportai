@@ -27,6 +27,7 @@ interface ImageItem {
   id: string;
   url: string;
   file?: File;
+  originalFile?: File;
   deleted: boolean;
   caption?: string;
   voiceNote?: string;
@@ -246,16 +247,17 @@ const CaptureScreen = () => {
     toast.success(t('common.allDiscarded'));
   };
 
-  // Handle annotated image save - replaces original with annotated version
+  // Handle annotated image save - preserves original, uses annotated as display version
   const handleAnnotationSave = (imageId: string, annotatedBlob: Blob) => {
     const newUrl = URL.createObjectURL(annotatedBlob);
     const newFile = new File([annotatedBlob], `annotated-${Date.now()}.png`, { type: 'image/png' });
     
-    setImages(prev => prev.map(img =>
-      img.id === imageId 
-        ? { ...img, url: newUrl, file: newFile }
-        : img
-    ));
+    setImages(prev => prev.map(img => {
+      if (img.id !== imageId) return img;
+      // Preserve original file if not already preserved
+      const originalFile = img.originalFile || img.file;
+      return { ...img, url: newUrl, file: newFile, originalFile };
+    }));
     
     setAnnotatingImageId(null);
     toast.success("Annotation saved");
@@ -563,7 +565,7 @@ const CaptureScreen = () => {
       // Convert files to base64 for both AI processing and navigation state
       const imageWithBase64 = await Promise.all(
         activeImgs.map(async (img) => {
-          if (!img.file) return { ...img, base64: null };
+          if (!img.file) return { ...img, base64: null, originalBase64: null };
           
           const base64 = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
@@ -571,8 +573,19 @@ const CaptureScreen = () => {
             reader.onerror = reject;
             reader.readAsDataURL(img.file);
           });
+
+          // Convert original file to base64 if it exists (annotation preserved original)
+          let originalBase64: string | null = null;
+          if (img.originalFile) {
+            originalBase64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(img.originalFile!);
+            });
+          }
           
-          return { ...img, base64 };
+          return { ...img, base64, originalBase64 };
         })
       );
 
@@ -626,6 +639,7 @@ const CaptureScreen = () => {
               caption: img.caption, 
               voiceNote: img.voiceNote,
               base64: img.base64,
+              originalBase64: img.originalBase64,
               latitude: img.latitude,
               longitude: img.longitude,
               capturedAt: img.capturedAt?.toISOString(),

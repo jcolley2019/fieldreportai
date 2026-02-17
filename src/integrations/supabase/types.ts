@@ -265,6 +265,7 @@ export type Database = {
           location_name: string | null
           longitude: number | null
           mime_type: string | null
+          original_file_path: string | null
           report_id: string
           updated_at: string
           user_id: string
@@ -280,6 +281,7 @@ export type Database = {
           location_name?: string | null
           longitude?: number | null
           mime_type?: string | null
+          original_file_path?: string | null
           report_id: string
           updated_at?: string
           user_id: string
@@ -295,6 +297,7 @@ export type Database = {
           location_name?: string | null
           longitude?: number | null
           mime_type?: string | null
+          original_file_path?: string | null
           report_id?: string
           updated_at?: string
           user_id?: string
@@ -497,6 +500,38 @@ export type Database = {
             columns: ["parent_report_id"]
             isOneToOne: false
             referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      share_access_log: {
+        Row: {
+          accessed_at: string
+          id: string
+          ip_address: string | null
+          share_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          accessed_at?: string
+          id?: string
+          ip_address?: string | null
+          share_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          accessed_at?: string
+          id?: string
+          ip_address?: string | null
+          share_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_access_log_share_id_fkey"
+            columns: ["share_id"]
+            isOneToOne: false
+            referencedRelation: "project_shares"
             referencedColumns: ["id"]
           },
         ]
