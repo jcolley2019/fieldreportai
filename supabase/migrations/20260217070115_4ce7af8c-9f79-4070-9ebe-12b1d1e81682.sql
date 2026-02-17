@@ -1,0 +1,2 @@
+ALTER TABLE public.reports DROP CONSTRAINT reports_report_type_check;
+ALTER TABLE public.reports ADD CONSTRAINT reports_report_type_check CHECK (report_type = ANY (ARRAY['daily'::text, 'weekly'::text, 'monthly'::text, 'site_survey'::text, 'field'::text]));
