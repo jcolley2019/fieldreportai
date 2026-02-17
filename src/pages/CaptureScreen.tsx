@@ -1143,7 +1143,7 @@ const CaptureScreen = () => {
                   )}
                   {/* Edit caption button */}
                   <button
-                    onClick={(e) => { e.stopPropagation(); handleEditCaption(activeImages[selectedImageIndex].id); }}
+                    onClick={() => handleEditCaption(activeImages[selectedImageIndex].id)}
                     className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70 transition-all"
                     title="Edit caption"
                   >
@@ -1152,7 +1152,7 @@ const CaptureScreen = () => {
                   {/* Annotate button */}
                   {!activeImages[selectedImageIndex].isVideo && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); setAnnotatingImageId(activeImages[selectedImageIndex].id); }}
+                      onClick={() => setAnnotatingImageId(activeImages[selectedImageIndex].id)}
                       className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white backdrop-blur-sm hover:bg-primary/80 transition-all"
                       title="Annotate photo"
                     >
