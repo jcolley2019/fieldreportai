@@ -317,17 +317,7 @@ const CaptureScreen = () => {
   };
 
   const deleteImage = (id: string) => {
-    setImages(prev => prev.map(img => 
-      img.id === id ? { ...img, deleted: true } : img
-    ));
-    toast.success(t('captureScreen.imageDeleted') + ". " + t('captureScreen.undo') + " to restore.");
-  };
-
-  const undoDelete = (id: string) => {
-    setImages(prev => prev.map(img => 
-      img.id === id ? { ...img, deleted: false } : img
-    ));
-    toast.success(t('common.imageRestored'));
+    setImages(prev => prev.filter(img => img.id !== id));
   };
 
   const discardAll = () => {
@@ -1059,21 +1049,6 @@ const CaptureScreen = () => {
                     key={image.id}
                     className="relative aspect-square w-20 flex-shrink-0 snap-start overflow-hidden rounded-lg bg-secondary"
                   >
-                    {image.deleted ? (
-                      <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-lg bg-destructive/80 px-2 text-center text-white">
-                        <Trash2 className="h-5 w-5" />
-                        <p className="text-[10px] font-semibold leading-tight">
-                          Image Deleted
-                        </p>
-                        <button
-                          onClick={() => undoDelete(image.id)}
-                          className="mt-1 rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold backdrop-blur-sm hover:bg-white/30"
-                        >
-                          Undo
-                        </button>
-                      </div>
-                    ) : (
-                      <>
                         {image.isVideo ? (
                           <div className="relative h-full w-full bg-secondary cursor-pointer" onClick={() => setSelectedImageIndex(activeIndex)}>
                             <video src={image.url} className="h-full w-full object-cover" muted />
@@ -1126,10 +1101,8 @@ const CaptureScreen = () => {
                           className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70">
                           <Trash2 className="h-3 w-3" />
                         </button>
-                      </>
-                    )}
                   </div>
-                )})}
+                })}
               </div>
             </div>
           )}
