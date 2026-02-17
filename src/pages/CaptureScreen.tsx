@@ -1121,7 +1121,7 @@ const CaptureScreen = () => {
                 />
                 
                 {/* Top action bar */}
-                <div className="absolute top-4 right-4 flex items-center gap-2">
+                <div className="absolute top-4 right-4 flex items-center gap-2" onTouchStart={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()}>
                   {/* Voice note button */}
                   {!activeImages[selectedImageIndex].isVideo && recordingForPhotoId !== activeImages[selectedImageIndex].id && (
                     <button
