@@ -62,7 +62,7 @@ const CaptureScreen = () => {
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const [editingCaptionId, setEditingCaptionId] = useState<string | null>(null);
   const [editingCaptionText, setEditingCaptionText] = useState("");
-  const [isLabelingImage, setIsLabelingImage] = useState<string | null>(null);
+  const [labelingImages, setLabelingImages] = useState<Set<string>>(new Set());
   const [annotatingImageId, setAnnotatingImageId] = useState<string | null>(null);
   const [gpsStampingEnabled, setGpsStampingEnabled] = useState(false);
   const [recordingForPhotoId, setRecordingForPhotoId] = useState<string | null>(null);
@@ -174,7 +174,7 @@ const CaptureScreen = () => {
       }
       return;
     }
-    setIsLabelingImage(imageId);
+    setLabelingImages(prev => new Set(prev).add(imageId));
     try {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -189,7 +189,6 @@ const CaptureScreen = () => {
 
           if (error) {
             console.error("Label generation error:", error);
-            // If we have a voice note, use it as fallback
             if (voiceNote) {
               setImages(prev => prev.map(img =>
                 img.id === imageId ? { ...img, caption: voiceNote, voiceNote } : img
@@ -206,12 +205,12 @@ const CaptureScreen = () => {
         } catch (err) {
           console.error("Error in label-photo callback:", err);
         } finally {
-          setIsLabelingImage(null);
+          setLabelingImages(prev => { const next = new Set(prev); next.delete(imageId); return next; });
         }
       };
     } catch (error) {
       console.error("Error generating label:", error);
-      setIsLabelingImage(null);
+      setLabelingImages(prev => { const next = new Set(prev); next.delete(imageId); return next; });
     }
   };
 
@@ -1076,7 +1075,7 @@ const CaptureScreen = () => {
                             onClick={() => setSelectedImageIndex(activeIndex)}
                           />
                         )}
-                        {isLabelingImage === image.id && (
+                        {labelingImages.has(image.id) && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                             <Loader2 className="h-5 w-5 text-white animate-spin" />
                           </div>
