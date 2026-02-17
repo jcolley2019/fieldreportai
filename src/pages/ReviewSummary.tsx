@@ -396,6 +396,7 @@ const ReviewSummary = () => {
       // Upload captured images to storage and save to media table
       if (capturedImages.length > 0) {
         console.log(`Processing ${capturedImages.length} images for upload...`);
+        let uploadedCount = 0;
         for (let i = 0; i < capturedImages.length; i++) {
           const image = capturedImages[i];
           try {
@@ -422,12 +423,12 @@ const ReviewSummary = () => {
               
               if (uploadError) {
                 console.error(`Error uploading image ${i + 1}:`, uploadError);
+                toast.error(`Failed to upload photo ${i + 1}: ${uploadError.message}`);
                 continue;
               }
               
               storagePath = uploadData.path;
             } else if (image.base64 && image.base64.startsWith('blob:')) {
-              // blob: URLs from previous page - try to fetch
               try {
                 const response = await fetch(image.base64);
                 const blob = await response.blob();
@@ -443,11 +444,13 @@ const ReviewSummary = () => {
                 
                 if (uploadError) {
                   console.error(`Error uploading blob image ${i + 1}:`, uploadError);
+                  toast.error(`Failed to upload photo ${i + 1}: ${uploadError.message}`);
                   continue;
                 }
                 storagePath = uploadData.path;
               } catch (blobErr) {
                 console.error(`Blob URL expired for image ${i + 1}, skipping:`, blobErr);
+                toast.error(`Photo ${i + 1} expired. Please recapture.`);
                 continue;
               }
             } else if (image.url && !image.url.startsWith('blob:')) {
@@ -500,12 +503,18 @@ const ReviewSummary = () => {
             
             if (mediaError) {
               console.error(`Error saving media record ${i + 1}:`, mediaError);
+              toast.error(`Failed to save photo ${i + 1} record: ${mediaError.message}`);
             } else {
+              uploadedCount++;
               console.log(`Image ${i + 1} saved successfully`);
             }
           } catch (err) {
             console.error(`Error processing image ${i + 1}:`, err);
+            toast.error(`Error processing photo ${i + 1}`);
           }
+        }
+        if (uploadedCount > 0) {
+          toast.success(`${uploadedCount} photo(s) uploaded successfully`);
         }
       }
 
@@ -765,7 +774,7 @@ const ReviewSummary = () => {
               disabled={isSaving}
               className="w-full bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
-              {isSaving ? t('reviewSummary.saving') : t('reviewSummary.finalize')}
+              {isSaving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t('reviewSummary.saving')}</> : t('reviewSummary.finalize')}
             </Button>
           </>
         ) : (
@@ -774,7 +783,7 @@ const ReviewSummary = () => {
             disabled={isSaving}
             className="w-full bg-primary py-6 text-base font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
-            {isSaving ? t('reviewSummary.saving') : t('reviewSummary.continueToReport')}
+            {isSaving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t('reviewSummary.saving')}</> : t('reviewSummary.continueToReport')}
           </Button>
         )}
       </div>
