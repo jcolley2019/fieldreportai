@@ -14,15 +14,17 @@ import {
   Redo2, 
   Trash2, 
   Download,
-  MousePointer2
+  MousePointer2,
+  Square,
+  Cloud
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type ToolType = "select" | "pencil" | "arrow" | "circle" | "text";
+type ToolType = "select" | "pencil" | "arrow" | "circle" | "text" | "rectangle" | "cloud";
 
 interface AnnotationElement {
   id: string;
-  type: "pencil" | "arrow" | "circle" | "text";
+  type: "pencil" | "arrow" | "circle" | "text" | "rectangle" | "cloud";
   color: string;
   strokeWidth: number;
   points?: { x: number; y: number }[];
@@ -33,6 +35,8 @@ interface AnnotationElement {
   radius?: number;
   text?: string;
   fontSize?: number;
+  width?: number;
+  height?: number;
 }
 
 interface PhotoAnnotationDialogProps {
@@ -53,6 +57,99 @@ const COLORS = [
   { name: "White", value: "#ffffff" },
   { name: "Black", value: "#000000" },
 ];
+
+const HANDLE_SIZE = 8;
+
+type HandleId = "nw" | "ne" | "sw" | "se" | "n" | "s" | "e" | "w" | "start" | "end" | "radius";
+
+interface HandleInfo {
+  id: HandleId;
+  x: number;
+  y: number;
+}
+
+function getElementHandles(el: AnnotationElement, ctx?: CanvasRenderingContext2D | null): HandleInfo[] {
+  const handles: HandleInfo[] = [];
+
+  if (el.type === "rectangle" || el.type === "cloud") {
+    const x = el.startX ?? 0;
+    const y = el.startY ?? 0;
+    const w = el.width ?? 0;
+    const h = el.height ?? 0;
+    handles.push(
+      { id: "nw", x, y },
+      { id: "ne", x: x + w, y },
+      { id: "sw", x, y: y + h },
+      { id: "se", x: x + w, y: y + h },
+    );
+  } else if (el.type === "circle") {
+    const cx = el.startX ?? 0;
+    const cy = el.startY ?? 0;
+    const r = el.radius ?? 0;
+    handles.push(
+      { id: "e", x: cx + r, y: cy },
+      { id: "w", x: cx - r, y: cy },
+      { id: "n", x: cx, y: cy - r },
+      { id: "s", x: cx, y: cy + r },
+    );
+  } else if (el.type === "arrow") {
+    handles.push(
+      { id: "start", x: el.startX ?? 0, y: el.startY ?? 0 },
+      { id: "end", x: el.endX ?? 0, y: el.endY ?? 0 },
+    );
+  } else if (el.type === "text" && ctx && el.text) {
+    ctx.font = `bold ${el.fontSize || 24}px system-ui`;
+    const metrics = ctx.measureText(el.text);
+    const x = el.startX ?? 0;
+    const y = el.startY ?? 0;
+    const th = el.fontSize || 24;
+    const tw = metrics.width;
+    handles.push(
+      { id: "nw", x, y: y - th },
+      { id: "ne", x: x + tw, y: y - th },
+      { id: "sw", x, y },
+      { id: "se", x: x + tw, y },
+    );
+  }
+
+  return handles;
+}
+
+function drawCloudPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + w * 0.15, y + h * 0.85);
+  ctx.lineTo(x + w * 0.85, y + h * 0.85);
+  ctx.quadraticCurveTo(x + w * 1.08, y + h * 0.85, x + w * 0.95, y + h * 0.55);
+  ctx.quadraticCurveTo(x + w * 1.1, y + h * 0.3, x + w * 0.78, y + h * 0.2);
+  ctx.quadraticCurveTo(x + w * 0.75, y - h * 0.05, x + w * 0.5, y + h * 0.08);
+  ctx.quadraticCurveTo(x + w * 0.25, y - h * 0.08, x + w * 0.2, y + h * 0.22);
+  ctx.quadraticCurveTo(x - w * 0.08, y + h * 0.3, x + w * 0.05, y + h * 0.58);
+  ctx.quadraticCurveTo(x - w * 0.08, y + h * 0.85, x + w * 0.15, y + h * 0.85);
+  ctx.closePath();
+}
+
+function drawHandles(ctx: CanvasRenderingContext2D, handles: HandleInfo[]) {
+  ctx.save();
+  handles.forEach(h => {
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = "#3b82f6";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([]);
+    ctx.fillRect(h.x - HANDLE_SIZE / 2, h.y - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE);
+    ctx.strokeRect(h.x - HANDLE_SIZE / 2, h.y - HANDLE_SIZE / 2, HANDLE_SIZE, HANDLE_SIZE);
+  });
+  ctx.restore();
+}
+
+function hitTestHandle(x: number, y: number, handles: HandleInfo[]): HandleId | null {
+  const tolerance = HANDLE_SIZE + 4;
+  for (const h of handles) {
+    if (Math.abs(x - h.x) <= tolerance / 2 && Math.abs(y - h.y) <= tolerance / 2) {
+      return h.id;
+    }
+  }
+  return null;
+}
 
 export const PhotoAnnotationDialog = ({
   open,
@@ -81,6 +178,8 @@ export const PhotoAnnotationDialog = ({
   const [draggingElementId, setDraggingElementId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  const [resizingHandle, setResizingHandle] = useState<HandleId | null>(null);
+  const [resizingElementId, setResizingElementId] = useState<string | null>(null);
 
   // Load image and set canvas size
   useEffect(() => {
@@ -91,7 +190,6 @@ export const PhotoAnnotationDialog = ({
     img.onload = () => {
       setLoadedImage(img);
       
-      // Calculate canvas size to fit container while maintaining aspect ratio
       const maxWidth = Math.min(window.innerWidth - 100, 900);
       const maxHeight = Math.min(window.innerHeight - 300, 600);
       
@@ -118,11 +216,9 @@ export const PhotoAnnotationDialog = ({
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx || !loadedImage) return;
 
-    // Clear and draw base image
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(loadedImage, 0, 0, canvas.width, canvas.height);
 
-    // Draw all elements
     const allElements = currentElement ? [...elements, currentElement] : elements;
     
     allElements.forEach((el) => {
@@ -140,7 +236,6 @@ export const PhotoAnnotationDialog = ({
             el.points.forEach((point) => ctx.lineTo(point.x, point.y));
             ctx.stroke();
             
-            // Selection indicator for pencil
             if (el.id === selectedElementId) {
               const xs = el.points.map(p => p.x);
               const ys = el.points.map(p => p.y);
@@ -181,19 +276,19 @@ export const PhotoAnnotationDialog = ({
             );
             ctx.closePath();
             ctx.fill();
-            // Selection indicator for arrow
+
             if (el.id === selectedElementId) {
+              const handles = getElementHandles(el);
               ctx.save();
               ctx.strokeStyle = "#3b82f6";
               ctx.lineWidth = 2;
               ctx.setLineDash([4, 4]);
               ctx.beginPath();
-              ctx.arc(el.startX, el.startY, 6, 0, 2 * Math.PI);
-              ctx.stroke();
-              ctx.beginPath();
-              ctx.arc(el.endX, el.endY, 6, 0, 2 * Math.PI);
+              ctx.moveTo(el.startX, el.startY);
+              ctx.lineTo(el.endX, el.endY);
               ctx.stroke();
               ctx.restore();
+              drawHandles(ctx, handles);
             }
           }
           break;
@@ -204,8 +299,8 @@ export const PhotoAnnotationDialog = ({
             ctx.arc(el.startX, el.startY, el.radius, 0, 2 * Math.PI);
             ctx.stroke();
             
-            // Selection indicator for circle
             if (el.id === selectedElementId) {
+              const handles = getElementHandles(el);
               ctx.save();
               ctx.strokeStyle = "#3b82f6";
               ctx.lineWidth = 2;
@@ -214,6 +309,42 @@ export const PhotoAnnotationDialog = ({
               ctx.arc(el.startX, el.startY, el.radius + 6, 0, 2 * Math.PI);
               ctx.stroke();
               ctx.restore();
+              drawHandles(ctx, handles);
+            }
+          }
+          break;
+
+        case "rectangle":
+          if (el.startX !== undefined && el.startY !== undefined && el.width !== undefined && el.height !== undefined) {
+            ctx.strokeRect(el.startX, el.startY, el.width, el.height);
+
+            if (el.id === selectedElementId) {
+              const handles = getElementHandles(el);
+              ctx.save();
+              ctx.strokeStyle = "#3b82f6";
+              ctx.lineWidth = 2;
+              ctx.setLineDash([4, 4]);
+              ctx.strokeRect(el.startX - 4, el.startY - 4, el.width + 8, el.height + 8);
+              ctx.restore();
+              drawHandles(ctx, handles);
+            }
+          }
+          break;
+
+        case "cloud":
+          if (el.startX !== undefined && el.startY !== undefined && el.width !== undefined && el.height !== undefined) {
+            drawCloudPath(ctx, el.startX, el.startY, el.width, el.height);
+            ctx.stroke();
+
+            if (el.id === selectedElementId) {
+              const handles = getElementHandles(el);
+              ctx.save();
+              ctx.strokeStyle = "#3b82f6";
+              ctx.lineWidth = 2;
+              ctx.setLineDash([4, 4]);
+              ctx.strokeRect(el.startX - 4, el.startY - 4, el.width + 8, el.height + 8);
+              ctx.restore();
+              drawHandles(ctx, handles);
             }
           }
           break;
@@ -223,8 +354,8 @@ export const PhotoAnnotationDialog = ({
             ctx.font = `bold ${el.fontSize || 24}px system-ui`;
             ctx.fillText(el.text, el.startX, el.startY);
             
-            // Draw selection border around selected text
             if (el.id === selectedElementId) {
+              const handles = getElementHandles(el, ctx);
               const metrics = ctx.measureText(el.text);
               const textHeight = (el.fontSize || 24);
               const padding = 4;
@@ -239,6 +370,7 @@ export const PhotoAnnotationDialog = ({
                 textHeight + padding * 2
               );
               ctx.restore();
+              drawHandles(ctx, handles);
             }
           }
           break;
@@ -272,11 +404,32 @@ export const PhotoAnnotationDialog = ({
     };
   };
 
+  const selectElement = (el: AnnotationElement) => {
+    setSelectedElementId(el.id);
+    setColor(el.color);
+    setStrokeWidth(el.strokeWidth);
+    if (el.fontSize) setFontSize(el.fontSize);
+  };
+
   const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
     if (tool === "select") {
       const { x, y } = getCanvasCoordinates(e);
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
+
+      // Check resize handles on currently selected element first
+      if (selectedElementId) {
+        const selEl = elements.find(el => el.id === selectedElementId);
+        if (selEl) {
+          const handles = getElementHandles(selEl, ctx);
+          const handleHit = hitTestHandle(x, y, handles);
+          if (handleHit) {
+            setResizingHandle(handleHit);
+            setResizingElementId(selectedElementId);
+            return;
+          }
+        }
+      }
       
       // Hit-test all elements (reverse order for top-most first)
       for (let i = elements.length - 1; i >= 0; i--) {
@@ -288,10 +441,7 @@ export const PhotoAnnotationDialog = ({
           const textHeight = el.fontSize || 24;
           if (x >= el.startX && x <= el.startX + metrics.width && y >= el.startY - textHeight && y <= el.startY) {
             setDraggingElementId(el.id);
-            setSelectedElementId(el.id);
-            setColor(el.color);
-            setStrokeWidth(el.strokeWidth);
-            if (el.fontSize) setFontSize(el.fontSize);
+            selectElement(el);
             setDragOffset({ x: x - el.startX, y: y - el.startY });
             return;
           }
@@ -301,42 +451,43 @@ export const PhotoAnnotationDialog = ({
           const dx = x - el.startX;
           const dy = y - el.startY;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          // Hit if within the circle or near its edge
           if (dist <= el.radius + 10) {
             setDraggingElementId(el.id);
-            setSelectedElementId(el.id);
-            setColor(el.color);
-            setStrokeWidth(el.strokeWidth);
+            selectElement(el);
             setDragOffset({ x: x - el.startX, y: y - el.startY });
+            return;
+          }
+        }
+
+        if ((el.type === "rectangle" || el.type === "cloud") && el.startX !== undefined && el.startY !== undefined && el.width !== undefined && el.height !== undefined) {
+          const ex = el.startX, ey = el.startY, ew = el.width, eh = el.height;
+          if (x >= ex && x <= ex + ew && y >= ey && y <= ey + eh) {
+            setDraggingElementId(el.id);
+            selectElement(el);
+            setDragOffset({ x: x - ex, y: y - ey });
             return;
           }
         }
         
         if (el.type === "arrow" && el.startX !== undefined && el.startY !== undefined && el.endX !== undefined && el.endY !== undefined) {
-          // Hit-test: distance from point to line segment
           const lineLenSq = (el.endX - el.startX) ** 2 + (el.endY - el.startY) ** 2;
-          let t = lineLenSq === 0 ? 0 : Math.max(0, Math.min(1, ((x - el.startX) * (el.endX - el.startX) + (y - el.startY) * (el.endY - el.startY)) / lineLenSq));
+          const t = lineLenSq === 0 ? 0 : Math.max(0, Math.min(1, ((x - el.startX) * (el.endX - el.startX) + (y - el.startY) * (el.endY - el.startY)) / lineLenSq));
           const projX = el.startX + t * (el.endX - el.startX);
           const projY = el.startY + t * (el.endY - el.startY);
           const distToLine = Math.sqrt((x - projX) ** 2 + (y - projY) ** 2);
           if (distToLine <= 15) {
             setDraggingElementId(el.id);
-            setSelectedElementId(el.id);
-            setColor(el.color);
-            setStrokeWidth(el.strokeWidth);
+            selectElement(el);
             setDragOffset({ x: x - el.startX, y: y - el.startY });
             return;
           }
         }
         
         if (el.type === "pencil" && el.points && el.points.length > 0) {
-          // Hit-test: check distance to any point in the path
           const hit = el.points.some(p => Math.sqrt((x - p.x) ** 2 + (y - p.y) ** 2) <= 15);
           if (hit) {
             setDraggingElementId(el.id);
-            setSelectedElementId(el.id);
-            setColor(el.color);
-            setStrokeWidth(el.strokeWidth);
+            selectElement(el);
             setDragOffset({ x, y });
             return;
           }
@@ -369,12 +520,74 @@ export const PhotoAnnotationDialog = ({
       endY: y,
       points: tool === "pencil" ? [{ x, y }] : undefined,
       radius: 0,
+      width: 0,
+      height: 0,
     };
 
     setCurrentElement(newElement);
   };
 
   const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
+    // Handle resizing via handle drag
+    if (resizingHandle && resizingElementId) {
+      const { x, y } = getCanvasCoordinates(e);
+      setElements(prev => prev.map(el => {
+        if (el.id !== resizingElementId) return el;
+
+        if ((el.type === "rectangle" || el.type === "cloud") && el.startX !== undefined && el.startY !== undefined && el.width !== undefined && el.height !== undefined) {
+          let sx = el.startX, sy = el.startY, w = el.width, h = el.height;
+          switch (resizingHandle) {
+            case "se": w = x - sx; h = y - sy; break;
+            case "ne": w = x - sx; { const newH = sy + h - y; sy = y; h = newH; } break;
+            case "sw": { const newW = sx + w - x; sx = x; w = newW; } h = y - sy; break;
+            case "nw": { const newW = sx + w - x; sx = x; w = newW; } { const newH = sy + h - y; sy = y; h = newH; } break;
+          }
+          return { ...el, startX: sx, startY: sy, width: w, height: h };
+        }
+
+        if (el.type === "circle" && el.startX !== undefined && el.startY !== undefined) {
+          const dx = x - el.startX;
+          const dy = y - el.startY;
+          const newRadius = Math.sqrt(dx * dx + dy * dy);
+          return { ...el, radius: Math.max(5, newRadius) };
+        }
+
+        if (el.type === "arrow") {
+          if (resizingHandle === "start") return { ...el, startX: x, startY: y };
+          if (resizingHandle === "end") return { ...el, endX: x, endY: y };
+        }
+
+        if (el.type === "text" && el.startX !== undefined && el.startY !== undefined) {
+          // Scale font size based on handle drag distance from origin
+          const canvas = canvasRef.current;
+          const ctx = canvas?.getContext("2d");
+          if (ctx && el.text) {
+            const origFontSize = el.fontSize || 24;
+            ctx.font = `bold ${origFontSize}px system-ui`;
+            const origWidth = ctx.measureText(el.text).width;
+            if (resizingHandle === "se" || resizingHandle === "ne") {
+              const newWidth = x - el.startX;
+              if (newWidth > 10 && origWidth > 0) {
+                const scale = newWidth / origWidth;
+                return { ...el, fontSize: Math.max(8, Math.min(120, Math.round(origFontSize * scale))) };
+              }
+            }
+            if (resizingHandle === "sw" || resizingHandle === "nw") {
+              const rightEdge = el.startX + origWidth;
+              const newWidth = rightEdge - x;
+              if (newWidth > 10 && origWidth > 0) {
+                const scale = newWidth / origWidth;
+                return { ...el, fontSize: Math.max(8, Math.min(120, Math.round(origFontSize * scale))) };
+              }
+            }
+          }
+        }
+
+        return el;
+      }));
+      return;
+    }
+
     // Handle dragging a selected element
     if (draggingElementId) {
       const { x, y } = getCanvasCoordinates(e);
@@ -392,11 +605,14 @@ export const PhotoAnnotationDialog = ({
           const dy = y - dragOffset.y;
           return { ...el, points: el.points.map(p => ({ x: p.x + dx, y: p.y + dy })) };
         }
+
+        if ((el.type === "rectangle" || el.type === "cloud") && el.startX !== undefined && el.startY !== undefined) {
+          return { ...el, startX: x - dragOffset.x, startY: y - dragOffset.y };
+        }
         
         // text and circle use startX/startY
         return { ...el, startX: x - dragOffset.x, startY: y - dragOffset.y };
       }));
-      // Update drag offset for pencil (delta-based)
       if (elements.find(el => el.id === draggingElementId)?.type === "pencil") {
         setDragOffset({ x, y });
       }
@@ -425,10 +641,27 @@ export const PhotoAnnotationDialog = ({
         ...currentElement,
         radius: Math.sqrt(dx * dx + dy * dy),
       });
+    } else if (currentElement.type === "rectangle" || currentElement.type === "cloud") {
+      setCurrentElement({
+        ...currentElement,
+        width: x - (currentElement.startX || 0),
+        height: y - (currentElement.startY || 0),
+      });
     }
   };
 
   const handlePointerUp = () => {
+    // Commit resize to history
+    if (resizingHandle && resizingElementId) {
+      const newHistory = history.slice(0, historyIndex + 1);
+      newHistory.push([...elements]);
+      setHistory(newHistory);
+      setHistoryIndex(newHistory.length - 1);
+      setResizingHandle(null);
+      setResizingElementId(null);
+      return;
+    }
+
     // Commit drag move to history
     if (draggingElementId) {
       const newHistory = history.slice(0, historyIndex + 1);
@@ -446,7 +679,6 @@ export const PhotoAnnotationDialog = ({
     const newElements = [...elements, currentElement];
     setElements(newElements);
     
-    // Update history
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(newElements);
     setHistory(newHistory);
@@ -506,9 +738,28 @@ export const PhotoAnnotationDialog = ({
     setHistoryIndex(newHistory.length - 1);
   };
 
+  const updateSelectedElement = (updates: Partial<AnnotationElement>) => {
+    if (!selectedElementId) return;
+    setElements(prev => {
+      const updated = prev.map(el =>
+        el.id === selectedElementId ? { ...el, ...updates } : el
+      );
+      const newHistory = history.slice(0, historyIndex + 1);
+      newHistory.push(updated);
+      setHistory(newHistory);
+      setHistoryIndex(newHistory.length - 1);
+      return updated;
+    });
+  };
+
   const handleSave = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    // Deselect to hide handles before saving
+    setSelectedElementId(null);
+    // Wait for redraw
+    await new Promise(r => setTimeout(r, 50));
 
     canvas.toBlob((blob) => {
       if (blob) {
@@ -552,6 +803,12 @@ export const PhotoAnnotationDialog = ({
               <ToggleGroupItem value="circle" aria-label="Circle">
                 <Circle className="h-4 w-4" />
               </ToggleGroupItem>
+              <ToggleGroupItem value="rectangle" aria-label="Rectangle">
+                <Square className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="cloud" aria-label="Cloud">
+                <Cloud className="h-4 w-4" />
+              </ToggleGroupItem>
               <ToggleGroupItem value="text" aria-label="Text">
                 <Type className="h-4 w-4" />
               </ToggleGroupItem>
@@ -565,16 +822,7 @@ export const PhotoAnnotationDialog = ({
                   onClick={() => {
                     setColor(c.value);
                     if (selectedElementId) {
-                      setElements(prev => {
-                        const updated = prev.map(el =>
-                          el.id === selectedElementId ? { ...el, color: c.value } : el
-                        );
-                        const newHistory = history.slice(0, historyIndex + 1);
-                        newHistory.push(updated);
-                        setHistory(newHistory);
-                        setHistoryIndex(newHistory.length - 1);
-                        return updated;
-                      });
+                      updateSelectedElement({ color: c.value });
                     }
                   }}
                   className={cn(
@@ -595,16 +843,7 @@ export const PhotoAnnotationDialog = ({
                 onValueChange={(v) => {
                   setStrokeWidth(v[0]);
                   if (selectedElementId) {
-                    setElements(prev => {
-                      const updated = prev.map(el =>
-                        el.id === selectedElementId ? { ...el, strokeWidth: v[0] } : el
-                      );
-                      const newHistory = history.slice(0, historyIndex + 1);
-                      newHistory.push(updated);
-                      setHistory(newHistory);
-                      setHistoryIndex(newHistory.length - 1);
-                      return updated;
-                    });
+                    updateSelectedElement({ strokeWidth: v[0] });
                   }
                 }}
                 min={1}
@@ -702,16 +941,7 @@ export const PhotoAnnotationDialog = ({
                 onValueChange={(v) => {
                   setFontSize(v[0]);
                   if (selectedElementId) {
-                    setElements(prev => {
-                      const updated = prev.map(el =>
-                        el.id === selectedElementId && el.type === "text" ? { ...el, fontSize: v[0] } : el
-                      );
-                      const newHistory = history.slice(0, historyIndex + 1);
-                      newHistory.push(updated);
-                      setHistory(newHistory);
-                      setHistoryIndex(newHistory.length - 1);
-                      return updated;
-                    });
+                    updateSelectedElement({ fontSize: v[0] });
                   }
                 }}
                 min={12}
