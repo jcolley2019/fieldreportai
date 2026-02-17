@@ -23,7 +23,7 @@ const requestSchema = z.object({
 type ReportType = z.infer<typeof reportTypeSchema>;
 
 // Retry configuration
-const PRIMARY_MODEL = "google/gemini-2.5-flash-lite";
+const PRIMARY_MODEL = "google/gemini-3-flash-preview";
 const FALLBACK_MODEL = "google/gemini-2.5-flash";
 const RETRY_DELAY_MS = 1000;
 const FUNCTION_NAME = "generate-report-summary";
