@@ -217,7 +217,7 @@
     "project": "Project",
     "generatingTitle": "Generating Summary",
     "analyzingContent": "Analyzing your photos and notes with AI...",
-    "estimatedTime": "This usually takes 10-20 seconds",
+    "estimatedTime": "This usually takes 15-30 seconds",
     "addContentFirst": "Please add some content first",
     "editCaption": "Edit Photo Label",
     "editCaptionDescription": "Add or edit the label for this photo. Labels appear below photos in reports.",

@@ -652,12 +652,12 @@ const CaptureScreen = () => {
         activeImgs.map(async (img) => {
           if (!img.file) return { ...img, base64: null, originalBase64: null };
 
-          // Compress image before sending to AI (max 800px, 0.75 quality)
+          // Compress image aggressively before sending to AI (max 512px, 0.6 quality)
           let fileForAI: Blob = img.file;
           if (!img.isVideo) {
             try {
               const { compressImage } = await import('@/lib/imageCompression');
-              fileForAI = await compressImage(img.file, { maxWidth: 800, maxHeight: 800, quality: 0.75 });
+              fileForAI = await compressImage(img.file, { maxWidth: 512, maxHeight: 512, quality: 0.6 });
             } catch {
               // fallback to original
             }
@@ -692,14 +692,15 @@ const CaptureScreen = () => {
         })
       );
 
-      // Use compressed images for AI, full images for display
+      // Use compressed images for AI, full images for display (cap at 10 for AI)
       const validImageDataUrls = imageWithBase64
         .map(img => (img as any).aiBase64 ?? img.base64)
-        .filter(url => url !== null) as string[];
+        .filter(url => url !== null)
+        .slice(0, 10) as string[];
 
-      const imageCaptions = imageWithBase64.map(img => img.caption || img.voiceNote || "");
+      const imageCaptions = imageWithBase64.map(img => img.caption || img.voiceNote || "").slice(0, 10);
 
-      // Real 55-second timeout using Promise.race
+      // 90-second timeout using Promise.race
       const invokePromise = supabase.functions.invoke('generate-report-summary', {
         body: { 
           description: description || "",
@@ -710,7 +711,7 @@ const CaptureScreen = () => {
       });
 
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('AbortError: Request timed out')), 55000)
+        setTimeout(() => reject(new Error('AbortError: Request timed out')), 90000)
       );
 
       const { data, error } = await Promise.race([invokePromise, timeoutPromise]) as Awaited<typeof invokePromise>;
