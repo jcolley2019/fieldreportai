@@ -642,14 +642,13 @@ export const LiveCameraCapture = ({
             )}
             
             {/* Top Controls */}
-            <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4">
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-2 py-3">
               {/* Left controls */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 {/* Close/Done button */}
                 <button
                   onClick={() => {
                     if (capturedImages.length > 0) {
-                      // Save images before closing
                       handleDone();
                     } else if (isRecording && onStopRecording) {
                       onStopRecording();
@@ -657,20 +656,20 @@ export const LiveCameraCapture = ({
                       onOpenChange(false);
                     }
                   }}
-                  className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-all duration-300 ${
+                  className={`flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-sm transition-all duration-300 ${
                     capturedImages.length > 0
                       ? 'bg-green-500 text-white hover:bg-green-600 animate-scale-in'
                       : 'bg-black/50 text-white hover:bg-black/70'
                   }`}
                 >
-                  <X className="h-6 w-6" />
+                  <X className="h-5 w-5" />
                 </button>
 
                 {/* Flash toggle button */}
                 <button
                   data-coach="flash-button"
                   onClick={toggleFlash}
-                  className={`relative flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
+                  className={`relative flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
                     flashMode === 'on'
                       ? 'bg-yellow-500 text-black hover:bg-yellow-600'
                       : flashMode === 'auto'
@@ -679,14 +678,14 @@ export const LiveCameraCapture = ({
                   }`}
                 >
                   {flashMode === 'off' ? (
-                    <ZapOff className="h-6 w-6" />
+                    <ZapOff className="h-5 w-5" />
                   ) : flashMode === 'auto' ? (
                     <>
-                      <Zap className="h-6 w-6" />
-                      <span className="absolute bottom-0 right-0 text-[10px] font-bold bg-black text-white rounded-full w-4 h-4 flex items-center justify-center">A</span>
+                      <Zap className="h-5 w-5" />
+                      <span className="absolute bottom-0 right-0 text-[8px] font-bold bg-black text-white rounded-full w-3.5 h-3.5 flex items-center justify-center">A</span>
                     </>
                   ) : (
-                    <Zap className="h-6 w-6" fill="currentColor" />
+                    <Zap className="h-5 w-5" fill="currentColor" />
                   )}
                 </button>
 
@@ -694,86 +693,71 @@ export const LiveCameraCapture = ({
                 <button
                   data-coach="hdr-button"
                   onClick={toggleHDR}
-                  className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
+                  className={`flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
                     hdrEnabled
                       ? 'bg-purple-500 text-white hover:bg-purple-600'
                       : 'bg-black/50 text-white/50 hover:bg-black/70 hover:text-white'
                   }`}
                 >
-                  <Sparkles className="h-6 w-6" />
+                  <Sparkles className="h-5 w-5" />
                 </button>
 
                 {/* Grid toggle button */}
                 <button
                   data-coach="grid-button"
                   onClick={() => setGridEnabled(!gridEnabled)}
-                  className={`flex h-12 w-12 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
+                  className={`flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-sm transition-all ${
                     gridEnabled
                       ? 'bg-yellow-500 text-black hover:bg-yellow-600'
                       : 'bg-black/50 text-white hover:bg-black/70'
                   }`}
                 >
-                  <Grid3x3 className="h-6 w-6" />
+                  <Grid3x3 className="h-5 w-5" />
                 </button>
               </div>
 
-              {/* Center: Recording indicator or Camera name */}
-              <div className="flex flex-col items-center gap-1">
-              {isRecording ? (
-                  <div className={`px-4 py-1.5 rounded-full text-sm font-semibold backdrop-blur-sm ${
-                    isPaused 
-                      ? 'bg-transparent' 
-                      : 'bg-green-500/90'
-                  }`}>
-                    <span className="font-mono text-white">
-                      {formatDuration(recordingDuration)}
+              {/* Center: Recording indicator only */}
+              {isRecording && (
+                <div className={`px-3 py-1 rounded-full text-sm font-semibold backdrop-blur-sm ${
+                  isPaused 
+                    ? 'bg-transparent' 
+                    : 'bg-green-500/90'
+                }`}>
+                  <span className="font-mono text-white">
+                    {formatDuration(recordingDuration)}
+                  </span>
+                  {isPaused && (
+                    <span className="ml-2 px-2 py-0.5 rounded text-xs font-bold bg-red-500 text-white tracking-wider">
+                      PAUSED
                     </span>
-                    {isPaused && (
-                      <span className="ml-2 px-2 py-0.5 rounded text-xs font-bold bg-red-500 text-white tracking-wider">
-                        PAUSED
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  /* Active camera name */
-                  videoDevices.length > 0 && (
-                    <div className="px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white/80 text-xs font-medium max-w-[200px] truncate">
-                      {(() => {
-                        const activeDevice = videoDevices.find(d => d.deviceId === selectedDeviceId);
-                        if (activeDevice?.label) return activeDevice.label;
-                        if (videoDevices.length === 1 && videoDevices[0].label) return videoDevices[0].label;
-                        return facingMode === 'user' ? 'Front Camera' : 'Back Camera';
-                      })()}
-                    </div>
-                  )
-                )}
-              </div>
+                  )}
+                </div>
+              )}
 
-              {/* Camera flip button */}
-              <div className="flex items-center gap-2">
+              {/* Right controls */}
+              <div className="flex items-center gap-1.5">
                 <button
                   data-coach="fullscreen-button"
                   onClick={() => setIsFullscreen(!isFullscreen)}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
                   title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
                 >
                   {isFullscreen ? (
-                    <Minimize2 className="h-6 w-6" />
+                    <Minimize2 className="h-5 w-5" />
                   ) : (
-                    <Maximize2 className="h-6 w-6" />
+                    <Maximize2 className="h-5 w-5" />
                   )}
                 </button>
                 
-                {/* Camera selector dropdown - show when multiple cameras available */}
+                {/* Camera flip toggle */}
                 {videoDevices.length > 1 ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
                         data-coach="camera-switch-button"
-                        className="flex h-12 items-center gap-1 px-3 rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
                       >
                         <SwitchCamera className="h-5 w-5" />
-                        <ChevronDown className="h-4 w-4" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent 
@@ -797,9 +781,9 @@ export const LiveCameraCapture = ({
                   <button
                     data-coach="camera-switch-button"
                     onClick={toggleCamera}
-                    className="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm hover:bg-black/70"
                   >
-                    <SwitchCamera className="h-6 w-6" />
+                    <SwitchCamera className="h-5 w-5" />
                   </button>
                 )}
               </div>
