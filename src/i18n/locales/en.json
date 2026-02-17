@@ -629,6 +629,8 @@
     "searchPlaceholder": "Search reports...",
     "filterAll": "All Types",
     "loading": "Loading reports...",
+    "emptyState": "No saved reports yet",
+    "emptyStateHint": "Generate a report from a project to see it here",
     "noReports": "No saved reports yet",
     "noMatches": "No reports found matching your search",
     "download": "Download",
