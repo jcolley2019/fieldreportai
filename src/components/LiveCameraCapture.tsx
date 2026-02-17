@@ -845,21 +845,23 @@ export const LiveCameraCapture = ({
                   {/* Left: Combined Done/Gallery button */}
                   <div className="flex justify-center">
                     <div className="flex flex-col items-center gap-1">
-                      <button
-                        onClick={handleDone}
-                        className="relative flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all overflow-hidden"
-                      >
-                        {capturedImages.length > 0 ? (
-                          <>
+                      <div className="relative">
+                        <button
+                          onClick={handleDone}
+                          className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all overflow-hidden"
+                        >
+                          {capturedImages.length > 0 ? (
                             <img src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} alt="Gallery" className="w-full h-full object-cover" />
-                            <div className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg">
-                              {capturedImages.length}
-                            </div>
-                          </>
-                        ) : (
-                          <Image className="h-6 w-6 text-white" />
+                          ) : (
+                            <Image className="h-6 w-6 text-white" />
+                          )}
+                        </button>
+                        {capturedImages.length > 0 && (
+                          <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg">
+                            {capturedImages.length}
+                          </div>
                         )}
-                      </button>
+                      </div>
                       <span className="text-xs font-semibold uppercase tracking-wider text-white">Done</span>
                     </div>
                   </div>
@@ -921,21 +923,23 @@ export const LiveCameraCapture = ({
                   {/* Left: Combined Done/Gallery button */}
                   <div className="flex justify-center">
                     <div className="flex flex-col items-center gap-1">
-                      <button
-                        onClick={handleDone}
-                        className="relative flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all overflow-hidden"
-                      >
-                        {capturedImages.length > 0 ? (
-                          <>
+                      <div className="relative">
+                        <button
+                          onClick={handleDone}
+                          className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all overflow-hidden"
+                        >
+                          {capturedImages.length > 0 ? (
                             <img src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} alt="Gallery" className="w-full h-full object-cover" />
-                            <div className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg">
-                              {capturedImages.length}
-                            </div>
-                          </>
-                        ) : (
-                          <Image className="h-6 w-6 text-white" />
+                          ) : (
+                            <Image className="h-6 w-6 text-white" />
+                          )}
+                        </button>
+                        {capturedImages.length > 0 && (
+                          <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg">
+                            {capturedImages.length}
+                          </div>
                         )}
-                      </button>
+                      </div>
                       <span className="text-xs font-semibold uppercase tracking-wider text-white">Done</span>
                     </div>
                   </div>
