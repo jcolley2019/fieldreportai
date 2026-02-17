@@ -801,18 +801,9 @@ const ReviewSummary = () => {
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {/* Save as Standalone Option */}
             <Button
-              disabled={isSaving}
-              onClick={async () => {
+              onClick={() => {
                 setShowProjectSelector(false);
-                setIsSaving(true);
-                try {
-                  await saveReportToProject(null);
-                } catch (err) {
-                  console.error("Error saving standalone:", err);
-                  toast.error(t('reviewSummary.errorOccurred'));
-                } finally {
-                  setIsSaving(false);
-                }
+                saveReportToProject(null);
               }}
               variant="outline"
               className="w-full justify-start h-auto p-4"

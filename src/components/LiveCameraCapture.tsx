@@ -642,7 +642,7 @@ export const LiveCameraCapture = ({
             )}
             
             {/* Top Controls */}
-            <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))]">
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4">
               {/* Left controls */}
               <div className="flex items-center gap-2">
                 {/* Close/Done button */}
