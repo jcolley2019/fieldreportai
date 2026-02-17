@@ -411,7 +411,7 @@ const ReviewSummary = () => {
               const fileExt = image.isVideo 
                 ? 'webm' 
                 : (image.base64.includes('image/png') ? 'png' : 'jpg');
-              const filePath = `${currentReportId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+              const filePath = `${user.id}/${currentReportId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
               
               const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('media')
@@ -432,7 +432,7 @@ const ReviewSummary = () => {
                 const response = await fetch(image.base64);
                 const blob = await response.blob();
                 const fileExt = image.isVideo ? 'webm' : 'jpg';
-                const filePath = `${currentReportId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+                const filePath = `${user.id}/${currentReportId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
                 
                 const { data: uploadData, error: uploadError } = await supabase.storage
                   .from('media')
@@ -464,7 +464,7 @@ const ReviewSummary = () => {
                 const origResponse = await fetch(image.originalBase64);
                 const origBlob = await origResponse.blob();
                 const origExt = image.originalBase64.includes('image/png') ? 'png' : 'jpg';
-                const origPath = `${currentReportId}/originals/${Date.now()}-${Math.random().toString(36).substring(7)}.${origExt}`;
+                const origPath = `${user.id}/${currentReportId}/originals/${Date.now()}-${Math.random().toString(36).substring(7)}.${origExt}`;
                 
                 const { data: origUpload, error: origError } = await supabase.storage
                   .from('media')
