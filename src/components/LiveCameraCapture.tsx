@@ -52,7 +52,7 @@ export const LiveCameraCapture = ({
   const [capturedImages, setCapturedImages] = useState<File[]>([]);
   const [showGalleryReview, setShowGalleryReview] = useState(false);
   const [selectedGalleryItems, setSelectedGalleryItems] = useState<Set<number>>(new Set());
-  const [deletingFiles, setDeletingFiles] = useState<Map<File, ReturnType<typeof setTimeout>>>(new Map());
+  
   const [isReady, setIsReady] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [cameraMode, setCameraMode] = useState<'photo' | 'video'>('photo');
@@ -416,37 +416,7 @@ export const LiveCameraCapture = ({
   };
 
   const handleDeletePhoto = (file: File) => {
-    const timeoutId = setTimeout(() => {
-      setCapturedImages(prev => prev.filter(f => f !== file));
-      setDeletingFiles(prev => {
-        const next = new Map(prev);
-        next.delete(file);
-        return next;
-      });
-    }, 1000);
-    setDeletingFiles(prev => new Map(prev).set(file, timeoutId));
-    // Deselect if selected
-    setCapturedImages(prev => {
-      const idx = prev.indexOf(file);
-      if (idx !== -1) {
-        setSelectedGalleryItems(prevSel => {
-          const next = new Set(prevSel);
-          next.delete(idx);
-          return next;
-        });
-      }
-      return prev;
-    });
-  };
-
-  const handleUndoDelete = (file: File) => {
-    setDeletingFiles(prev => {
-      const next = new Map(prev);
-      const timeoutId = next.get(file);
-      if (timeoutId !== undefined) clearTimeout(timeoutId);
-      next.delete(file);
-      return next;
-    });
+    setCapturedImages(prev => prev.filter(f => f !== file));
   };
 
   const getDistance = (touch1: React.Touch, touch2: React.Touch) => {
@@ -1098,8 +1068,6 @@ export const LiveCameraCapture = ({
     {showGalleryReview && (
       <Dialog open={showGalleryReview} onOpenChange={(open) => {
         if (!open) {
-          deletingFiles.forEach(timeoutId => clearTimeout(timeoutId));
-          setDeletingFiles(new Map());
           setSelectedGalleryItems(new Set());
         }
         setShowGalleryReview(open);
@@ -1173,24 +1141,7 @@ export const LiveCameraCapture = ({
 
             <div className="grid grid-cols-3 gap-2">
               {capturedImages.map((file, index) => {
-                const isDeleting = deletingFiles.has(file);
                 const isSelected = selectedGalleryItems.has(index);
-
-                if (isDeleting) {
-                  return (
-                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-red-600/80 flex flex-col items-center justify-center gap-1">
-                      <Trash2 className="h-5 w-5 text-white" />
-                      <span className="text-white text-xs font-semibold">Image Deleted</span>
-                      <button
-                        onClick={() => handleUndoDelete(file)}
-                        className="mt-1 px-2 py-0.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-[10px] font-bold uppercase tracking-wider"
-                      >
-                        Undo
-                      </button>
-                    </div>
-                  );
-                }
-
                 return (
                   <div
                     key={index}
