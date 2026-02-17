@@ -22,6 +22,7 @@ import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useEffectiveOffline } from "@/hooks/useEffectiveOffline";
 import { queueMedia, fileToArrayBuffer, type PendingMediaItem } from "@/lib/offlineQueue";
+import { saveDraft, loadDraft, clearDraft, fileToBase64, base64ToFile, type DraftData } from "@/lib/draftStorage";
 
 interface ImageItem {
   id: string;
@@ -88,6 +89,79 @@ const CaptureScreen = () => {
     };
     loadPreferences();
   }, []);
+
+  // Restore draft photos from IndexedDB on mount
+  useEffect(() => {
+    const restoreDraft = async () => {
+      const draft = await loadDraft();
+      if (draft && draft.images.length > 0) {
+        const restoredImages: ImageItem[] = draft.images.map(di => {
+          const file = di.base64 ? base64ToFile(di.base64, `restored-${di.id}.jpg`) : undefined;
+          const originalFile = di.originalBase64 ? base64ToFile(di.originalBase64, `original-${di.id}.jpg`) : undefined;
+          return {
+            id: di.id,
+            url: file ? URL.createObjectURL(file) : "",
+            file,
+            originalFile,
+            deleted: di.deleted,
+            caption: di.caption,
+            voiceNote: di.voiceNote,
+            latitude: di.latitude,
+            longitude: di.longitude,
+            capturedAt: di.capturedAt ? new Date(di.capturedAt) : undefined,
+            locationName: di.locationName,
+            isVideo: di.isVideo,
+          };
+        });
+        setImages(restoredImages);
+        if (draft.description) setDescription(draft.description);
+        toast.info("Restored your previous captured photos");
+      }
+    };
+    restoreDraft();
+  }, []);
+
+  // Auto-save draft to IndexedDB whenever images or description change
+  const draftSaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (draftSaveTimeout.current) clearTimeout(draftSaveTimeout.current);
+    draftSaveTimeout.current = setTimeout(async () => {
+      const activeImgs = images.filter(img => !img.deleted);
+      if (activeImgs.length === 0 && !description) return;
+      try {
+        const draftImages = await Promise.all(
+          images.map(async (img) => {
+            let base64: string | undefined;
+            let originalBase64: string | undefined;
+            if (img.file) base64 = await fileToBase64(img.file);
+            if (img.originalFile) originalBase64 = await fileToBase64(img.originalFile);
+            return {
+              id: img.id,
+              base64: base64 || "",
+              originalBase64: originalBase64 || null,
+              caption: img.caption,
+              voiceNote: img.voiceNote,
+              latitude: img.latitude,
+              longitude: img.longitude,
+              capturedAt: img.capturedAt?.toISOString(),
+              locationName: img.locationName,
+              isVideo: img.isVideo,
+              deleted: img.deleted,
+            };
+          })
+        );
+        await saveDraft({
+          images: draftImages,
+          description,
+          reportId: location.state?.reportId,
+          savedAt: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.error("Error auto-saving draft:", err);
+      }
+    }, 2000); // Debounce 2 seconds
+    return () => { if (draftSaveTimeout.current) clearTimeout(draftSaveTimeout.current); };
+  }, [images, description]);
 
   // Generate AI label for a photo
   const generateAILabel = async (imageId: string, file: File, voiceNote?: string) => {
@@ -244,6 +318,7 @@ const CaptureScreen = () => {
   const discardAll = () => {
     setImages([]);
     setDescription("");
+    clearDraft();
     toast.success(t('common.allDiscarded'));
   };
 
@@ -600,14 +675,20 @@ const CaptureScreen = () => {
 
       const imageCaptions = imageWithBase64.map(img => img.caption || img.voiceNote || "");
 
+      // Add a 60-second timeout to prevent infinite spinning
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+
       const { data, error } = await supabase.functions.invoke('generate-report-summary', {
         body: { 
           description: description || "",
           imageDataUrls: validImageDataUrls,
           imageCaptions,
           photoDescriptionMode
-        }
+        },
       });
+
+      clearTimeout(timeoutId);
 
       if (error) {
         console.error("Summary generation error:", error);
@@ -631,7 +712,9 @@ const CaptureScreen = () => {
       setGenerationProgress(100);
       
       // Small delay to show completion
-      setTimeout(() => {
+      setTimeout(async () => {
+        // Clear draft on successful navigation
+        await clearDraft();
         // Navigate with the generated summary and media (including captions, geo data, and base64 data)
         navigate("/review-summary", { 
           state: { 
@@ -654,9 +737,12 @@ const CaptureScreen = () => {
           } 
         });
       }, 300);
-    } catch (err) {
+    } catch (err: any) {
+      const isTimeout = err?.name === 'AbortError' || err?.message?.includes('abort');
       console.error("Error generating summary:", err);
-      toast.error("Failed to generate summary. Please try again.");
+      toast.error(isTimeout 
+        ? "Summary generation timed out. Your photos are saved — please try again." 
+        : "Failed to generate summary. Your photos are saved — please try again.");
       clearInterval(progressInterval);
     } finally {
       setIsGenerating(false);
