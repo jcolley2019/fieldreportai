@@ -180,30 +180,34 @@ const CaptureScreen = () => {
       reader.readAsDataURL(file);
       
       reader.onloadend = async () => {
-        const base64Data = reader.result as string;
-        
-        const { data, error } = await supabase.functions.invoke('label-photo', {
-          body: { imageBase64: base64Data, voiceNote }
-        });
+        try {
+          const base64Data = reader.result as string;
+          
+          const { data, error } = await supabase.functions.invoke('label-photo', {
+            body: { imageBase64: base64Data, voiceNote }
+          });
 
-        if (error) {
-          console.error("Label generation error:", error);
-          // If we have a voice note, use it as fallback
-          if (voiceNote) {
+          if (error) {
+            console.error("Label generation error:", error);
+            // If we have a voice note, use it as fallback
+            if (voiceNote) {
+              setImages(prev => prev.map(img =>
+                img.id === imageId ? { ...img, caption: voiceNote, voiceNote } : img
+              ));
+            }
+            return;
+          }
+
+          if (data?.label) {
             setImages(prev => prev.map(img =>
-              img.id === imageId ? { ...img, caption: voiceNote, voiceNote } : img
+              img.id === imageId ? { ...img, caption: data.label, voiceNote: voiceNote || img.voiceNote } : img
             ));
           }
+        } catch (err) {
+          console.error("Error in label-photo callback:", err);
+        } finally {
           setIsLabelingImage(null);
-          return;
         }
-
-        if (data?.label) {
-          setImages(prev => prev.map(img =>
-            img.id === imageId ? { ...img, caption: data.label, voiceNote: voiceNote || img.voiceNote } : img
-          ));
-        }
-        setIsLabelingImage(null);
       };
     } catch (error) {
       console.error("Error generating label:", error);
