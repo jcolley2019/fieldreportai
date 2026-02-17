@@ -289,6 +289,9 @@ export const PhotoAnnotationDialog = ({
           if (x >= el.startX && x <= el.startX + metrics.width && y >= el.startY - textHeight && y <= el.startY) {
             setDraggingElementId(el.id);
             setSelectedElementId(el.id);
+            setColor(el.color);
+            setStrokeWidth(el.strokeWidth);
+            if (el.fontSize) setFontSize(el.fontSize);
             setDragOffset({ x: x - el.startX, y: y - el.startY });
             return;
           }
@@ -302,6 +305,8 @@ export const PhotoAnnotationDialog = ({
           if (dist <= el.radius + 10) {
             setDraggingElementId(el.id);
             setSelectedElementId(el.id);
+            setColor(el.color);
+            setStrokeWidth(el.strokeWidth);
             setDragOffset({ x: x - el.startX, y: y - el.startY });
             return;
           }
@@ -317,6 +322,8 @@ export const PhotoAnnotationDialog = ({
           if (distToLine <= 15) {
             setDraggingElementId(el.id);
             setSelectedElementId(el.id);
+            setColor(el.color);
+            setStrokeWidth(el.strokeWidth);
             setDragOffset({ x: x - el.startX, y: y - el.startY });
             return;
           }
@@ -328,6 +335,8 @@ export const PhotoAnnotationDialog = ({
           if (hit) {
             setDraggingElementId(el.id);
             setSelectedElementId(el.id);
+            setColor(el.color);
+            setStrokeWidth(el.strokeWidth);
             setDragOffset({ x, y });
             return;
           }
@@ -553,7 +562,21 @@ export const PhotoAnnotationDialog = ({
               {COLORS.map((c) => (
                 <button
                   key={c.value}
-                  onClick={() => setColor(c.value)}
+                  onClick={() => {
+                    setColor(c.value);
+                    if (selectedElementId) {
+                      setElements(prev => {
+                        const updated = prev.map(el =>
+                          el.id === selectedElementId ? { ...el, color: c.value } : el
+                        );
+                        const newHistory = history.slice(0, historyIndex + 1);
+                        newHistory.push(updated);
+                        setHistory(newHistory);
+                        setHistoryIndex(newHistory.length - 1);
+                        return updated;
+                      });
+                    }
+                  }}
                   className={cn(
                     "w-6 h-6 rounded-full border-2 transition-transform",
                     color === c.value ? "border-primary scale-110" : "border-border"
@@ -569,7 +592,21 @@ export const PhotoAnnotationDialog = ({
               <Label className="text-xs whitespace-nowrap">Size</Label>
               <Slider
                 value={[strokeWidth]}
-                onValueChange={(v) => setStrokeWidth(v[0])}
+                onValueChange={(v) => {
+                  setStrokeWidth(v[0]);
+                  if (selectedElementId) {
+                    setElements(prev => {
+                      const updated = prev.map(el =>
+                        el.id === selectedElementId ? { ...el, strokeWidth: v[0] } : el
+                      );
+                      const newHistory = history.slice(0, historyIndex + 1);
+                      newHistory.push(updated);
+                      setHistory(newHistory);
+                      setHistoryIndex(newHistory.length - 1);
+                      return updated;
+                    });
+                  }
+                }}
                 min={1}
                 max={10}
                 step={1}
@@ -657,12 +694,26 @@ export const PhotoAnnotationDialog = ({
           </div>
 
           {/* Font size for text tool */}
-          {tool === "text" && (
+          {(tool === "text" || (selectedElementId && elements.find(el => el.id === selectedElementId)?.type === "text")) && (
             <div className="flex items-center gap-2">
               <Label className="text-sm">Font Size: {fontSize}px</Label>
               <Slider
                 value={[fontSize]}
-                onValueChange={(v) => setFontSize(v[0])}
+                onValueChange={(v) => {
+                  setFontSize(v[0]);
+                  if (selectedElementId) {
+                    setElements(prev => {
+                      const updated = prev.map(el =>
+                        el.id === selectedElementId && el.type === "text" ? { ...el, fontSize: v[0] } : el
+                      );
+                      const newHistory = history.slice(0, historyIndex + 1);
+                      newHistory.push(updated);
+                      setHistory(newHistory);
+                      setHistoryIndex(newHistory.length - 1);
+                      return updated;
+                    });
+                  }
+                }}
                 min={12}
                 max={72}
                 step={2}
