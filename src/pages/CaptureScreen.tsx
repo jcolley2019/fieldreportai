@@ -175,10 +175,21 @@ const CaptureScreen = () => {
       return;
     }
     setLabelingImages(prev => new Set(prev).add(imageId));
+
+    // Safety timeout: clear spinner after 30s in case something silently fails
+    const safetyTimer = setTimeout(() => {
+      setLabelingImages(prev => { const next = new Set(prev); next.delete(imageId); return next; });
+    }, 30000);
+
     try {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       
+      reader.onerror = () => {
+        console.error("FileReader error for image:", imageId);
+        setLabelingImages(prev => { const next = new Set(prev); next.delete(imageId); return next; });
+      };
+
       reader.onloadend = async () => {
         try {
           const base64Data = reader.result as string;
@@ -205,6 +216,7 @@ const CaptureScreen = () => {
         } catch (err) {
           console.error("Error in label-photo callback:", err);
         } finally {
+          clearTimeout(safetyTimer);
           setLabelingImages(prev => { const next = new Set(prev); next.delete(imageId); return next; });
         }
       };
