@@ -139,6 +139,22 @@ export const PhotoAnnotationDialog = ({
             ctx.moveTo(el.points[0].x, el.points[0].y);
             el.points.forEach((point) => ctx.lineTo(point.x, point.y));
             ctx.stroke();
+            
+            // Selection indicator for pencil
+            if (el.id === selectedElementId) {
+              const xs = el.points.map(p => p.x);
+              const ys = el.points.map(p => p.y);
+              const minX = Math.min(...xs) - 6;
+              const minY = Math.min(...ys) - 6;
+              const maxX = Math.max(...xs) + 6;
+              const maxY = Math.max(...ys) + 6;
+              ctx.save();
+              ctx.strokeStyle = "#3b82f6";
+              ctx.lineWidth = 2;
+              ctx.setLineDash([4, 4]);
+              ctx.strokeRect(minX, minY, maxX - minX, maxY - minY);
+              ctx.restore();
+            }
           }
           break;
 
@@ -165,6 +181,20 @@ export const PhotoAnnotationDialog = ({
             );
             ctx.closePath();
             ctx.fill();
+            // Selection indicator for arrow
+            if (el.id === selectedElementId) {
+              ctx.save();
+              ctx.strokeStyle = "#3b82f6";
+              ctx.lineWidth = 2;
+              ctx.setLineDash([4, 4]);
+              ctx.beginPath();
+              ctx.arc(el.startX, el.startY, 6, 0, 2 * Math.PI);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.arc(el.endX, el.endY, 6, 0, 2 * Math.PI);
+              ctx.stroke();
+              ctx.restore();
+            }
           }
           break;
 
@@ -173,6 +203,18 @@ export const PhotoAnnotationDialog = ({
             ctx.beginPath();
             ctx.arc(el.startX, el.startY, el.radius, 0, 2 * Math.PI);
             ctx.stroke();
+            
+            // Selection indicator for circle
+            if (el.id === selectedElementId) {
+              ctx.save();
+              ctx.strokeStyle = "#3b82f6";
+              ctx.lineWidth = 2;
+              ctx.setLineDash([4, 4]);
+              ctx.beginPath();
+              ctx.arc(el.startX, el.startY, el.radius + 6, 0, 2 * Math.PI);
+              ctx.stroke();
+              ctx.restore();
+            }
           }
           break;
 
@@ -233,24 +275,60 @@ export const PhotoAnnotationDialog = ({
   const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
     if (tool === "select") {
       const { x, y } = getCanvasCoordinates(e);
-      // Hit-test text elements (reverse order for top-most first)
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
+      
+      // Hit-test all elements (reverse order for top-most first)
       for (let i = elements.length - 1; i >= 0; i--) {
         const el = elements[i];
+        
         if (el.type === "text" && el.startX !== undefined && el.startY !== undefined && el.text && ctx) {
           ctx.font = `bold ${el.fontSize || 24}px system-ui`;
           const metrics = ctx.measureText(el.text);
           const textHeight = el.fontSize || 24;
-          if (
-            x >= el.startX &&
-            x <= el.startX + metrics.width &&
-            y >= el.startY - textHeight &&
-            y <= el.startY
-          ) {
+          if (x >= el.startX && x <= el.startX + metrics.width && y >= el.startY - textHeight && y <= el.startY) {
             setDraggingElementId(el.id);
             setSelectedElementId(el.id);
             setDragOffset({ x: x - el.startX, y: y - el.startY });
+            return;
+          }
+        }
+        
+        if (el.type === "circle" && el.startX !== undefined && el.startY !== undefined && el.radius !== undefined) {
+          const dx = x - el.startX;
+          const dy = y - el.startY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          // Hit if within the circle or near its edge
+          if (dist <= el.radius + 10) {
+            setDraggingElementId(el.id);
+            setSelectedElementId(el.id);
+            setDragOffset({ x: x - el.startX, y: y - el.startY });
+            return;
+          }
+        }
+        
+        if (el.type === "arrow" && el.startX !== undefined && el.startY !== undefined && el.endX !== undefined && el.endY !== undefined) {
+          // Hit-test: distance from point to line segment
+          const lineLenSq = (el.endX - el.startX) ** 2 + (el.endY - el.startY) ** 2;
+          let t = lineLenSq === 0 ? 0 : Math.max(0, Math.min(1, ((x - el.startX) * (el.endX - el.startX) + (y - el.startY) * (el.endY - el.startY)) / lineLenSq));
+          const projX = el.startX + t * (el.endX - el.startX);
+          const projY = el.startY + t * (el.endY - el.startY);
+          const distToLine = Math.sqrt((x - projX) ** 2 + (y - projY) ** 2);
+          if (distToLine <= 15) {
+            setDraggingElementId(el.id);
+            setSelectedElementId(el.id);
+            setDragOffset({ x: x - el.startX, y: y - el.startY });
+            return;
+          }
+        }
+        
+        if (el.type === "pencil" && el.points && el.points.length > 0) {
+          // Hit-test: check distance to any point in the path
+          const hit = el.points.some(p => Math.sqrt((x - p.x) ** 2 + (y - p.y) ** 2) <= 15);
+          if (hit) {
+            setDraggingElementId(el.id);
+            setSelectedElementId(el.id);
+            setDragOffset({ x, y });
             return;
           }
         }
@@ -293,8 +371,26 @@ export const PhotoAnnotationDialog = ({
       const { x, y } = getCanvasCoordinates(e);
       setElements(prev => prev.map(el => {
         if (el.id !== draggingElementId) return el;
+        
+        if (el.type === "arrow" && el.startX !== undefined && el.startY !== undefined && el.endX !== undefined && el.endY !== undefined) {
+          const dx = x - dragOffset.x - el.startX;
+          const dy = y - dragOffset.y - el.startY;
+          return { ...el, startX: el.startX + dx, startY: el.startY + dy, endX: el.endX + dx, endY: el.endY + dy };
+        }
+        
+        if (el.type === "pencil" && el.points) {
+          const dx = x - dragOffset.x;
+          const dy = y - dragOffset.y;
+          return { ...el, points: el.points.map(p => ({ x: p.x + dx, y: p.y + dy })) };
+        }
+        
+        // text and circle use startX/startY
         return { ...el, startX: x - dragOffset.x, startY: y - dragOffset.y };
       }));
+      // Update drag offset for pencil (delta-based)
+      if (elements.find(el => el.id === draggingElementId)?.type === "pencil") {
+        setDragOffset({ x, y });
+      }
       return;
     }
 
