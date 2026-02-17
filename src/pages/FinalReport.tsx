@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { pdf } from '@react-pdf/renderer';
 import { ReportPDF } from '@/components/ReportPDF';
-import { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer, Table, TableCell, TableRow, WidthType, BorderStyle, ImageRun } from 'docx';
+import { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer, Table, TableCell, TableRow, WidthType, BorderStyle, ImageRun, ExternalHyperlink } from 'docx';
 import { saveAs } from 'file-saver';
 import { formatDate, formatDateLong, formatDateTime } from '@/lib/dateFormat';
 import DOMPurify from 'dompurify';
@@ -67,6 +67,7 @@ const FinalReport = () => {
   });
   const [showSuccess, setShowSuccess] = useState(false);
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
+  const [videoUrls, setVideoUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const loadReportData = async () => {
@@ -110,19 +111,23 @@ const FinalReport = () => {
         if (!mediaError && mediaData) {
           setMedia(mediaData);
           
-          // Generate signed URLs for private storage bucket
+          // Generate signed URLs for both images and videos
           const urls: Record<string, string> = {};
+          const vUrls: Record<string, string> = {};
           for (const item of mediaData) {
-            if (item.file_type === 'image') {
-              const { data: signedUrlData } = await supabase.storage
-                .from('media')
-                .createSignedUrl(item.file_path, 3600); // 1 hour expiry
-              if (signedUrlData?.signedUrl) {
+            const { data: signedUrlData } = await supabase.storage
+              .from('media')
+              .createSignedUrl(item.file_path, 3600); // 1 hour expiry
+            if (signedUrlData?.signedUrl) {
+              if (item.file_type === 'image') {
                 urls[item.id] = signedUrlData.signedUrl;
+              } else if (item.file_type === 'video') {
+                vUrls[item.id] = signedUrlData.signedUrl;
               }
             }
           }
           setMediaUrls(urls);
+          setVideoUrls(vUrls);
         }
 
         const { data: checklistsData, error: checklistsError } = await supabase
@@ -181,9 +186,12 @@ const FinalReport = () => {
 
       // Use existing signed URLs from state for PDF generation
       const mediaUrlsMap = new Map<string, string>();
+      const videoUrlsMap = new Map<string, string>();
       for (const item of media) {
         if (item.file_type === 'image' && mediaUrls[item.id]) {
           mediaUrlsMap.set(item.id, mediaUrls[item.id]);
+        } else if (item.file_type === 'video' && videoUrls[item.id]) {
+          videoUrlsMap.set(item.id, videoUrls[item.id]);
         }
       }
 
@@ -193,6 +201,7 @@ const FinalReport = () => {
           media={media}
           checklists={checklists}
           mediaUrls={mediaUrlsMap}
+          videoUrls={videoUrlsMap}
         />
       ).toBlob();
 
@@ -488,6 +497,58 @@ const FinalReport = () => {
           );
         }
       }
+
+      // Videos section
+      const videoMedia = media.filter(item => item.file_type === 'video');
+      if (videoMedia.length > 0) {
+        docSections.push(
+          new Paragraph({
+            text: "Videos Recorded",
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 400, after: 200 },
+          })
+        );
+        videoMedia.forEach((item, idx) => {
+          const videoUrl = videoUrls[item.id];
+          const note = (item as any).caption || (item as any).voice_note;
+          docSections.push(
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Video ${idx + 1}`, bold: true }),
+                ...(note ? [new TextRun({ text: ` — ${note}` })] : []),
+              ],
+              spacing: { after: 80 },
+            })
+          );
+          if (videoUrl) {
+            docSections.push(
+              new Paragraph({
+                children: [
+                  new ExternalHyperlink({
+                    link: videoUrl,
+                    children: [
+                      new TextRun({
+                        text: "▶ View / Download Video",
+                        color: "6366f1",
+                        underline: {},
+                      }),
+                    ],
+                  }),
+                ],
+                spacing: { after: 160 },
+              })
+            );
+          } else {
+            docSections.push(
+              new Paragraph({
+                children: [new TextRun({ text: "(Video link not available)", italics: true, color: "999999" })],
+                spacing: { after: 160 },
+              })
+            );
+          }
+        });
+      }
+
       // Checklists
       if (checklists.length > 0) {
         checklists.forEach((checklist) => {

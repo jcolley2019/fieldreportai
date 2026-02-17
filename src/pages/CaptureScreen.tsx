@@ -230,7 +230,7 @@ const CaptureScreen = () => {
     if (!files) return;
     const currentActive = images.filter(img => !img.deleted).length;
     if (currentActive >= 30) {
-      toast.warning("You have 30+ photos. AI summary will use the first 20. Consider starting a new report for best results.");
+      toast.warning("You have 30+ items. AI summary will use the first 25 photos. Consider starting a new report for best results.");
     }
 
     // Get GPS data only if enabled in settings
@@ -278,7 +278,7 @@ const CaptureScreen = () => {
     // Get GPS data only if enabled in settings
     const currentActive = images.filter(img => !img.deleted).length;
     if (currentActive >= 30) {
-      toast.warning("You have 30+ photos. AI summary will use the first 20. Consider starting a new report for best results.");
+      toast.warning("You have 30+ items. AI summary will use the first 25 photos. Consider starting a new report for best results.");
     }
     const geoData = gpsStampingEnabled ? await getCurrentPosition() : null;
 
@@ -700,15 +700,25 @@ const CaptureScreen = () => {
         })
       );
 
-      // Use compressed photos only for AI (skip videos, cap at 20) — full images for display
+      // Use compressed photos only for AI (skip videos, cap at 25) — full images for display
       const validImageDataUrls = imageWithBase64
         .filter(img => !(img as any).isVideo)
         .map(img => (img as any).aiBase64 ?? img.base64)
         .filter(url => url !== null)
-        .slice(0, 20) as string[];
+        .slice(0, 25) as string[];
+
+      // Build video context strings — include voice note + index so AI references them in report
+      const videoItems = imageWithBase64.filter(img => (img as any).isVideo);
+      const videoContextLines = videoItems.map((vid, idx) => {
+        const note = vid.voiceNote || vid.caption || "";
+        return `Video ${idx + 1}${note ? `: ${note}` : " (no note recorded)"}`;
+      });
 
       // All captions including videos (their voice notes add context even without image)
-      const imageCaptions = imageWithBase64.map(img => img.caption || img.voiceNote || "").slice(0, 20);
+      const imageCaptions = imageWithBase64
+        .filter(img => !(img as any).isVideo)
+        .map(img => img.caption || img.voiceNote || "")
+        .slice(0, 25);
 
       // 90-second timeout using Promise.race
       const invokePromise = supabase.functions.invoke('generate-report-summary', {
@@ -716,6 +726,7 @@ const CaptureScreen = () => {
           description: description || "",
           imageDataUrls: validImageDataUrls,
           imageCaptions,
+          videoContextLines: videoContextLines.length > 0 ? videoContextLines : undefined,
           photoDescriptionMode
         },
       });
@@ -1070,8 +1081,8 @@ const CaptureScreen = () => {
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-foreground">
                   {images.filter(img => !img.deleted).length} {images.filter(img => !img.deleted).some(img => img.isVideo) ? 'items' : 'photo' + (images.filter(img => !img.deleted).length !== 1 ? 's' : '')} captured
-                  {images.filter(img => !img.deleted).length > 20 && (
-                    <span className="ml-2 text-xs text-yellow-500 font-normal">(AI uses first 20)</span>
+                  {images.filter(img => !img.deleted).filter(img => !img.isVideo).length > 25 && (
+                    <span className="ml-2 text-xs text-yellow-500 font-normal">(AI uses first 25 photos)</span>
                   )}
                 </h3>
               </div>
