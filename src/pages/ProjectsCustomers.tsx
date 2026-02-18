@@ -7,7 +7,8 @@ import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { Input } from "@/components/ui/input";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Building2, Hash, User as UserIcon, ListChecks, Search, Filter, Plus, Trash2, Mail, Send, Loader2, X, CheckSquare, Square, Tag } from "lucide-react";
+import { Building2, Hash, User as UserIcon, ListChecks, Search, Filter, Plus, Trash2, Mail, Send, Loader2, X, CheckSquare, Square, Tag, Download, Printer, FileText } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
   Select,
@@ -302,6 +303,84 @@ const ProjectsCustomers = () => {
     }
   };
 
+  const handleExportCSV = () => {
+    const header = ['Project Name', 'Customer', 'Job Number', 'Created', 'Checklists', 'Tags'];
+    const rows = filteredProjects.map(p => [
+      `"${p.project_name.replace(/"/g, '""')}"`,
+      `"${p.customer_name.replace(/"/g, '""')}"`,
+      `"${p.job_number.replace(/"/g, '""')}"`,
+      `"${new Date(p.created_at).toLocaleDateString()}"`,
+      p.checklist_count,
+      `"${(p.tags ?? []).join(', ')}"`,
+    ]);
+    const csv = [header.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Projects_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('CSV exported');
+  };
+
+  const handlePrint = () => {
+    const rows = filteredProjects.map(p => `
+      <tr>
+        <td>${p.project_name}</td>
+        <td>${p.customer_name}</td>
+        <td>${p.job_number}</td>
+        <td>${new Date(p.created_at).toLocaleDateString()}</td>
+        <td>${p.checklist_count}</td>
+        <td>${(p.tags ?? []).join(', ') || '—'}</td>
+      </tr>
+    `).join('');
+
+    const html = `
+      <html>
+      <head>
+        <title>Projects & Customers</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 32px; }
+          h1 { font-size: 22px; margin-bottom: 4px; }
+          .subtitle { color: #666; font-size: 13px; margin-bottom: 24px; }
+          table { width: 100%; border-collapse: collapse; font-size: 13px; }
+          th { background: #f3f4f6; text-align: left; padding: 8px 10px; border-bottom: 2px solid #e5e7eb; font-weight: 600; }
+          td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+          .tag { display: inline-block; background: #ede9fe; color: #5b21b6; border-radius: 9999px; padding: 1px 8px; font-size: 11px; margin: 1px; }
+          @media print { body { padding: 16px; } }
+        </style>
+      </head>
+      <body>
+        <h1>Projects & Customers</h1>
+        <p class="subtitle">Generated on ${new Date().toLocaleDateString()} • ${filteredProjects.length} project${filteredProjects.length !== 1 ? 's' : ''}${activeTagFilter ? ` • Filtered by tag: "${activeTagFilter}"` : ''}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Project Name</th>
+              <th>Customer</th>
+              <th>Job #</th>
+              <th>Created</th>
+              <th>Checklists</th>
+              <th>Tags</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      win.print();
+    }
+  };
+
   if (loading) {
     return (
       <div className="dark min-h-screen bg-background">
@@ -323,6 +402,24 @@ const ProjectsCustomers = () => {
           <NavbarTitle>{t('projects.title')}</NavbarTitle>
         </NavbarCenter>
         <NavbarRight>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportCSV} className="gap-2">
+                <FileText className="h-4 w-4" />
+                Export CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handlePrint} className="gap-2">
+                <Printer className="h-4 w-4" />
+                Print / PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             onClick={() => navigate("/new-project")}
             size="sm"
