@@ -577,22 +577,19 @@ const ChecklistConfirmation = () => {
           </Button>
         </div>
 
-        {/* Secondary Actions Bar (Centered) */}
-        <div className="border-t border-zinc-800 px-4 py-4">
-          <div className="flex items-center justify-center gap-2 md:gap-3">
+        {/* Secondary Actions Bar */}
+        <div className="border-t border-zinc-800 px-4 py-3">
+          <div className="flex items-center gap-2">
             {/* Print Button */}
             <Button
               onClick={handlePrintChecklist}
               variant="outline"
               size="sm"
-              className="gap-2 text-zinc-200 hover:text-white border-zinc-600"
+              className="gap-2 text-zinc-200 hover:text-white border-zinc-600 flex-shrink-0"
             >
               <Printer className="h-4 w-4" />
-              <span className="hidden md:inline">{t('checklistConfirmation.print')}</span>
+              <span className="hidden sm:inline">{t('checklistConfirmation.print')}</span>
             </Button>
-
-            {/* Divider */}
-            <div className="hidden md:block h-8 w-px bg-zinc-700" />
 
             {/* Copy Link Button */}
             <Button
@@ -602,26 +599,33 @@ const ChecklistConfirmation = () => {
               }}
               variant="ghost"
               size="sm"
-              className="gap-2 text-zinc-200 hover:text-white"
+              className="gap-2 text-zinc-200 hover:text-white flex-shrink-0"
             >
               <Link className="h-4 w-4" />
-              <span className="hidden md:inline">{t('checklistConfirmation.copyLink')}</span>
+              <span className="hidden sm:inline">{t('checklistConfirmation.copyLink')}</span>
             </Button>
 
-            {/* Divider */}
-            <div className="hidden md:block h-8 w-px bg-zinc-700" />
+            {/* Export PDF — prominent labeled button */}
+            <Button
+              id="export-pdf-checklist-btn"
+              onClick={handleDownloadPDF}
+              size="sm"
+              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 flex-1 font-semibold"
+              disabled={!checklist}
+            >
+              <Download className="h-4 w-4" />
+              Export PDF
+            </Button>
 
-            {/* Save Options Dropdown */}
+            {/* More options dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1 md:gap-2 text-zinc-200 hover:text-white border-zinc-600"
+                  className="gap-1 text-zinc-200 hover:text-white border-zinc-600 flex-shrink-0"
                   disabled={!checklist}
                 >
-                  <Download className="h-4 w-4" />
-                  <span className="hidden sm:inline">{t('checklistConfirmation.saveOptions')}</span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
