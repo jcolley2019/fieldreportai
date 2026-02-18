@@ -461,6 +461,9 @@ const Index = () => {
               onClick={() => navigate("/capture-screen", { state: { quickCapture: true } })}
               className="glass-card flex flex-col items-center gap-3 p-5 hover-lift group relative border border-primary/40 shadow-[0_0_16px_hsl(var(--primary)/0.25)] hover:shadow-[0_0_28px_hsl(var(--primary)/0.45)] hover:border-primary/70 transition-all duration-300"
             >
+              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground shadow-sm whitespace-nowrap">
+                Recommended
+              </span>
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/20 transition-all duration-300 group-hover:bg-primary/35 group-hover:shadow-glow-blue">
                 <Camera className="h-7 w-7 text-primary transition-transform duration-300 group-hover:scale-110" />
               </div>
