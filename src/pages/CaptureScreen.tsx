@@ -700,67 +700,42 @@ const CaptureScreen = () => {
     }, 500);
 
     try {
-      // ── Step 1: Build display base64 for navigation (original quality, parallel) ──
-      // This runs quickly because it's just reading files the browser already has in memory.
-      const imageWithDisplay = await Promise.all(
-        activeImgs.map(async (img) => {
-          if (!img.file) return { ...img, base64: null as string | null, originalBase64: null as string | null };
+      const photoItems = activeImgs.filter(img => !img.isVideo);
+      const videoItems = activeImgs.filter(img => img.isVideo);
 
-          const base64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(img.file!);
-          });
+      // ── Step 1: Build AI image URLs in PARALLEL ──
+      // For pre-uploaded images: just sign the URL (fast, ~5ms each).
+      // For not-yet-uploaded images: compress+encode on the fly as fallback.
+      // All sign calls run simultaneously via Promise.all — not sequentially.
+      const { compressImage } = await import('@/lib/imageCompression');
 
-          let originalBase64: string | null = null;
-          if (img.originalFile) {
-            originalBase64 = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result as string);
-              reader.onerror = reject;
-              reader.readAsDataURL(img.originalFile!);
-            });
+      const aiImageUrlResults = await Promise.all(
+        photoItems.slice(0, 25).map(async (img): Promise<string | null> => {
+          // Fast path: signed URL from pre-uploaded thumbnail
+          if (img.storagePath) {
+            const { data: signedData } = await supabase.storage
+              .from('media')
+              .createSignedUrl(img.storagePath, 3600);
+            if (signedData?.signedUrl) return signedData.signedUrl;
           }
-          return { ...img, base64, originalBase64 };
+          // Fallback: compress + base64 (only fires when upload hasn't completed yet)
+          if (img.file) {
+            try {
+              const compressed = await compressImage(img.file, { maxWidth: 512, maxHeight: 512, quality: 0.6 });
+              return await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(compressed);
+              });
+            } catch {
+              return null;
+            }
+          }
+          return null;
         })
       );
-
-      // ── Step 2: Build AI image URLs — prefer storage signed URLs, fall back to base64 ──
-      // For images that were pre-uploaded in the background, we just need to sign the URL.
-      // For any that weren't uploaded yet, compress+encode on the fly (fallback).
-      const photoItems = imageWithDisplay.filter(img => !img.isVideo);
-      const videoItems = imageWithDisplay.filter(img => img.isVideo);
-
-      const aiImageUrls: string[] = [];
-      for (const img of photoItems.slice(0, 25)) {
-        if (img.storagePath) {
-          // Fast path: generate signed URL (~10ms)
-          const { data: signedData } = await supabase.storage
-            .from('media')
-            .createSignedUrl(img.storagePath, 3600);
-          if (signedData?.signedUrl) {
-            aiImageUrls.push(signedData.signedUrl);
-            continue;
-          }
-        }
-        // Fallback path: compress + base64 encode for this single image
-        if (img.file) {
-          try {
-            const { compressImage } = await import('@/lib/imageCompression');
-            const compressed = await compressImage(img.file, { maxWidth: 512, maxHeight: 512, quality: 0.6 });
-            const b64 = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result as string);
-              reader.onerror = reject;
-              reader.readAsDataURL(compressed);
-            });
-            aiImageUrls.push(b64);
-          } catch {
-            // skip this image if compression fails
-          }
-        }
-      }
+      const aiImageUrls = aiImageUrlResults.filter((u): u is string => u !== null);
 
       // Build video context strings
       const videoContextLines = videoItems.map((vid, idx) => {
@@ -772,9 +747,11 @@ const CaptureScreen = () => {
         .map(img => img.caption || img.voiceNote || "")
         .slice(0, 25);
 
-      // ── Step 3: Call edge function with tiny URL payload ──
+      // ── Step 2: Fire AI call + display-base64 encoding IN PARALLEL ──
+      // Display encoding (for ReviewSummary navigation) runs alongside the AI call
+      // so we don't block AI generation waiting for large file reads.
       const invokePromise = supabase.functions.invoke('generate-report-summary', {
-        body: { 
+        body: {
           description: description || "",
           imageDataUrls: aiImageUrls,
           imageCaptions,
@@ -783,11 +760,39 @@ const CaptureScreen = () => {
         },
       });
 
+      const displayEncodePromise = Promise.all(
+        activeImgs.map(async (img) => {
+          if (!img.file) return { ...img, base64: null as string | null, originalBase64: null as string | null };
+          const base64 = await new Promise<string | null>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(img.file!);
+          });
+          let originalBase64: string | null = null;
+          if (img.originalFile) {
+            originalBase64 = await new Promise<string | null>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = () => resolve(null);
+              reader.readAsDataURL(img.originalFile!);
+            });
+          }
+          return { ...img, base64, originalBase64 };
+        })
+      );
+
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('AbortError: Request timed out')), 90000)
       );
 
-      const { data, error } = await Promise.race([invokePromise, timeoutPromise]) as Awaited<typeof invokePromise>;
+      // AI call races against timeout; display encoding runs alongside
+      const [aiResult, imageWithDisplay] = await Promise.all([
+        Promise.race([invokePromise, timeoutPromise]) as Promise<Awaited<typeof invokePromise>>,
+        displayEncodePromise,
+      ]);
+
+      const { data, error } = aiResult;
 
       if (error) {
         console.error("Summary generation error:", error);
@@ -808,18 +813,18 @@ const CaptureScreen = () => {
 
       clearInterval(progressInterval);
       setGenerationProgress(100);
-      
+
       setTimeout(async () => {
         await clearDraft();
-        navigate("/review-summary", { 
-          state: { 
+        navigate("/review-summary", {
+          state: {
             simpleMode: isSimpleMode,
             summary: data.summary,
             description,
-            images: imageWithDisplay.map(img => ({ 
-              url: img.url, 
-              id: img.id, 
-              caption: img.caption, 
+            images: imageWithDisplay.map(img => ({
+              url: img.url,
+              id: img.id,
+              caption: img.caption,
               voiceNote: img.voiceNote,
               base64: img.base64,
               originalBase64: img.originalBase64,
@@ -829,7 +834,7 @@ const CaptureScreen = () => {
               locationName: img.locationName,
               isVideo: img.isVideo || false,
             }))
-          } 
+          }
         });
       }, 300);
     } catch (err: any) {
