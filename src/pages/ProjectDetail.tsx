@@ -428,11 +428,58 @@ const ProjectDetail = () => {
     window.print();
   };
 
+  const getOrCreateShareUrl = async (): Promise<string | undefined> => {
+    if (!project || !projectId) return undefined;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return undefined;
+
+      // Reuse an existing non-expired, non-revoked share link
+      const { data: existing } = await supabase
+        .from('project_shares')
+        .select('share_token, expires_at')
+        .eq('report_id', projectId)
+        .is('revoked_at', null)
+        .gt('expires_at', new Date().toISOString())
+        .order('expires_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existing?.share_token) {
+        return `${window.location.origin}/shared/${existing.share_token}`;
+      }
+
+      // Create a new long-lived share link (1 year)
+      const expiresAt = new Date();
+      expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+      const { data: created } = await supabase
+        .from('project_shares')
+        .insert({
+          report_id: projectId,
+          user_id: user.id,
+          expires_at: expiresAt.toISOString(),
+          allow_download: true,
+        })
+        .select('share_token')
+        .single();
+
+      if (created?.share_token) {
+        return `${window.location.origin}/shared/${created.share_token}`;
+      }
+    } catch (err) {
+      console.warn('Could not create share link for PDF:', err);
+    }
+    return undefined;
+  };
+
   const handleDownloadPDF = async () => {
     if (!project) return;
     
     try {
       toast.info('Preparing PDF…');
+
+      // Auto-create or reuse a permanent share link for the PDF
+      const shareUrl = await getOrCreateShareUrl();
 
       // Convert images to base64 data URLs so @react-pdf/renderer doesn't
       // have to make cross-origin fetches (which fail on mobile Safari).
@@ -473,6 +520,7 @@ const ProjectDetail = () => {
           media={media}
           checklists={checklists}
           mediaUrls={base64UrlsMap}
+          shareUrl={shareUrl}
         />
       ).toBlob();
       
