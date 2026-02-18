@@ -51,6 +51,7 @@ const CaptureScreen = () => {
   const { isEffectivelyOffline: isOffline } = useEffectiveOffline();
   const isSimpleMode = location.state?.simpleMode || false;
   const isProjectMode = location.state?.projectMode || false;
+  const isQuickCapture = location.state?.quickCapture || false;
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<ImageItem[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
@@ -701,13 +702,23 @@ const CaptureScreen = () => {
     }
   };
 
-  // ── Save project details and proceed with generation ─────────────────────
   const handleSaveProjectAndGenerate = async () => {
     const { projectName, customerName, jobNumber, jobDescription } = projectDetails;
     if (!projectName.trim()) { toast.error("Project name is required"); return; }
-    if (!customerName.trim()) { toast.error("Customer name is required"); return; }
-    if (!jobNumber.trim()) { toast.error("Job number is required"); return; }
-    if (!jobDescription.trim()) { toast.error("Job description is required"); return; }
+
+    // In Quick Capture mode, auto-fill optional fields if left blank
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const finalCustomer = customerName.trim() || "—";
+    const finalJobNumber = jobNumber.trim() || `QC-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+    const finalDescription = jobDescription.trim() || `Quick capture on ${dateStr}`;
+
+    if (!isQuickCapture) {
+      // Full project mode — keep existing strict validation
+      if (!finalCustomer || finalCustomer === '—') { toast.error("Customer name is required"); return; }
+      if (!jobNumber.trim()) { toast.error("Job number is required"); return; }
+      if (!jobDescription.trim()) { toast.error("Job description is required"); return; }
+    }
 
     setProjectSheetSaving(true);
     try {
@@ -719,9 +730,9 @@ const CaptureScreen = () => {
         .insert([{
           user_id: user.id,
           project_name: projectName.trim(),
-          customer_name: customerName.trim(),
-          job_number: jobNumber.trim(),
-          job_description: jobDescription.trim(),
+          customer_name: finalCustomer,
+          job_number: finalJobNumber,
+          job_description: finalDescription,
         }])
         .select('id')
         .single();
@@ -732,7 +743,6 @@ const CaptureScreen = () => {
       setLinkedProjectName(projectName.trim());
       setShowProjectSheet(false);
       toast.success(`Project "${projectName}" created — generating report…`);
-      // Proceed with generation using the new reportId
       await generateSummary(report.id);
     } catch (err) {
       toast.error("Failed to save project details");
@@ -1416,8 +1426,8 @@ const CaptureScreen = () => {
         <Button
           data-coach="generate-button"
           onClick={() => {
-            // Project mode with no linked project yet → collect details first
-            if (isProjectMode && !linkedReportId) {
+            // Quick Capture or Project Mode with no linked project → collect details first
+            if ((isQuickCapture || isProjectMode) && !linkedReportId) {
               const activeImgs = images.filter(img => !img.deleted);
               if (!description && activeImgs.length === 0) {
                 toast.error(t('captureScreen.addContentFirst'));
@@ -1658,10 +1668,12 @@ const CaptureScreen = () => {
           <SheetHeader className="mb-4">
             <SheetTitle className="flex items-center gap-2 text-lg">
               <Building2 className="h-5 w-5 text-primary" />
-              Project Details
+              {isQuickCapture ? "Name Your Capture" : "Project Details"}
             </SheetTitle>
             <SheetDescription>
-              Almost done! Add your project info to link these photos.
+              {isQuickCapture
+                ? "Give it a name — everything else is optional and can be edited later."
+                : "Almost done! Add your project info to link these photos."}
             </SheetDescription>
           </SheetHeader>
 
@@ -1673,10 +1685,10 @@ const CaptureScreen = () => {
               disabled={isVoiceFilling}
               className={`flex h-14 w-14 items-center justify-center rounded-full transition-all shadow-lg ${
                 isVoiceRecording
-                  ? 'bg-destructive text-white animate-pulse shadow-destructive/40'
+                  ? 'bg-destructive text-destructive-foreground animate-pulse shadow-destructive/40'
                   : isVoiceFilling
                   ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                  : 'bg-primary text-white hover:bg-primary/90 shadow-primary/30'
+                  : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/30'
               }`}
             >
               {isVoiceFilling ? <Loader2 className="h-6 w-6 animate-spin" /> : isVoiceRecording ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
@@ -1687,6 +1699,7 @@ const CaptureScreen = () => {
           </div>
 
           <div className="space-y-4">
+            {/* Project name — always required */}
             <div>
               <label className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-1.5">
                 <Building2 className="h-3.5 w-3.5 text-primary" /> Project Name *
@@ -1696,53 +1709,67 @@ const CaptureScreen = () => {
                 onChange={e => setProjectDetails(p => ({ ...p, projectName: e.target.value }))}
                 placeholder="e.g. Main St Renovation"
                 className="bg-secondary border-none"
+                autoFocus
               />
             </div>
-            <div>
-              <label className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-1.5">
-                <User className="h-3.5 w-3.5 text-primary" /> Customer Name *
-              </label>
-              <Input
-                value={projectDetails.customerName}
-                onChange={e => setProjectDetails(p => ({ ...p, customerName: e.target.value }))}
-                placeholder="e.g. ABC Corp"
-                className="bg-secondary border-none"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-1.5">
-                <Hash className="h-3.5 w-3.5 text-primary" /> Job Number *
-              </label>
-              <Input
-                value={projectDetails.jobNumber}
-                onChange={e => setProjectDetails(p => ({ ...p, jobNumber: e.target.value }))}
-                placeholder="e.g. JOB-2026-001"
-                className="bg-secondary border-none"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-1.5">
-                <FileText className="h-3.5 w-3.5 text-primary" /> Job Description *
-              </label>
-              <Textarea
-                value={projectDetails.jobDescription}
-                onChange={e => setProjectDetails(p => ({ ...p, jobDescription: e.target.value }))}
-                placeholder="Briefly describe the work being done…"
-                className="bg-secondary border-none resize-none min-h-[80px]"
-                maxLength={500}
-              />
-            </div>
+
+            {/* Optional fields — always show in project mode; shown collapsed hint in quick mode */}
+            {isQuickCapture ? (
+              <p className="text-xs text-muted-foreground">
+                Customer, job number &amp; description will be auto-generated — you can update them from the project page anytime.
+              </p>
+            ) : (
+              <>
+                <div>
+                  <label className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-1.5">
+                    <User className="h-3.5 w-3.5 text-primary" /> Customer Name *
+                  </label>
+                  <Input
+                    value={projectDetails.customerName}
+                    onChange={e => setProjectDetails(p => ({ ...p, customerName: e.target.value }))}
+                    placeholder="e.g. ABC Corp"
+                    className="bg-secondary border-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-1.5">
+                    <Hash className="h-3.5 w-3.5 text-primary" /> Job Number *
+                  </label>
+                  <Input
+                    value={projectDetails.jobNumber}
+                    onChange={e => setProjectDetails(p => ({ ...p, jobNumber: e.target.value }))}
+                    placeholder="e.g. JOB-2026-001"
+                    className="bg-secondary border-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-1.5">
+                    <FileText className="h-3.5 w-3.5 text-primary" /> Job Description *
+                  </label>
+                  <Textarea
+                    value={projectDetails.jobDescription}
+                    onChange={e => setProjectDetails(p => ({ ...p, jobDescription: e.target.value }))}
+                    placeholder="Briefly describe the work being done…"
+                    className="bg-secondary border-none resize-none min-h-[80px]"
+                    maxLength={500}
+                  />
+                </div>
+              </>
+            )}
 
             <Button
               onClick={handleSaveProjectAndGenerate}
               disabled={projectSheetSaving || isVoiceRecording || isVoiceFilling}
               className="w-full h-12 text-base font-semibold"
             >
-              {projectSheetSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating project…</> : "Save & Generate Report"}
+              {projectSheetSaving
+                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating project…</>
+                : isQuickCapture ? "Save & Generate Report" : "Save & Generate Report"}
             </Button>
           </div>
         </SheetContent>
       </Sheet>
+
     </div>
   );
 };

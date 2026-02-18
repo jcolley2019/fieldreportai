@@ -455,30 +455,45 @@ const Index = () => {
 
         {/* Mode Selection Section */}
         <section className="mb-8">
-          <h2 className="mb-6 text-2xl font-semibold text-foreground">{t('dashboard.chooseWorkflow')}</h2>
-          <div className="grid grid-cols-2 gap-5">
-            <button 
+          {/* Quick Capture — primary CTA */}
+          <button
+            onClick={() => navigate("/capture-screen", { state: { quickCapture: true } })}
+            className="glass-card w-full flex items-center gap-5 p-6 mb-4 hover-lift group"
+          >
+            <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25 group-hover:shadow-glow-blue">
+              <Camera className="h-10 w-10 text-primary transition-transform duration-300 group-hover:scale-110" />
+            </div>
+            <div className="text-left">
+              <h3 className="text-xl font-bold text-foreground mb-1">Quick Capture</h3>
+              <p className="text-sm text-muted-foreground">Snap photos now — name the project after</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground ml-auto flex-shrink-0 group-hover:text-primary transition-colors" />
+          </button>
+
+          {/* Secondary row */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
               onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })}
-              className="glass-card flex flex-col items-center gap-5 p-8 hover-lift group"
+              className="glass-card flex flex-col items-center gap-3 p-5 hover-lift group"
             >
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25 group-hover:shadow-glow-blue">
-                <Zap className="h-10 w-10 text-primary transition-transform duration-300 group-hover:scale-110" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
+                <Zap className="h-6 w-6 text-primary transition-transform duration-300 group-hover:scale-110" />
               </div>
               <div className="text-center">
-                <h3 className="text-lg font-semibold text-foreground mb-1">{t('dashboard.simpleMode')}</h3>
-                <p className="text-sm text-muted-foreground">{t('dashboard.quickReports')}</p>
+                <h3 className="text-sm font-semibold text-foreground mb-0.5">{t('dashboard.simpleMode')}</h3>
+                <p className="text-xs text-muted-foreground">{t('dashboard.quickReports')}</p>
               </div>
             </button>
-            <button 
+            <button
               onClick={() => navigate("/capture-screen", { state: { projectMode: true } })}
-              className="glass-card flex flex-col items-center gap-5 p-8 hover-lift group"
+              className="glass-card flex flex-col items-center gap-3 p-5 hover-lift group"
             >
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25 group-hover:shadow-glow-blue">
-                <FolderOpen className="h-10 w-10 text-primary transition-transform duration-300 group-hover:scale-110" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
+                <FolderOpen className="h-6 w-6 text-primary transition-transform duration-300 group-hover:scale-110" />
               </div>
               <div className="text-center">
-                <h3 className="text-lg font-semibold text-foreground mb-1">{t('dashboard.projectMode')}</h3>
-                <p className="text-sm text-muted-foreground">{t('dashboard.manageProjects')}</p>
+                <h3 className="text-sm font-semibold text-foreground mb-0.5">{t('dashboard.projectMode')}</h3>
+                <p className="text-xs text-muted-foreground">{t('dashboard.manageProjects')}</p>
               </div>
             </button>
           </div>
