@@ -704,18 +704,20 @@ const CaptureScreen = () => {
 
   const handleSaveProjectAndGenerate = async () => {
     const { projectName, customerName, jobNumber, jobDescription } = projectDetails;
-    if (!projectName.trim()) { toast.error("Project name is required"); return; }
 
-    // In Quick Capture mode, auto-fill optional fields if left blank
+    // Auto-fill all fields for Quick Capture — nothing is required
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const autoTimestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+    const finalProjectName = projectName.trim() || `QC-${autoTimestamp}`;
     const finalCustomer = customerName.trim() || "—";
-    const finalJobNumber = jobNumber.trim() || `QC-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+    const finalJobNumber = jobNumber.trim() || `QC-${autoTimestamp}`;
     const finalDescription = jobDescription.trim() || `Quick capture on ${dateStr}`;
 
     if (!isQuickCapture) {
       // Full project mode — keep existing strict validation
-      if (!finalCustomer || finalCustomer === '—') { toast.error("Customer name is required"); return; }
+      if (!projectName.trim()) { toast.error("Project name is required"); return; }
+      if (!customerName.trim()) { toast.error("Customer name is required"); return; }
       if (!jobNumber.trim()) { toast.error("Job number is required"); return; }
       if (!jobDescription.trim()) { toast.error("Job description is required"); return; }
     }
@@ -729,7 +731,7 @@ const CaptureScreen = () => {
         .from('reports')
         .insert([{
           user_id: user.id,
-          project_name: projectName.trim(),
+          project_name: finalProjectName,
           customer_name: finalCustomer,
           job_number: finalJobNumber,
           job_description: finalDescription,
@@ -740,7 +742,7 @@ const CaptureScreen = () => {
       if (error || !report) throw error;
 
       setLinkedReportId(report.id);
-      setLinkedProjectName(projectName.trim());
+      setLinkedProjectName(finalProjectName);
       setShowProjectSheet(false);
       toast.success(`Project "${projectName}" created — generating report…`);
       await generateSummary(report.id);

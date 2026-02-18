@@ -339,9 +339,9 @@ const Index = () => {
                 <FolderOpen className="mr-2 h-4 w-4" />
                 {t('dashboard.viewAllProjects')}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })} className="cursor-pointer">
+              <DropdownMenuItem onClick={() => navigate("/capture-screen", { state: { quickCapture: true } })} className="cursor-pointer">
                 <Camera className="mr-2 h-4 w-4" />
-                {t('dashboard.captureScreen')}
+                Quick Capture
               </DropdownMenuItem>
               
               {/* Recent Projects Section */}
@@ -470,33 +470,20 @@ const Index = () => {
             <ChevronRight className="h-5 w-5 text-muted-foreground ml-auto flex-shrink-0 group-hover:text-primary transition-colors" />
           </button>
 
-          {/* Secondary row */}
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })}
-              className="glass-card flex flex-col items-center gap-3 p-5 hover-lift group"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
-                <Zap className="h-6 w-6 text-primary transition-transform duration-300 group-hover:scale-110" />
-              </div>
-              <div className="text-center">
-                <h3 className="text-sm font-semibold text-foreground mb-0.5">{t('dashboard.simpleMode')}</h3>
-                <p className="text-xs text-muted-foreground">{t('dashboard.quickReports')}</p>
-              </div>
-            </button>
-            <button
-              onClick={() => navigate("/capture-screen", { state: { projectMode: true } })}
-              className="glass-card flex flex-col items-center gap-3 p-5 hover-lift group"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
-                <FolderOpen className="h-6 w-6 text-primary transition-transform duration-300 group-hover:scale-110" />
-              </div>
-              <div className="text-center">
-                <h3 className="text-sm font-semibold text-foreground mb-0.5">{t('dashboard.projectMode')}</h3>
-                <p className="text-xs text-muted-foreground">{t('dashboard.manageProjects')}</p>
-              </div>
-            </button>
-          </div>
+          {/* Project Mode — secondary CTA */}
+          <button
+            onClick={() => navigate("/capture-screen", { state: { projectMode: true } })}
+            className="glass-card w-full flex items-center gap-5 p-5 hover-lift group"
+          >
+            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
+              <FolderOpen className="h-7 w-7 text-primary transition-transform duration-300 group-hover:scale-110" />
+            </div>
+            <div className="text-left">
+              <h3 className="text-base font-semibold text-foreground mb-0.5">{t('dashboard.projectMode')}</h3>
+              <p className="text-xs text-muted-foreground">{t('dashboard.manageProjects')}</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground ml-auto flex-shrink-0 group-hover:text-primary transition-colors" />
+          </button>
         </section>
 
         {/* Recent Projects Section */}
