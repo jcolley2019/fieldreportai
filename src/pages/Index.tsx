@@ -536,6 +536,30 @@ const Index = () => {
             )}
           </div>
 
+          {/* Status summary row */}
+          {projects.length > 0 && (
+            <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+              {(Object.entries(STATUS_CONFIG) as [ProjectStatus, typeof STATUS_CONFIG[ProjectStatus]][]).map(([key, cfg], i) => {
+                const count = projects.filter(p => p.status === key).length;
+                if (count === 0) return null;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setActiveStatusFilter(activeStatusFilter === key ? null : key)}
+                    className={`inline-flex items-center gap-1.5 transition-colors hover:text-foreground ${activeStatusFilter === key ? 'text-foreground font-medium' : ''}`}
+                  >
+                    <span className={`h-2 w-2 rounded-full ${cfg.dot}`} />
+                    {count} {cfg.label}
+                  </button>
+                );
+              }).filter(Boolean).reduce<React.ReactNode[]>((acc, el, i, arr) => {
+                acc.push(el);
+                if (i < arr.length - 1) acc.push(<span key={`sep-${i}`} className="text-border">·</span>);
+                return acc;
+              }, [])}
+            </div>
+          )}
+
           {/* Status filter chips */}
           {projects.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-2">
