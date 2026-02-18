@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Camera, Mic, Trash2, ChevronLeft, FileText, ChevronRight, ListChecks, ClipboardList, Pencil, Loader2, PenTool, Building2, Hash, User, MicOff, CheckCircle2 } from "lucide-react";
+import { Camera, Mic, Trash2, ChevronLeft, FileText, ChevronRight, ListChecks, ClipboardList, Pencil, Loader2, PenTool, Building2, Hash, User, MicOff, CheckCircle2, ShieldOff } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import CoachMarks from "@/components/CoachMarks";
@@ -24,6 +24,7 @@ import { useGeolocation } from "@/hooks/useGeolocation";
 import { useEffectiveOffline } from "@/hooks/useEffectiveOffline";
 import { queueMedia, fileToArrayBuffer, type PendingMediaItem } from "@/lib/offlineQueue";
 import { saveDraft, loadDraft, clearDraft, fileToBase64, base64ToFile, type DraftData } from "@/lib/draftStorage";
+import { useProjectRole } from "@/hooks/useProjectRole";
 
 interface ImageItem {
   id: string;
@@ -85,8 +86,12 @@ const CaptureScreen = () => {
   const [linkedReportId, setLinkedReportId] = useState<string | null>(location.state?.reportId || null);
   const [linkedProjectName, setLinkedProjectName] = useState<string>(location.state?.projectName || "");
 
+  // RBAC: derive the current user's role for this project (if any)
+  const { canEdit: canEditProject } = useProjectRole(linkedReportId ?? undefined);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
 
   // Load user preferences
   const [photoDescriptionMode, setPhotoDescriptionMode] = useState("ai_enhanced");
@@ -1287,16 +1292,26 @@ const CaptureScreen = () => {
 
           {/* Upload/Camera Section with Auto Voice Recording */}
           <div className="flex flex-col items-center gap-4">
-            <button
-              data-coach="camera-button"
-              onClick={handleOpenCamera}
-              className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-all hover:bg-primary/30 shadow-xl shadow-primary/50 ring-4 ring-primary/30"
-            >
-              <div className="flex items-center gap-3">
-                <Camera className="h-16 w-16" />
-                <Mic className="h-14 w-14" />
+            {linkedReportId && !canEditProject ? (
+              <div className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-muted/30 p-6 text-center">
+                <ShieldOff className="h-12 w-12 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">View-only access</p>
+                  <p className="text-xs text-muted-foreground mt-1">You have viewer permissions on this project and cannot add photos.</p>
+                </div>
               </div>
-            </button>
+            ) : (
+              <button
+                data-coach="camera-button"
+                onClick={handleOpenCamera}
+                className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-all hover:bg-primary/30 shadow-xl shadow-primary/50 ring-4 ring-primary/30"
+              >
+                <div className="flex items-center gap-3">
+                  <Camera className="h-16 w-16" />
+                  <Mic className="h-14 w-14" />
+                </div>
+              </button>
+            )}
             
             {/* Hidden file inputs */}
             <input
