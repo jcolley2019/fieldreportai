@@ -1,7 +1,6 @@
-import { useState, useRef, KeyboardEvent } from "react";
+import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { X, Plus, Tag } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -15,7 +14,34 @@ interface TagEditorProps {
 export const TagEditor = ({ projectId, tags, onTagsChange, readOnly = false }: TagEditorProps) => {
   const [inputValue, setInputValue] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [allTags, setAllTags] = useState<string[]>([]);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fetch all existing tags from other projects for autocomplete
+  useEffect(() => {
+    const fetchAllTags = async () => {
+      const { data } = await supabase
+        .from('reports')
+        .select('tags')
+        .neq('id', projectId);
+
+      if (data) {
+        const tagSet = new Set<string>();
+        data.forEach(row => (row.tags ?? []).forEach((t: string) => tagSet.add(t)));
+        setAllTags(Array.from(tagSet).sort());
+      }
+    };
+    fetchAllTags();
+  }, [projectId]);
+
+  const suggestions = inputValue.trim().length > 0
+    ? allTags.filter(t =>
+        t.includes(inputValue.trim().toLowerCase()) &&
+        !tags.includes(t)
+      )
+    : [];
 
   const saveTags = async (newTags: string[]) => {
     const { error } = await supabase
@@ -31,17 +57,19 @@ export const TagEditor = ({ projectId, tags, onTagsChange, readOnly = false }: T
     return true;
   };
 
-  const addTag = async () => {
-    const tag = inputValue.trim().toLowerCase().replace(/\s+/g, '-');
-    if (!tag || tags.includes(tag)) {
+  const addTag = async (value?: string) => {
+    const raw = (value ?? inputValue).trim().toLowerCase().replace(/\s+/g, '-');
+    if (!raw || tags.includes(raw)) {
       setInputValue("");
       setIsAdding(false);
+      setHighlightedIndex(-1);
       return;
     }
-    const newTags = [...tags, tag];
+    const newTags = [...tags, raw];
     await saveTags(newTags);
     setInputValue("");
     setIsAdding(false);
+    setHighlightedIndex(-1);
   };
 
   const removeTag = async (tagToRemove: string) => {
@@ -50,12 +78,35 @@ export const TagEditor = ({ projectId, tags, onTagsChange, readOnly = false }: T
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (suggestions.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setHighlightedIndex(i => Math.min(i + 1, suggestions.length - 1));
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setHighlightedIndex(i => Math.max(i - 1, -1));
+        return;
+      }
+      if (e.key === "Tab" && highlightedIndex >= 0) {
+        e.preventDefault();
+        addTag(suggestions[highlightedIndex]);
+        return;
+      }
+    }
+
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
-      addTag();
+      if (highlightedIndex >= 0 && suggestions[highlightedIndex]) {
+        addTag(suggestions[highlightedIndex]);
+      } else {
+        addTag();
+      }
     } else if (e.key === "Escape") {
       setInputValue("");
       setIsAdding(false);
+      setHighlightedIndex(-1);
     } else if (e.key === "Backspace" && !inputValue && tags.length > 0) {
       removeTag(tags[tags.length - 1]);
     }
@@ -100,16 +151,50 @@ export const TagEditor = ({ projectId, tags, onTagsChange, readOnly = false }: T
 
       {!readOnly && (
         isAdding ? (
-          <Input
-            ref={inputRef}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onBlur={addTag}
-            placeholder="Add tag…"
-            autoFocus
-            className="h-6 w-28 rounded-full px-3 py-0 text-xs bg-secondary border-border"
-          />
+          <div className="relative" ref={dropdownRef}>
+            <Input
+              ref={inputRef}
+              value={inputValue}
+              onChange={(e) => {
+                setInputValue(e.target.value);
+                setHighlightedIndex(-1);
+              }}
+              onKeyDown={handleKeyDown}
+              onBlur={() => {
+                // Delay so click on suggestion registers first
+                setTimeout(() => {
+                  setInputValue("");
+                  setIsAdding(false);
+                  setHighlightedIndex(-1);
+                }, 150);
+              }}
+              placeholder="Add tag…"
+              autoFocus
+              className="h-6 w-28 rounded-full px-3 py-0 text-xs bg-secondary border-border"
+            />
+            {suggestions.length > 0 && (
+              <div className="absolute top-full mt-1 left-0 z-50 min-w-[140px] rounded-xl border border-border/50 bg-popover shadow-lg overflow-hidden">
+                {suggestions.slice(0, 8).map((s, i) => (
+                  <button
+                    key={s}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      addTag(s);
+                    }}
+                    className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
+                      i === highlightedIndex
+                        ? "bg-accent text-accent-foreground"
+                        : "hover:bg-accent/60 text-foreground"
+                    }`}
+                  >
+                    <span className={`inline-block rounded-full px-2 py-0.5 border text-xs font-medium ${getTagColor(s)}`}>
+                      {s}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
           <button
             onClick={() => {
