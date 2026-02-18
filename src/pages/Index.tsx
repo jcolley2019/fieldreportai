@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User } from "@supabase/supabase-js";
-import { FileText, Camera, Mic, Share2, Eye, ChevronDown, ChevronRight, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Circle, Cloud, Layers, LogOut, MessageSquare } from "lucide-react";
+import { FileText, Camera, Mic, Share2, Eye, ChevronDown, ChevronRight, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Circle, Cloud, Layers, LogOut, MessageSquare, X } from "lucide-react";
+
 import { toast } from "sonner";
 import { TrialBanner } from "@/components/TrialBanner";
 import { SubscriptionBadge } from "@/components/SubscriptionBadge";
@@ -39,6 +40,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+type ProjectStatus = 'in_progress' | 'needs_review' | 'complete';
+
 interface Project {
   id: string;
   project_name: string;
@@ -47,8 +50,15 @@ interface Project {
   job_description: string;
   created_at: string;
   checklist_count: number;
+  status: ProjectStatus;
   new_comment_count?: number;
 }
+
+const STATUS_CONFIG: Record<ProjectStatus, { label: string; color: string; dot: string }> = {
+  in_progress: { label: 'In Progress', color: 'bg-blue-500/15 text-blue-400 border-blue-500/30', dot: 'bg-blue-400' },
+  needs_review: { label: 'Needs Review', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30', dot: 'bg-amber-400' },
+  complete: { label: 'Complete', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-400' },
+};
 
 const Index = () => {
   const { t } = useTranslation();
@@ -252,29 +262,42 @@ const Index = () => {
 
           return {
             ...report,
+            status: ((report as any).status as ProjectStatus) ?? 'in_progress',
             checklist_count: checklistResult.error ? 0 : (checklistResult.count || 0),
             new_comment_count: newCommentCount,
           };
         })
       );
 
-      setProjects(projectsWithCounts);
+      setProjects(projectsWithCounts as Project[]);
     } catch (error) {
       console.error('Error fetching projects:', error);
       toast.error(t('dashboard.failedLoadProjects'));
     }
   };
 
+  const handleStatusChange = async (projectId: string, newStatus: ProjectStatus) => {
+    setProjects(prev => prev.map(p => p.id === projectId ? { ...p, status: newStatus } : p));
+    const { error } = await supabase.from('reports').update({ status: newStatus } as any).eq('id', projectId);
+    if (error) {
+      toast.error('Failed to update status');
+      fetchProjects();
+    }
+  };
+
   // Filter and sort projects
+  const [activeStatusFilter, setActiveStatusFilter] = useState<ProjectStatus | null>(null);
   const filteredProjects = projects
     .filter((project) => {
       const searchLower = searchQuery.toLowerCase();
-      return (
+      const matchesSearch = (
         project.project_name.toLowerCase().includes(searchLower) ||
         project.customer_name.toLowerCase().includes(searchLower) ||
         project.job_number.toLowerCase().includes(searchLower) ||
         project.job_description.toLowerCase().includes(searchLower)
       );
+      const matchesStatus = !activeStatusFilter || project.status === activeStatusFilter;
+      return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -498,7 +521,7 @@ const Index = () => {
 
         {/* Recent Projects Section */}
         <section id="projects-section">
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-foreground">{t('dashboard.recentProjects')}</h2>
             {projects.length > 5 && (
               <Button
@@ -512,6 +535,31 @@ const Index = () => {
               </Button>
             )}
           </div>
+
+          {/* Status filter chips */}
+          {projects.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {([null, 'in_progress', 'needs_review', 'complete'] as (ProjectStatus | null)[]).map((s) => {
+                const cfg = s ? STATUS_CONFIG[s] : null;
+                const isActive = activeStatusFilter === s;
+                return (
+                  <button
+                    key={s ?? 'all'}
+                    onClick={() => setActiveStatusFilter(s)}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      isActive
+                        ? s ? cfg!.color + ' border-transparent' : 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-secondary text-muted-foreground border-border hover:border-primary hover:text-primary'
+                    }`}
+                  >
+                    {cfg && <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />}
+                    {s ? STATUS_CONFIG[s].label : 'All'}
+                    {isActive && s && <X className="h-3 w-3 ml-0.5" onClick={(e) => { e.stopPropagation(); setActiveStatusFilter(null); }} />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           
           <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm">
             {projects.length === 0 ? (
@@ -521,7 +569,9 @@ const Index = () => {
               </div>
             ) : (
               <div className="divide-y divide-border/30">
-                {filteredProjects.slice(0, 5).map((project) => (
+                {filteredProjects.slice(0, 5).map((project) => {
+                  const statusCfg = STATUS_CONFIG[project.status];
+                  return (
                   <div
                     key={project.id}
                     className="flex items-start gap-4 p-4 hover:bg-muted/20 cursor-pointer group transition-colors duration-200"
@@ -536,7 +586,34 @@ const Index = () => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground text-lg mb-1">{project.project_name}</h3>
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <h3 className="font-semibold text-foreground text-lg">{project.project_name}</h3>
+                        {/* Status badge / inline selector */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              onClick={(e) => e.stopPropagation()}
+                              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition-colors ${statusCfg.color}`}
+                            >
+                              <span className={`h-1.5 w-1.5 rounded-full ${statusCfg.dot}`} />
+                              {statusCfg.label}
+                              <ChevronDown className="h-3 w-3 opacity-60" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+                            {(Object.entries(STATUS_CONFIG) as [ProjectStatus, typeof STATUS_CONFIG[ProjectStatus]][]).map(([key, cfg]) => (
+                              <DropdownMenuItem
+                                key={key}
+                                className="gap-2"
+                                onClick={(e) => { e.stopPropagation(); handleStatusChange(project.id, key); }}
+                              >
+                                <span className={`h-2 w-2 rounded-full ${cfg.dot}`} />
+                                {cfg.label}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                       <div className="space-y-1 text-sm">
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <UserIcon className="h-4 w-4 flex-shrink-0" />
@@ -579,7 +656,8 @@ const Index = () => {
                       </Button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
