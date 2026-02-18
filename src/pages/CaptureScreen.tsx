@@ -1166,11 +1166,6 @@ const CaptureScreen = () => {
         storageKey="captureScreenCoachDismissed"
         steps={[
           {
-            targetSelector: '[data-coach="camera-button"]',
-            title: t("coachMarks.capture.cameraTitle"),
-            description: t("coachMarks.capture.cameraDesc"),
-          },
-          {
             targetSelector: '[data-coach="field-notes"]',
             title: t("coachMarks.capture.notesTitle"),
             description: t("coachMarks.capture.notesDesc"),
@@ -1299,9 +1294,6 @@ const CaptureScreen = () => {
                 <Camera className="h-16 w-16" />
                 <Mic className="h-14 w-14" />
               </div>
-              <p className="text-base font-bold text-foreground drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                {t('captureScreen.takePhotosWithVoice')}
-              </p>
             </button>
             
             {/* Hidden file inputs */}
