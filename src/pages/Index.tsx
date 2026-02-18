@@ -105,31 +105,39 @@ const Index = () => {
   useEffect(() => {
     let isMounted = true;
 
-    // Safety timeout: force loading to false after 5 seconds
+    // Safety timeout: force loading to false after 8 seconds
     const safetyTimeout = setTimeout(() => {
       if (isMounted && loading) {
         console.warn('Dashboard auth safety timeout triggered');
         setLoading(false);
       }
-    }, 5000);
+    }, 8000);
 
-    // Listener for ONGOING auth changes (does NOT control loading)
+    // Listener for ONGOING auth changes — this also fires on session restore
+    // which handles the mobile refresh case where getSession() returns null first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!isMounted) return;
-        setUser(session?.user ?? null);
-        if (loading) setLoading(false);
+        const newUser = session?.user ?? null;
+        setUser(newUser);
+        setLoading(false);
       }
     );
 
-    // INITIAL load (controls loading)
+    // INITIAL load — on mobile, localStorage tokens may not be ready yet
+    // so we rely on onAuthStateChange firing INITIAL_SESSION to set user
     const initializeAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (isMounted) {
-          setUser(session?.user ?? null);
+        if (isMounted && session?.user) {
+          // Session found immediately — set user and stop loading
+          setUser(session.user);
+          setLoading(false);
         }
-      } finally {
+        // If session is null, wait for onAuthStateChange(INITIAL_SESSION)
+        // which will fire shortly with the restored session from localStorage
+      } catch (e) {
+        console.error('Auth init error:', e);
         if (isMounted) setLoading(false);
       }
     };
@@ -399,14 +407,21 @@ const Index = () => {
     return (
       <div className="dark min-h-screen">
         <div className="flex min-h-screen items-center justify-center bg-background">
-          <div className="text-foreground">{t('common.loading')}</div>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </div>
     );
   }
 
   if (!user) {
-    return null;
+    // Session not restored yet — show spinner (handles mobile refresh race condition)
+    return (
+      <div className="dark min-h-screen">
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
   }
 
   return (
