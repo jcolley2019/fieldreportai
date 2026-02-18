@@ -6,10 +6,11 @@ import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, ListChecks, ClipboardList, Pencil, Loader2, PenTool, Link2 } from "lucide-react";
+import { Camera, Mic, Trash2, ChevronLeft, FileText, ChevronRight, ListChecks, ClipboardList, Pencil, Loader2, PenTool, Building2, Hash, User, MicOff, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import CoachMarks from "@/components/CoachMarks";
@@ -49,6 +50,7 @@ const CaptureScreen = () => {
   const { getCurrentPosition } = useGeolocation();
   const { isEffectivelyOffline: isOffline } = useEffectiveOffline();
   const isSimpleMode = location.state?.simpleMode || false;
+  const isProjectMode = location.state?.projectMode || false;
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<ImageItem[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
@@ -59,7 +61,7 @@ const CaptureScreen = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [showCameraDialog, setShowCameraDialog] = useState(false);
-  const [showLiveCamera, setShowLiveCamera] = useState(false);
+  const [showLiveCamera, setShowLiveCamera] = useState(true); // auto-open camera immediately
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const [editingCaptionId, setEditingCaptionId] = useState<string | null>(null);
@@ -69,6 +71,19 @@ const CaptureScreen = () => {
   const [gpsStampingEnabled, setGpsStampingEnabled] = useState(false);
   const [recordingForPhotoId, setRecordingForPhotoId] = useState<string | null>(null);
   const [photoMediaRecorder, setPhotoMediaRecorder] = useState<MediaRecorder | null>(null);
+
+  // Project details sheet (for Project Mode — fill details after capturing)
+  const [showProjectSheet, setShowProjectSheet] = useState(false);
+  const [projectDetails, setProjectDetails] = useState({ projectName: "", customerName: "", jobNumber: "", jobDescription: "" });
+  const [projectSheetSaving, setProjectSheetSaving] = useState(false);
+  const [isVoiceFilling, setIsVoiceFilling] = useState(false);
+  const [isVoiceRecording, setIsVoiceRecording] = useState(false);
+  const voiceRecorderRef = useRef<MediaRecorder | null>(null);
+  const voiceChunksRef = useRef<Blob[]>([]);
+  // Linked project/report id
+  const [linkedReportId, setLinkedReportId] = useState<string | null>(location.state?.reportId || null);
+  const [linkedProjectName, setLinkedProjectName] = useState<string>(location.state?.projectName || "");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -634,7 +649,99 @@ const CaptureScreen = () => {
     }
   };
 
-  const generateSummary = async () => {
+  // ── Voice-fill project details ──────────────────────────────────────────
+  const handleVoiceFillProjectDetails = async () => {
+    if (isVoiceRecording) {
+      // Stop recording
+      if (voiceRecorderRef.current && voiceRecorderRef.current.state !== 'inactive') {
+        voiceRecorderRef.current.stop();
+      }
+      setIsVoiceRecording(false);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      voiceChunksRef.current = [];
+      recorder.ondataavailable = (e) => { if (e.data.size > 0) voiceChunksRef.current.push(e.data); };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        setIsVoiceFilling(true);
+        const audioBlob = new Blob(voiceChunksRef.current, { type: recorder.mimeType });
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64 = (reader.result as string).split(',')[1];
+          try {
+            const { data: transcribeData } = await supabase.functions.invoke('transcribe-audio', { body: { audio: base64 } });
+            if (transcribeData?.text) {
+              const { data: extracted } = await supabase.functions.invoke('extract-report-fields', { body: { transcription: transcribeData.text } });
+              if (extracted) {
+                setProjectDetails(prev => ({
+                  projectName: extracted.projectName || prev.projectName,
+                  customerName: extracted.customerName || prev.customerName,
+                  jobNumber: extracted.jobNumber || prev.jobNumber,
+                  jobDescription: extracted.jobDescription || prev.jobDescription,
+                }));
+                toast.success("Fields filled from voice!");
+              }
+            }
+          } catch (err) {
+            toast.error("Could not process voice input");
+          }
+          setIsVoiceFilling(false);
+        };
+      };
+      recorder.start();
+      voiceRecorderRef.current = recorder;
+      setIsVoiceRecording(true);
+      toast.info("Recording… describe your project name, customer, job number, and description");
+    } catch {
+      toast.error("Could not access microphone");
+    }
+  };
+
+  // ── Save project details and proceed with generation ─────────────────────
+  const handleSaveProjectAndGenerate = async () => {
+    const { projectName, customerName, jobNumber, jobDescription } = projectDetails;
+    if (!projectName.trim()) { toast.error("Project name is required"); return; }
+    if (!customerName.trim()) { toast.error("Customer name is required"); return; }
+    if (!jobNumber.trim()) { toast.error("Job number is required"); return; }
+    if (!jobDescription.trim()) { toast.error("Job description is required"); return; }
+
+    setProjectSheetSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast.error("You must be logged in"); return; }
+
+      const { data: report, error } = await supabase
+        .from('reports')
+        .insert([{
+          user_id: user.id,
+          project_name: projectName.trim(),
+          customer_name: customerName.trim(),
+          job_number: jobNumber.trim(),
+          job_description: jobDescription.trim(),
+        }])
+        .select('id')
+        .single();
+
+      if (error || !report) throw error;
+
+      setLinkedReportId(report.id);
+      setLinkedProjectName(projectName.trim());
+      setShowProjectSheet(false);
+      toast.success(`Project "${projectName}" created — generating report…`);
+      // Proceed with generation using the new reportId
+      await generateSummary(report.id);
+    } catch (err) {
+      toast.error("Failed to save project details");
+    } finally {
+      setProjectSheetSaving(false);
+    }
+  };
+
+  const generateSummary = async (overrideReportId?: string) => {
     const activeImgs = images.filter(img => !img.deleted);
     
     if (!description && activeImgs.length === 0) {
@@ -885,6 +992,7 @@ const CaptureScreen = () => {
         navigate("/review-summary", {
           state: {
             simpleMode: isSimpleMode,
+            reportId: overrideReportId || linkedReportId || location.state?.reportId,
             summary: data.summary,
             description,
             images: imageWithDisplay.map(img => ({
@@ -1095,15 +1203,26 @@ const CaptureScreen = () => {
       <main className="flex-1 px-4 pt-4 pb-36 animate-fade-in">
         {/* Project Info Pills */}
         <div className="flex flex-wrap gap-2 pb-4">
-          <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
-            <p className="text-xs font-medium text-muted-foreground">{t('captureScreen.project')}: {location.state?.projectName || ''}</p>
-          </div>
+          {isProjectMode && (
+            <div className={`flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full px-3 ${linkedProjectName ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
+              <Building2 className="h-3 w-3" />
+              <p className="text-xs font-medium">
+                {linkedProjectName || "Project details saved after capture"}
+              </p>
+            </div>
+          )}
+          {!isProjectMode && (
+            <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
+              <p className="text-xs font-medium text-muted-foreground">{t('captureScreen.project')}: {linkedProjectName || ''}</p>
+            </div>
+          )}
           <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
             <p className="text-xs font-medium text-muted-foreground">
               {formatDate(new Date())}
             </p>
           </div>
         </div>
+
 
         <div className="flex flex-col gap-y-6">
           {/* Description Textarea */}
@@ -1296,7 +1415,19 @@ const CaptureScreen = () => {
       <div className="fixed bottom-0 left-0 right-0 z-20 w-full bg-background/80 p-4 backdrop-blur-lg">
         <Button
           data-coach="generate-button"
-          onClick={generateSummary}
+          onClick={() => {
+            // Project mode with no linked project yet → collect details first
+            if (isProjectMode && !linkedReportId) {
+              const activeImgs = images.filter(img => !img.deleted);
+              if (!description && activeImgs.length === 0) {
+                toast.error(t('captureScreen.addContentFirst'));
+                return;
+              }
+              setShowProjectSheet(true);
+              return;
+            }
+            generateSummary();
+          }}
           disabled={isGenerating}
           className="w-full rounded-xl bg-primary px-4 py-6 text-base font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
         >
@@ -1520,8 +1651,101 @@ const CaptureScreen = () => {
           onSave={(blob) => handleAnnotationSave(annotatingImageId, blob)}
         />
       )}
+
+      {/* Project Details Bottom Sheet (Project Mode — fill after capturing) */}
+      <Sheet open={showProjectSheet} onOpenChange={setShowProjectSheet}>
+        <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto rounded-t-2xl pb-safe">
+          <SheetHeader className="mb-4">
+            <SheetTitle className="flex items-center gap-2 text-lg">
+              <Building2 className="h-5 w-5 text-primary" />
+              Project Details
+            </SheetTitle>
+            <SheetDescription>
+              Almost done! Add your project info to link these photos.
+            </SheetDescription>
+          </SheetHeader>
+
+          {/* Voice fill button */}
+          <div className="mb-5 flex flex-col items-center gap-2">
+            <button
+              type="button"
+              onClick={handleVoiceFillProjectDetails}
+              disabled={isVoiceFilling}
+              className={`flex h-14 w-14 items-center justify-center rounded-full transition-all shadow-lg ${
+                isVoiceRecording
+                  ? 'bg-destructive text-white animate-pulse shadow-destructive/40'
+                  : isVoiceFilling
+                  ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                  : 'bg-primary text-white hover:bg-primary/90 shadow-primary/30'
+              }`}
+            >
+              {isVoiceFilling ? <Loader2 className="h-6 w-6 animate-spin" /> : isVoiceRecording ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
+            </button>
+            <p className="text-xs text-muted-foreground text-center">
+              {isVoiceRecording ? "Recording… tap to stop" : isVoiceFilling ? "Processing voice…" : "Tap mic to fill with voice"}
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-1.5">
+                <Building2 className="h-3.5 w-3.5 text-primary" /> Project Name *
+              </label>
+              <Input
+                value={projectDetails.projectName}
+                onChange={e => setProjectDetails(p => ({ ...p, projectName: e.target.value }))}
+                placeholder="e.g. Main St Renovation"
+                className="bg-secondary border-none"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-1.5">
+                <User className="h-3.5 w-3.5 text-primary" /> Customer Name *
+              </label>
+              <Input
+                value={projectDetails.customerName}
+                onChange={e => setProjectDetails(p => ({ ...p, customerName: e.target.value }))}
+                placeholder="e.g. ABC Corp"
+                className="bg-secondary border-none"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-1.5">
+                <Hash className="h-3.5 w-3.5 text-primary" /> Job Number *
+              </label>
+              <Input
+                value={projectDetails.jobNumber}
+                onChange={e => setProjectDetails(p => ({ ...p, jobNumber: e.target.value }))}
+                placeholder="e.g. JOB-2026-001"
+                className="bg-secondary border-none"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-1.5">
+                <FileText className="h-3.5 w-3.5 text-primary" /> Job Description *
+              </label>
+              <Textarea
+                value={projectDetails.jobDescription}
+                onChange={e => setProjectDetails(p => ({ ...p, jobDescription: e.target.value }))}
+                placeholder="Briefly describe the work being done…"
+                className="bg-secondary border-none resize-none min-h-[80px]"
+                maxLength={500}
+              />
+            </div>
+
+            <Button
+              onClick={handleSaveProjectAndGenerate}
+              disabled={projectSheetSaving || isVoiceRecording || isVoiceFilling}
+              className="w-full h-12 text-base font-semibold"
+            >
+              {projectSheetSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating project…</> : "Save & Generate Report"}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
 
 export default CaptureScreen;
+
