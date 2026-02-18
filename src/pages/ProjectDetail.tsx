@@ -109,6 +109,71 @@ const ProjectDetail = () => {
     }
   }, [projectId]);
 
+  // Realtime: prepend new comments as they arrive
+  useEffect(() => {
+    if (!projectId) return;
+
+    let shareTokens: string[] = [];
+
+    // Fetch the current share tokens for this project so we can filter realtime events
+    supabase
+      .from('project_shares')
+      .select('share_token')
+      .eq('report_id', projectId)
+      .then(({ data }) => {
+        shareTokens = (data ?? []).map((s) => s.share_token);
+      });
+
+    const channel = supabase
+      .channel(`project-comments-${projectId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'photo_comments' },
+        async (payload) => {
+          const newComment = payload.new as PhotoComment;
+          // Only process comments that belong to this project's shares
+          if (!shareTokens.includes(newComment.share_token)) return;
+
+          // Generate a thumbnail URL for the commented photo if we don't have one yet
+          setCommentMediaUrls((prev) => {
+            if (prev[newComment.media_id]) return prev; // already have it
+            // Kick off async URL fetch without blocking
+            supabase
+              .from('media')
+              .select('file_path')
+              .eq('id', newComment.media_id)
+              .single()
+              .then(({ data: mediaItem }) => {
+                if (!mediaItem) return;
+                const thumbPath = mediaItem.file_path
+                  .replace(/^(.*\/)([^/]+)$/, '$1thumbnails/$2')
+                  .replace(/\.[^.]+$/, '.jpg');
+                supabase.storage
+                  .from('media')
+                  .createSignedUrl(thumbPath, 3600)
+                  .then(({ data }) => {
+                    if (data?.signedUrl) {
+                      setCommentMediaUrls((prev2) => ({
+                        ...prev2,
+                        [newComment.media_id]: data.signedUrl,
+                      }));
+                    }
+                  });
+              });
+            return prev;
+          });
+
+          setComments((prev) => [newComment, ...prev]);
+          toast.info(`New comment from ${newComment.commenter_name}`);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [projectId]);
+
   const fetchProjectData = async () => {
     try {
       setLoading(true);
