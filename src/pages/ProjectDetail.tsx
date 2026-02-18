@@ -71,6 +71,7 @@ const ProjectDetail = () => {
   const [project, setProject] = useState<ProjectData | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
+  const [thumbnailUrls, setThumbnailUrls] = useState<Record<string, string>>({});
   const [checklists, setChecklists] = useState<ChecklistData[]>([]);
   const [documents, setDocuments] = useState<DocumentData[]>([]);
   
@@ -118,17 +119,36 @@ const ProjectDetail = () => {
       if (!mediaError && mediaData) {
         setMedia(mediaData);
         
-        // Generate signed URLs for private bucket
+        // Generate full-size + thumbnail signed URLs in parallel
+        const urlResults = await Promise.all(
+          mediaData.map(async (item) => {
+            const thumbPath = item.file_type === 'image'
+              ? item.file_path.replace(/^(.*\/)([^/]+)$/, '$1thumbnails/$2').replace(/\.[^.]+$/, '.jpg')
+              : null;
+
+            const [fullResult, thumbResult] = await Promise.all([
+              supabase.storage.from('media').createSignedUrl(item.file_path, 3600),
+              thumbPath
+                ? supabase.storage.from('media').createSignedUrl(thumbPath, 3600)
+                : Promise.resolve({ data: null }),
+            ]);
+
+            return {
+              id: item.id,
+              fullUrl: fullResult.data?.signedUrl ?? '',
+              thumbUrl: thumbResult.data?.signedUrl ?? '',
+            };
+          })
+        );
+
         const urls: Record<string, string> = {};
-        for (const item of mediaData) {
-          const { data: signedUrlData } = await supabase.storage
-            .from('media')
-            .createSignedUrl(item.file_path, 3600); // 1 hour expiry
-          if (signedUrlData?.signedUrl) {
-            urls[item.id] = signedUrlData.signedUrl;
-          }
+        const thumbs: Record<string, string> = {};
+        for (const r of urlResults) {
+          if (r.fullUrl) urls[r.id] = r.fullUrl;
+          if (r.thumbUrl) thumbs[r.id] = r.thumbUrl;
         }
         setMediaUrls(urls);
+        setThumbnailUrls(thumbs);
       }
 
       // Fetch checklists with items
@@ -698,11 +718,17 @@ const ProjectDetail = () => {
                     >
                       {item.file_type === 'image' ? (
                         <img
-                          src={getMediaUrl(item.id)}
+                          src={thumbnailUrls[item.id] || getMediaUrl(item.id)}
                           alt="Project media"
                           className="h-full w-full object-cover"
+                          loading="lazy"
                           onError={(e) => {
-                            console.error('Image load error for:', item.file_path);
+                            // Thumbnail missing — fall back to full-size
+                            const target = e.currentTarget;
+                            const fullUrl = getMediaUrl(item.id);
+                            if (target.src !== fullUrl && fullUrl) {
+                              target.src = fullUrl;
+                            }
                           }}
                         />
                       ) : (

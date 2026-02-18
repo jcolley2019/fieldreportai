@@ -457,6 +457,24 @@ const ReviewSummary = () => {
               continue;
             }
             
+            // Upload thumbnail (300px) for fast gallery loading
+            if (!image.isVideo) {
+              try {
+                const response2 = await fetch(image.base64 || image.url);
+                const fullBlob = await response2.blob();
+                const { generateThumbnail } = await import('@/lib/imageCompression');
+                const thumbBlob = await generateThumbnail(fullBlob);
+                // Derive thumb path by injecting "thumbnails/" folder in same directory
+                const thumbPath = storagePath.replace(/^(.*\/)([^/]+)$/, '$1thumbnails/$2').replace(/\.[^.]+$/, '.jpg');
+                await supabase.storage.from('media').upload(thumbPath, thumbBlob, {
+                  contentType: 'image/jpeg',
+                  upsert: true,
+                });
+              } catch (thumbErr) {
+                console.warn(`Thumbnail generation failed for image ${i + 1}:`, thumbErr);
+              }
+            }
+
             // Upload original (unannotated) version if it exists
             let originalFilePath: string | null = null;
             if (image.originalBase64 && image.originalBase64.startsWith('data:')) {
