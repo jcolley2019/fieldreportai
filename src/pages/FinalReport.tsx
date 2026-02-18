@@ -69,6 +69,36 @@ const FinalReport = () => {
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({});
 
+  // Parallel signed URL generation with 55-minute TTL
+  const refreshSignedUrls = async (mediaData: MediaItem[]) => {
+    const results = await Promise.all(
+      mediaData.map(async (item) => {
+        const { data } = await supabase.storage
+          .from('media')
+          .createSignedUrl(item.file_path, 3300); // 55 min TTL
+        return { id: item.id, file_type: item.file_type, url: data?.signedUrl ?? null };
+      })
+    );
+    const urls: Record<string, string> = {};
+    const vUrls: Record<string, string> = {};
+    for (const r of results) {
+      if (!r.url) continue;
+      if (r.file_type === 'image') urls[r.id] = r.url;
+      else if (r.file_type === 'video') vUrls[r.id] = r.url;
+    }
+    setMediaUrls(urls);
+    setVideoUrls(vUrls);
+  };
+
+  // Auto-refresh signed URLs every 50 minutes (before 55-min TTL expires)
+  useEffect(() => {
+    if (media.length === 0) return;
+    const interval = setInterval(() => {
+      refreshSignedUrls(media);
+    }, 50 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [media]);
+
   useEffect(() => {
     const loadReportData = async () => {
       if (!reportId) {
@@ -111,23 +141,8 @@ const FinalReport = () => {
         if (!mediaError && mediaData) {
           setMedia(mediaData);
           
-          // Generate signed URLs for both images and videos
-          const urls: Record<string, string> = {};
-          const vUrls: Record<string, string> = {};
-          for (const item of mediaData) {
-            const { data: signedUrlData } = await supabase.storage
-              .from('media')
-              .createSignedUrl(item.file_path, 3600); // 1 hour expiry
-            if (signedUrlData?.signedUrl) {
-              if (item.file_type === 'image') {
-                urls[item.id] = signedUrlData.signedUrl;
-              } else if (item.file_type === 'video') {
-                vUrls[item.id] = signedUrlData.signedUrl;
-              }
-            }
-          }
-          setMediaUrls(urls);
-          setVideoUrls(vUrls);
+          // Parallelize signed URL generation (TTL: 55 min, refreshed every 50 min)
+          await refreshSignedUrls(mediaData);
         }
 
         const { data: checklistsData, error: checklistsError } = await supabase
