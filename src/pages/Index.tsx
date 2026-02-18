@@ -417,7 +417,7 @@ const Index = () => {
               </div>
             </button>
             <button 
-              onClick={() => setShowProjectDialog(true)}
+              onClick={() => navigate("/capture-screen", { state: { projectMode: true } })}
               className="glass-card flex flex-col items-center gap-5 p-8 hover-lift group"
             >
               <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25 group-hover:shadow-glow-blue">
@@ -570,8 +570,13 @@ const Index = () => {
                       key={project.id}
                       onClick={() => {
                         setShowProjectDialog(false);
-                        toast.info(`Selected: ${project.project_name}`);
-                        // TODO: Navigate to project detail page
+                        navigate("/capture-screen", {
+                          state: {
+                            projectMode: true,
+                            reportId: project.id,
+                            projectName: project.project_name,
+                          }
+                        });
                       }}
                       className="w-full text-left p-4 rounded-lg bg-card hover:bg-secondary transition-colors"
                     >
