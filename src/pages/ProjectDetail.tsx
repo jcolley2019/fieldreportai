@@ -432,11 +432,24 @@ const ProjectDetail = () => {
     if (!project) return;
     
     try {
-      const mediaUrlsMap = new Map<string, string>();
-      media.forEach(item => {
-        const url = mediaUrls[item.id];
-        if (url) mediaUrlsMap.set(item.id, url);
-      });
+      toast.info('Preparing PDF…');
+
+      // Refresh signed URLs right before generating to avoid expiry issues
+      const freshUrlsMap = new Map<string, string>();
+      await Promise.all(
+        media.filter(m => m.file_type === 'image').map(async (item) => {
+          try {
+            const { data } = await supabase.storage
+              .from('media')
+              .createSignedUrl(item.file_path, 300); // 5-min URL sufficient for PDF generation
+            if (data?.signedUrl) freshUrlsMap.set(item.id, data.signedUrl);
+          } catch {
+            // Fall back to already-loaded URL if refresh fails
+            const existing = mediaUrls[item.id];
+            if (existing) freshUrlsMap.set(item.id, existing);
+          }
+        })
+      );
 
       const blob = await pdf(
         <ReportPDF 
@@ -446,7 +459,7 @@ const ProjectDetail = () => {
           }}
           media={media}
           checklists={checklists}
-          mediaUrls={mediaUrlsMap}
+          mediaUrls={freshUrlsMap}
         />
       ).toBlob();
       
@@ -454,7 +467,7 @@ const ProjectDetail = () => {
       toast.success('PDF downloaded');
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF');
+      toast.error('Failed to generate PDF. Please try again.');
     }
   };
 
