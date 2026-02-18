@@ -16,6 +16,7 @@ import BetaCountdownBanner from "@/components/BetaCountdownBanner";
 import GettingStartedGuide from "@/components/GettingStartedGuide";
 import OfflineQueueCard from "@/components/OfflineQueueCard";
 import InstallBanner from "@/components/InstallBanner";
+import { PendingInvitesModal } from "@/components/PendingInvitesModal";
 import {
   Select,
   SelectContent,
@@ -321,6 +322,8 @@ const Index = () => {
   return (
     <div className="dark min-h-screen bg-background">
       <BetaCountdownBanner />
+      {/* Pending team invitations modal — shown once after login */}
+      <PendingInvitesModal userId={user.id} userEmail={user.email ?? ""} />
       {/* Glass Navbar */}
       <GlassNavbar fixed={false}>
         <NavbarLeft>
