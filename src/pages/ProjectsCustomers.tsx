@@ -7,7 +7,7 @@ import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { Input } from "@/components/ui/input";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Building2, Hash, User as UserIcon, ListChecks, Search, Filter, Plus, Trash2, Mail, Send, Loader2, X, CheckSquare, Square, Tag, Download, Printer, FileText, MessageSquare } from "lucide-react";
+import { Building2, Hash, User as UserIcon, ListChecks, Search, Filter, Plus, Trash2, Mail, Send, Loader2, X, CheckSquare, Square, Tag, Download, Printer, FileText, MessageSquare, ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
@@ -26,6 +26,14 @@ import { ReportPDF } from '@/components/ReportPDF';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
+type ProjectStatus = 'in_progress' | 'needs_review' | 'complete';
+
+const STATUS_CONFIG: Record<ProjectStatus, { label: string; color: string; dot: string }> = {
+  in_progress: { label: 'In Progress', color: 'bg-blue-500/15 text-blue-400 border-blue-500/30', dot: 'bg-blue-400' },
+  needs_review: { label: 'Needs Review', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30', dot: 'bg-amber-400' },
+  complete: { label: 'Complete', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-400' },
+};
+
 interface Project {
   id: string;
   project_name: string;
@@ -35,6 +43,7 @@ interface Project {
   created_at: string;
   checklist_count: number;
   tags: string[];
+  status: ProjectStatus;
   new_comment_count?: number;
 }
 
@@ -127,13 +136,14 @@ const ProjectsCustomers = () => {
 
           return {
             ...report,
+            status: ((report as any).status as ProjectStatus) ?? 'in_progress',
             checklist_count: checklistResult.error ? 0 : (checklistResult.count || 0),
             new_comment_count: newCommentCount,
           };
         })
       );
 
-      setProjects(projectsWithCounts);
+      setProjects(projectsWithCounts as Project[]);
     } catch (error) {
       console.error('Error fetching projects:', error);
       toast.error('Failed to load projects');
@@ -163,6 +173,15 @@ const ProjectsCustomers = () => {
     }
   };
 
+  const handleStatusChange = async (projectId: string, newStatus: ProjectStatus) => {
+    setProjects(prev => prev.map(p => p.id === projectId ? { ...p, status: newStatus } : p));
+    const { error } = await supabase.from('reports').update({ status: newStatus } as any).eq('id', projectId);
+    if (error) {
+      toast.error('Failed to update status');
+      fetchProjects();
+    }
+  };
+
   // Highlight matching text
   const highlightText = (text: string, query: string) => {
     if (!query.trim()) return text;
@@ -186,6 +205,8 @@ const ProjectsCustomers = () => {
   // Collect all unique tags across projects
   const allTags = Array.from(new Set(projects.flatMap(p => p.tags ?? []))).sort();
 
+  const [activeStatusFilter, setActiveStatusFilter] = useState<ProjectStatus | null>(null);
+
   // Filter and sort projects
   const filteredProjects = projects
     .filter((project) => {
@@ -197,7 +218,8 @@ const ProjectsCustomers = () => {
         project.job_description.toLowerCase().includes(searchLower)
       );
       const matchesTag = !activeTagFilter || (project.tags ?? []).includes(activeTagFilter);
-      return matchesSearch && matchesTag;
+      const matchesStatus = !activeStatusFilter || project.status === activeStatusFilter;
+      return matchesSearch && matchesTag && matchesStatus;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -566,6 +588,31 @@ const ProjectsCustomers = () => {
           </div>
         </div>
 
+        {/* Status filter chips */}
+        {projects.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {([null, 'in_progress', 'needs_review', 'complete'] as (ProjectStatus | null)[]).map((s) => {
+              const cfg = s ? STATUS_CONFIG[s] : null;
+              const isActive = activeStatusFilter === s;
+              return (
+                <button
+                  key={s ?? 'all'}
+                  onClick={() => setActiveStatusFilter(s)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    isActive
+                      ? s ? cfg!.color + ' border-transparent' : 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-secondary text-muted-foreground border-border hover:border-primary hover:text-primary'
+                  }`}
+                >
+                  {cfg && <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />}
+                  {s ? STATUS_CONFIG[s].label : 'All'}
+                  {isActive && s && <X className="h-3 w-3 ml-0.5" onClick={(e) => { e.stopPropagation(); setActiveStatusFilter(null); }} />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Tag filter chips */}
         {allTags.length > 0 && (
           <div className="mb-4 flex flex-wrap gap-2 items-center">
@@ -596,11 +643,13 @@ const ProjectsCustomers = () => {
         ) : filteredProjects.length === 0 ? (
           <div className="rounded-lg bg-card p-8 text-center">
             <Search className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <p className="text-muted-foreground">{t('projects.noMatches')} "{searchQuery || activeTagFilter}"</p>
+            <p className="text-muted-foreground">{t('projects.noMatches')} "{searchQuery || activeTagFilter || activeStatusFilter}"</p>
           </div>
         ) : (
             <div className="space-y-3">
-              {filteredProjects.map((project) => (
+              {filteredProjects.map((project) => {
+                const statusCfg = STATUS_CONFIG[project.status];
+                return (
                 <div
                   key={project.id}
                   onClick={() => selectionMode ? toggleProjectSelection(project.id, { stopPropagation: () => {} } as React.MouseEvent) : navigate(`/project/${project.id}`)}
@@ -626,9 +675,36 @@ const ProjectsCustomers = () => {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground text-lg mb-1">
-                      {highlightText(project.project_name, searchQuery)}
-                    </h3>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h3 className="font-semibold text-foreground text-lg">
+                        {highlightText(project.project_name, searchQuery)}
+                      </h3>
+                      {/* Status badge / inline selector */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            onClick={(e) => e.stopPropagation()}
+                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition-colors ${statusCfg.color}`}
+                          >
+                            <span className={`h-1.5 w-1.5 rounded-full ${statusCfg.dot}`} />
+                            {statusCfg.label}
+                            <ChevronDown className="h-3 w-3 opacity-60" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+                          {(Object.entries(STATUS_CONFIG) as [ProjectStatus, typeof STATUS_CONFIG[ProjectStatus]][]).map(([key, cfg]) => (
+                            <DropdownMenuItem
+                              key={key}
+                              className="gap-2"
+                              onClick={(e) => { e.stopPropagation(); handleStatusChange(project.id, key); }}
+                            >
+                              <span className={`h-2 w-2 rounded-full ${cfg.dot}`} />
+                              {cfg.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                     <div className="space-y-1 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <UserIcon className="h-4 w-4 flex-shrink-0" />
@@ -678,7 +754,7 @@ const ProjectsCustomers = () => {
                     </Button>
                   )}
                 </div>
-              ))}
+              ); })}
             </div>
         )}
 
