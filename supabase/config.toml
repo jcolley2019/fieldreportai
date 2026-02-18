@@ -32,3 +32,9 @@ verify_jwt = true
 
 [functions.get-public-share]
 verify_jwt = false
+
+[functions.post-photo-comment]
+verify_jwt = false
+
+[functions.get-photo-comments]
+verify_jwt = false

@@ -353,6 +353,33 @@ export type Database = {
           },
         ]
       }
+      photo_comments: {
+        Row: {
+          comment_text: string
+          commenter_name: string
+          created_at: string
+          id: string
+          media_id: string
+          share_token: string
+        }
+        Insert: {
+          comment_text: string
+          commenter_name: string
+          created_at?: string
+          id?: string
+          media_id: string
+          share_token: string
+        }
+        Update: {
+          comment_text?: string
+          commenter_name?: string
+          created_at?: string
+          id?: string
+          media_id?: string
+          share_token?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
