@@ -15,6 +15,7 @@ import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import BetaCountdownBanner from "@/components/BetaCountdownBanner";
 import GettingStartedGuide from "@/components/GettingStartedGuide";
 import OfflineQueueCard from "@/components/OfflineQueueCard";
+import InstallBanner from "@/components/InstallBanner";
 import {
   Select,
   SelectContent,
@@ -449,6 +450,9 @@ const Index = () => {
         
         {/* Getting Started Guide */}
         <GettingStartedGuide userId={user?.id} />
+
+        {/* Install Banner — mobile browsers only, not shown when installed as PWA */}
+        <InstallBanner />
 
         {/* Offline Queue */}
         <OfflineQueueCard />
