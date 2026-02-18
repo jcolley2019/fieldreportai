@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2, Printer, Download, Mail, Send, Loader2, Clock, Share2, Camera } from "lucide-react";
+import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2, Printer, Download, Mail, Send, Loader2, Clock, Share2, Camera, MessageSquare, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,6 +65,15 @@ interface DocumentData {
   file_size: number | null;
 }
 
+interface PhotoComment {
+  id: string;
+  media_id: string;
+  share_token: string;
+  commenter_name: string;
+  comment_text: string;
+  created_at: string;
+}
+
 const ProjectDetail = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
@@ -76,6 +85,9 @@ const ProjectDetail = () => {
   const [thumbnailUrls, setThumbnailUrls] = useState<Record<string, string>>({});
   const [checklists, setChecklists] = useState<ChecklistData[]>([]);
   const [documents, setDocuments] = useState<DocumentData[]>([]);
+  const [comments, setComments] = useState<PhotoComment[]>([]);
+  const [commentMediaUrls, setCommentMediaUrls] = useState<Record<string, string>>({});
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
   
   // Share dialog state
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -216,6 +228,41 @@ const ProjectDetail = () => {
         setMediaLinkCounts(counts);
       }
 
+      // Fetch all share tokens for this project, then comments for those tokens
+      const { data: sharesData } = await supabase
+        .from('project_shares')
+        .select('share_token')
+        .eq('report_id', projectId);
+
+      if (sharesData && sharesData.length > 0) {
+        const tokens = sharesData.map((s) => s.share_token);
+        const { data: commentsData } = await supabase
+          .from('photo_comments')
+          .select('*')
+          .in('share_token', tokens)
+          .order('created_at', { ascending: false });
+
+        if (commentsData) {
+          setComments(commentsData);
+          // Build a map of media_id -> thumbnail URL for comments
+          const uniqueMediaIds = [...new Set(commentsData.map((c) => c.media_id))];
+          const thumbEntries = await Promise.all(
+            uniqueMediaIds.map(async (mid) => {
+              const mediaItem = mediaData?.find((m: MediaItem) => m.id === mid);
+              if (!mediaItem) return { mid, url: '' };
+              const thumbPath = mediaItem.file_path
+                .replace(/^(.*\/)([^/]+)$/, '$1thumbnails/$2')
+                .replace(/\.[^.]+$/, '.jpg');
+              const { data } = await supabase.storage.from('media').createSignedUrl(thumbPath, 3600);
+              return { mid, url: data?.signedUrl ?? '' };
+            })
+          );
+          const cUrls: Record<string, string> = {};
+          thumbEntries.forEach(({ mid, url }) => { if (url) cUrls[mid] = url; });
+          setCommentMediaUrls(cUrls);
+        }
+      }
+
     } catch (error) {
       console.error('Error fetching project data:', error);
       toast.error('Failed to load project details');
@@ -256,6 +303,26 @@ const ProjectDetail = () => {
     } catch (error) {
       console.error('Error deleting checklist:', error);
       toast.error('Failed to delete checklist');
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      setDeletingCommentId(commentId);
+      const { error } = await supabase
+        .from('photo_comments')
+        .delete()
+        .eq('id', commentId);
+
+      if (error) throw error;
+
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+      toast.success('Comment deleted');
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      toast.error('Failed to delete comment');
+    } finally {
+      setDeletingCommentId(null);
     }
   };
 
@@ -686,25 +753,37 @@ const ProjectDetail = () => {
 
         {/* Content Tabs */}
         <Tabs defaultValue="media" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-muted">
-            <TabsTrigger value="media" className="gap-2">
+          <TabsList className="grid w-full grid-cols-5 bg-muted">
+            <TabsTrigger value="media" className="gap-1">
               <ImageIcon className="h-4 w-4" />
               <span className="hidden sm:inline">Photos</span>
-              <span className="sm:hidden">{media.length}</span>
+              <span className="sm:hidden text-xs">{media.length}</span>
             </TabsTrigger>
-            <TabsTrigger value="timeline" className="gap-2">
+            <TabsTrigger value="timeline" className="gap-1">
               <Clock className="h-4 w-4" />
               <span className="hidden sm:inline">Timeline</span>
             </TabsTrigger>
-            <TabsTrigger value="checklists" className="gap-2">
+            <TabsTrigger value="checklists" className="gap-1">
               <ListChecks className="h-4 w-4" />
               <span className="hidden sm:inline">Checklists</span>
-              <span className="sm:hidden">{checklists.length}</span>
+              <span className="sm:hidden text-xs">{checklists.length}</span>
             </TabsTrigger>
-            <TabsTrigger value="documents" className="gap-2">
+            <TabsTrigger value="documents" className="gap-1">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Docs</span>
-              <span className="sm:hidden">{documents.length}</span>
+              <span className="sm:hidden text-xs">{documents.length}</span>
+            </TabsTrigger>
+            <TabsTrigger value="comments" className="gap-1 relative">
+              <MessageSquare className="h-4 w-4" />
+              <span className="hidden sm:inline">Comments</span>
+              {comments.length > 0 && (
+                <span className="sm:hidden text-xs">{comments.length}</span>
+              )}
+              {comments.length > 0 && (
+                <span className="hidden sm:flex absolute -top-1 -right-1 h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                  {comments.length > 9 ? '9+' : comments.length}
+                </span>
+              )}
             </TabsTrigger>
           </TabsList>
 
@@ -867,6 +946,77 @@ const ProjectDetail = () => {
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Comments Tab */}
+          <TabsContent value="comments" className="mt-4">
+            {comments.length === 0 ? (
+              <Card className="bg-card border-border">
+                <CardContent className="flex flex-col items-center justify-center p-8">
+                  <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground font-medium">No comments yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">Comments from your shared gallery will appear here</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {comments.map((comment) => {
+                  const photoUrl = commentMediaUrls[comment.media_id];
+                  return (
+                    <Card key={comment.id} className="bg-card border-border">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          {/* Photo thumbnail */}
+                          {photoUrl ? (
+                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-secondary">
+                              <img
+                                src={photoUrl}
+                                alt="Commented photo"
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-secondary">
+                              <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          )}
+                          {/* Comment content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-foreground truncate">
+                                  {comment.commenter_name}
+                                </span>
+                                <span className="text-xs text-muted-foreground flex-shrink-0">
+                                  {formatDateDisplay(comment.created_at)}
+                                </span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => handleDeleteComment(comment.id)}
+                                disabled={deletingCommentId === comment.id}
+                              >
+                                {deletingCommentId === comment.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                )}
+                              </Button>
+                            </div>
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                              {comment.comment_text}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </TabsContent>
