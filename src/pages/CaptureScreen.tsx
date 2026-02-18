@@ -37,6 +37,8 @@ interface ImageItem {
   capturedAt?: Date;
   locationName?: string;
   isVideo?: boolean;
+  storagePath?: string;       // set after background AI-thumbnail upload
+  uploadStatus?: 'uploading' | 'uploaded' | 'failed';
 }
 
 const CaptureScreen = () => {
@@ -226,6 +228,33 @@ const CaptureScreen = () => {
     }
   };
 
+  // ── Background AI-thumbnail upload ──────────────────────────────────────
+  // Compress to 512px and upload to storage so generateSummary can send URLs
+  // instead of giant base64 payloads.
+  const uploadImageForAI = async (img: ImageItem): Promise<string | null> => {
+    if (!img.file || img.isVideo) return null;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { compressImage } = await import('@/lib/imageCompression');
+      const compressed = await compressImage(img.file, { maxWidth: 512, maxHeight: 512, quality: 0.6 });
+      const path = `${user.id}/ai-thumbnails/${img.id}.jpg`;
+      const { error } = await supabase.storage.from('media').upload(path, compressed, {
+        contentType: 'image/jpeg',
+        upsert: true,
+      });
+      if (error) {
+        console.warn('AI thumbnail upload failed:', error.message);
+        return null;
+      }
+      return path;
+    } catch (err) {
+      console.warn('AI thumbnail upload error:', err);
+      return null;
+    }
+  };
+
   const handleImageUpload = async (files: FileList | null) => {
     if (!files) return;
     const currentActive = images.filter(img => !img.deleted).length;
@@ -244,15 +273,23 @@ const CaptureScreen = () => {
       latitude: geoData?.latitude,
       longitude: geoData?.longitude,
       capturedAt: gpsStampingEnabled ? new Date() : undefined,
-      locationName: geoData?.locationName
+      locationName: geoData?.locationName,
+      uploadStatus: 'uploading' as const,
     }));
 
     setImages(prev => [...prev, ...newImages]);
     
-    // Generate AI labels for uploaded images
+    // Generate AI labels + background storage upload (parallel, fire-and-forget)
     newImages.forEach(img => {
       if (img.file) {
         generateAILabel(img.id, img.file);
+        uploadImageForAI(img).then(storagePath => {
+          setImages(prev => prev.map(i =>
+            i.id === img.id
+              ? { ...i, storagePath: storagePath ?? undefined, uploadStatus: storagePath ? 'uploaded' : 'failed' }
+              : i
+          ));
+        });
       }
     });
     
@@ -294,15 +331,23 @@ const CaptureScreen = () => {
         capturedAt: gpsStampingEnabled ? new Date() : undefined,
         locationName: geoData?.locationName,
         isVideo,
+        uploadStatus: isVideo ? undefined : 'uploading' as const,
       };
     });
 
     setImages(prev => [...prev, ...newImages]);
     
-    // Generate AI labels for captured images (not videos)
+    // Generate AI labels + background upload for photos (not videos)
     newImages.forEach(img => {
       if (img.file && !img.isVideo) {
         generateAILabel(img.id, img.file);
+        uploadImageForAI(img).then(storagePath => {
+          setImages(prev => prev.map(i =>
+            i.id === img.id
+              ? { ...i, storagePath: storagePath ?? undefined, uploadStatus: storagePath ? 'uploaded' : 'failed' }
+              : i
+          ));
+        });
       }
     });
   };
@@ -655,21 +700,11 @@ const CaptureScreen = () => {
     }, 500);
 
     try {
-      // Convert files to base64, compressing images for AI to keep payload small & fast
-      const imageWithBase64 = await Promise.all(
+      // ── Step 1: Build display base64 for navigation (original quality, parallel) ──
+      // This runs quickly because it's just reading files the browser already has in memory.
+      const imageWithDisplay = await Promise.all(
         activeImgs.map(async (img) => {
-          if (!img.file) return { ...img, base64: null, originalBase64: null };
-
-          // Compress image aggressively before sending to AI (max 512px, 0.6 quality)
-          let fileForAI: Blob = img.file;
-          if (!img.isVideo) {
-            try {
-              const { compressImage } = await import('@/lib/imageCompression');
-              fileForAI = await compressImage(img.file, { maxWidth: 512, maxHeight: 512, quality: 0.6 });
-            } catch {
-              // fallback to original
-            }
-          }
+          if (!img.file) return { ...img, base64: null as string | null, originalBase64: null as string | null };
 
           const base64 = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
@@ -678,14 +713,6 @@ const CaptureScreen = () => {
             reader.readAsDataURL(img.file!);
           });
 
-          const aiBase64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(fileForAI);
-          });
-
-          // Convert original file to base64 if it exists (annotation preserved original)
           let originalBase64: string | null = null;
           if (img.originalFile) {
             originalBase64 = await new Promise<string>((resolve, reject) => {
@@ -695,36 +722,61 @@ const CaptureScreen = () => {
               reader.readAsDataURL(img.originalFile!);
             });
           }
-          
-          return { ...img, base64, aiBase64, originalBase64 };
+          return { ...img, base64, originalBase64 };
         })
       );
 
-      // Use compressed photos only for AI (skip videos, cap at 25) — full images for display
-      const validImageDataUrls = imageWithBase64
-        .filter(img => !(img as any).isVideo)
-        .map(img => (img as any).aiBase64 ?? img.base64)
-        .filter(url => url !== null)
-        .slice(0, 25) as string[];
+      // ── Step 2: Build AI image URLs — prefer storage signed URLs, fall back to base64 ──
+      // For images that were pre-uploaded in the background, we just need to sign the URL.
+      // For any that weren't uploaded yet, compress+encode on the fly (fallback).
+      const photoItems = imageWithDisplay.filter(img => !img.isVideo);
+      const videoItems = imageWithDisplay.filter(img => img.isVideo);
 
-      // Build video context strings — include voice note + index so AI references them in report
-      const videoItems = imageWithBase64.filter(img => (img as any).isVideo);
+      const aiImageUrls: string[] = [];
+      for (const img of photoItems.slice(0, 25)) {
+        if (img.storagePath) {
+          // Fast path: generate signed URL (~10ms)
+          const { data: signedData } = await supabase.storage
+            .from('media')
+            .createSignedUrl(img.storagePath, 3600);
+          if (signedData?.signedUrl) {
+            aiImageUrls.push(signedData.signedUrl);
+            continue;
+          }
+        }
+        // Fallback path: compress + base64 encode for this single image
+        if (img.file) {
+          try {
+            const { compressImage } = await import('@/lib/imageCompression');
+            const compressed = await compressImage(img.file, { maxWidth: 512, maxHeight: 512, quality: 0.6 });
+            const b64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(compressed);
+            });
+            aiImageUrls.push(b64);
+          } catch {
+            // skip this image if compression fails
+          }
+        }
+      }
+
+      // Build video context strings
       const videoContextLines = videoItems.map((vid, idx) => {
         const note = vid.voiceNote || vid.caption || "";
         return `Video ${idx + 1}${note ? `: ${note}` : " (no note recorded)"}`;
       });
 
-      // All captions including videos (their voice notes add context even without image)
-      const imageCaptions = imageWithBase64
-        .filter(img => !(img as any).isVideo)
+      const imageCaptions = photoItems
         .map(img => img.caption || img.voiceNote || "")
         .slice(0, 25);
 
-      // 90-second timeout using Promise.race
+      // ── Step 3: Call edge function with tiny URL payload ──
       const invokePromise = supabase.functions.invoke('generate-report-summary', {
         body: { 
           description: description || "",
-          imageDataUrls: validImageDataUrls,
+          imageDataUrls: aiImageUrls,
           imageCaptions,
           videoContextLines: videoContextLines.length > 0 ? videoContextLines : undefined,
           photoDescriptionMode
@@ -754,21 +806,17 @@ const CaptureScreen = () => {
         return;
       }
 
-      // Complete the progress
       clearInterval(progressInterval);
       setGenerationProgress(100);
       
-      // Small delay to show completion
       setTimeout(async () => {
-        // Clear draft on successful navigation
         await clearDraft();
-        // Navigate with the generated summary and media (including captions, geo data, and base64 data)
         navigate("/review-summary", { 
           state: { 
             simpleMode: isSimpleMode,
             summary: data.summary,
             description,
-            images: imageWithBase64.map(img => ({ 
+            images: imageWithDisplay.map(img => ({ 
               url: img.url, 
               id: img.id, 
               caption: img.caption, 
@@ -1110,6 +1158,12 @@ const CaptureScreen = () => {
                       {labelingImages.has(image.id) && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                           <Loader2 className="h-5 w-5 text-white animate-spin" />
+                        </div>
+                      )}
+                      {/* Upload status indicator (bottom-right, only for photos) */}
+                      {!image.isVideo && !labelingImages.has(image.id) && image.uploadStatus === 'uploading' && (
+                        <div className="absolute bottom-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/60">
+                          <Loader2 className="h-2.5 w-2.5 text-white animate-spin" />
                         </div>
                       )}
                       {recordingForPhotoId === image.id && (
