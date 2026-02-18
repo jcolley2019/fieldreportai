@@ -88,6 +88,7 @@ export default function SharedProject() {
   const [activeTab, setActiveTab] = useState("photos");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [isZipping, setIsZipping] = useState(false);
+  const [locationFilter, setLocationFilter] = useState<string>("all");
 
   const downloadAllZip = async () => {
     if (!data) return;
@@ -289,72 +290,127 @@ export default function SharedProject() {
                   {t("share.noPhotos")}
                 </CardContent>
               </Card>
-            ) : (
-              <>
-                {allowDownload && (
-                  <div className="flex justify-end mb-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={downloadAllZip}
-                      disabled={isZipping}
-                    >
-                      {isZipping ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Download className="h-4 w-4" />
-                      )}
-                      {isZipping ? "Preparing ZIP…" : `Download All (${media.length})`}
-                    </Button>
-                  </div>
-                )}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {media.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className="relative group aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer"
-                    onClick={() => setLightboxIndex(index)}
-                  >
-                    <img
-                      src={item.thumbnailUrl || item.signedUrl}
-                      alt=""
-                      loading="lazy"
-                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                      onError={(e) => {
-                        // Fall back to full-size if thumbnail fails
-                        if ((e.target as HTMLImageElement).src !== item.signedUrl) {
-                          (e.target as HTMLImageElement).src = item.signedUrl;
-                        }
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
-                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
-                      <p className="text-white text-xs">
-                        {format(new Date(item.captured_at), "MMM d, yyyy h:mm a")}
-                      </p>
-                      {item.location_name && (
-                        <p className="text-white/80 text-xs truncate">{item.location_name}</p>
-                      )}
-                    </div>
+            ) : (() => {
+              // Derive unique locations (only those with a name)
+              const locations = Array.from(
+                new Set(media.map((m) => m.location_name).filter(Boolean))
+              ) as string[];
+              const hasLocations = locations.length > 0;
+
+              // Filter media by selected location
+              const filteredMedia = locationFilter === "all"
+                ? media
+                : media.filter((m) => m.location_name === locationFilter);
+
+              // Keep lightbox index relative to full media array for correct navigation
+              return (
+                <>
+                  {/* Toolbar: location filter + download all */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    {hasLocations ? (
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => setLocationFilter("all")}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                            locationFilter === "all"
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-card text-foreground border-border hover:bg-muted"
+                          }`}
+                        >
+                          All ({media.length})
+                        </button>
+                        {locations.map((loc) => {
+                          const count = media.filter((m) => m.location_name === loc).length;
+                          return (
+                            <button
+                              key={loc}
+                              onClick={() => setLocationFilter(loc)}
+                              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                                locationFilter === loc
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-card text-foreground border-border hover:bg-muted"
+                              }`}
+                            >
+                              {loc} ({count})
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div /> /* spacer when no locations */
+                    )}
+
                     {allowDownload && (
                       <Button
-                        variant="secondary"
-                        size="icon"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          downloadImage(item.signedUrl, `photo-${item.id}.jpg`);
-                        }}
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 shrink-0"
+                        onClick={downloadAllZip}
+                        disabled={isZipping}
                       >
-                        <Download className="h-4 w-4" />
+                        {isZipping ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                        {isZipping ? "Preparing ZIP…" : `Download All (${media.length})`}
                       </Button>
                     )}
                   </div>
-                ))}
-              </div>
-              </>
-            )}
+
+                  {filteredMedia.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-12">No photos at this location.</p>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {filteredMedia.map((item) => {
+                        const globalIndex = media.findIndex((m) => m.id === item.id);
+                        return (
+                          <div
+                            key={item.id}
+                            className="relative group aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer"
+                            onClick={() => setLightboxIndex(globalIndex)}
+                          >
+                            <img
+                              src={item.thumbnailUrl || item.signedUrl}
+                              alt=""
+                              loading="lazy"
+                              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                              onError={(e) => {
+                                if ((e.target as HTMLImageElement).src !== item.signedUrl) {
+                                  (e.target as HTMLImageElement).src = item.signedUrl;
+                                }
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
+                            <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
+                              <p className="text-white text-xs">
+                                {format(new Date(item.captured_at), "MMM d, yyyy h:mm a")}
+                              </p>
+                              {item.location_name && (
+                                <p className="text-white/80 text-xs truncate">{item.location_name}</p>
+                              )}
+                            </div>
+                            {allowDownload && (
+                              <Button
+                                variant="secondary"
+                                size="icon"
+                                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  downloadImage(item.signedUrl, `photo-${item.id}.jpg`);
+                                }}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </TabsContent>
 
           <TabsContent value="notes">
