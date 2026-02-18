@@ -38,6 +38,7 @@ interface ProjectData {
     captured_at: string;
     location_name?: string;
     signedUrl: string;
+    thumbnailUrl: string | null;
   }>;
   notes: Array<{
     id: string;
@@ -248,9 +249,16 @@ export default function SharedProject() {
                     onClick={() => setLightboxIndex(index)}
                   >
                     <img
-                      src={item.signedUrl}
+                      src={item.thumbnailUrl || item.signedUrl}
                       alt=""
+                      loading="lazy"
                       className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      onError={(e) => {
+                        // Fall back to full-size if thumbnail fails
+                        if ((e.target as HTMLImageElement).src !== item.signedUrl) {
+                          (e.target as HTMLImageElement).src = item.signedUrl;
+                        }
+                      }}
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
                     <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
