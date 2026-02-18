@@ -18,7 +18,10 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  X
+  X,
+  CalendarDays,
+  ImageIcon,
+  StickyNote
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -83,6 +86,14 @@ export default function SharedProject() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("photos");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  // Build a unified chronological timeline from photos + notes
+  const timelineItems = data
+    ? [
+        ...(data.media.map((m) => ({ type: "photo" as const, date: new Date(m.captured_at), item: m }))),
+        ...(data.notes.map((n) => ({ type: "note" as const, date: new Date(n.created_at), item: n }))),
+      ].sort((a, b) => a.date.getTime() - b.date.getTime())
+    : [];
 
   useEffect(() => {
     if (token) {
@@ -230,6 +241,10 @@ export default function SharedProject() {
             <TabsTrigger value="tasks" className="gap-2">
               <ListTodo className="h-4 w-4" />
               {t("share.tasks")} ({tasks.length})
+            </TabsTrigger>
+            <TabsTrigger value="timeline" className="gap-2">
+              <CalendarDays className="h-4 w-4" />
+              Timeline ({timelineItems.length})
             </TabsTrigger>
           </TabsList>
 
@@ -397,6 +412,82 @@ export default function SharedProject() {
                       )}
                     </CardContent>
                   </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ── Timeline Tab ── */}
+          <TabsContent value="timeline">
+            {timelineItems.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  No activity to show yet.
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="relative pl-6 border-l-2 border-border space-y-6">
+                {timelineItems.map((entry, idx) => (
+                  <div key={idx} className="relative">
+                    {/* Timeline dot */}
+                    <div className={`absolute -left-[1.65rem] top-1 w-5 h-5 rounded-full border-2 border-background flex items-center justify-center ${
+                      entry.type === "photo" ? "bg-primary" : "bg-muted-foreground"
+                    }`}>
+                      {entry.type === "photo"
+                        ? <ImageIcon className="h-2.5 w-2.5 text-primary-foreground" />
+                        : <StickyNote className="h-2.5 w-2.5 text-background" />
+                      }
+                    </div>
+
+                    {/* Timestamp */}
+                    <p className="text-xs text-muted-foreground mb-2">
+                      {format(entry.date, "MMMM d, yyyy · h:mm a")}
+                    </p>
+
+                    {entry.type === "photo" ? (
+                      <div
+                        className="relative w-48 rounded-lg overflow-hidden cursor-pointer group"
+                        onClick={() => {
+                          const photoIdx = media.findIndex(m => m.id === entry.item.id);
+                          setLightboxIndex(photoIdx);
+                        }}
+                      >
+                        <img
+                          src={(entry.item as typeof media[0]).thumbnailUrl || (entry.item as typeof media[0]).signedUrl}
+                          alt=""
+                          loading="lazy"
+                          className="w-full aspect-square object-cover group-hover:scale-105 transition-transform"
+                          onError={(e) => {
+                            const full = (entry.item as typeof media[0]).signedUrl;
+                            if ((e.target as HTMLImageElement).src !== full) {
+                              (e.target as HTMLImageElement).src = full;
+                            }
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                        {(entry.item as typeof media[0]).location_name && (
+                          <p className="absolute bottom-0 left-0 right-0 px-2 py-1 text-[10px] text-white bg-black/50 truncate">
+                            {(entry.item as typeof media[0]).location_name}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <Card className="max-w-xl">
+                        <CardContent className="py-3 px-4">
+                          {(entry.item as typeof notes[0]).organized_notes ? (
+                            <div
+                              className="prose prose-sm dark:prose-invert max-w-none"
+                              dangerouslySetInnerHTML={{ __html: (entry.item as typeof notes[0]).organized_notes! }}
+                            />
+                          ) : (
+                            <p className="whitespace-pre-wrap text-sm">
+                              {(entry.item as typeof notes[0]).note_text}
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
