@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2, Printer, Download, Mail, Send, Loader2, Clock, Share2, Camera, MessageSquare, AlertCircle } from "lucide-react";
+import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2, Printer, Download, Mail, Send, Loader2, Clock, Share2, Camera, MessageSquare, AlertCircle, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +27,14 @@ import { MediaLinkedContent, MediaLinkBadge } from "@/components/MediaLinkedCont
 import { TagEditor } from "@/components/TagEditor";
 import { useProjectRole } from "@/hooks/useProjectRole";
 
+type ProjectStatus = 'in_progress' | 'needs_review' | 'complete';
+
+const STATUS_CONFIG: Record<ProjectStatus, { label: string; color: string; dot: string }> = {
+  in_progress: { label: 'In Progress', color: 'bg-blue-500/15 text-blue-400 border-blue-500/30', dot: 'bg-blue-400' },
+  needs_review: { label: 'Needs Review', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30', dot: 'bg-amber-400' },
+  complete: { label: 'Complete', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-400' },
+};
+
 interface ProjectData {
   id: string;
   project_name: string;
@@ -35,6 +43,7 @@ interface ProjectData {
   job_description: string;
   created_at: string;
   tags: string[];
+  status: ProjectStatus;
 }
 
 interface MediaItem {
@@ -191,7 +200,7 @@ const ProjectDetail = () => {
         .single();
 
       if (projectError) throw projectError;
-      setProject(projectData);
+      setProject({ ...projectData, status: ((projectData as any).status as ProjectStatus) ?? 'in_progress' });
 
       // Fetch media
       const { data: mediaData, error: mediaError } = await supabase
@@ -627,6 +636,18 @@ const ProjectDetail = () => {
     }
   };
 
+  const handleStatusChange = async (newStatus: ProjectStatus) => {
+    if (!project) return;
+    setProject(prev => prev ? { ...prev, status: newStatus } : prev);
+    const { error } = await supabase.from('reports').update({ status: newStatus } as any).eq('id', project.id);
+    if (error) {
+      toast.error('Failed to update status');
+      fetchProjectData();
+    } else {
+      toast.success(`Status updated to ${STATUS_CONFIG[newStatus].label}`);
+    }
+  };
+
   if (loading) {
     return (
       <div className="dark min-h-screen bg-background">
@@ -671,8 +692,33 @@ const ProjectDetail = () => {
                 <Building2 className="h-7 w-7 text-primary" />
               </div>
               <div className="flex-1">
-                <CardTitle className="text-foreground">{project.project_name}</CardTitle>
-                <CardDescription className="mt-2 space-y-2">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <CardTitle className="text-foreground">{project.project_name}</CardTitle>
+                  {/* Status badge with inline dropdown */}
+                  {(() => {
+                    const cfg = STATUS_CONFIG[project.status];
+                    return (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition-colors ${cfg.color}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
+                            {cfg.label}
+                            <ChevronDown className="h-3 w-3 opacity-60" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          {(Object.entries(STATUS_CONFIG) as [ProjectStatus, typeof STATUS_CONFIG[ProjectStatus]][]).map(([key, c]) => (
+                            <DropdownMenuItem key={key} className="gap-2" onClick={() => handleStatusChange(key)}>
+                              <span className={`h-2 w-2 rounded-full ${c.dot}`} />
+                              {c.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    );
+                  })()}
+                </div>
+                <CardDescription className="space-y-2">
                   <div className="flex items-center gap-2">
                     <UserIcon className="h-4 w-4" />
                     <span>{project.customer_name}</span>
