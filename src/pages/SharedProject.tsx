@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import JSZip from "jszip";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -86,6 +87,39 @@ export default function SharedProject() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("photos");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [isZipping, setIsZipping] = useState(false);
+
+  const downloadAllZip = async () => {
+    if (!data) return;
+    setIsZipping(true);
+    try {
+      const zip = new JSZip();
+      const folder = zip.folder(data.project.project_name || "photos")!;
+      await Promise.all(
+        data.media
+          .filter((m) => m.signedUrl)
+          .map(async (m, idx) => {
+            const res = await fetch(m.signedUrl);
+            const blob = await res.blob();
+            const ext = m.signedUrl.split("?")[0].split(".").pop() || "jpg";
+            folder.file(`photo-${idx + 1}.${ext}`, blob);
+          })
+      );
+      const content = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(content);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${data.project.project_name || "photos"}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("ZIP download failed:", err);
+    } finally {
+      setIsZipping(false);
+    }
+  };
 
   // Build a unified chronological timeline from photos + notes
   const timelineItems = data
@@ -256,6 +290,25 @@ export default function SharedProject() {
                 </CardContent>
               </Card>
             ) : (
+              <>
+                {allowDownload && (
+                  <div className="flex justify-end mb-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={downloadAllZip}
+                      disabled={isZipping}
+                    >
+                      {isZipping ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
+                      {isZipping ? "Preparing ZIP…" : `Download All (${media.length})`}
+                    </Button>
+                  </div>
+                )}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {media.map((item, index) => (
                   <div
@@ -300,6 +353,7 @@ export default function SharedProject() {
                   </div>
                 ))}
               </div>
+              </>
             )}
           </TabsContent>
 
