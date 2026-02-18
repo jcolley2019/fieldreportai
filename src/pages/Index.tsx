@@ -455,35 +455,35 @@ const Index = () => {
 
         {/* Mode Selection Section */}
         <section className="mb-8">
-          {/* Quick Capture — primary CTA */}
-          <button
-            onClick={() => navigate("/capture-screen", { state: { quickCapture: true } })}
-            className="glass-card w-full flex items-center gap-5 p-6 mb-4 hover-lift group"
-          >
-            <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25 group-hover:shadow-glow-blue">
-              <Camera className="h-10 w-10 text-primary transition-transform duration-300 group-hover:scale-110" />
-            </div>
-            <div className="text-left">
-              <h3 className="text-xl font-bold text-foreground mb-1">Quick Capture</h3>
-              <p className="text-sm text-muted-foreground">Snap photos now — name the project after</p>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground ml-auto flex-shrink-0 group-hover:text-primary transition-colors" />
-          </button>
+          <div className="grid grid-cols-2 gap-3">
+            {/* Quick Capture */}
+            <button
+              onClick={() => navigate("/capture-screen", { state: { quickCapture: true } })}
+              className="glass-card flex flex-col items-center gap-3 p-5 hover-lift group"
+            >
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25 group-hover:shadow-glow-blue">
+                <Camera className="h-7 w-7 text-primary transition-transform duration-300 group-hover:scale-110" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-sm font-bold text-foreground mb-0.5">Quick Capture</h3>
+                <p className="text-xs text-muted-foreground">Snap now, name later</p>
+              </div>
+            </button>
 
-          {/* Project Mode — secondary CTA */}
-          <button
-            onClick={() => navigate("/capture-screen", { state: { projectMode: true } })}
-            className="glass-card w-full flex items-center gap-5 p-5 hover-lift group"
-          >
-            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
-              <FolderOpen className="h-7 w-7 text-primary transition-transform duration-300 group-hover:scale-110" />
-            </div>
-            <div className="text-left">
-              <h3 className="text-base font-semibold text-foreground mb-0.5">{t('dashboard.projectMode')}</h3>
-              <p className="text-xs text-muted-foreground">{t('dashboard.manageProjects')}</p>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground ml-auto flex-shrink-0 group-hover:text-primary transition-colors" />
-          </button>
+            {/* Project Mode */}
+            <button
+              onClick={() => navigate("/capture-screen", { state: { projectMode: true } })}
+              className="glass-card flex flex-col items-center gap-3 p-5 hover-lift group"
+            >
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
+                <FolderOpen className="h-7 w-7 text-primary transition-transform duration-300 group-hover:scale-110" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-sm font-bold text-foreground mb-0.5">{t('dashboard.projectMode')}</h3>
+                <p className="text-xs text-muted-foreground">{t('dashboard.manageProjects')}</p>
+              </div>
+            </button>
+          </div>
         </section>
 
         {/* Recent Projects Section */}
