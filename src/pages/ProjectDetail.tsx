@@ -88,6 +88,7 @@ const ProjectDetail = () => {
   const [comments, setComments] = useState<PhotoComment[]>([]);
   const [commentMediaUrls, setCommentMediaUrls] = useState<Record<string, string>>({});
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+  const [hasUnreadComment, setHasUnreadComment] = useState(false);
   
   // Share dialog state
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -164,6 +165,7 @@ const ProjectDetail = () => {
           });
 
           setComments((prev) => [newComment, ...prev]);
+          setHasUnreadComment(true);
           toast.info(`New comment from ${newComment.commenter_name}`);
         }
       )
@@ -820,6 +822,7 @@ const ProjectDetail = () => {
         <Tabs defaultValue="media" className="w-full" onValueChange={(tab) => {
             if (tab === 'comments' && projectId) {
               localStorage.setItem(`comments_viewed_${projectId}`, new Date().toISOString());
+              setHasUnreadComment(false);
             }
           }}>
           <TabsList className="grid w-full grid-cols-5 bg-muted">
@@ -848,10 +851,13 @@ const ProjectDetail = () => {
               {comments.length > 0 && (
                 <span className="sm:hidden text-xs">{comments.length}</span>
               )}
-              {comments.length > 0 && (
+              {comments.length > 0 && !hasUnreadComment && (
                 <span className="hidden sm:flex absolute -top-1 -right-1 h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
                   {comments.length > 9 ? '9+' : comments.length}
                 </span>
+              )}
+              {hasUnreadComment && (
+                <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-primary animate-[pulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] ring-2 ring-background" />
               )}
             </TabsTrigger>
           </TabsList>
