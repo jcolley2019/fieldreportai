@@ -400,6 +400,7 @@ const ReviewSummary = () => {
           const image = capturedImages[i];
           try {
             let storagePath = '';
+            let uploadedBlob: Blob | null = null; // retain blob for thumbnail generation
             console.log(`Image ${i + 1}: base64=${!!image.base64}, url=${image.url?.substring(0, 30)}, isVideo=${image.isVideo}`);
             
             // If we have base64 data, convert to blob and upload
@@ -426,6 +427,7 @@ const ReviewSummary = () => {
               }
               
               storagePath = uploadData.path;
+              uploadedBlob = blob;
             } else if (image.base64 && image.base64.startsWith('blob:')) {
               // blob: URLs from previous page - try to fetch
               try {
@@ -446,6 +448,7 @@ const ReviewSummary = () => {
                   continue;
                 }
                 storagePath = uploadData.path;
+                uploadedBlob = blob;
               } catch (blobErr) {
                 console.error(`Blob URL expired for image ${i + 1}, skipping:`, blobErr);
                 continue;
@@ -457,19 +460,18 @@ const ReviewSummary = () => {
               continue;
             }
             
-            // Upload thumbnail (300px) for fast gallery loading
-            if (!image.isVideo) {
+            // Upload thumbnail (300px) for fast gallery loading — reuse the already-fetched blob
+            if (!image.isVideo && uploadedBlob) {
               try {
-                const response2 = await fetch(image.base64 || image.url);
-                const fullBlob = await response2.blob();
                 const { generateThumbnail } = await import('@/lib/imageCompression');
-                const thumbBlob = await generateThumbnail(fullBlob);
+                const thumbBlob = await generateThumbnail(uploadedBlob);
                 // Derive thumb path by injecting "thumbnails/" folder in same directory
                 const thumbPath = storagePath.replace(/^(.*\/)([^/]+)$/, '$1thumbnails/$2').replace(/\.[^.]+$/, '.jpg');
                 await supabase.storage.from('media').upload(thumbPath, thumbBlob, {
                   contentType: 'image/jpeg',
                   upsert: true,
                 });
+                console.log(`Thumbnail generated for image ${i + 1}: ${thumbPath}`);
               } catch (thumbErr) {
                 console.warn(`Thumbnail generation failed for image ${i + 1}:`, thumbErr);
               }
