@@ -479,72 +479,102 @@ export default function SharedProject() {
                   No activity to show yet.
                 </CardContent>
               </Card>
-            ) : (
-              <div className="relative pl-6 border-l-2 border-border space-y-6">
-                {timelineItems.map((entry, idx) => (
-                  <div key={idx} className="relative">
-                    {/* Timeline dot */}
-                    <div className={`absolute -left-[1.65rem] top-1 w-5 h-5 rounded-full border-2 border-background flex items-center justify-center ${
-                      entry.type === "photo" ? "bg-primary" : "bg-muted-foreground"
-                    }`}>
-                      {entry.type === "photo"
-                        ? <ImageIcon className="h-2.5 w-2.5 text-primary-foreground" />
-                        : <StickyNote className="h-2.5 w-2.5 text-background" />
-                      }
-                    </div>
+            ) : (() => {
+              // Group entries by calendar day
+              const groups: { label: string; entries: typeof timelineItems }[] = [];
+              timelineItems.forEach((entry) => {
+                const dayLabel = format(entry.date, "EEEE, MMMM d, yyyy");
+                const last = groups[groups.length - 1];
+                if (last && last.label === dayLabel) {
+                  last.entries.push(entry);
+                } else {
+                  groups.push({ label: dayLabel, entries: [entry] });
+                }
+              });
 
-                    {/* Timestamp */}
-                    <p className="text-xs text-muted-foreground mb-2">
-                      {format(entry.date, "MMMM d, yyyy · h:mm a")}
-                    </p>
-
-                    {entry.type === "photo" ? (
-                      <div
-                        className="relative w-48 rounded-lg overflow-hidden cursor-pointer group"
-                        onClick={() => {
-                          const photoIdx = media.findIndex(m => m.id === entry.item.id);
-                          setLightboxIndex(photoIdx);
-                        }}
-                      >
-                        <img
-                          src={(entry.item as typeof media[0]).thumbnailUrl || (entry.item as typeof media[0]).signedUrl}
-                          alt=""
-                          loading="lazy"
-                          className="w-full aspect-square object-cover group-hover:scale-105 transition-transform"
-                          onError={(e) => {
-                            const full = (entry.item as typeof media[0]).signedUrl;
-                            if ((e.target as HTMLImageElement).src !== full) {
-                              (e.target as HTMLImageElement).src = full;
-                            }
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                        {(entry.item as typeof media[0]).location_name && (
-                          <p className="absolute bottom-0 left-0 right-0 px-2 py-1 text-[10px] text-white bg-black/50 truncate">
-                            {(entry.item as typeof media[0]).location_name}
-                          </p>
-                        )}
+              return (
+                <div className="space-y-8">
+                  {groups.map((group) => (
+                    <div key={group.label}>
+                      {/* Sticky day header */}
+                      <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm py-2 mb-4 border-b border-border">
+                        <div className="flex items-center gap-2">
+                          <CalendarDays className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-semibold text-foreground">{group.label}</span>
+                          <span className="text-xs text-muted-foreground ml-1">· {group.entries.length} item{group.entries.length !== 1 ? "s" : ""}</span>
+                        </div>
                       </div>
-                    ) : (
-                      <Card className="max-w-xl">
-                        <CardContent className="py-3 px-4">
-                          {(entry.item as typeof notes[0]).organized_notes ? (
-                            <div
-                              className="prose prose-sm dark:prose-invert max-w-none"
-                              dangerouslySetInnerHTML={{ __html: (entry.item as typeof notes[0]).organized_notes! }}
-                            />
-                          ) : (
-                            <p className="whitespace-pre-wrap text-sm">
-                              {(entry.item as typeof notes[0]).note_text}
+
+                      {/* Entries for this day */}
+                      <div className="relative pl-6 border-l-2 border-border space-y-6">
+                        {group.entries.map((entry, idx) => (
+                          <div key={idx} className="relative">
+                            {/* Timeline dot */}
+                            <div className={`absolute -left-[1.65rem] top-1 w-5 h-5 rounded-full border-2 border-background flex items-center justify-center ${
+                              entry.type === "photo" ? "bg-primary" : "bg-muted-foreground"
+                            }`}>
+                              {entry.type === "photo"
+                                ? <ImageIcon className="h-2.5 w-2.5 text-primary-foreground" />
+                                : <StickyNote className="h-2.5 w-2.5 text-background" />
+                              }
+                            </div>
+
+                            {/* Time only (day already shown in header) */}
+                            <p className="text-xs text-muted-foreground mb-2">
+                              {format(entry.date, "h:mm a")}
                             </p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+
+                            {entry.type === "photo" ? (
+                              <div
+                                className="relative w-48 rounded-lg overflow-hidden cursor-pointer group"
+                                onClick={() => {
+                                  const photoIdx = media.findIndex(m => m.id === entry.item.id);
+                                  setLightboxIndex(photoIdx);
+                                }}
+                              >
+                                <img
+                                  src={(entry.item as typeof media[0]).thumbnailUrl || (entry.item as typeof media[0]).signedUrl}
+                                  alt=""
+                                  loading="lazy"
+                                  className="w-full aspect-square object-cover group-hover:scale-105 transition-transform"
+                                  onError={(e) => {
+                                    const full = (entry.item as typeof media[0]).signedUrl;
+                                    if ((e.target as HTMLImageElement).src !== full) {
+                                      (e.target as HTMLImageElement).src = full;
+                                    }
+                                  }}
+                                />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                                {(entry.item as typeof media[0]).location_name && (
+                                  <p className="absolute bottom-0 left-0 right-0 px-2 py-1 text-[10px] text-white bg-black/50 truncate">
+                                    {(entry.item as typeof media[0]).location_name}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <Card className="max-w-xl">
+                                <CardContent className="py-3 px-4">
+                                  {(entry.item as typeof notes[0]).organized_notes ? (
+                                    <div
+                                      className="prose prose-sm dark:prose-invert max-w-none"
+                                      dangerouslySetInnerHTML={{ __html: (entry.item as typeof notes[0]).organized_notes! }}
+                                    />
+                                  ) : (
+                                    <p className="whitespace-pre-wrap text-sm">
+                                      {(entry.item as typeof notes[0]).note_text}
+                                    </p>
+                                  )}
+                                </CardContent>
+                              </Card>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </TabsContent>
         </Tabs>
       </main>
