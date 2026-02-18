@@ -1236,9 +1236,10 @@ const CaptureScreen = () => {
         </div>
 
 
+
         <div className="flex flex-col gap-y-6">
-          {/* Description Textarea */}
-          <div className="relative" data-coach="field-notes">
+          {/* Description Textarea — hidden in Quick Capture mode */}
+          {!isQuickCapture && <div className="relative" data-coach="field-notes">
             <label className="text-foreground font-medium flex items-center gap-2 mb-2">
               <FileText className="h-4 w-4 text-primary" />
               {t('captureScreen.fieldNotes')}
@@ -1253,7 +1254,7 @@ const CaptureScreen = () => {
             <div className="absolute bottom-2 right-3 text-xs text-muted-foreground">
               {description.length} / 1000
             </div>
-          </div>
+          </div>}
 
           {/* Quick Actions */}
           <div className="grid grid-cols-3 gap-3">
