@@ -456,6 +456,20 @@ const Index = () => {
         {/* Mode Selection Section */}
         <section className="mb-8">
           <div className="grid grid-cols-2 gap-3">
+            {/* Project Mode */}
+            <button
+              onClick={() => navigate("/capture-screen", { state: { projectMode: true } })}
+              className="glass-card flex flex-col items-center gap-3 p-5 hover-lift group"
+            >
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
+                <FolderOpen className="h-7 w-7 text-primary transition-transform duration-300 group-hover:scale-110" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-sm font-bold text-foreground mb-0.5">{t('dashboard.projectMode')}</h3>
+                <p className="text-xs text-muted-foreground">{t('dashboard.manageProjects')}</p>
+              </div>
+            </button>
+
             {/* Quick Capture */}
             <button
               onClick={() => navigate("/capture-screen", { state: { quickCapture: true } })}
@@ -470,20 +484,6 @@ const Index = () => {
               <div className="text-center">
                 <h3 className="text-sm font-bold text-primary-foreground mb-0.5">Quick Capture</h3>
                 <p className="text-xs text-primary-foreground/70">Snap now, name later</p>
-              </div>
-            </button>
-
-            {/* Project Mode */}
-            <button
-              onClick={() => navigate("/capture-screen", { state: { projectMode: true } })}
-              className="glass-card flex flex-col items-center gap-3 p-5 hover-lift group"
-            >
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
-                <FolderOpen className="h-7 w-7 text-primary transition-transform duration-300 group-hover:scale-110" />
-              </div>
-              <div className="text-center">
-                <h3 className="text-sm font-bold text-foreground mb-0.5">{t('dashboard.projectMode')}</h3>
-                <p className="text-xs text-muted-foreground">{t('dashboard.manageProjects')}</p>
               </div>
             </button>
           </div>
