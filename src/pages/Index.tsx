@@ -161,6 +161,46 @@ const Index = () => {
     }
   }, [user]);
 
+  // Realtime: increment badge when a new comment arrives
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('dashboard-photo-comments')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'photo_comments' },
+        async (payload) => {
+          const newComment = payload.new as { share_token: string; created_at: string };
+          // Find which project owns this share token
+          const { data: shareData } = await supabase
+            .from('project_shares')
+            .select('report_id')
+            .eq('share_token', newComment.share_token)
+            .single();
+
+          if (!shareData) return;
+          const reportId = shareData.report_id;
+          const lastViewed = localStorage.getItem(`comments_viewed_${reportId}`);
+          // Only increment if the comment is newer than last viewed
+          if (!lastViewed || new Date(newComment.created_at) > new Date(lastViewed)) {
+            setProjects((prev) =>
+              prev.map((p) =>
+                p.id === reportId
+                  ? { ...p, new_comment_count: (p.new_comment_count ?? 0) + 1 }
+                  : p
+              )
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   useEffect(() => {
     // Set up intersection observer for projects section
     const projectsSection = document.querySelector('#projects-section');
