@@ -752,7 +752,11 @@ const ProjectDetail = () => {
         </div>
 
         {/* Content Tabs */}
-        <Tabs defaultValue="media" className="w-full">
+        <Tabs defaultValue="media" className="w-full" onValueChange={(tab) => {
+            if (tab === 'comments' && projectId) {
+              localStorage.setItem(`comments_viewed_${projectId}`, new Date().toISOString());
+            }
+          }}>
           <TabsList className="grid w-full grid-cols-5 bg-muted">
             <TabsTrigger value="media" className="gap-1">
               <ImageIcon className="h-4 w-4" />

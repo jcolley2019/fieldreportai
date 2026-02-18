@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User } from "@supabase/supabase-js";
-import { FileText, Camera, Mic, Share2, Eye, ChevronDown, ChevronRight, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Circle, Cloud, Layers, LogOut } from "lucide-react";
+import { FileText, Camera, Mic, Share2, Eye, ChevronDown, ChevronRight, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Circle, Cloud, Layers, LogOut, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { TrialBanner } from "@/components/TrialBanner";
 import { SubscriptionBadge } from "@/components/SubscriptionBadge";
@@ -45,6 +45,7 @@ interface Project {
   job_description: string;
   created_at: string;
   checklist_count: number;
+  new_comment_count?: number;
 }
 
 const Index = () => {
@@ -188,17 +189,29 @@ const Index = () => {
 
       if (reportsError) throw reportsError;
 
-      // Fetch checklist counts for each report
+      // Fetch checklist counts and new comment counts for each report
       const projectsWithCounts = await Promise.all(
         (reportsData || []).map(async (report) => {
-          const { count, error: countError } = await supabase
-            .from('checklists')
-            .select('*', { count: 'exact', head: true })
-            .eq('report_id', report.id);
+          const lastViewed = localStorage.getItem(`comments_viewed_${report.id}`);
+
+          const [checklistResult, sharesResult] = await Promise.all([
+            supabase.from('checklists').select('*', { count: 'exact', head: true }).eq('report_id', report.id),
+            supabase.from('project_shares').select('share_token').eq('report_id', report.id),
+          ]);
+
+          let newCommentCount = 0;
+          if (sharesResult.data && sharesResult.data.length > 0) {
+            const tokens = sharesResult.data.map((s) => s.share_token);
+            let query = supabase.from('photo_comments').select('*', { count: 'exact', head: true }).in('share_token', tokens);
+            if (lastViewed) query = query.gt('created_at', lastViewed);
+            const { count } = await query;
+            newCommentCount = count ?? 0;
+          }
 
           return {
             ...report,
-            checklist_count: countError ? 0 : (count || 0)
+            checklist_count: checklistResult.error ? 0 : (checklistResult.count || 0),
+            new_comment_count: newCommentCount,
           };
         })
       );
@@ -462,8 +475,13 @@ const Index = () => {
                     className="flex items-start gap-4 p-4 hover:bg-muted/20 cursor-pointer group transition-colors duration-200"
                     onClick={() => navigate(`/project/${project.id}`)}
                   >
-                    <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
+                    <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
                       <Building2 className="h-7 w-7 text-primary" />
+                      {(project.new_comment_count ?? 0) > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold shadow-sm">
+                          {project.new_comment_count! > 9 ? '9+' : project.new_comment_count}
+                        </span>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-foreground text-lg mb-1">{project.project_name}</h3>
