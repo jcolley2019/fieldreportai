@@ -185,6 +185,7 @@ interface ReportPDFProps {
     job_description: string;
     created_at: string;
     report_type?: string;
+    tags?: string[];
   };
   media?: MediaItemForPDF[];
   checklists?: Array<{
@@ -360,6 +361,12 @@ export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls, 
               <Text style={styles.infoLabel}>Date:</Text>
               <Text style={styles.infoValue}>{formatDate(reportData.created_at)}</Text>
             </View>
+            {reportData.tags && reportData.tags.length > 0 && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Tags:</Text>
+                <Text style={styles.infoValue}>{reportData.tags.join(', ')}</Text>
+              </View>
+            )}
           </View>
         )}
 
