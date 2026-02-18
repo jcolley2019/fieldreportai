@@ -430,6 +430,18 @@ const FinalReport = () => {
               }),
             ],
           }),
+          ...(reportData.tags && reportData.tags.length > 0 ? [
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [new Paragraph({ children: [new TextRun({ text: "Tags:", bold: true })] })],
+                }),
+                new TableCell({
+                  children: [new Paragraph({ text: reportData.tags.join(', ') })],
+                }),
+              ],
+            }),
+          ] : []),
         ],
       });
 
