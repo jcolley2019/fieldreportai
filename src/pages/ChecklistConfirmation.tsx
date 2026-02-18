@@ -16,6 +16,9 @@ import { pdf } from '@react-pdf/renderer';
 import { Page, Text, View, Document as PDFDocument, StyleSheet } from '@react-pdf/renderer';
 import { useState } from "react";
 import { formatDateLong } from '@/lib/dateFormat';
+import { useEffectiveOffline } from "@/hooks/useEffectiveOffline";
+import { queueChecklist, type PendingChecklistItem } from "@/lib/offlineQueue";
+
 
 interface ChecklistItem {
   text: string;
@@ -36,6 +39,7 @@ const ChecklistConfirmation = () => {
   const checklist = location.state?.checklist as ChecklistData | undefined;
   const isSimpleMode = location.state?.simpleMode || false;
   const projectReportId = location.state?.reportId || null;
+  const { isEffectivelyOffline } = useEffectiveOffline();
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [checklistId, setChecklistId] = useState<string | null>(null);
@@ -286,6 +290,22 @@ const ChecklistConfirmation = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error(t('checklistConfirmation.signInRequired'));
+        return;
+      }
+
+      // Offline: queue locally
+      if (isEffectivelyOffline) {
+        const pending: PendingChecklistItem = {
+          id: `offline-cl-${Date.now()}`,
+          userId: user.id,
+          reportId: targetReportId ?? undefined,
+          title: checklist.title,
+          items: checklist.items,
+          createdAt: new Date().toISOString(),
+        };
+        await queueChecklist(pending);
+        toast.success('Checklist saved offline — will sync when connected');
+        setShowSuccess(true);
         return;
       }
 
