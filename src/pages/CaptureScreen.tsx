@@ -747,17 +747,99 @@ const CaptureScreen = () => {
         .map(img => img.caption || img.voiceNote || "")
         .slice(0, 25);
 
-      // ── Step 2: Fire AI call + display-base64 encoding IN PARALLEL ──
-      // Display encoding (for ReviewSummary navigation) runs alongside the AI call
-      // so we don't block AI generation waiting for large file reads.
-      const invokePromise = supabase.functions.invoke('generate-report-summary', {
-        body: {
+      // ── Step 2: Wait for any still-uploading images (up to 15s) ──
+      // If background uploads are still in flight, wait for them so we can use
+      // signed URLs instead of falling back to base64.
+      const uploadingIds = new Set(
+        photoItems.slice(0, 25)
+          .filter(img => img.uploadStatus === 'uploading')
+          .map(img => img.id)
+      );
+
+      if (uploadingIds.size > 0) {
+        console.log(`Waiting for ${uploadingIds.size} background uploads to complete...`);
+        setGenerationProgress(15);
+        await new Promise<void>(resolve => {
+          const deadline = setTimeout(resolve, 15000);
+          const check = setInterval(() => {
+            // Re-read current images state
+            setImages(current => {
+              const stillUploading = current.filter(i => uploadingIds.has(i.id) && i.uploadStatus === 'uploading');
+              if (stillUploading.length === 0) {
+                clearInterval(check);
+                clearTimeout(deadline);
+                resolve();
+              }
+              return current;
+            });
+            return;
+          }, 300);
+        });
+      }
+
+      // Re-read fresh image state after wait
+      const freshImages = await new Promise<ImageItem[]>(resolve => {
+        setImages(current => { resolve(current); return current; });
+      });
+      const freshPhotoItems = freshImages.filter(i => !i.deleted && !i.isVideo);
+
+      // Re-build AI URLs with fresh storagePaths
+      const freshAiUrlResults = await Promise.all(
+        freshPhotoItems.slice(0, 25).map(async (img): Promise<string | null> => {
+          if (img.storagePath) {
+            const { data: signedData } = await supabase.storage
+              .from('media')
+              .createSignedUrl(img.storagePath, 3600);
+            if (signedData?.signedUrl) return signedData.signedUrl;
+          }
+          if (img.file) {
+            try {
+              const compressed = await compressImage(img.file, { maxWidth: 512, maxHeight: 512, quality: 0.6 });
+              return await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(compressed);
+              });
+            } catch { return null; }
+          }
+          return null;
+        })
+      );
+      const finalAiImageUrls = freshAiUrlResults.filter((u): u is string => u !== null);
+      const signedUrlCount = freshPhotoItems.slice(0, 25).filter(i => i.storagePath).length;
+      console.log(`AI payload: ${finalAiImageUrls.length} images (${signedUrlCount} signed URLs, ${finalAiImageUrls.length - signedUrlCount} base64 fallbacks)`);
+
+      // ── Step 3: Fire AI call + display-base64 encoding IN PARALLEL ──
+      // Use fetch with AbortController for reliable timeout control.
+      const abortController = new AbortController();
+      const abortTimer = setTimeout(() => abortController.abort(), 90000);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
+      const invokePromise = fetch(`${supabaseUrl}/functions/v1/generate-report-summary`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({
           description: description || "",
-          imageDataUrls: aiImageUrls,
+          imageDataUrls: finalAiImageUrls,
           imageCaptions,
           videoContextLines: videoContextLines.length > 0 ? videoContextLines : undefined,
           photoDescriptionMode
-        },
+        }),
+        signal: abortController.signal,
+      }).then(async (res) => {
+        clearTimeout(abortTimer);
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Edge function error ${res.status}: ${errText}`);
+        }
+        return res.json();
       });
 
       const displayEncodePromise = Promise.all(
@@ -782,29 +864,13 @@ const CaptureScreen = () => {
         })
       );
 
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('AbortError: Request timed out')), 90000)
-      );
+      // AI call and display encoding run in parallel
+      const [data, imageWithDisplay] = await Promise.all([invokePromise, displayEncodePromise]);
+      const error = null; // errors now thrown directly
 
-      // AI call races against timeout; display encoding runs alongside
-      const [aiResult, imageWithDisplay] = await Promise.all([
-        Promise.race([invokePromise, timeoutPromise]) as Promise<Awaited<typeof invokePromise>>,
-        displayEncodePromise,
-      ]);
-
-      const { data, error } = aiResult;
-
-      if (error) {
-        console.error("Summary generation error:", error);
-        toast.error(error.message || "Failed to generate summary");
-        clearInterval(progressInterval);
-        setIsGenerating(false);
-        setGenerationProgress(0);
-        return;
-      }
 
       if (!data?.summary) {
-        toast.error("No summary generated");
+        toast.error("No summary generated — please try again.");
         clearInterval(progressInterval);
         setIsGenerating(false);
         setGenerationProgress(0);
@@ -838,11 +904,11 @@ const CaptureScreen = () => {
         });
       }, 300);
     } catch (err: any) {
-      const isTimeout = err?.message?.includes('AbortError') || err?.message?.includes('timed out');
-      console.error("Error generating summary:", err);
-      toast.error(isTimeout 
-        ? "Summary generation timed out. Your photos are saved — please try again." 
-        : "Failed to generate summary. Your photos are saved — please try again.");
+      const isTimeout = err?.name === 'AbortError' || err?.message?.includes('AbortError') || err?.message?.includes('timed out') || err?.message?.includes('abort');
+      console.error("Error generating summary:", { name: err?.name, message: err?.message, status: err?.status });
+      toast.error(isTimeout
+        ? "Summary generation timed out. Try reducing the number of photos or wait for uploads to finish." 
+        : `Failed to generate summary: ${err?.message || 'Unknown error'}`);
       clearInterval(progressInterval);
     } finally {
       setIsGenerating(false);
