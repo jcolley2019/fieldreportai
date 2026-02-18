@@ -28,6 +28,8 @@ import {
   MessageSquare,
   Send,
   User,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -107,10 +109,14 @@ export default function SharedProject() {
   // Comments state
   const [comments, setComments] = useState<PhotoComment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
-  const [commenterName, setCommenterName] = useState("");
+  const [commenterName, setCommenterName] = useState(() => localStorage.getItem("shared_commenter_name") || "");
   const [commentText, setCommentText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCommentPanel, setShowCommentPanel] = useState(false);
+  // Per-photo inline comment state: mediaId -> { expanded, text, submitting }
+  const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
+  const [inlineCommentText, setInlineCommentText] = useState<Record<string, string>>({});
+  const [inlineSubmitting, setInlineSubmitting] = useState<Record<string, boolean>>({});
   const commentsEndRef = useRef<HTMLDivElement>(null);
 
   const downloadAllZip = async () => {
@@ -219,18 +225,13 @@ export default function SharedProject() {
     setIsSubmitting(true);
     try {
       const { data: result, error } = await supabase.functions.invoke("post-photo-comment", {
-        body: {
-          share_token: token,
-          media_id: mediaId,
-          commenter_name: name,
-          comment_text: text,
-        },
+        body: { share_token: token, media_id: mediaId, commenter_name: name, comment_text: text },
       });
 
       if (error) throw error;
       if (result.error) throw new Error(result.error);
 
-      // Optimistic update + refetch
+      localStorage.setItem("shared_commenter_name", name);
       setComments((prev) => [...prev, result.comment]);
       setCommentText("");
       toast.success("Comment posted!");
@@ -238,6 +239,34 @@ export default function SharedProject() {
       toast.error(err.message || "Failed to post comment");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleInlineComment = async (mediaId: string) => {
+    if (!token) return;
+    const name = commenterName.trim();
+    const text = (inlineCommentText[mediaId] || "").trim();
+
+    if (!name) { toast.error("Please enter your name"); return; }
+    if (!text) { toast.error("Please enter a comment"); return; }
+
+    setInlineSubmitting((prev) => ({ ...prev, [mediaId]: true }));
+    try {
+      const { data: result, error } = await supabase.functions.invoke("post-photo-comment", {
+        body: { share_token: token, media_id: mediaId, commenter_name: name, comment_text: text },
+      });
+
+      if (error) throw error;
+      if (result.error) throw new Error(result.error);
+
+      localStorage.setItem("shared_commenter_name", name);
+      setComments((prev) => [...prev, result.comment]);
+      setInlineCommentText((prev) => ({ ...prev, [mediaId]: "" }));
+      toast.success("Comment posted!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to post comment");
+    } finally {
+      setInlineSubmitting((prev) => ({ ...prev, [mediaId]: false }));
     }
   };
 
@@ -396,6 +425,7 @@ export default function SharedProject() {
 
               return (
                 <>
+                  {/* Filters + Download row */}
                   <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                     {hasLocations ? (
                       <div className="flex flex-wrap gap-2">
@@ -426,9 +456,7 @@ export default function SharedProject() {
                           );
                         })}
                       </div>
-                    ) : (
-                      <div />
-                    )}
+                    ) : <div />}
                     {allowDownload && (
                       <Button
                         variant="outline"
@@ -443,63 +471,166 @@ export default function SharedProject() {
                     )}
                   </div>
 
+                  {/* Commenter name — shared across all inline forms */}
+                  {filteredMedia.length > 0 && (
+                    <div className="mb-5 flex items-center gap-3 p-3 rounded-xl bg-muted/40 border border-border">
+                      <User className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <Input
+                        placeholder="Your name (used for all comments)"
+                        value={commenterName}
+                        onChange={(e) => setCommenterName(e.target.value.slice(0, 100))}
+                        className="h-8 text-sm border-0 bg-transparent p-0 focus-visible:ring-0 placeholder:text-muted-foreground/60"
+                      />
+                    </div>
+                  )}
+
                   {filteredMedia.length === 0 ? (
                     <p className="text-center text-muted-foreground py-12">No photos at this location.</p>
                   ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {filteredMedia.map((item) => {
                         const globalIndex = media.findIndex((m) => m.id === item.id);
-                        const commentCount = commentCountByMedia[item.id] || 0;
+                        const photoComments = comments.filter((c) => c.media_id === item.id);
+                        const isExpanded = expandedComments[item.id] || false;
+
                         return (
-                          <div
-                            key={item.id}
-                            className="relative group aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer"
-                            onClick={() => {
-                              setLightboxIndex(globalIndex);
-                              setShowCommentPanel(false);
-                            }}
-                          >
-                            <img
-                              src={item.thumbnailUrl || item.signedUrl}
-                              alt=""
-                              loading="lazy"
-                              className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                              onError={(e) => {
-                                if ((e.target as HTMLImageElement).src !== item.signedUrl) {
-                                  (e.target as HTMLImageElement).src = item.signedUrl;
-                                }
+                          <Card key={item.id} className="overflow-hidden">
+                            {/* Photo */}
+                            <div
+                              className="relative aspect-video bg-muted cursor-pointer group"
+                              onClick={() => {
+                                setLightboxIndex(globalIndex);
+                                setShowCommentPanel(false);
                               }}
-                            />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
-                            <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/60 to-transparent">
-                              <p className="text-white text-xs">
-                                {format(new Date(item.captured_at), "MMM d, yyyy h:mm a")}
-                              </p>
-                              {item.location_name && (
-                                <p className="text-white/80 text-xs truncate">{item.location_name}</p>
+                            >
+                              <img
+                                src={item.thumbnailUrl || item.signedUrl}
+                                alt=""
+                                loading="lazy"
+                                className="w-full h-full object-cover transition-transform group-hover:scale-[1.02]"
+                                onError={(e) => {
+                                  if ((e.target as HTMLImageElement).src !== item.signedUrl) {
+                                    (e.target as HTMLImageElement).src = item.signedUrl;
+                                  }
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                              {allowDownload && (
+                                <Button
+                                  variant="secondary"
+                                  size="icon"
+                                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadImage(item.signedUrl, `photo-${item.id}.jpg`);
+                                  }}
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                                <p className="text-white text-xs">
+                                  {format(new Date(item.captured_at), "MMM d, yyyy h:mm a")}
+                                </p>
+                                {item.location_name && (
+                                  <p className="text-white/80 text-xs truncate">{item.location_name}</p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Comment thread */}
+                            <div className="border-t border-border">
+                              {/* Toggle bar */}
+                              <button
+                                className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-muted/30 transition-colors"
+                                onClick={() =>
+                                  setExpandedComments((prev) => ({ ...prev, [item.id]: !prev[item.id] }))
+                                }
+                              >
+                                <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <MessageSquare className="h-4 w-4" />
+                                  {photoComments.length > 0
+                                    ? `${photoComments.length} comment${photoComments.length !== 1 ? "s" : ""}`
+                                    : "Leave a comment"}
+                                </span>
+                                {isExpanded
+                                  ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                                  : <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                }
+                              </button>
+
+                              {/* Expanded thread */}
+                              {isExpanded && (
+                                <div className="px-4 pb-4 space-y-3">
+                                  {/* Existing comments */}
+                                  {photoComments.length > 0 && (
+                                    <div className="space-y-2 pt-1">
+                                      {photoComments.map((c) => (
+                                        <div key={c.id} className="flex gap-2.5">
+                                          <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                                            <User className="h-3.5 w-3.5 text-primary" />
+                                          </div>
+                                          <div className="flex-1 bg-muted/40 rounded-xl px-3 py-2">
+                                            <div className="flex items-baseline gap-2 mb-0.5">
+                                              <span className="text-xs font-semibold text-foreground">{c.commenter_name}</span>
+                                              <span className="text-[10px] text-muted-foreground">
+                                                {format(new Date(c.created_at), "MMM d, h:mm a")}
+                                              </span>
+                                            </div>
+                                            <p className="text-sm text-foreground whitespace-pre-wrap">{c.comment_text}</p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Add comment */}
+                                  <div className="flex gap-2 pt-1">
+                                    <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                                      <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                    </div>
+                                    <div className="flex-1 space-y-2">
+                                      <Textarea
+                                        placeholder="Write a comment…"
+                                        value={inlineCommentText[item.id] || ""}
+                                        onChange={(e) =>
+                                          setInlineCommentText((prev) => ({
+                                            ...prev,
+                                            [item.id]: e.target.value.slice(0, 1000),
+                                          }))
+                                        }
+                                        className="text-sm resize-none min-h-[60px]"
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
+                                            handleInlineComment(item.id);
+                                        }}
+                                      />
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[10px] text-muted-foreground">
+                                          {(inlineCommentText[item.id] || "").length}/1000 · Cmd+Enter to send
+                                        </span>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => handleInlineComment(item.id)}
+                                          disabled={
+                                            inlineSubmitting[item.id] ||
+                                            !commenterName.trim() ||
+                                            !(inlineCommentText[item.id] || "").trim()
+                                          }
+                                          className="gap-1.5 h-7 text-xs"
+                                        >
+                                          {inlineSubmitting[item.id]
+                                            ? <Loader2 className="h-3 w-3 animate-spin" />
+                                            : <Send className="h-3 w-3" />}
+                                          Post
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
                               )}
                             </div>
-                            {/* Comment count badge */}
-                            {commentCount > 0 && (
-                              <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/70 rounded-full px-2 py-0.5">
-                                <MessageSquare className="h-3 w-3 text-white" />
-                                <span className="text-white text-xs font-medium">{commentCount}</span>
-                              </div>
-                            )}
-                            {allowDownload && (
-                              <Button
-                                variant="secondary"
-                                size="icon"
-                                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  downloadImage(item.signedUrl, `photo-${item.id}.jpg`);
-                                }}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
+                          </Card>
                         );
                       })}
                     </div>
@@ -508,6 +639,8 @@ export default function SharedProject() {
               );
             })()}
           </TabsContent>
+
+
 
           <TabsContent value="notes">
             {notes.length === 0 ? (
