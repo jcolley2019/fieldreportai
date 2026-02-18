@@ -199,16 +199,39 @@ const FinalReport = () => {
         description: t('finalReport.preparingPDF'),
       });
 
-      // Use existing signed URLs from state for PDF generation
+      // Convert images to base64 data URLs so @react-pdf/renderer doesn't
+      // make cross-origin fetches (which fail on mobile Safari).
       const mediaUrlsMap = new Map<string, string>();
       const videoUrlsMap = new Map<string, string>();
-      for (const item of media) {
-        if (item.file_type === 'image' && mediaUrls[item.id]) {
-          mediaUrlsMap.set(item.id, mediaUrls[item.id]);
-        } else if (item.file_type === 'video' && videoUrls[item.id]) {
-          videoUrlsMap.set(item.id, videoUrls[item.id]);
-        }
-      }
+
+      await Promise.all(
+        media.map(async (item) => {
+          if (item.file_type === 'image') {
+            try {
+              // Get a fresh signed URL then convert to base64
+              const { data } = await supabase.storage
+                .from('media')
+                .createSignedUrl(item.file_path, 120);
+              const signedUrl = data?.signedUrl;
+              if (!signedUrl) return;
+              const response = await fetch(signedUrl);
+              if (!response.ok) return;
+              const blob = await response.blob();
+              const reader = new FileReader();
+              const dataUrl = await new Promise<string>((resolve, reject) => {
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+              mediaUrlsMap.set(item.id, dataUrl);
+            } catch (err) {
+              console.warn('Could not convert image to base64 for PDF:', item.id, err);
+            }
+          } else if (item.file_type === 'video' && videoUrls[item.id]) {
+            videoUrlsMap.set(item.id, videoUrls[item.id]);
+          }
+        })
+      );
 
       const blob = await pdf(
         <ReportPDF

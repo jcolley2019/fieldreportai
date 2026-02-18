@@ -434,19 +434,32 @@ const ProjectDetail = () => {
     try {
       toast.info('Preparing PDF…');
 
-      // Refresh signed URLs right before generating to avoid expiry issues
-      const freshUrlsMap = new Map<string, string>();
+      // Convert images to base64 data URLs so @react-pdf/renderer doesn't
+      // have to make cross-origin fetches (which fail on mobile Safari).
+      const base64UrlsMap = new Map<string, string>();
       await Promise.all(
         media.filter(m => m.file_type === 'image').map(async (item) => {
           try {
+            // Get a fresh signed URL
             const { data } = await supabase.storage
               .from('media')
-              .createSignedUrl(item.file_path, 300); // 5-min URL sufficient for PDF generation
-            if (data?.signedUrl) freshUrlsMap.set(item.id, data.signedUrl);
-          } catch {
-            // Fall back to already-loaded URL if refresh fails
-            const existing = mediaUrls[item.id];
-            if (existing) freshUrlsMap.set(item.id, existing);
+              .createSignedUrl(item.file_path, 120);
+            const signedUrl = data?.signedUrl;
+            if (!signedUrl) return;
+
+            // Fetch and convert to base64 data URL
+            const response = await fetch(signedUrl);
+            if (!response.ok) return;
+            const blob = await response.blob();
+            const reader = new FileReader();
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+            base64UrlsMap.set(item.id, dataUrl);
+          } catch (err) {
+            console.warn('Could not convert image to base64 for PDF:', item.id, err);
           }
         })
       );
@@ -459,7 +472,7 @@ const ProjectDetail = () => {
           }}
           media={media}
           checklists={checklists}
-          mediaUrls={freshUrlsMap}
+          mediaUrls={base64UrlsMap}
         />
       ).toBlob();
       
