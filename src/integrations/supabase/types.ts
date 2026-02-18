@@ -467,6 +467,7 @@ export type Database = {
           parent_report_id: string | null
           project_name: string
           report_type: string | null
+          tags: string[]
           updated_at: string
           user_id: string
         }
@@ -479,6 +480,7 @@ export type Database = {
           parent_report_id?: string | null
           project_name: string
           report_type?: string | null
+          tags?: string[]
           updated_at?: string
           user_id: string
         }
@@ -491,6 +493,7 @@ export type Database = {
           parent_report_id?: string | null
           project_name?: string
           report_type?: string | null
+          tags?: string[]
           updated_at?: string
           user_id?: string
         }

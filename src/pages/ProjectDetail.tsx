@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ProjectTimeline } from "@/components/ProjectTimeline";
 import { ShareProjectDialog } from "@/components/ShareProjectDialog";
 import { MediaLinkedContent, MediaLinkBadge } from "@/components/MediaLinkedContent";
+import { TagEditor } from "@/components/TagEditor";
 
 interface ProjectData {
   id: string;
@@ -31,6 +32,7 @@ interface ProjectData {
   job_number: string;
   job_description: string;
   created_at: string;
+  tags: string[];
 }
 
 interface MediaItem {
@@ -551,11 +553,18 @@ const ProjectDetail = () => {
             </div>
           </CardHeader>
           {project.job_description && (
-            <CardContent>
+            <CardContent className="pb-0">
               <h4 className="text-sm font-semibold text-foreground mb-2">Description</h4>
               <p className="text-sm text-muted-foreground">{project.job_description}</p>
             </CardContent>
           )}
+          <CardContent className={project.job_description ? "pt-4" : ""}>
+            <TagEditor
+              projectId={project.id}
+              tags={project.tags ?? []}
+              onTagsChange={(newTags) => setProject((prev) => prev ? { ...prev, tags: newTags } : prev)}
+            />
+          </CardContent>
         </Card>
 
         {/* Continue Working Button */}

@@ -7,7 +7,7 @@ import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { Input } from "@/components/ui/input";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Building2, Hash, User as UserIcon, ListChecks, Search, Filter, Plus, Trash2, Mail, Send, Loader2, X, CheckSquare, Square } from "lucide-react";
+import { Building2, Hash, User as UserIcon, ListChecks, Search, Filter, Plus, Trash2, Mail, Send, Loader2, X, CheckSquare, Square, Tag } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -33,6 +33,7 @@ interface Project {
   job_description: string;
   created_at: string;
   checklist_count: number;
+  tags: string[];
 }
 
 const ProjectsCustomers = () => {
@@ -42,6 +43,7 @@ const ProjectsCustomers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"recent" | "name" | "customer">("recent");
   const [loading, setLoading] = useState(true);
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
   
   // Selection and email state
   const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
@@ -131,16 +133,21 @@ const ProjectsCustomers = () => {
     );
   };
 
+  // Collect all unique tags across projects
+  const allTags = Array.from(new Set(projects.flatMap(p => p.tags ?? []))).sort();
+
   // Filter and sort projects
   const filteredProjects = projects
     .filter((project) => {
       const searchLower = searchQuery.toLowerCase();
-      return (
+      const matchesSearch = (
         project.project_name.toLowerCase().includes(searchLower) ||
         project.customer_name.toLowerCase().includes(searchLower) ||
         project.job_number.toLowerCase().includes(searchLower) ||
         project.job_description.toLowerCase().includes(searchLower)
       );
+      const matchesTag = !activeTagFilter || (project.tags ?? []).includes(activeTagFilter);
+      return matchesSearch && matchesTag;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -412,6 +419,27 @@ const ProjectsCustomers = () => {
             </Select>
           </div>
         </div>
+
+        {/* Tag filter chips */}
+        {allTags.length > 0 && (
+          <div className="mb-4 flex flex-wrap gap-2 items-center">
+            <Tag className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => setActiveTagFilter(activeTagFilter === tag ? null : tag)}
+                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                  activeTagFilter === tag
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-secondary text-muted-foreground border-border hover:border-primary hover:text-primary'
+                }`}
+              >
+                {tag}
+                {activeTagFilter === tag && <X className="h-3 w-3 ml-0.5" />}
+              </button>
+            ))}
+          </div>
+        )}
         
         {/* Projects List */}
         {projects.length === 0 ? (
@@ -422,7 +450,7 @@ const ProjectsCustomers = () => {
         ) : filteredProjects.length === 0 ? (
           <div className="rounded-lg bg-card p-8 text-center">
             <Search className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <p className="text-muted-foreground">{t('projects.noMatches')} "{searchQuery}"</p>
+            <p className="text-muted-foreground">{t('projects.noMatches')} "{searchQuery || activeTagFilter}"</p>
           </div>
         ) : (
             <div className="space-y-3">
@@ -463,6 +491,26 @@ const ProjectsCustomers = () => {
                         <ListChecks className="h-4 w-4 flex-shrink-0" />
                         <span>{project.checklist_count} {project.checklist_count !== 1 ? t('dashboard.checklists') : t('dashboard.checklist')}</span>
                       </div>
+                      {(project.tags ?? []).length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {(project.tags ?? []).map((tag) => (
+                            <button
+                              key={tag}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveTagFilter(activeTagFilter === tag ? null : tag);
+                              }}
+                              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium transition-colors ${
+                                activeTagFilter === tag
+                                  ? 'bg-primary text-primary-foreground border-primary'
+                                  : 'bg-secondary/60 text-muted-foreground border-border hover:border-primary hover:text-primary'
+                              }`}
+                            >
+                              {tag}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   {!selectionMode && (
