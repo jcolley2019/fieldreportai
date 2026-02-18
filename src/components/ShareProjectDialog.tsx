@@ -8,7 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Link2, Users, Copy, Check, Trash2, Loader2, Mail, Clock, Download } from "lucide-react";
+import { Link2, Users, Copy, Check, Trash2, Loader2, Mail, Clock, Download, Shield } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -47,6 +48,7 @@ export const ShareProjectDialog = ({ open, onOpenChange, reportId, projectName }
   const [allowDownload, setAllowDownload] = useState(true);
   const [expirationDays, setExpirationDays] = useState(30);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<"viewer" | "editor" | "admin">("viewer");
   const [isInviting, setIsInviting] = useState(false);
 
   useEffect(() => {
@@ -156,7 +158,7 @@ export const ShareProjectDialog = ({ open, onOpenChange, reportId, projectName }
           report_id: reportId,
           owner_id: user.id,
           member_email: inviteEmail.trim().toLowerCase(),
-          role: "viewer",
+          role: inviteRole,
         })
         .select()
         .single();
@@ -295,7 +297,7 @@ export const ShareProjectDialog = ({ open, onOpenChange, reportId, projectName }
                             size="icon"
                             onClick={() => copyShareLink(link.share_token)}
                           >
-                            {isCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                          {isCopied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                           </Button>
                         )}
                         <Button
@@ -318,17 +320,34 @@ export const ShareProjectDialog = ({ open, onOpenChange, reportId, projectName }
               {t("share.teamAccessDesc")}
             </p>
 
-            <div className="flex gap-2">
-              <Input
-                type="email"
-                placeholder={t("share.enterEmail")}
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && inviteTeamMember()}
-              />
-              <Button onClick={inviteTeamMember} disabled={isInviting || !inviteEmail.trim()}>
-                {isInviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
-              </Button>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  type="email"
+                  placeholder={t("share.enterEmail")}
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && inviteTeamMember()}
+                  className="flex-1"
+                />
+                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as "viewer" | "editor" | "admin")}>
+                  <SelectTrigger className="w-28">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="viewer">Viewer</SelectItem>
+                    <SelectItem value="editor">Editor</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={inviteTeamMember} disabled={isInviting || !inviteEmail.trim()}>
+                  {isInviting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Shield className="h-3 w-3" />
+                Viewer: read-only · Editor: can add photos &amp; notes · Admin: full edit access
+              </p>
             </div>
 
             {teamMembers.length > 0 && (

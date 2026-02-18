@@ -10,6 +10,7 @@ import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListCh
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { formatDate } from '@/lib/dateFormat';
 import { pdf } from '@react-pdf/renderer';
 import { ReportPDF } from '@/components/ReportPDF';
@@ -24,6 +25,7 @@ import { ProjectTimeline } from "@/components/ProjectTimeline";
 import { ShareProjectDialog } from "@/components/ShareProjectDialog";
 import { MediaLinkedContent, MediaLinkBadge } from "@/components/MediaLinkedContent";
 import { TagEditor } from "@/components/TagEditor";
+import { useProjectRole } from "@/hooks/useProjectRole";
 
 interface ProjectData {
   id: string;
@@ -78,6 +80,7 @@ const ProjectDetail = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { canEdit, canManage, role } = useProjectRole(projectId);
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<ProjectData | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
@@ -701,14 +704,28 @@ const ProjectDetail = () => {
           </CardContent>
         </Card>
 
-        {/* Continue Working Button */}
-        <Button
-          onClick={() => navigate("/capture-screen", { state: { reportId: projectId, projectName: project.project_name, customerName: project.customer_name, jobNumber: project.job_number } })}
-          className="w-full h-14 mb-4 gap-3 bg-primary text-primary-foreground hover:bg-primary/90 text-base font-semibold"
-        >
-          <Camera className="h-5 w-5" />
-          Continue Working on Project
-        </Button>
+        {/* Role badge for team members */}
+        {role !== "owner" && role !== "none" && (
+          <div className="mb-3 flex items-center gap-2 rounded-xl border border-border bg-muted/50 px-3 py-2">
+            <Badge variant="outline" className="capitalize">{role}</Badge>
+            <span className="text-xs text-muted-foreground">
+              {role === "viewer"
+                ? "You have read-only access to this project"
+                : "You can add photos and notes to this project"}
+            </span>
+          </div>
+        )}
+
+        {/* Continue Working Button — editors and owners only */}
+        {canEdit && (
+          <Button
+            onClick={() => navigate("/capture-screen", { state: { reportId: projectId, projectName: project.project_name, customerName: project.customer_name, jobNumber: project.job_number } })}
+            className="w-full h-14 mb-4 gap-3 bg-primary text-primary-foreground hover:bg-primary/90 text-base font-semibold"
+          >
+            <Camera className="h-5 w-5" />
+            Continue Working on Project
+          </Button>
+        )}
 
         {/* Action Buttons */}
         <div className="flex gap-3 mb-6">
@@ -738,84 +755,88 @@ const ProjectDetail = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button 
-            variant="outline" 
-            className="flex-1 gap-2"
-            onClick={() => setShareDialogOpen(true)}
-          >
-            <Share2 className="h-4 w-4" />
-            {t("common.share")}
-          </Button>
-          <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="flex-1 gap-2">
-                <Mail className="h-4 w-4" />
-                Email
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Share via Email</DialogTitle>
-                <DialogDescription>
-                  Send project details as a PDF attachment
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="recipientEmail">Recipient Email *</Label>
-                  <Input
-                    id="recipientEmail"
-                    type="email"
-                    placeholder="email@example.com"
-                    value={recipientEmail}
-                    onChange={(e) => setRecipientEmail(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="recipientName">Recipient Name (optional)</Label>
-                  <Input
-                    id="recipientName"
-                    type="text"
-                    placeholder="John Doe"
-                    value={recipientName}
-                    onChange={(e) => setRecipientName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="emailMessage">Message (optional)</Label>
-                  <Textarea
-                    id="emailMessage"
-                    placeholder="Add a personal message..."
-                    value={emailMessage}
-                    onChange={(e) => setEmailMessage(e.target.value)}
-                    rows={3}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>
-                  Cancel
+          {canManage && (
+            <Button 
+              variant="outline" 
+              className="flex-1 gap-2"
+              onClick={() => setShareDialogOpen(true)}
+            >
+              <Share2 className="h-4 w-4" />
+              {t("common.share")}
+            </Button>
+          )}
+          {canManage && (
+            <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex-1 gap-2">
+                  <Mail className="h-4 w-4" />
+                  Email
                 </Button>
-                <Button 
-                  onClick={handleSendEmail} 
-                  disabled={sendingEmail || !recipientEmail}
-                  className="gap-2"
-                >
-                  {sendingEmail ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4" />
-                      Send Email
-                    </>
-                  )}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Share via Email</DialogTitle>
+                  <DialogDescription>
+                    Send project details as a PDF attachment
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="recipientEmail">Recipient Email *</Label>
+                    <Input
+                      id="recipientEmail"
+                      type="email"
+                      placeholder="email@example.com"
+                      value={recipientEmail}
+                      onChange={(e) => setRecipientEmail(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="recipientName">Recipient Name (optional)</Label>
+                    <Input
+                      id="recipientName"
+                      type="text"
+                      placeholder="John Doe"
+                      value={recipientName}
+                      onChange={(e) => setRecipientName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="emailMessage">Message (optional)</Label>
+                    <Textarea
+                      id="emailMessage"
+                      placeholder="Add a personal message..."
+                      value={emailMessage}
+                      onChange={(e) => setEmailMessage(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleSendEmail} 
+                    disabled={sendingEmail || !recipientEmail}
+                    className="gap-2"
+                  >
+                    {sendingEmail ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        Send Email
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         {/* Content Tabs */}
@@ -905,14 +926,16 @@ const ProjectDetail = () => {
                         onClick={() => setSelectedMediaForLink(item.id)} 
                       />
                     </div>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => handleDeleteMedia(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {canManage && (
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleDeleteMedia(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                     <p className="mt-1 text-xs text-muted-foreground">{formatDateDisplay(item.created_at)}</p>
                   </div>
                 ))}
@@ -947,14 +970,16 @@ const ProjectDetail = () => {
                         <CardTitle className="text-foreground">{checklist.title}</CardTitle>
                         <CardDescription>{formatDateDisplay(checklist.created_at)}</CardDescription>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteChecklist(checklist.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {canManage && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteChecklist(checklist.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -1069,19 +1094,21 @@ const ProjectDetail = () => {
                                   {formatDateDisplay(comment.created_at)}
                                 </span>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => handleDeleteComment(comment.id)}
-                                disabled={deletingCommentId === comment.id}
-                              >
-                                {deletingCommentId === comment.id ? (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                )}
-                              </Button>
+                              {canManage && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => handleDeleteComment(comment.id)}
+                                  disabled={deletingCommentId === comment.id}
+                                >
+                                  {deletingCommentId === comment.id ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  )}
+                                </Button>
+                              )}
                             </div>
                             <p className="text-sm text-muted-foreground leading-relaxed">
                               {comment.comment_text}
