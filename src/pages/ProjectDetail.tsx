@@ -543,17 +543,21 @@ const ProjectDetail = () => {
       
       toast.dismiss(toastId);
 
-      const blobUrl = URL.createObjectURL(blob);
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
       if (isIOS) {
-        // iOS Safari ignores <a download> — open blob URL in new tab so user
-        // sees the PDF in Safari's built-in viewer and can save via Share sheet
-        window.open(blobUrl, '_blank');
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
-        toast.success('PDF opened — use the Share button to save it');
+        // iOS Safari cannot open blob:// URLs in new tabs ("Task failed").
+        // Convert to a base64 data URL — Safari can open those as PDFs.
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const dataUrl = reader.result as string;
+          window.open(dataUrl, '_blank');
+          toast.success('PDF opened — tap the Share button (↑) to save to Files');
+        };
+        reader.readAsDataURL(blob);
       } else {
         // Desktop / Android: standard anchor-click download
+        const blobUrl = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = blobUrl;
         link.download = `${project.project_name.replace(/\s+/g, '_')}_Report.pdf`;
