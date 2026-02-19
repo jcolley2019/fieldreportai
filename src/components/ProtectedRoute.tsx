@@ -13,6 +13,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     // Ongoing auth changes — does NOT control loading state to avoid deadlocks
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!isMounted) return;
+      console.log('[ProtectedRoute] onAuthStateChange:', _event, !!session);
       setAuthenticated(!!session);
     });
 
@@ -20,6 +21,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     const initAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('[ProtectedRoute] getSession result:', !!session);
         if (isMounted) setAuthenticated(!!session);
       } finally {
         if (isMounted) setLoading(false);
