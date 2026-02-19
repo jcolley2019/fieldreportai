@@ -499,6 +499,7 @@ const Index = () => {
                 onSelect={async () => {
                   await supabase.auth.signOut();
                   localStorage.removeItem('skipOnboarding');
+                  sessionStorage.setItem('just_logged_out', 'true');
                   window.location.assign("/auth");
                 }}
                 className="cursor-pointer text-destructive focus:text-destructive"
