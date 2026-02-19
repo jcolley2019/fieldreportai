@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
 
@@ -19,6 +19,7 @@ const authSchema = z.object({
 
 const Auth = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,6 +33,15 @@ const Auth = () => {
   const mode = searchParams.get("mode");
   const startTrial = searchParams.get("startTrial");
 
+  const getDestination = () => {
+    if (redirectUrl) {
+      return pendingPlan && pendingBilling
+        ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
+        : redirectUrl;
+    }
+    return "/dashboard";
+  };
+
   // Set signup mode if coming from guest checkout or trial start
   useEffect(() => {
     if (mode === 'signup' || startTrial === 'true') {
@@ -42,29 +52,17 @@ const Auth = () => {
   // Redirect if already logged in (but not if we just logged out)
   useEffect(() => {
     const checkUser = async () => {
-      // If there's a 'loggedOut' flag in sessionStorage, skip auto-redirect
       if (sessionStorage.getItem('just_logged_out')) {
         sessionStorage.removeItem('just_logged_out');
         return;
       }
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigateToDestination();
+        navigate(getDestination(), { replace: true });
       }
     };
     checkUser();
   }, []);
-
-  const navigateToDestination = () => {
-    let destination = "/dashboard";
-    if (redirectUrl) {
-      destination = pendingPlan && pendingBilling
-        ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
-        : redirectUrl;
-    }
-    // Hard redirect ensures session is fully settled before ProtectedRoute checks
-    window.location.assign(destination);
-  };
 
   const activateTrial = async () => {
     try {
@@ -124,8 +122,7 @@ const Auth = () => {
     if (startTrial === 'true') {
       activateTrial().catch(console.error);
     }
-    // Navigate — keep loading=true so form doesn't flash back before redirect
-    navigateToDestination();
+    navigate(getDestination(), { replace: true });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

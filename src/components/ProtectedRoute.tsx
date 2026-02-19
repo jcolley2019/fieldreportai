@@ -10,26 +10,22 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let isMounted = true;
 
-    // Ongoing auth changes — does NOT control loading state to avoid deadlocks
+    // Per Supabase docs: set up onAuthStateChange FIRST.
+    // It fires for both new logins AND restoring sessions from storage on page load.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!isMounted) return;
       setAuthenticated(!!session);
+      setLoading(false);
     });
 
-    // Initial load — controls loading state exclusively
-    const initAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (isMounted) setAuthenticated(!!session);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    initAuth();
+    // Safety net: if onAuthStateChange never fires within 3s, unblock loading
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) setLoading(false);
+    }, 3000);
 
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
   }, []);
