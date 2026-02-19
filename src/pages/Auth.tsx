@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
 
@@ -24,7 +24,6 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectUrl = searchParams.get("redirect");
   const pendingPlan = searchParams.get("plan");
@@ -57,14 +56,14 @@ const Auth = () => {
   }, []);
 
   const navigateToDestination = () => {
+    let destination = "/dashboard";
     if (redirectUrl) {
-      const fullRedirect = pendingPlan && pendingBilling
+      destination = pendingPlan && pendingBilling
         ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
         : redirectUrl;
-      navigate(fullRedirect);
-    } else {
-      navigate("/dashboard");
     }
+    // Hard redirect ensures session is fully settled before ProtectedRoute checks
+    window.location.assign(destination);
   };
 
   const activateTrial = async () => {
