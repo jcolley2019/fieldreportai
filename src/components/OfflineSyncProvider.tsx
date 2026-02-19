@@ -49,7 +49,7 @@ const OfflineSyncProvider = () => {
 
     const refresh = async () => {
       const counts = await getPendingCounts();
-      setPendingCount(counts.media + counts.notes);
+      setPendingCount(counts.media + counts.notes + counts.tasks + counts.checklists);
     };
     refresh();
     const interval = setInterval(refresh, 5000);

@@ -85,14 +85,28 @@ const handler = async (req: Request): Promise<Response> => {
     ]);
 
     // Generate signed URLs for media (valid for 1 hour)
+    // Also attempt thumbnail URLs for faster gallery loading
     const mediaWithUrls = await Promise.all(
       (mediaResult.data || []).map(async (item) => {
+        // Full-size URL (used in lightbox / download)
         const { data: signedData } = await supabaseClient.storage
           .from("media")
           .createSignedUrl(item.file_path, 3600);
+
+        // Thumbnail URL — stored at thumbnails/<rest-of-path>
+        let thumbnailUrl: string | null = null;
+        if (item.file_type === "image") {
+          const thumbnailPath = `thumbnails/${item.file_path}`;
+          const { data: thumbData } = await supabaseClient.storage
+            .from("media")
+            .createSignedUrl(thumbnailPath, 3600);
+          thumbnailUrl = thumbData?.signedUrl || null;
+        }
+
         return {
           ...item,
           signedUrl: signedData?.signedUrl || null,
+          thumbnailUrl,
         };
       })
     );

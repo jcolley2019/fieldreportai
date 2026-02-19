@@ -53,12 +53,18 @@ const CoachMarks = ({ steps, storageKey }: CoachMarksProps) => {
 
     const rect = el.getBoundingClientRect();
     const tooltipWidth = 280;
-    const tooltipHeight = 120;
-    const gap = 12;
+    const gap = 16;
+    // Use a generous estimate so we always prefer "above" for bottom-area elements
+    const tooltipHeight = 160;
+    // Safe zone: keep tooltip above the bottom controls bar (approx 100px)
+    const safeBottom = 100;
 
-    // Determine if tooltip goes above or below
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const placeBelow = spaceBelow > tooltipHeight + gap + 20;
+    const spaceAbove = rect.top - gap - safeBottom;
+    const spaceBelow = window.innerHeight - rect.bottom - gap - safeBottom;
+
+    // Prefer above if the element is in the lower half of the screen
+    const elementInLowerHalf = rect.top > window.innerHeight / 2;
+    const placeBelow = !elementInLowerHalf && spaceBelow > tooltipHeight;
 
     let top: number;
     if (placeBelow) {
@@ -69,8 +75,8 @@ const CoachMarks = ({ steps, storageKey }: CoachMarksProps) => {
       setArrowDirection("bottom");
     }
 
-    // Clamp top within viewport
-    top = Math.max(12, Math.min(top, window.innerHeight - tooltipHeight - 12));
+    // Clamp top within viewport with safe zones
+    top = Math.max(12, Math.min(top, window.innerHeight - tooltipHeight - safeBottom));
 
     // Center horizontally on target, clamp to viewport
     let left = rect.left + rect.width / 2 - tooltipWidth / 2;
@@ -121,16 +127,17 @@ const CoachMarks = ({ steps, storageKey }: CoachMarksProps) => {
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop — clicking it dismisses, but clicks on tooltip must not reach it */}
       <div
         className="fixed inset-0 z-[9998] bg-black/40 transition-opacity duration-300"
         onClick={dismiss}
       />
 
-      {/* Tooltip */}
+      {/* Tooltip — stopPropagation prevents backdrop from swallowing button clicks */}
       <div
         style={tooltipStyle}
         className="fixed z-[9999] animate-fade-in rounded-xl border border-primary/30 bg-card p-4 shadow-2xl shadow-primary/20"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Arrow */}
         <div
@@ -144,7 +151,7 @@ const CoachMarks = ({ steps, storageKey }: CoachMarksProps) => {
 
         {/* Close button */}
         <button
-          onClick={dismiss}
+          onClick={(e) => { e.stopPropagation(); dismiss(); }}
           className="absolute right-2 top-2 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
         >
           <X className="h-3.5 w-3.5" />
@@ -164,7 +171,7 @@ const CoachMarks = ({ steps, storageKey }: CoachMarksProps) => {
             {currentStep + 1} / {steps.length}
           </span>
           <button
-            onClick={handleNext}
+            onClick={(e) => { e.stopPropagation(); handleNext(); }}
             className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
           >
             {currentStep < steps.length - 1 ? t("coachMarks.next") : t("coachMarks.gotIt")}

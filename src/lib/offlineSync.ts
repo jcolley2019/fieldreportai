@@ -1,5 +1,5 @@
 /**
- * Offline Sync Service — uploads queued media and notes when back online.
+ * Offline Sync Service — uploads queued media, notes, tasks and checklists when back online.
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -8,9 +8,15 @@ import {
   removePendingMedia,
   getPendingNotes,
   removePendingNote,
+  getPendingTasks,
+  removePendingTask,
+  getPendingChecklists,
+  removePendingChecklist,
   arrayBufferToFile,
   type PendingMediaItem,
   type PendingNoteItem,
+  type PendingTaskItem,
+  type PendingChecklistItem,
 } from './offlineQueue';
 
 export interface SyncProgress {
@@ -39,7 +45,6 @@ async function uploadMediaItem(item: PendingMediaItem): Promise<boolean> {
     const file = arrayBufferToFile(item.fileData, item.fileName, item.mimeType);
     const filePath = `${item.userId}/${item.reportId}/${Date.now()}-${item.fileName}`;
 
-    // Upload to storage
     const { error: uploadError } = await supabase.storage
       .from('media')
       .upload(filePath, file, { contentType: item.mimeType });
@@ -49,7 +54,6 @@ async function uploadMediaItem(item: PendingMediaItem): Promise<boolean> {
       return false;
     }
 
-    // Insert media record
     const { error: dbError } = await supabase.from('media').insert({
       user_id: item.userId,
       report_id: item.reportId,
@@ -95,14 +99,97 @@ async function uploadNoteItem(item: PendingNoteItem): Promise<boolean> {
   }
 }
 
+async function uploadTaskItem(item: PendingTaskItem): Promise<boolean> {
+  try {
+    const { error } = await supabase.from('tasks').insert({
+      user_id: item.userId,
+      report_id: item.reportId ?? null,
+      title: item.title,
+      description: item.description ?? null,
+      priority: item.priority,
+      status: item.status,
+    });
+
+    if (error) {
+      console.error('Offline sync: task insert failed', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Offline sync: unexpected error', err);
+    return false;
+  }
+}
+
+async function uploadChecklistItem(item: PendingChecklistItem): Promise<boolean> {
+  try {
+    // Create or find a report if needed
+    let reportId = item.reportId ?? null;
+    if (!reportId) {
+      const { data: newReport, error: reportError } = await supabase
+        .from('reports')
+        .insert({
+          user_id: item.userId,
+          project_name: item.title,
+          customer_name: 'Standalone Checklist',
+          job_number: `CL-${Date.now()}`,
+          job_description: `Checklist: ${item.title}`,
+        })
+        .select()
+        .single();
+      if (reportError || !newReport) {
+        console.error('Offline sync: checklist report create failed', reportError);
+        return false;
+      }
+      reportId = newReport.id;
+    }
+
+    const { data: newChecklist, error: checklistError } = await supabase
+      .from('checklists')
+      .insert({ user_id: item.userId, report_id: reportId, title: item.title })
+      .select()
+      .single();
+
+    if (checklistError || !newChecklist) {
+      console.error('Offline sync: checklist insert failed', checklistError);
+      return false;
+    }
+
+    const itemsToInsert = item.items.map((i) => ({
+      checklist_id: newChecklist.id,
+      text: i.text,
+      priority: i.priority,
+      category: i.category,
+      completed: i.completed,
+    }));
+
+    const { error: itemsError } = await supabase.from('checklist_items').insert(itemsToInsert);
+    if (itemsError) {
+      console.error('Offline sync: checklist items insert failed', itemsError);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Offline sync: unexpected error', err);
+    return false;
+  }
+}
+
 export async function syncOfflineQueue(): Promise<SyncProgress> {
   if (isSyncing) return { total: 0, completed: 0, failed: 0, inProgress: true };
 
   isSyncing = true;
 
-  const pendingMedia = await getPendingMedia();
-  const pendingNotes = await getPendingNotes();
-  const total = pendingMedia.length + pendingNotes.length;
+  const [pendingMedia, pendingNotes, pendingTasks, pendingChecklists] = await Promise.all([
+    getPendingMedia(),
+    getPendingNotes(),
+    getPendingTasks(),
+    getPendingChecklists(),
+  ]);
+
+  const total = pendingMedia.length + pendingNotes.length + pendingTasks.length + pendingChecklists.length;
 
   if (total === 0) {
     isSyncing = false;
@@ -113,30 +200,29 @@ export async function syncOfflineQueue(): Promise<SyncProgress> {
   let failed = 0;
 
   const progress = (): SyncProgress => ({ total, completed, failed, inProgress: true });
-
   notify(progress());
 
-  // Upload media
   for (const item of pendingMedia) {
     const ok = await uploadMediaItem(item);
-    if (ok) {
-      await removePendingMedia(item.id);
-      completed++;
-    } else {
-      failed++;
-    }
+    if (ok) { await removePendingMedia(item.id); completed++; } else { failed++; }
     notify(progress());
   }
 
-  // Upload notes
   for (const item of pendingNotes) {
     const ok = await uploadNoteItem(item);
-    if (ok) {
-      await removePendingNote(item.id);
-      completed++;
-    } else {
-      failed++;
-    }
+    if (ok) { await removePendingNote(item.id); completed++; } else { failed++; }
+    notify(progress());
+  }
+
+  for (const item of pendingTasks) {
+    const ok = await uploadTaskItem(item);
+    if (ok) { await removePendingTask(item.id); completed++; } else { failed++; }
+    notify(progress());
+  }
+
+  for (const item of pendingChecklists) {
+    const ok = await uploadChecklistItem(item);
+    if (ok) { await removePendingChecklist(item.id); completed++; } else { failed++; }
     notify(progress());
   }
 

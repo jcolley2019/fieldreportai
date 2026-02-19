@@ -10,12 +10,14 @@ import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from 
 import CoachMarks from "@/components/CoachMarks";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Sparkles, Trash2, Clock, Flag, CheckCircle2, Circle, Loader2, Mic, MicOff, FolderOpen, ImageIcon } from "lucide-react";
+import { Plus, Sparkles, Trash2, Clock, Flag, CheckCircle2, Circle, Loader2, Mic, MicOff, FolderOpen, ImageIcon, WifiOff } from "lucide-react";
 import { PhotoPickerDialog } from "@/components/PhotoPickerDialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { TaskActionsBar } from "@/components/tasks/TaskActionsBar";
 import { TaskProjectSelector } from "@/components/tasks/TaskProjectSelector";
+import { useEffectiveOffline } from "@/hooks/useEffectiveOffline";
+import { queueTask, type PendingTaskItem } from "@/lib/offlineQueue";
 
 interface Task {
   id: string;
@@ -37,7 +39,7 @@ const Tasks = () => {
 
   const [reportId, setReportId] = useState<string | undefined>(initialReportId);
   const [projectName, setProjectName] = useState<string | undefined>(initialProjectName);
-
+  const { isEffectivelyOffline } = useEffectiveOffline();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isAddingTask, setIsAddingTask] = useState(false);
@@ -97,6 +99,35 @@ const Tasks = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+
+      // Offline: queue locally and add optimistic task to UI
+      if (isEffectivelyOffline) {
+        const offlineId = `offline-task-${Date.now()}`;
+        const pendingItem: PendingTaskItem = {
+          id: offlineId,
+          userId: user.id,
+          reportId: reportId || undefined,
+          title: newTask.title,
+          description: newTask.description || undefined,
+          priority: newTask.priority,
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+        };
+        await queueTask(pendingItem);
+        const optimisticTask: Task = {
+          id: offlineId,
+          title: newTask.title,
+          description: newTask.description || undefined,
+          priority: newTask.priority,
+          status: 'pending',
+          created_at: new Date().toISOString(),
+        };
+        setTasks(prev => [optimisticTask, ...prev]);
+        setNewTask({ title: '', description: '', priority: 'medium' });
+        setShowAddDialog(false);
+        toast.success('Task saved offline — will sync when connected');
+        return;
+      }
 
       const { data, error } = await supabase
         .from('tasks')

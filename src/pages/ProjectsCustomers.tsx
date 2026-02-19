@@ -7,7 +7,8 @@ import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { Input } from "@/components/ui/input";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Building2, Hash, User as UserIcon, ListChecks, Search, Filter, Plus, Trash2, Mail, Send, Loader2, X, CheckSquare, Square } from "lucide-react";
+import { Building2, Hash, User as UserIcon, ListChecks, Search, Filter, Plus, Trash2, Mail, Send, Loader2, X, CheckSquare, Square, Tag, Download, Printer, FileText, MessageSquare, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
   Select,
@@ -25,6 +26,14 @@ import { ReportPDF } from '@/components/ReportPDF';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
+type ProjectStatus = 'in_progress' | 'needs_review' | 'complete';
+
+const STATUS_CONFIG: Record<ProjectStatus, { label: string; color: string; dot: string }> = {
+  in_progress: { label: 'In Progress', color: 'bg-blue-500/15 text-blue-400 border-blue-500/30', dot: 'bg-blue-400' },
+  needs_review: { label: 'Needs Review', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30', dot: 'bg-amber-400' },
+  complete: { label: 'Complete', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-400' },
+};
+
 interface Project {
   id: string;
   project_name: string;
@@ -33,6 +42,9 @@ interface Project {
   job_description: string;
   created_at: string;
   checklist_count: number;
+  tags: string[];
+  status: ProjectStatus;
+  new_comment_count?: number;
 }
 
 const ProjectsCustomers = () => {
@@ -42,6 +54,7 @@ const ProjectsCustomers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"recent" | "name" | "customer">("recent");
   const [loading, setLoading] = useState(true);
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
   
   // Selection and email state
   const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
@@ -56,6 +69,42 @@ const ProjectsCustomers = () => {
     fetchProjects();
   }, []);
 
+  // Realtime: increment badge when a new comment arrives
+  useEffect(() => {
+    const channel = supabase
+      .channel('projects-page-photo-comments')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'photo_comments' },
+        async (payload) => {
+          const newComment = payload.new as { share_token: string; created_at: string };
+          const { data: shareData } = await supabase
+            .from('project_shares')
+            .select('report_id')
+            .eq('share_token', newComment.share_token)
+            .single();
+
+          if (!shareData) return;
+          const reportId = shareData.report_id;
+          const lastViewed = localStorage.getItem(`comments_viewed_${reportId}`);
+          if (!lastViewed || new Date(newComment.created_at) > new Date(lastViewed)) {
+            setProjects((prev) =>
+              prev.map((p) =>
+                p.id === reportId
+                  ? { ...p, new_comment_count: (p.new_comment_count ?? 0) + 1 }
+                  : p
+              )
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const fetchProjects = async () => {
     try {
       setLoading(true);
@@ -66,22 +115,35 @@ const ProjectsCustomers = () => {
 
       if (reportsError) throw reportsError;
 
-      // Fetch checklist counts for each report
+      // Fetch checklist counts and new comment counts for each report
       const projectsWithCounts = await Promise.all(
         (reportsData || []).map(async (report) => {
-          const { count, error: countError } = await supabase
-            .from('checklists')
-            .select('*', { count: 'exact', head: true })
-            .eq('report_id', report.id);
+          const lastViewed = localStorage.getItem(`comments_viewed_${report.id}`);
+
+          const [checklistResult, sharesResult] = await Promise.all([
+            supabase.from('checklists').select('*', { count: 'exact', head: true }).eq('report_id', report.id),
+            supabase.from('project_shares').select('share_token').eq('report_id', report.id),
+          ]);
+
+          let newCommentCount = 0;
+          if (sharesResult.data && sharesResult.data.length > 0) {
+            const tokens = sharesResult.data.map((s) => s.share_token);
+            let query = supabase.from('photo_comments').select('*', { count: 'exact', head: true }).in('share_token', tokens);
+            if (lastViewed) query = query.gt('created_at', lastViewed);
+            const { count } = await query;
+            newCommentCount = count ?? 0;
+          }
 
           return {
             ...report,
-            checklist_count: countError ? 0 : (count || 0)
+            status: ((report as any).status as ProjectStatus) ?? 'in_progress',
+            checklist_count: checklistResult.error ? 0 : (checklistResult.count || 0),
+            new_comment_count: newCommentCount,
           };
         })
       );
 
-      setProjects(projectsWithCounts);
+      setProjects(projectsWithCounts as Project[]);
     } catch (error) {
       console.error('Error fetching projects:', error);
       toast.error('Failed to load projects');
@@ -111,6 +173,15 @@ const ProjectsCustomers = () => {
     }
   };
 
+  const handleStatusChange = async (projectId: string, newStatus: ProjectStatus) => {
+    setProjects(prev => prev.map(p => p.id === projectId ? { ...p, status: newStatus } : p));
+    const { error } = await supabase.from('reports').update({ status: newStatus } as any).eq('id', projectId);
+    if (error) {
+      toast.error('Failed to update status');
+      fetchProjects();
+    }
+  };
+
   // Highlight matching text
   const highlightText = (text: string, query: string) => {
     if (!query.trim()) return text;
@@ -131,16 +202,24 @@ const ProjectsCustomers = () => {
     );
   };
 
+  // Collect all unique tags across projects
+  const allTags = Array.from(new Set(projects.flatMap(p => p.tags ?? []))).sort();
+
+  const [activeStatusFilter, setActiveStatusFilter] = useState<ProjectStatus | null>(null);
+
   // Filter and sort projects
   const filteredProjects = projects
     .filter((project) => {
       const searchLower = searchQuery.toLowerCase();
-      return (
+      const matchesSearch = (
         project.project_name.toLowerCase().includes(searchLower) ||
         project.customer_name.toLowerCase().includes(searchLower) ||
         project.job_number.toLowerCase().includes(searchLower) ||
         project.job_description.toLowerCase().includes(searchLower)
       );
+      const matchesTag = !activeTagFilter || (project.tags ?? []).includes(activeTagFilter);
+      const matchesStatus = !activeStatusFilter || project.status === activeStatusFilter;
+      return matchesSearch && matchesTag && matchesStatus;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -295,6 +374,84 @@ const ProjectsCustomers = () => {
     }
   };
 
+  const handleExportCSV = () => {
+    const header = ['Project Name', 'Customer', 'Job Number', 'Created', 'Checklists', 'Tags'];
+    const rows = filteredProjects.map(p => [
+      `"${p.project_name.replace(/"/g, '""')}"`,
+      `"${p.customer_name.replace(/"/g, '""')}"`,
+      `"${p.job_number.replace(/"/g, '""')}"`,
+      `"${new Date(p.created_at).toLocaleDateString()}"`,
+      p.checklist_count,
+      `"${(p.tags ?? []).join(', ')}"`,
+    ]);
+    const csv = [header.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Projects_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('CSV exported');
+  };
+
+  const handlePrint = () => {
+    const rows = filteredProjects.map(p => `
+      <tr>
+        <td>${p.project_name}</td>
+        <td>${p.customer_name}</td>
+        <td>${p.job_number}</td>
+        <td>${new Date(p.created_at).toLocaleDateString()}</td>
+        <td>${p.checklist_count}</td>
+        <td>${(p.tags ?? []).join(', ') || '—'}</td>
+      </tr>
+    `).join('');
+
+    const html = `
+      <html>
+      <head>
+        <title>Projects & Customers</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 32px; }
+          h1 { font-size: 22px; margin-bottom: 4px; }
+          .subtitle { color: #666; font-size: 13px; margin-bottom: 24px; }
+          table { width: 100%; border-collapse: collapse; font-size: 13px; }
+          th { background: #f3f4f6; text-align: left; padding: 8px 10px; border-bottom: 2px solid #e5e7eb; font-weight: 600; }
+          td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+          .tag { display: inline-block; background: #ede9fe; color: #5b21b6; border-radius: 9999px; padding: 1px 8px; font-size: 11px; margin: 1px; }
+          @media print { body { padding: 16px; } }
+        </style>
+      </head>
+      <body>
+        <h1>Projects & Customers</h1>
+        <p class="subtitle">Generated on ${new Date().toLocaleDateString()} • ${filteredProjects.length} project${filteredProjects.length !== 1 ? 's' : ''}${activeTagFilter ? ` • Filtered by tag: "${activeTagFilter}"` : ''}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Project Name</th>
+              <th>Customer</th>
+              <th>Job #</th>
+              <th>Created</th>
+              <th>Checklists</th>
+              <th>Tags</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      win.print();
+    }
+  };
+
   if (loading) {
     return (
       <div className="dark min-h-screen bg-background">
@@ -316,6 +473,24 @@ const ProjectsCustomers = () => {
           <NavbarTitle>{t('projects.title')}</NavbarTitle>
         </NavbarCenter>
         <NavbarRight>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportCSV} className="gap-2">
+                <FileText className="h-4 w-4" />
+                Export CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handlePrint} className="gap-2">
+                <Printer className="h-4 w-4" />
+                Print / PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             onClick={() => navigate("/new-project")}
             size="sm"
@@ -412,6 +587,52 @@ const ProjectsCustomers = () => {
             </Select>
           </div>
         </div>
+
+        {/* Status filter chips */}
+        {projects.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {([null, 'in_progress', 'needs_review', 'complete'] as (ProjectStatus | null)[]).map((s) => {
+              const cfg = s ? STATUS_CONFIG[s] : null;
+              const isActive = activeStatusFilter === s;
+              return (
+                <button
+                  key={s ?? 'all'}
+                  onClick={() => setActiveStatusFilter(s)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    isActive
+                      ? s ? cfg!.color + ' border-transparent' : 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-secondary text-muted-foreground border-border hover:border-primary hover:text-primary'
+                  }`}
+                >
+                  {cfg && <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />}
+                  {s ? STATUS_CONFIG[s].label : 'All'}
+                  {isActive && s && <X className="h-3 w-3 ml-0.5" onClick={(e) => { e.stopPropagation(); setActiveStatusFilter(null); }} />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Tag filter chips */}
+        {allTags.length > 0 && (
+          <div className="mb-4 flex flex-wrap gap-2 items-center">
+            <Tag className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => setActiveTagFilter(activeTagFilter === tag ? null : tag)}
+                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                  activeTagFilter === tag
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-secondary text-muted-foreground border-border hover:border-primary hover:text-primary'
+                }`}
+              >
+                {tag}
+                {activeTagFilter === tag && <X className="h-3 w-3 ml-0.5" />}
+              </button>
+            ))}
+          </div>
+        )}
         
         {/* Projects List */}
         {projects.length === 0 ? (
@@ -422,11 +643,13 @@ const ProjectsCustomers = () => {
         ) : filteredProjects.length === 0 ? (
           <div className="rounded-lg bg-card p-8 text-center">
             <Search className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-            <p className="text-muted-foreground">{t('projects.noMatches')} "{searchQuery}"</p>
+            <p className="text-muted-foreground">{t('projects.noMatches')} "{searchQuery || activeTagFilter || activeStatusFilter}"</p>
           </div>
         ) : (
             <div className="space-y-3">
-              {filteredProjects.map((project) => (
+              {filteredProjects.map((project) => {
+                const statusCfg = STATUS_CONFIG[project.status];
+                return (
                 <div
                   key={project.id}
                   onClick={() => selectionMode ? toggleProjectSelection(project.id, { stopPropagation: () => {} } as React.MouseEvent) : navigate(`/project/${project.id}`)}
@@ -443,13 +666,45 @@ const ProjectsCustomers = () => {
                       />
                     </div>
                   )}
-                  <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
                     <Building2 className="h-7 w-7 text-primary" />
+                    {(project.new_comment_count ?? 0) > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold shadow-sm">
+                        {project.new_comment_count! > 9 ? '9+' : project.new_comment_count}
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground text-lg mb-1">
-                      {highlightText(project.project_name, searchQuery)}
-                    </h3>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h3 className="font-semibold text-foreground text-lg">
+                        {highlightText(project.project_name, searchQuery)}
+                      </h3>
+                      {/* Status badge / inline selector */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            onClick={(e) => e.stopPropagation()}
+                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition-colors ${statusCfg.color}`}
+                          >
+                            <span className={`h-1.5 w-1.5 rounded-full ${statusCfg.dot}`} />
+                            {statusCfg.label}
+                            <ChevronDown className="h-3 w-3 opacity-60" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+                          {(Object.entries(STATUS_CONFIG) as [ProjectStatus, typeof STATUS_CONFIG[ProjectStatus]][]).map(([key, cfg]) => (
+                            <DropdownMenuItem
+                              key={key}
+                              className="gap-2"
+                              onClick={(e) => { e.stopPropagation(); handleStatusChange(project.id, key); }}
+                            >
+                              <span className={`h-2 w-2 rounded-full ${cfg.dot}`} />
+                              {cfg.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                     <div className="space-y-1 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <UserIcon className="h-4 w-4 flex-shrink-0" />
@@ -463,6 +718,26 @@ const ProjectsCustomers = () => {
                         <ListChecks className="h-4 w-4 flex-shrink-0" />
                         <span>{project.checklist_count} {project.checklist_count !== 1 ? t('dashboard.checklists') : t('dashboard.checklist')}</span>
                       </div>
+                      {(project.tags ?? []).length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {(project.tags ?? []).map((tag) => (
+                            <button
+                              key={tag}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveTagFilter(activeTagFilter === tag ? null : tag);
+                              }}
+                              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium transition-colors ${
+                                activeTagFilter === tag
+                                  ? 'bg-primary text-primary-foreground border-primary'
+                                  : 'bg-secondary/60 text-muted-foreground border-border hover:border-primary hover:text-primary'
+                              }`}
+                            >
+                              {tag}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   {!selectionMode && (
@@ -479,7 +754,7 @@ const ProjectsCustomers = () => {
                     </Button>
                   )}
                 </div>
-              ))}
+              ); })}
             </div>
         )}
 

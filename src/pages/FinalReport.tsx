@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { pdf } from '@react-pdf/renderer';
 import { ReportPDF } from '@/components/ReportPDF';
-import { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer, Table, TableCell, TableRow, WidthType, BorderStyle, ImageRun } from 'docx';
+import { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer, Table, TableCell, TableRow, WidthType, BorderStyle, ImageRun, ExternalHyperlink } from 'docx';
 import { saveAs } from 'file-saver';
 import { formatDate, formatDateLong, formatDateTime } from '@/lib/dateFormat';
 import DOMPurify from 'dompurify';
@@ -67,6 +67,37 @@ const FinalReport = () => {
   });
   const [showSuccess, setShowSuccess] = useState(false);
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
+  const [videoUrls, setVideoUrls] = useState<Record<string, string>>({});
+
+  // Parallel signed URL generation with 55-minute TTL
+  const refreshSignedUrls = async (mediaData: MediaItem[]) => {
+    const results = await Promise.all(
+      mediaData.map(async (item) => {
+        const { data } = await supabase.storage
+          .from('media')
+          .createSignedUrl(item.file_path, 3300); // 55 min TTL
+        return { id: item.id, file_type: item.file_type, url: data?.signedUrl ?? null };
+      })
+    );
+    const urls: Record<string, string> = {};
+    const vUrls: Record<string, string> = {};
+    for (const r of results) {
+      if (!r.url) continue;
+      if (r.file_type === 'image') urls[r.id] = r.url;
+      else if (r.file_type === 'video') vUrls[r.id] = r.url;
+    }
+    setMediaUrls(urls);
+    setVideoUrls(vUrls);
+  };
+
+  // Auto-refresh signed URLs every 50 minutes (before 55-min TTL expires)
+  useEffect(() => {
+    if (media.length === 0) return;
+    const interval = setInterval(() => {
+      refreshSignedUrls(media);
+    }, 50 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [media]);
 
   useEffect(() => {
     const loadReportData = async () => {
@@ -110,19 +141,8 @@ const FinalReport = () => {
         if (!mediaError && mediaData) {
           setMedia(mediaData);
           
-          // Generate signed URLs for private storage bucket
-          const urls: Record<string, string> = {};
-          for (const item of mediaData) {
-            if (item.file_type === 'image') {
-              const { data: signedUrlData } = await supabase.storage
-                .from('media')
-                .createSignedUrl(item.file_path, 3600); // 1 hour expiry
-              if (signedUrlData?.signedUrl) {
-                urls[item.id] = signedUrlData.signedUrl;
-              }
-            }
-          }
-          setMediaUrls(urls);
+          // Parallelize signed URL generation (TTL: 55 min, refreshed every 50 min)
+          await refreshSignedUrls(mediaData);
         }
 
         const { data: checklistsData, error: checklistsError } = await supabase
@@ -179,13 +199,39 @@ const FinalReport = () => {
         description: t('finalReport.preparingPDF'),
       });
 
-      // Use existing signed URLs from state for PDF generation
+      // Convert images to base64 data URLs so @react-pdf/renderer doesn't
+      // make cross-origin fetches (which fail on mobile Safari).
       const mediaUrlsMap = new Map<string, string>();
-      for (const item of media) {
-        if (item.file_type === 'image' && mediaUrls[item.id]) {
-          mediaUrlsMap.set(item.id, mediaUrls[item.id]);
-        }
-      }
+      const videoUrlsMap = new Map<string, string>();
+
+      await Promise.all(
+        media.map(async (item) => {
+          if (item.file_type === 'image') {
+            try {
+              // Get a fresh signed URL then convert to base64
+              const { data } = await supabase.storage
+                .from('media')
+                .createSignedUrl(item.file_path, 120);
+              const signedUrl = data?.signedUrl;
+              if (!signedUrl) return;
+              const response = await fetch(signedUrl);
+              if (!response.ok) return;
+              const blob = await response.blob();
+              const reader = new FileReader();
+              const dataUrl = await new Promise<string>((resolve, reject) => {
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+              mediaUrlsMap.set(item.id, dataUrl);
+            } catch (err) {
+              console.warn('Could not convert image to base64 for PDF:', item.id, err);
+            }
+          } else if (item.file_type === 'video' && videoUrls[item.id]) {
+            videoUrlsMap.set(item.id, videoUrls[item.id]);
+          }
+        })
+      );
 
       const blob = await pdf(
         <ReportPDF
@@ -193,6 +239,7 @@ const FinalReport = () => {
           media={media}
           checklists={checklists}
           mediaUrls={mediaUrlsMap}
+          videoUrls={videoUrlsMap}
         />
       ).toBlob();
 
@@ -406,6 +453,18 @@ const FinalReport = () => {
               }),
             ],
           }),
+          ...(reportData.tags && reportData.tags.length > 0 ? [
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [new Paragraph({ children: [new TextRun({ text: "Tags:", bold: true })] })],
+                }),
+                new TableCell({
+                  children: [new Paragraph({ text: reportData.tags.join(', ') })],
+                }),
+              ],
+            }),
+          ] : []),
         ],
       });
 
@@ -488,6 +547,58 @@ const FinalReport = () => {
           );
         }
       }
+
+      // Videos section
+      const videoMedia = media.filter(item => item.file_type === 'video');
+      if (videoMedia.length > 0) {
+        docSections.push(
+          new Paragraph({
+            text: "Videos Recorded",
+            heading: HeadingLevel.HEADING_1,
+            spacing: { before: 400, after: 200 },
+          })
+        );
+        videoMedia.forEach((item, idx) => {
+          const videoUrl = videoUrls[item.id];
+          const note = (item as any).caption || (item as any).voice_note;
+          docSections.push(
+            new Paragraph({
+              children: [
+                new TextRun({ text: `Video ${idx + 1}`, bold: true }),
+                ...(note ? [new TextRun({ text: ` — ${note}` })] : []),
+              ],
+              spacing: { after: 80 },
+            })
+          );
+          if (videoUrl) {
+            docSections.push(
+              new Paragraph({
+                children: [
+                  new ExternalHyperlink({
+                    link: videoUrl,
+                    children: [
+                      new TextRun({
+                        text: "▶ View / Download Video",
+                        color: "6366f1",
+                        underline: {},
+                      }),
+                    ],
+                  }),
+                ],
+                spacing: { after: 160 },
+              })
+            );
+          } else {
+            docSections.push(
+              new Paragraph({
+                children: [new TextRun({ text: "(Video link not available)", italics: true, color: "999999" })],
+                spacing: { after: 160 },
+              })
+            );
+          }
+        });
+      }
+
       // Checklists
       if (checklists.length > 0) {
         checklists.forEach((checklist) => {
@@ -1229,49 +1340,53 @@ const FinalReport = () => {
           </Button>
         </div>
 
-        {/* Secondary Actions Bar (Centered) */}
-        <div className="border-t border-zinc-800 px-4 py-4">
-          <div className="flex items-center justify-center gap-2 md:gap-3">
+        {/* Secondary Actions Bar */}
+        <div className="border-t border-zinc-800 px-4 py-3">
+          <div className="flex items-center gap-2">
             {/* Print Button */}
             <Button
               onClick={handlePrint}
               variant="outline"
               size="sm"
-              className="gap-2 text-zinc-200 hover:text-white border-zinc-600"
+              className="gap-2 text-zinc-200 hover:text-white border-zinc-600 flex-shrink-0"
               disabled={!reportData}
             >
               <Printer className="h-4 w-4" />
-              <span className="hidden md:inline">{t('finalReport.print')}</span>
+              <span className="hidden sm:inline">{t('finalReport.print')}</span>
             </Button>
-
-            {/* Divider */}
-            <div className="hidden md:block h-8 w-px bg-zinc-700" />
 
             {/* Copy Link Button */}
             <Button
               onClick={handleCopyLink}
               variant="ghost"
               size="sm"
-              className="gap-2 text-zinc-200 hover:text-white"
+              className="gap-2 text-zinc-200 hover:text-white flex-shrink-0"
             >
               <Link className="h-4 w-4" />
-              <span className="hidden md:inline">{t('finalReport.copyLink')}</span>
+              <span className="hidden sm:inline">{t('finalReport.copyLink')}</span>
             </Button>
 
-            {/* Divider */}
-            <div className="hidden md:block h-8 w-px bg-zinc-700" />
+            {/* Export PDF — prominent labeled button */}
+            <Button
+              id="export-pdf-btn"
+              onClick={handleDownloadPDF}
+              size="sm"
+              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 flex-1 font-semibold"
+              disabled={!reportData}
+            >
+              <Download className="h-4 w-4" />
+              Export PDF
+            </Button>
 
-            {/* Save Options Dropdown */}
+            {/* More options dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1 md:gap-2 text-zinc-200 hover:text-white border-zinc-600"
+                  className="gap-1 text-zinc-200 hover:text-white border-zinc-600 flex-shrink-0"
                   disabled={!reportData}
                 >
-                  <Download className="h-4 w-4" />
-                  <span className="hidden sm:inline">{t('finalReport.saveOptions')}</span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>

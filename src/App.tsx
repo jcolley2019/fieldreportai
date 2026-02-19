@@ -28,6 +28,7 @@ import Tasks from "./pages/Tasks";
 import CheckoutSuccess from "./pages/CheckoutSuccess";
 import AdminMetrics from "./pages/AdminMetrics";
 import SharedProject from "./pages/SharedProject";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -68,6 +69,7 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/checkout-success" element={<CheckoutSuccess />} />
             <Route path="/admin/metrics" element={<AdminMetrics />} />
+            <Route path="/install" element={<Install />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </IdleTimeoutProvider>

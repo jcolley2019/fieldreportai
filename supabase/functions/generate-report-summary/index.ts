@@ -12,8 +12,9 @@ const reportTypeSchema = z.enum(['field', 'daily', 'weekly', 'monthly', 'site_su
 
 const requestSchema = z.object({
   description: z.string().max(50000).optional(),
-  imageDataUrls: z.array(z.string().max(10_000_000)).max(20).optional(),
-  imageCaptions: z.array(z.string().max(2000)).max(20).optional(),
+  imageDataUrls: z.array(z.string().max(10_000_000)).max(25).optional(),
+  imageCaptions: z.array(z.string().max(2000)).max(25).optional(),
+  videoContextLines: z.array(z.string().max(500)).max(20).optional(),
   reportType: reportTypeSchema.optional().default('daily'),
   includedDailyReports: z.array(z.string().max(50000)).max(7).optional(),
   includedWeeklyReports: z.array(z.string().max(100000)).max(5).optional(),
@@ -23,7 +24,7 @@ const requestSchema = z.object({
 type ReportType = z.infer<typeof reportTypeSchema>;
 
 // Retry configuration
-const PRIMARY_MODEL = "google/gemini-2.5-flash-lite";
+const PRIMARY_MODEL = "google/gemini-3-flash-preview";
 const FALLBACK_MODEL = "google/gemini-2.5-flash";
 const RETRY_DELAY_MS = 1000;
 const FUNCTION_NAME = "generate-report-summary";
@@ -361,7 +362,7 @@ serve(async (req) => {
       );
     }
     
-    const { description, imageDataUrls, imageCaptions, reportType, includedDailyReports, includedWeeklyReports, photoDescriptionMode } = validationResult.data;
+    const { description, imageDataUrls, imageCaptions, videoContextLines, reportType, includedDailyReports, includedWeeklyReports, photoDescriptionMode } = validationResult.data;
     console.log("Generating report summary", { 
       descriptionLength: description?.length,
       imageCount: imageDataUrls?.length,
@@ -425,6 +426,14 @@ serve(async (req) => {
           text: captionInstruction
         });
       }
+    }
+
+    // Add video context — AI cannot see videos but notes give it written context
+    if (videoContextLines && videoContextLines.length > 0) {
+      content.push({
+        type: "text",
+        text: `VIDEO RECORDINGS (${videoContextLines.length} video${videoContextLines.length > 1 ? 's' : ''} captured — not visible to AI, include in report as a "Videos Recorded" section with each voice note):\n${videoContextLines.join('\n')}\n\nFor each video, include a placeholder entry in the report under a "VIDEOS RECORDED" section, listing the video number and the user's voice note. The actual video links will be inserted when the report is saved.`
+      });
     }
 
     if (imageDataUrls && imageDataUrls.length > 0) {
