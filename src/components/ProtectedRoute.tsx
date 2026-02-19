@@ -9,19 +9,34 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     let isMounted = true;
+    let resolved = false;
 
-    // Per Supabase docs: set up onAuthStateChange FIRST.
-    // It fires for both new logins AND restoring sessions from storage on page load.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!isMounted) return;
-      setAuthenticated(!!session);
+    const resolve = (authenticated: boolean) => {
+      if (!isMounted || resolved) return;
+      resolved = true;
+      setAuthenticated(authenticated);
       setLoading(false);
+    };
+
+    // Fast path: read session from localStorage immediately
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      resolve(!!session);
     });
 
-    // Safety net: if onAuthStateChange never fires within 3s, unblock loading
+    // Also listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
+      if (resolved) {
+        setAuthenticated(!!session);
+      } else {
+        resolve(!!session);
+      }
+    });
+
+    // Safety net: 5s timeout
     const safetyTimer = setTimeout(() => {
-      if (isMounted) setLoading(false);
-    }, 3000);
+      if (isMounted && !resolved) resolve(false);
+    }, 5000);
 
     return () => {
       isMounted = false;

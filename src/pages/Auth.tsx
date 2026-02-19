@@ -116,13 +116,11 @@ const Auth = () => {
 
   const handlePostAuth = () => {
     // Fire-and-forget post-auth tasks (non-blocking)
-    if (sessionId) {
-      linkSubscriptionToAccount().catch(console.error);
-    }
-    if (startTrial === 'true') {
-      activateTrial().catch(console.error);
-    }
-    navigate(getDestination(), { replace: true });
+    if (sessionId) linkSubscriptionToAccount().catch(console.error);
+    if (startTrial === 'true') activateTrial().catch(console.error);
+    // Hard redirect with full page reload — guarantees ProtectedRoute reads
+    // the session fresh from storage with no React state race conditions.
+    window.location.replace(getDestination());
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
