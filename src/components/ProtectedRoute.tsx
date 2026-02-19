@@ -8,20 +8,30 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setAuthenticated(!!session);
-      setLoading(false);
-    };
+    let isMounted = true;
 
-    checkSession();
-
+    // Ongoing auth changes — does NOT control loading state to avoid deadlocks
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
       setAuthenticated(!!session);
-      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Initial load — controls loading state exclusively
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (isMounted) setAuthenticated(!!session);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    initAuth();
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   if (loading) {
