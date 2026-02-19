@@ -493,21 +493,21 @@ export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls, 
           </View>
         )}
 
-        {/* Non-field/site_survey: Photos grid (legacy) */}
-        {!isPhotoDocType && media.length > 0 && (
-          <View style={styles.section} wrap={false}>
+        {/* Non-field/site_survey: Photos grid (legacy) - show ALL images */}
+        {!isPhotoDocType && media.filter(m => m.file_type === 'image').length > 0 && (
+          <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              Photos & Media ({media.length})
+              Photos & Media ({media.filter(m => m.file_type === 'image').length})
             </Text>
             <View style={styles.imageGrid}>
-              {media.slice(0, 4).map((item) => {
+              {media.filter(m => m.file_type === 'image').map((item) => {
                 const url = mediaUrls?.get(item.id);
                 const coords = formatCoordinates(item.latitude, item.longitude);
                 const captureDate = formatCaptureDate(item.captured_at);
                 const locationDisplay = item.location_name || coords;
                 
-                return item.file_type === 'image' && url ? (
-                  <View key={item.id} style={styles.imageContainer}>
+                return url ? (
+                  <View key={item.id} style={styles.imageContainer} wrap={false}>
                     <Image src={url} style={styles.image} />
                     {(locationDisplay || captureDate) && (
                       <Text style={styles.imageMetadata}>
@@ -520,11 +520,6 @@ export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls, 
                 ) : null;
               })}
             </View>
-            {media.length > 4 && (
-              <Text style={styles.text}>
-                + {media.length - 4} more photo{media.length - 4 !== 1 ? 's' : ''}
-              </Text>
-            )}
           </View>
         )}
 
