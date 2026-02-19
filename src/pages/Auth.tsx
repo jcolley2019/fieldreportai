@@ -40,9 +40,14 @@ const Auth = () => {
     }
   }, [mode, startTrial]);
 
-  // Redirect if already logged in
+  // Redirect if already logged in (but not if we just logged out)
   useEffect(() => {
     const checkUser = async () => {
+      // If there's a 'loggedOut' flag in sessionStorage, skip auto-redirect
+      if (sessionStorage.getItem('just_logged_out')) {
+        sessionStorage.removeItem('just_logged_out');
+        return;
+      }
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         navigateToDestination();

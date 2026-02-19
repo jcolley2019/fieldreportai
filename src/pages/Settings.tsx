@@ -386,6 +386,7 @@ const Settings = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     localStorage.removeItem('skipOnboarding');
+    sessionStorage.setItem('just_logged_out', 'true');
     window.location.assign("/auth");
   };
 
