@@ -542,7 +542,17 @@ const ProjectDetail = () => {
       ).toBlob();
       
       toast.dismiss(toastId);
-      saveAs(blob, `${project.project_name.replace(/\s+/g, '_')}_Report.pdf`);
+
+      // iOS Safari-safe download: create a temporary <a> and click it
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `${project.project_name.replace(/\s+/g, '_')}_Report.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+
       toast.success('PDF downloaded successfully');
     } catch (error) {
       console.error('Error generating PDF:', error);
