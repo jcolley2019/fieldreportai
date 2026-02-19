@@ -207,17 +207,31 @@ const Auth = () => {
 
           if (isAutoLoggedIn) {
             toast({
-              title: "Account Created",
+              title: "Account Created!",
               description: startTrial === 'true' ? "Your 14-day Pro trial is now active!" : "You're now logged in!",
             });
             handlePostAuth();
           } else {
-            // Email confirmation required — switch to login
-            toast({
-              title: t('auth.success.accountCreated').split('!')[0],
-              description: t('auth.success.accountCreated'),
+            // Try auto-login immediately (works when email confirmation is disabled)
+            const { error: loginError, data: loginData } = await supabase.auth.signInWithPassword({
+              email: validatedData.email,
+              password: validatedData.password,
             });
-            setIsLogin(true);
+
+            if (!loginError && loginData.session) {
+              toast({
+                title: "Account Created!",
+                description: "You're now logged in!",
+              });
+              handlePostAuth();
+            } else {
+              // Email confirmation is required — switch to login mode with clear message
+              toast({
+                title: "Account Created!",
+                description: "Please check your email to confirm your account, then log in below.",
+              });
+              setIsLogin(true);
+            }
           }
         }
       }
