@@ -116,15 +116,16 @@ const Auth = () => {
     }
   };
 
-  const handlePostAuth = async () => {
-    // Run post-auth tasks (non-blocking for navigation)
+  const handlePostAuth = () => {
+    // Navigate immediately — fire-and-forget any post-auth tasks
+    navigateToDestination();
+    // Run post-auth tasks after navigation is triggered (non-blocking)
     if (sessionId) {
-      linkSubscriptionToAccount();
+      linkSubscriptionToAccount().catch(console.error);
     }
     if (startTrial === 'true') {
-      activateTrial();
+      activateTrial().catch(console.error);
     }
-    navigateToDestination();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
