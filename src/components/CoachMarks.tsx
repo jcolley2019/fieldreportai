@@ -53,18 +53,12 @@ const CoachMarks = ({ steps, storageKey }: CoachMarksProps) => {
 
     const rect = el.getBoundingClientRect();
     const tooltipWidth = 280;
-    const gap = 16;
-    // Use a generous estimate so we always prefer "above" for bottom-area elements
-    const tooltipHeight = 160;
-    // Safe zone: keep tooltip above the bottom controls bar (approx 100px)
-    const safeBottom = 100;
+    const tooltipHeight = 120;
+    const gap = 12;
 
-    const spaceAbove = rect.top - gap - safeBottom;
-    const spaceBelow = window.innerHeight - rect.bottom - gap - safeBottom;
-
-    // Prefer above if the element is in the lower half of the screen
-    const elementInLowerHalf = rect.top > window.innerHeight / 2;
-    const placeBelow = !elementInLowerHalf && spaceBelow > tooltipHeight;
+    // Determine if tooltip goes above or below
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const placeBelow = spaceBelow > tooltipHeight + gap + 20;
 
     let top: number;
     if (placeBelow) {
@@ -75,8 +69,8 @@ const CoachMarks = ({ steps, storageKey }: CoachMarksProps) => {
       setArrowDirection("bottom");
     }
 
-    // Clamp top within viewport with safe zones
-    top = Math.max(12, Math.min(top, window.innerHeight - tooltipHeight - safeBottom));
+    // Clamp top within viewport
+    top = Math.max(12, Math.min(top, window.innerHeight - tooltipHeight - 12));
 
     // Center horizontally on target, clamp to viewport
     let left = rect.left + rect.width / 2 - tooltipWidth / 2;

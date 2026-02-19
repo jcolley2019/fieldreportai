@@ -1371,21 +1371,6 @@ const Settings = () => {
             {t('settings.about')}
           </h3>
 
-          {/* Install App */}
-          <button
-            onClick={() => navigate("/install")}
-            className="flex w-full items-center justify-between border-b border-border py-4"
-          >
-            <div className="flex items-center gap-4">
-              <Smartphone className="h-5 w-5 text-foreground" />
-              <div className="text-left">
-                <p className="text-base font-medium text-foreground">Add to Home Screen</p>
-                <p className="text-xs text-muted-foreground">Install app for faster camera access</p>
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          </button>
-
           {/* About Fieldwork */}
           <div className="flex items-center justify-between border-b border-border py-4">
             <div className="flex items-center gap-4">

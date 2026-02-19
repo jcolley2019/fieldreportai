@@ -6,11 +6,10 @@ import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
-import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2, Printer, Download, Mail, Send, Loader2, Clock, Share2, Camera, MessageSquare, AlertCircle, ChevronDown } from "lucide-react";
+import { Building2, Hash, User as UserIcon, Image as ImageIcon, FileText, ListChecks, Calendar, Trash2, Printer, Download, Mail, Send, Loader2, Clock, Share2, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { formatDate } from '@/lib/dateFormat';
 import { pdf } from '@react-pdf/renderer';
 import { ReportPDF } from '@/components/ReportPDF';
@@ -24,16 +23,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { ProjectTimeline } from "@/components/ProjectTimeline";
 import { ShareProjectDialog } from "@/components/ShareProjectDialog";
 import { MediaLinkedContent, MediaLinkBadge } from "@/components/MediaLinkedContent";
-import { TagEditor } from "@/components/TagEditor";
-import { useProjectRole } from "@/hooks/useProjectRole";
-
-type ProjectStatus = 'in_progress' | 'needs_review' | 'complete';
-
-const STATUS_CONFIG: Record<ProjectStatus, { label: string; color: string; dot: string }> = {
-  in_progress: { label: 'In Progress', color: 'bg-blue-500/15 text-blue-400 border-blue-500/30', dot: 'bg-blue-400' },
-  needs_review: { label: 'Needs Review', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30', dot: 'bg-amber-400' },
-  complete: { label: 'Complete', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-400' },
-};
 
 interface ProjectData {
   id: string;
@@ -42,8 +31,6 @@ interface ProjectData {
   job_number: string;
   job_description: string;
   created_at: string;
-  tags: string[];
-  status: ProjectStatus;
 }
 
 interface MediaItem {
@@ -76,31 +63,16 @@ interface DocumentData {
   file_size: number | null;
 }
 
-interface PhotoComment {
-  id: string;
-  media_id: string;
-  share_token: string;
-  commenter_name: string;
-  comment_text: string;
-  created_at: string;
-}
-
 const ProjectDetail = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { canEdit, canManage, role } = useProjectRole(projectId);
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<ProjectData | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
-  const [thumbnailUrls, setThumbnailUrls] = useState<Record<string, string>>({});
   const [checklists, setChecklists] = useState<ChecklistData[]>([]);
   const [documents, setDocuments] = useState<DocumentData[]>([]);
-  const [comments, setComments] = useState<PhotoComment[]>([]);
-  const [commentMediaUrls, setCommentMediaUrls] = useState<Record<string, string>>({});
-  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
-  const [hasUnreadComment, setHasUnreadComment] = useState(false);
   
   // Share dialog state
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -122,72 +94,6 @@ const ProjectDetail = () => {
     }
   }, [projectId]);
 
-  // Realtime: prepend new comments as they arrive
-  useEffect(() => {
-    if (!projectId) return;
-
-    let shareTokens: string[] = [];
-
-    // Fetch the current share tokens for this project so we can filter realtime events
-    supabase
-      .from('project_shares')
-      .select('share_token')
-      .eq('report_id', projectId)
-      .then(({ data }) => {
-        shareTokens = (data ?? []).map((s) => s.share_token);
-      });
-
-    const channel = supabase
-      .channel(`project-comments-${projectId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'photo_comments' },
-        async (payload) => {
-          const newComment = payload.new as PhotoComment;
-          // Only process comments that belong to this project's shares
-          if (!shareTokens.includes(newComment.share_token)) return;
-
-          // Generate a thumbnail URL for the commented photo if we don't have one yet
-          setCommentMediaUrls((prev) => {
-            if (prev[newComment.media_id]) return prev; // already have it
-            // Kick off async URL fetch without blocking
-            supabase
-              .from('media')
-              .select('file_path')
-              .eq('id', newComment.media_id)
-              .single()
-              .then(({ data: mediaItem }) => {
-                if (!mediaItem) return;
-                const thumbPath = mediaItem.file_path
-                  .replace(/^(.*\/)([^/]+)$/, '$1thumbnails/$2')
-                  .replace(/\.[^.]+$/, '.jpg');
-                supabase.storage
-                  .from('media')
-                  .createSignedUrl(thumbPath, 3600)
-                  .then(({ data }) => {
-                    if (data?.signedUrl) {
-                      setCommentMediaUrls((prev2) => ({
-                        ...prev2,
-                        [newComment.media_id]: data.signedUrl,
-                      }));
-                    }
-                  });
-              });
-            return prev;
-          });
-
-          setComments((prev) => [newComment, ...prev]);
-          setHasUnreadComment(true);
-          toast.info(`New comment from ${newComment.commenter_name}`);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [projectId]);
-
   const fetchProjectData = async () => {
     try {
       setLoading(true);
@@ -200,7 +106,7 @@ const ProjectDetail = () => {
         .single();
 
       if (projectError) throw projectError;
-      setProject({ ...projectData, status: ((projectData as any).status as ProjectStatus) ?? 'in_progress' });
+      setProject(projectData);
 
       // Fetch media
       const { data: mediaData, error: mediaError } = await supabase
@@ -212,36 +118,17 @@ const ProjectDetail = () => {
       if (!mediaError && mediaData) {
         setMedia(mediaData);
         
-        // Generate full-size + thumbnail signed URLs in parallel
-        const urlResults = await Promise.all(
-          mediaData.map(async (item) => {
-            const thumbPath = item.file_type === 'image'
-              ? item.file_path.replace(/^(.*\/)([^/]+)$/, '$1thumbnails/$2').replace(/\.[^.]+$/, '.jpg')
-              : null;
-
-            const [fullResult, thumbResult] = await Promise.all([
-              supabase.storage.from('media').createSignedUrl(item.file_path, 3600),
-              thumbPath
-                ? supabase.storage.from('media').createSignedUrl(thumbPath, 3600)
-                : Promise.resolve({ data: null }),
-            ]);
-
-            return {
-              id: item.id,
-              fullUrl: fullResult.data?.signedUrl ?? '',
-              thumbUrl: thumbResult.data?.signedUrl ?? '',
-            };
-          })
-        );
-
+        // Generate signed URLs for private bucket
         const urls: Record<string, string> = {};
-        const thumbs: Record<string, string> = {};
-        for (const r of urlResults) {
-          if (r.fullUrl) urls[r.id] = r.fullUrl;
-          if (r.thumbUrl) thumbs[r.id] = r.thumbUrl;
+        for (const item of mediaData) {
+          const { data: signedUrlData } = await supabase.storage
+            .from('media')
+            .createSignedUrl(item.file_path, 3600); // 1 hour expiry
+          if (signedUrlData?.signedUrl) {
+            urls[item.id] = signedUrlData.signedUrl;
+          }
         }
         setMediaUrls(urls);
-        setThumbnailUrls(thumbs);
       }
 
       // Fetch checklists with items
@@ -307,41 +194,6 @@ const ProjectDetail = () => {
         setMediaLinkCounts(counts);
       }
 
-      // Fetch all share tokens for this project, then comments for those tokens
-      const { data: sharesData } = await supabase
-        .from('project_shares')
-        .select('share_token')
-        .eq('report_id', projectId);
-
-      if (sharesData && sharesData.length > 0) {
-        const tokens = sharesData.map((s) => s.share_token);
-        const { data: commentsData } = await supabase
-          .from('photo_comments')
-          .select('*')
-          .in('share_token', tokens)
-          .order('created_at', { ascending: false });
-
-        if (commentsData) {
-          setComments(commentsData);
-          // Build a map of media_id -> thumbnail URL for comments
-          const uniqueMediaIds = [...new Set(commentsData.map((c) => c.media_id))];
-          const thumbEntries = await Promise.all(
-            uniqueMediaIds.map(async (mid) => {
-              const mediaItem = mediaData?.find((m: MediaItem) => m.id === mid);
-              if (!mediaItem) return { mid, url: '' };
-              const thumbPath = mediaItem.file_path
-                .replace(/^(.*\/)([^/]+)$/, '$1thumbnails/$2')
-                .replace(/\.[^.]+$/, '.jpg');
-              const { data } = await supabase.storage.from('media').createSignedUrl(thumbPath, 3600);
-              return { mid, url: data?.signedUrl ?? '' };
-            })
-          );
-          const cUrls: Record<string, string> = {};
-          thumbEntries.forEach(({ mid, url }) => { if (url) cUrls[mid] = url; });
-          setCommentMediaUrls(cUrls);
-        }
-      }
-
     } catch (error) {
       console.error('Error fetching project data:', error);
       toast.error('Failed to load project details');
@@ -382,26 +234,6 @@ const ProjectDetail = () => {
     } catch (error) {
       console.error('Error deleting checklist:', error);
       toast.error('Failed to delete checklist');
-    }
-  };
-
-  const handleDeleteComment = async (commentId: string) => {
-    try {
-      setDeletingCommentId(commentId);
-      const { error } = await supabase
-        .from('photo_comments')
-        .delete()
-        .eq('id', commentId);
-
-      if (error) throw error;
-
-      setComments((prev) => prev.filter((c) => c.id !== commentId));
-      toast.success('Comment deleted');
-    } catch (error) {
-      console.error('Error deleting comment:', error);
-      toast.error('Failed to delete comment');
-    } finally {
-      setDeletingCommentId(null);
     }
   };
 
@@ -636,18 +468,6 @@ const ProjectDetail = () => {
     }
   };
 
-  const handleStatusChange = async (newStatus: ProjectStatus) => {
-    if (!project) return;
-    setProject(prev => prev ? { ...prev, status: newStatus } : prev);
-    const { error } = await supabase.from('reports').update({ status: newStatus } as any).eq('id', project.id);
-    if (error) {
-      toast.error('Failed to update status');
-      fetchProjectData();
-    } else {
-      toast.success(`Status updated to ${STATUS_CONFIG[newStatus].label}`);
-    }
-  };
-
   if (loading) {
     return (
       <div className="dark min-h-screen bg-background">
@@ -692,33 +512,8 @@ const ProjectDetail = () => {
                 <Building2 className="h-7 w-7 text-primary" />
               </div>
               <div className="flex-1">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <CardTitle className="text-foreground">{project.project_name}</CardTitle>
-                  {/* Status badge with inline dropdown */}
-                  {(() => {
-                    const cfg = STATUS_CONFIG[project.status];
-                    return (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition-colors ${cfg.color}`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
-                            {cfg.label}
-                            <ChevronDown className="h-3 w-3 opacity-60" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start">
-                          {(Object.entries(STATUS_CONFIG) as [ProjectStatus, typeof STATUS_CONFIG[ProjectStatus]][]).map(([key, c]) => (
-                            <DropdownMenuItem key={key} className="gap-2" onClick={() => handleStatusChange(key)}>
-                              <span className={`h-2 w-2 rounded-full ${c.dot}`} />
-                              {c.label}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    );
-                  })()}
-                </div>
-                <CardDescription className="space-y-2">
+                <CardTitle className="text-foreground">{project.project_name}</CardTitle>
+                <CardDescription className="mt-2 space-y-2">
                   <div className="flex items-center gap-2">
                     <UserIcon className="h-4 w-4" />
                     <span>{project.customer_name}</span>
@@ -736,42 +531,21 @@ const ProjectDetail = () => {
             </div>
           </CardHeader>
           {project.job_description && (
-            <CardContent className="pb-0">
+            <CardContent>
               <h4 className="text-sm font-semibold text-foreground mb-2">Description</h4>
               <p className="text-sm text-muted-foreground">{project.job_description}</p>
             </CardContent>
           )}
-          <CardContent className={project.job_description ? "pt-4" : ""}>
-            <TagEditor
-              projectId={project.id}
-              tags={project.tags ?? []}
-              onTagsChange={(newTags) => setProject((prev) => prev ? { ...prev, tags: newTags } : prev)}
-            />
-          </CardContent>
         </Card>
 
-        {/* Role badge for team members */}
-        {role !== "owner" && role !== "none" && (
-          <div className="mb-3 flex items-center gap-2 rounded-xl border border-border bg-muted/50 px-3 py-2">
-            <Badge variant="outline" className="capitalize">{role}</Badge>
-            <span className="text-xs text-muted-foreground">
-              {role === "viewer"
-                ? "You have read-only access to this project"
-                : "You can add photos and notes to this project"}
-            </span>
-          </div>
-        )}
-
-        {/* Continue Working Button — editors and owners only */}
-        {canEdit && (
-          <Button
-            onClick={() => navigate("/capture-screen", { state: { reportId: projectId, projectName: project.project_name, customerName: project.customer_name, jobNumber: project.job_number } })}
-            className="w-full h-14 mb-4 gap-3 bg-primary text-primary-foreground hover:bg-primary/90 text-base font-semibold"
-          >
-            <Camera className="h-5 w-5" />
-            Continue Working on Project
-          </Button>
-        )}
+        {/* Continue Working Button */}
+        <Button
+          onClick={() => navigate("/capture-screen", { state: { reportId: projectId, projectName: project.project_name, customerName: project.customer_name, jobNumber: project.job_number } })}
+          className="w-full h-14 mb-4 gap-3 bg-primary text-primary-foreground hover:bg-primary/90 text-base font-semibold"
+        >
+          <Camera className="h-5 w-5" />
+          Continue Working on Project
+        </Button>
 
         {/* Action Buttons */}
         <div className="flex gap-3 mb-6">
@@ -801,131 +575,107 @@ const ProjectDetail = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          {canManage && (
-            <Button 
-              variant="outline" 
-              className="flex-1 gap-2"
-              onClick={() => setShareDialogOpen(true)}
-            >
-              <Share2 className="h-4 w-4" />
-              {t("common.share")}
-            </Button>
-          )}
-          {canManage && (
-            <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="flex-1 gap-2">
-                  <Mail className="h-4 w-4" />
-                  Email
+          <Button 
+            variant="outline" 
+            className="flex-1 gap-2"
+            onClick={() => setShareDialogOpen(true)}
+          >
+            <Share2 className="h-4 w-4" />
+            {t("common.share")}
+          </Button>
+          <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex-1 gap-2">
+                <Mail className="h-4 w-4" />
+                Email
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Share via Email</DialogTitle>
+                <DialogDescription>
+                  Send project details as a PDF attachment
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="recipientEmail">Recipient Email *</Label>
+                  <Input
+                    id="recipientEmail"
+                    type="email"
+                    placeholder="email@example.com"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="recipientName">Recipient Name (optional)</Label>
+                  <Input
+                    id="recipientName"
+                    type="text"
+                    placeholder="John Doe"
+                    value={recipientName}
+                    onChange={(e) => setRecipientName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="emailMessage">Message (optional)</Label>
+                  <Textarea
+                    id="emailMessage"
+                    placeholder="Add a personal message..."
+                    value={emailMessage}
+                    onChange={(e) => setEmailMessage(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>
+                  Cancel
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Share via Email</DialogTitle>
-                  <DialogDescription>
-                    Send project details as a PDF attachment
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="recipientEmail">Recipient Email *</Label>
-                    <Input
-                      id="recipientEmail"
-                      type="email"
-                      placeholder="email@example.com"
-                      value={recipientEmail}
-                      onChange={(e) => setRecipientEmail(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="recipientName">Recipient Name (optional)</Label>
-                    <Input
-                      id="recipientName"
-                      type="text"
-                      placeholder="John Doe"
-                      value={recipientName}
-                      onChange={(e) => setRecipientName(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="emailMessage">Message (optional)</Label>
-                    <Textarea
-                      id="emailMessage"
-                      placeholder="Add a personal message..."
-                      value={emailMessage}
-                      onChange={(e) => setEmailMessage(e.target.value)}
-                      rows={3}
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setEmailDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handleSendEmail} 
-                    disabled={sendingEmail || !recipientEmail}
-                    className="gap-2"
-                  >
-                    {sendingEmail ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4" />
-                        Send Email
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
+                <Button 
+                  onClick={handleSendEmail} 
+                  disabled={sendingEmail || !recipientEmail}
+                  className="gap-2"
+                >
+                  {sendingEmail ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      Send Email
+                    </>
+                  )}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Content Tabs */}
-        <Tabs defaultValue="media" className="w-full" onValueChange={(tab) => {
-            if (tab === 'comments' && projectId) {
-              localStorage.setItem(`comments_viewed_${projectId}`, new Date().toISOString());
-              setHasUnreadComment(false);
-            }
-          }}>
-          <TabsList className="grid w-full grid-cols-5 bg-muted">
-            <TabsTrigger value="media" className="gap-1">
+        <Tabs defaultValue="media" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 bg-muted">
+            <TabsTrigger value="media" className="gap-2">
               <ImageIcon className="h-4 w-4" />
               <span className="hidden sm:inline">Photos</span>
-              <span className="sm:hidden text-xs">{media.length}</span>
+              <span className="sm:hidden">{media.length}</span>
             </TabsTrigger>
-            <TabsTrigger value="timeline" className="gap-1">
+            <TabsTrigger value="timeline" className="gap-2">
               <Clock className="h-4 w-4" />
               <span className="hidden sm:inline">Timeline</span>
             </TabsTrigger>
-            <TabsTrigger value="checklists" className="gap-1">
+            <TabsTrigger value="checklists" className="gap-2">
               <ListChecks className="h-4 w-4" />
               <span className="hidden sm:inline">Checklists</span>
-              <span className="sm:hidden text-xs">{checklists.length}</span>
+              <span className="sm:hidden">{checklists.length}</span>
             </TabsTrigger>
-            <TabsTrigger value="documents" className="gap-1">
+            <TabsTrigger value="documents" className="gap-2">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Docs</span>
-              <span className="sm:hidden text-xs">{documents.length}</span>
-            </TabsTrigger>
-            <TabsTrigger value="comments" className="gap-1 relative">
-              <MessageSquare className="h-4 w-4" />
-              <span className="hidden sm:inline">Comments</span>
-              {comments.length > 0 && (
-                <span className="sm:hidden text-xs">{comments.length}</span>
-              )}
-              {comments.length > 0 && !hasUnreadComment && (
-                <span className="hidden sm:flex absolute -top-1 -right-1 h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
-                  {comments.length > 9 ? '9+' : comments.length}
-                </span>
-              )}
-              {hasUnreadComment && (
-                <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-primary animate-[pulse_1.5s_cubic-bezier(0.4,0,0.6,1)_infinite] ring-2 ring-background" />
-              )}
+              <span className="sm:hidden">{documents.length}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -948,17 +698,11 @@ const ProjectDetail = () => {
                     >
                       {item.file_type === 'image' ? (
                         <img
-                          src={thumbnailUrls[item.id] || getMediaUrl(item.id)}
+                          src={getMediaUrl(item.id)}
                           alt="Project media"
                           className="h-full w-full object-cover"
-                          loading="lazy"
                           onError={(e) => {
-                            // Thumbnail missing — fall back to full-size
-                            const target = e.currentTarget;
-                            const fullUrl = getMediaUrl(item.id);
-                            if (target.src !== fullUrl && fullUrl) {
-                              target.src = fullUrl;
-                            }
+                            console.error('Image load error for:', item.file_path);
                           }}
                         />
                       ) : (
@@ -972,16 +716,14 @@ const ProjectDetail = () => {
                         onClick={() => setSelectedMediaForLink(item.id)} 
                       />
                     </div>
-                    {canManage && (
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => handleDeleteMedia(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => handleDeleteMedia(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                     <p className="mt-1 text-xs text-muted-foreground">{formatDateDisplay(item.created_at)}</p>
                   </div>
                 ))}
@@ -1016,16 +758,14 @@ const ProjectDetail = () => {
                         <CardTitle className="text-foreground">{checklist.title}</CardTitle>
                         <CardDescription>{formatDateDisplay(checklist.created_at)}</CardDescription>
                       </div>
-                      {canManage && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteChecklist(checklist.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteChecklist(checklist.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -1092,79 +832,6 @@ const ProjectDetail = () => {
                     </CardContent>
                   </Card>
                 ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Comments Tab */}
-          <TabsContent value="comments" className="mt-4">
-            {comments.length === 0 ? (
-              <Card className="bg-card border-border">
-                <CardContent className="flex flex-col items-center justify-center p-8">
-                  <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground font-medium">No comments yet</p>
-                  <p className="text-xs text-muted-foreground mt-1">Comments from your shared gallery will appear here</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-3">
-                {comments.map((comment) => {
-                  const photoUrl = commentMediaUrls[comment.media_id];
-                  return (
-                    <Card key={comment.id} className="bg-card border-border">
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          {/* Photo thumbnail */}
-                          {photoUrl ? (
-                            <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-secondary">
-                              <img
-                                src={photoUrl}
-                                alt="Commented photo"
-                                className="h-full w-full object-cover"
-                                loading="lazy"
-                              />
-                            </div>
-                          ) : (
-                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-secondary">
-                              <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                            </div>
-                          )}
-                          {/* Comment content */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2 mb-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-semibold text-foreground truncate">
-                                  {comment.commenter_name}
-                                </span>
-                                <span className="text-xs text-muted-foreground flex-shrink-0">
-                                  {formatDateDisplay(comment.created_at)}
-                                </span>
-                              </div>
-                              {canManage && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                  onClick={() => handleDeleteComment(comment.id)}
-                                  disabled={deletingCommentId === comment.id}
-                                >
-                                  {deletingCommentId === comment.id ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  )}
-                                </Button>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                              {comment.comment_text}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
               </div>
             )}
           </TabsContent>

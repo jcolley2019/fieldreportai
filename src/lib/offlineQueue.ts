@@ -4,11 +4,9 @@
  */
 
 const DB_NAME = 'fieldreport-offline';
-const DB_VERSION = 2;
+const DB_VERSION = 1;
 const STORE_MEDIA = 'pending-media';
 const STORE_NOTES = 'pending-notes';
-const STORE_TASKS = 'pending-tasks';
-const STORE_CHECKLISTS = 'pending-checklists';
 
 export interface PendingMediaItem {
   id: string;
@@ -38,31 +36,6 @@ export interface PendingNoteItem {
   createdAt: string;
 }
 
-export interface PendingTaskItem {
-  id: string;
-  userId: string;
-  reportId?: string;
-  title: string;
-  description?: string;
-  priority: 'low' | 'medium' | 'high';
-  status: 'pending' | 'in_progress' | 'completed';
-  createdAt: string;
-}
-
-export interface PendingChecklistItem {
-  id: string;
-  userId: string;
-  reportId?: string;
-  title: string;
-  items: Array<{
-    text: string;
-    priority: string;
-    category: string;
-    completed: boolean;
-  }>;
-  createdAt: string;
-}
-
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -74,12 +47,6 @@ function openDB(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(STORE_NOTES)) {
         db.createObjectStore(STORE_NOTES, { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains(STORE_TASKS)) {
-        db.createObjectStore(STORE_TASKS, { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains(STORE_CHECKLISTS)) {
-        db.createObjectStore(STORE_CHECKLISTS, { keyPath: 'id' });
       }
     };
 
@@ -152,89 +119,22 @@ export async function removePendingNote(id: string): Promise<void> {
   });
 }
 
-// ─── Tasks Queue ───
-
-export async function queueTask(item: PendingTaskItem): Promise<void> {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_TASKS, 'readwrite');
-    tx.objectStore(STORE_TASKS).put(item);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-export async function getPendingTasks(): Promise<PendingTaskItem[]> {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_TASKS, 'readonly');
-    const request = tx.objectStore(STORE_TASKS).getAll();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-export async function removePendingTask(id: string): Promise<void> {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_TASKS, 'readwrite');
-    tx.objectStore(STORE_TASKS).delete(id);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-// ─── Checklists Queue ───
-
-export async function queueChecklist(item: PendingChecklistItem): Promise<void> {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_CHECKLISTS, 'readwrite');
-    tx.objectStore(STORE_CHECKLISTS).put(item);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-export async function getPendingChecklists(): Promise<PendingChecklistItem[]> {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_CHECKLISTS, 'readonly');
-    const request = tx.objectStore(STORE_CHECKLISTS).getAll();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-export async function removePendingChecklist(id: string): Promise<void> {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_CHECKLISTS, 'readwrite');
-    tx.objectStore(STORE_CHECKLISTS).delete(id);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
 // ─── Counts ───
 
-export async function getPendingCounts(): Promise<{ media: number; notes: number; tasks: number; checklists: number }> {
+export async function getPendingCounts(): Promise<{ media: number; notes: number }> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction([STORE_MEDIA, STORE_NOTES, STORE_TASKS, STORE_CHECKLISTS], 'readonly');
+    const tx = db.transaction([STORE_MEDIA, STORE_NOTES], 'readonly');
     const mediaReq = tx.objectStore(STORE_MEDIA).count();
     const notesReq = tx.objectStore(STORE_NOTES).count();
-    const tasksReq = tx.objectStore(STORE_TASKS).count();
-    const checklistsReq = tx.objectStore(STORE_CHECKLISTS).count();
     
-    let media = 0, notes = 0, tasks = 0, checklists = 0;
+    let media = 0;
+    let notes = 0;
     
     mediaReq.onsuccess = () => { media = mediaReq.result; };
     notesReq.onsuccess = () => { notes = notesReq.result; };
-    tasksReq.onsuccess = () => { tasks = tasksReq.result; };
-    checklistsReq.onsuccess = () => { checklists = checklistsReq.result; };
     
-    tx.oncomplete = () => resolve({ media, notes, tasks, checklists });
+    tx.oncomplete = () => resolve({ media, notes });
     tx.onerror = () => reject(tx.error);
   });
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { CloudUpload, Image, FileText, Trash2, WifiOff } from 'lucide-react';
-import { getPendingMedia, getPendingNotes, getPendingTasks, getPendingChecklists, removePendingMedia, removePendingNote, removePendingTask, removePendingChecklist, type PendingMediaItem, type PendingNoteItem, type PendingTaskItem, type PendingChecklistItem } from '@/lib/offlineQueue';
+import { getPendingMedia, getPendingNotes, removePendingMedia, removePendingNote, type PendingMediaItem, type PendingNoteItem } from '@/lib/offlineQueue';
 import { syncOfflineQueue, onSyncProgress, type SyncProgress } from '@/lib/offlineSync';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useEffectiveOffline } from '@/hooks/useEffectiveOffline';
@@ -13,20 +13,14 @@ const OfflineQueueCard = () => {
   const { isEffectivelyOffline, workOfflineEnabled } = useEffectiveOffline();
   const [mediaItems, setMediaItems] = useState<PendingMediaItem[]>([]);
   const [noteItems, setNoteItems] = useState<PendingNoteItem[]>([]);
-  const [taskItems, setTaskItems] = useState<PendingTaskItem[]>([]);
-  const [checklistItems, setChecklistItems] = useState<PendingChecklistItem[]>([]);
   const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadQueue = async () => {
     try {
-      const [media, notes, tasks, checklists] = await Promise.all([
-        getPendingMedia(), getPendingNotes(), getPendingTasks(), getPendingChecklists()
-      ]);
+      const [media, notes] = await Promise.all([getPendingMedia(), getPendingNotes()]);
       setMediaItems(media);
       setNoteItems(notes);
-      setTaskItems(tasks);
-      setChecklistItems(checklists);
     } catch (err) {
       console.error('Error loading offline queue:', err);
     } finally {
@@ -36,6 +30,7 @@ const OfflineQueueCard = () => {
 
   useEffect(() => {
     loadQueue();
+    // Refresh every 10s
     const interval = setInterval(loadQueue, 10000);
     return () => clearInterval(interval);
   }, []);
@@ -49,7 +44,7 @@ const OfflineQueueCard = () => {
     });
   }, []);
 
-  const totalPending = mediaItems.length + noteItems.length + taskItems.length + checklistItems.length;
+  const totalPending = mediaItems.length + noteItems.length;
 
   // Don't show if nothing queued and not in work-offline mode
   if (!loading && totalPending === 0 && !workOfflineEnabled) return null;
@@ -69,12 +64,13 @@ const OfflineQueueCard = () => {
     }
   };
 
-  const handleDeleteItem = async (type: 'media' | 'note' | 'task' | 'checklist', id: string) => {
+  const handleDeleteItem = async (type: 'media' | 'note', id: string) => {
     try {
-      if (type === 'media') await removePendingMedia(id);
-      else if (type === 'note') await removePendingNote(id);
-      else if (type === 'task') await removePendingTask(id);
-      else if (type === 'checklist') await removePendingChecklist(id);
+      if (type === 'media') {
+        await removePendingMedia(id);
+      } else {
+        await removePendingNote(id);
+      }
       await loadQueue();
       toast.success("Item removed from queue.");
     } catch {
@@ -155,18 +151,6 @@ const OfflineQueueCard = () => {
                 <span className="flex items-center gap-1.5">
                   <FileText className="h-4 w-4" />
                   {noteItems.length} note{noteItems.length !== 1 ? 's' : ''}
-                </span>
-              )}
-              {taskItems.length > 0 && (
-                <span className="flex items-center gap-1.5">
-                  <FileText className="h-4 w-4" />
-                  {taskItems.length} task{taskItems.length !== 1 ? 's' : ''}
-                </span>
-              )}
-              {checklistItems.length > 0 && (
-                <span className="flex items-center gap-1.5">
-                  <FileText className="h-4 w-4" />
-                  {checklistItems.length} checklist{checklistItems.length !== 1 ? 's' : ''}
                 </span>
               )}
             </div>

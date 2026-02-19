@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { pdf } from '@react-pdf/renderer';
 import { ReportPDF } from '@/components/ReportPDF';
-import { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer, Table, TableCell, TableRow, WidthType, BorderStyle, ImageRun, ExternalHyperlink } from 'docx';
+import { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer, Table, TableCell, TableRow, WidthType, BorderStyle, ImageRun } from 'docx';
 import { saveAs } from 'file-saver';
 import { formatDate, formatDateLong, formatDateTime } from '@/lib/dateFormat';
 import DOMPurify from 'dompurify';
@@ -67,37 +67,6 @@ const FinalReport = () => {
   });
   const [showSuccess, setShowSuccess] = useState(false);
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
-  const [videoUrls, setVideoUrls] = useState<Record<string, string>>({});
-
-  // Parallel signed URL generation with 55-minute TTL
-  const refreshSignedUrls = async (mediaData: MediaItem[]) => {
-    const results = await Promise.all(
-      mediaData.map(async (item) => {
-        const { data } = await supabase.storage
-          .from('media')
-          .createSignedUrl(item.file_path, 3300); // 55 min TTL
-        return { id: item.id, file_type: item.file_type, url: data?.signedUrl ?? null };
-      })
-    );
-    const urls: Record<string, string> = {};
-    const vUrls: Record<string, string> = {};
-    for (const r of results) {
-      if (!r.url) continue;
-      if (r.file_type === 'image') urls[r.id] = r.url;
-      else if (r.file_type === 'video') vUrls[r.id] = r.url;
-    }
-    setMediaUrls(urls);
-    setVideoUrls(vUrls);
-  };
-
-  // Auto-refresh signed URLs every 50 minutes (before 55-min TTL expires)
-  useEffect(() => {
-    if (media.length === 0) return;
-    const interval = setInterval(() => {
-      refreshSignedUrls(media);
-    }, 50 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [media]);
 
   useEffect(() => {
     const loadReportData = async () => {
@@ -141,8 +110,19 @@ const FinalReport = () => {
         if (!mediaError && mediaData) {
           setMedia(mediaData);
           
-          // Parallelize signed URL generation (TTL: 55 min, refreshed every 50 min)
-          await refreshSignedUrls(mediaData);
+          // Generate signed URLs for private storage bucket
+          const urls: Record<string, string> = {};
+          for (const item of mediaData) {
+            if (item.file_type === 'image') {
+              const { data: signedUrlData } = await supabase.storage
+                .from('media')
+                .createSignedUrl(item.file_path, 3600); // 1 hour expiry
+              if (signedUrlData?.signedUrl) {
+                urls[item.id] = signedUrlData.signedUrl;
+              }
+            }
+          }
+          setMediaUrls(urls);
         }
 
         const { data: checklistsData, error: checklistsError } = await supabase
@@ -201,12 +181,9 @@ const FinalReport = () => {
 
       // Use existing signed URLs from state for PDF generation
       const mediaUrlsMap = new Map<string, string>();
-      const videoUrlsMap = new Map<string, string>();
       for (const item of media) {
         if (item.file_type === 'image' && mediaUrls[item.id]) {
           mediaUrlsMap.set(item.id, mediaUrls[item.id]);
-        } else if (item.file_type === 'video' && videoUrls[item.id]) {
-          videoUrlsMap.set(item.id, videoUrls[item.id]);
         }
       }
 
@@ -216,7 +193,6 @@ const FinalReport = () => {
           media={media}
           checklists={checklists}
           mediaUrls={mediaUrlsMap}
-          videoUrls={videoUrlsMap}
         />
       ).toBlob();
 
@@ -430,18 +406,6 @@ const FinalReport = () => {
               }),
             ],
           }),
-          ...(reportData.tags && reportData.tags.length > 0 ? [
-            new TableRow({
-              children: [
-                new TableCell({
-                  children: [new Paragraph({ children: [new TextRun({ text: "Tags:", bold: true })] })],
-                }),
-                new TableCell({
-                  children: [new Paragraph({ text: reportData.tags.join(', ') })],
-                }),
-              ],
-            }),
-          ] : []),
         ],
       });
 
@@ -524,58 +488,6 @@ const FinalReport = () => {
           );
         }
       }
-
-      // Videos section
-      const videoMedia = media.filter(item => item.file_type === 'video');
-      if (videoMedia.length > 0) {
-        docSections.push(
-          new Paragraph({
-            text: "Videos Recorded",
-            heading: HeadingLevel.HEADING_1,
-            spacing: { before: 400, after: 200 },
-          })
-        );
-        videoMedia.forEach((item, idx) => {
-          const videoUrl = videoUrls[item.id];
-          const note = (item as any).caption || (item as any).voice_note;
-          docSections.push(
-            new Paragraph({
-              children: [
-                new TextRun({ text: `Video ${idx + 1}`, bold: true }),
-                ...(note ? [new TextRun({ text: ` — ${note}` })] : []),
-              ],
-              spacing: { after: 80 },
-            })
-          );
-          if (videoUrl) {
-            docSections.push(
-              new Paragraph({
-                children: [
-                  new ExternalHyperlink({
-                    link: videoUrl,
-                    children: [
-                      new TextRun({
-                        text: "▶ View / Download Video",
-                        color: "6366f1",
-                        underline: {},
-                      }),
-                    ],
-                  }),
-                ],
-                spacing: { after: 160 },
-              })
-            );
-          } else {
-            docSections.push(
-              new Paragraph({
-                children: [new TextRun({ text: "(Video link not available)", italics: true, color: "999999" })],
-                spacing: { after: 160 },
-              })
-            );
-          }
-        });
-      }
-
       // Checklists
       if (checklists.length > 0) {
         checklists.forEach((checklist) => {

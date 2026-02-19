@@ -5,7 +5,7 @@ import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 import { IdleTimeoutWarning } from "./IdleTimeoutWarning";
 
 // Routes where idle timeout should NOT be active
-const PUBLIC_ROUTES = ["/", "/auth", "/pricing", "/landing", "/shared"];
+const PUBLIC_ROUTES = ["/", "/auth", "/pricing", "/landing"];
 
 // Default values
 const DEFAULT_IDLE_TIMEOUT = 15 * 60 * 1000; // 15 minutes
@@ -19,7 +19,7 @@ export const IdleTimeoutProvider = ({ children }: { children: React.ReactNode })
   
   // Check if current route is public
   const isPublicRoute = PUBLIC_ROUTES.some(
-    (route) => location.pathname === route || location.pathname.startsWith("/auth") || location.pathname.startsWith("/shared")
+    (route) => location.pathname === route || location.pathname.startsWith("/auth")
   );
 
   // Fetch user's idle timeout preference

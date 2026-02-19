@@ -490,15 +490,11 @@ export const PhotoAnnotationDialog = ({
         }
 
         if ((el.type === "rectangle" || el.type === "cloud") && el.startX !== undefined && el.startY !== undefined && el.width !== undefined && el.height !== undefined) {
-          // Normalize bounds to handle negative width/height (drawn right-to-left or bottom-to-top)
-          const ex = el.width < 0 ? el.startX + el.width : el.startX;
-          const ey = el.height < 0 ? el.startY + el.height : el.startY;
-          const ew = Math.abs(el.width);
-          const eh = Math.abs(el.height);
+          const ex = el.startX, ey = el.startY, ew = el.width, eh = el.height;
           if (x >= ex && x <= ex + ew && y >= ey && y <= ey + eh) {
             setDraggingElementId(el.id);
             selectElement(el);
-            setDragOffset({ x: x - el.startX, y: y - el.startY });
+            setDragOffset({ x: x - ex, y: y - ey });
             return;
           }
         }

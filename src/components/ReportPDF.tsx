@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet, Image, Link } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 
 // Create styles for PDF
 const styles = StyleSheet.create({
@@ -138,31 +138,6 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginBottom: 4,
   },
-  videoEntry: {
-    marginBottom: 12,
-    padding: 10,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 4,
-    borderLeft: 3,
-    borderLeftColor: '#6366f1',
-  },
-  videoLabel: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  videoNote: {
-    fontSize: 10,
-    color: '#374151',
-    marginBottom: 4,
-    lineHeight: 1.4,
-  },
-  videoLink: {
-    fontSize: 10,
-    color: '#6366f1',
-    textDecoration: 'underline',
-  },
 });
 
 interface MediaItemForPDF {
@@ -173,8 +148,6 @@ interface MediaItemForPDF {
   longitude?: number;
   captured_at?: string;
   location_name?: string;
-  caption?: string;
-  voice_note?: string;
 }
 
 interface ReportPDFProps {
@@ -185,7 +158,6 @@ interface ReportPDFProps {
     job_description: string;
     created_at: string;
     report_type?: string;
-    tags?: string[];
   };
   media?: MediaItemForPDF[];
   checklists?: Array<{
@@ -200,8 +172,6 @@ interface ReportPDFProps {
     }>;
   }>;
   mediaUrls?: Map<string, string>;
-  /** Signed or public URLs for video items, keyed by media id */
-  videoUrls?: Map<string, string>;
 }
 
 const getReportTypeLabel = (reportType?: string) => {
@@ -221,7 +191,7 @@ const getReportTypeLabel = (reportType?: string) => {
   }
 };
 
-export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls, videoUrls }: ReportPDFProps) => {
+export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls }: ReportPDFProps) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -361,12 +331,6 @@ export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls, 
               <Text style={styles.infoLabel}>Date:</Text>
               <Text style={styles.infoValue}>{formatDate(reportData.created_at)}</Text>
             </View>
-            {reportData.tags && reportData.tags.length > 0 && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Tags:</Text>
-                <Text style={styles.infoValue}>{reportData.tags.join(', ')}</Text>
-              </View>
-            )}
           </View>
         )}
 
@@ -484,34 +448,6 @@ export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls, 
                 + {media.length - 4} more photo{media.length - 4 !== 1 ? 's' : ''}
               </Text>
             )}
-          </View>
-        )}
-
-        {/* Videos Section */}
-        {media.filter(m => m.file_type === 'video').length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Videos Recorded ({media.filter(m => m.file_type === 'video').length})
-            </Text>
-            {media.filter(m => m.file_type === 'video').map((item, idx) => {
-              const videoUrl = videoUrls?.get(item.id);
-              const note = (item as any).caption || (item as any).voice_note;
-              return (
-                <View key={item.id} style={styles.videoEntry}>
-                  <Text style={styles.videoLabel}>Video {idx + 1}</Text>
-                  {note ? (
-                    <Text style={styles.videoNote}>Note: {note}</Text>
-                  ) : null}
-                  {videoUrl ? (
-                    <Link src={videoUrl} style={styles.videoLink}>
-                      ▶ View / Download Video
-                    </Link>
-                  ) : (
-                    <Text style={styles.videoNote}>(Video link available when viewing saved report)</Text>
-                  )}
-                </View>
-              );
-            })}
           </View>
         )}
 

@@ -77,14 +77,6 @@ export async function compressImage(
   });
 }
 
-/**
- * Generate a 300×300-max thumbnail for gallery display.
- * Much smaller than the full-size image (~15-30KB) so grids load fast.
- */
-export async function generateThumbnail(file: Blob): Promise<Blob> {
-  return compressImage(file, { maxWidth: 300, maxHeight: 300, quality: 0.70, mimeType: 'image/jpeg' });
-}
-
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;

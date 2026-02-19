@@ -353,33 +353,6 @@ export type Database = {
           },
         ]
       }
-      photo_comments: {
-        Row: {
-          comment_text: string
-          commenter_name: string
-          created_at: string
-          id: string
-          media_id: string
-          share_token: string
-        }
-        Insert: {
-          comment_text: string
-          commenter_name: string
-          created_at?: string
-          id?: string
-          media_id: string
-          share_token: string
-        }
-        Update: {
-          comment_text?: string
-          commenter_name?: string
-          created_at?: string
-          id?: string
-          media_id?: string
-          share_token?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -494,7 +467,6 @@ export type Database = {
           parent_report_id: string | null
           project_name: string
           report_type: string | null
-          tags: string[]
           updated_at: string
           user_id: string
         }
@@ -507,7 +479,6 @@ export type Database = {
           parent_report_id?: string | null
           project_name: string
           report_type?: string | null
-          tags?: string[]
           updated_at?: string
           user_id: string
         }
@@ -520,7 +491,6 @@ export type Database = {
           parent_report_id?: string | null
           project_name?: string
           report_type?: string | null
-          tags?: string[]
           updated_at?: string
           user_id?: string
         }

@@ -6,11 +6,10 @@ import { BackButton } from "@/components/BackButton";
 import { SettingsButton } from "@/components/SettingsButton";
 import { GlassNavbar, NavbarLeft, NavbarCenter, NavbarRight, NavbarTitle } from "@/components/GlassNavbar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Camera, Mic, Trash2, ChevronLeft, FileText, ChevronRight, ListChecks, ClipboardList, Pencil, Loader2, PenTool, Building2, Hash, User, MicOff, CheckCircle2, ShieldOff } from "lucide-react";
+import { Camera, Mic, Trash2, Undo2, ChevronLeft, FileText, ChevronRight, ListChecks, ClipboardList, Pencil, Loader2, PenTool, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { CameraDialog } from "@/components/CameraDialog";
 import CoachMarks from "@/components/CoachMarks";
@@ -24,7 +23,6 @@ import { useGeolocation } from "@/hooks/useGeolocation";
 import { useEffectiveOffline } from "@/hooks/useEffectiveOffline";
 import { queueMedia, fileToArrayBuffer, type PendingMediaItem } from "@/lib/offlineQueue";
 import { saveDraft, loadDraft, clearDraft, fileToBase64, base64ToFile, type DraftData } from "@/lib/draftStorage";
-import { useProjectRole } from "@/hooks/useProjectRole";
 
 interface ImageItem {
   id: string;
@@ -39,8 +37,6 @@ interface ImageItem {
   capturedAt?: Date;
   locationName?: string;
   isVideo?: boolean;
-  storagePath?: string;       // set after background AI-thumbnail upload
-  uploadStatus?: 'uploading' | 'uploaded' | 'failed';
 }
 
 const CaptureScreen = () => {
@@ -51,8 +47,6 @@ const CaptureScreen = () => {
   const { getCurrentPosition } = useGeolocation();
   const { isEffectivelyOffline: isOffline } = useEffectiveOffline();
   const isSimpleMode = location.state?.simpleMode || false;
-  const isProjectMode = location.state?.projectMode || false;
-  const isQuickCapture = location.state?.quickCapture || false;
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<ImageItem[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
@@ -63,7 +57,7 @@ const CaptureScreen = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [showCameraDialog, setShowCameraDialog] = useState(false);
-  const [showLiveCamera, setShowLiveCamera] = useState(true); // auto-open camera immediately
+  const [showLiveCamera, setShowLiveCamera] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const [editingCaptionId, setEditingCaptionId] = useState<string | null>(null);
@@ -73,25 +67,8 @@ const CaptureScreen = () => {
   const [gpsStampingEnabled, setGpsStampingEnabled] = useState(false);
   const [recordingForPhotoId, setRecordingForPhotoId] = useState<string | null>(null);
   const [photoMediaRecorder, setPhotoMediaRecorder] = useState<MediaRecorder | null>(null);
-
-  // Project details sheet (for Project Mode — fill details after capturing)
-  const [showProjectSheet, setShowProjectSheet] = useState(false);
-  const [projectDetails, setProjectDetails] = useState({ projectName: "", customerName: "", jobNumber: "", jobDescription: "" });
-  const [projectSheetSaving, setProjectSheetSaving] = useState(false);
-  const [isVoiceFilling, setIsVoiceFilling] = useState(false);
-  const [isVoiceRecording, setIsVoiceRecording] = useState(false);
-  const voiceRecorderRef = useRef<MediaRecorder | null>(null);
-  const voiceChunksRef = useRef<Blob[]>([]);
-  // Linked project/report id
-  const [linkedReportId, setLinkedReportId] = useState<string | null>(location.state?.reportId || null);
-  const [linkedProjectName, setLinkedProjectName] = useState<string>(location.state?.projectName || "");
-
-  // RBAC: derive the current user's role for this project (if any)
-  const { canEdit: canEditProject } = useProjectRole(linkedReportId ?? undefined);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
-
 
   // Load user preferences
   const [photoDescriptionMode, setPhotoDescriptionMode] = useState("ai_enhanced");
@@ -249,39 +226,8 @@ const CaptureScreen = () => {
     }
   };
 
-  // ── Background AI-thumbnail upload ──────────────────────────────────────
-  // Compress to 512px and upload to storage so generateSummary can send URLs
-  // instead of giant base64 payloads.
-  const uploadImageForAI = async (img: ImageItem): Promise<string | null> => {
-    if (!img.file || img.isVideo) return null;
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-
-      const { compressImage } = await import('@/lib/imageCompression');
-      const compressed = await compressImage(img.file, { maxWidth: 512, maxHeight: 512, quality: 0.6 });
-      const path = `${user.id}/ai-thumbnails/${img.id}.jpg`;
-      const { error } = await supabase.storage.from('media').upload(path, compressed, {
-        contentType: 'image/jpeg',
-        upsert: true,
-      });
-      if (error) {
-        console.warn('AI thumbnail upload failed:', error.message);
-        return null;
-      }
-      return path;
-    } catch (err) {
-      console.warn('AI thumbnail upload error:', err);
-      return null;
-    }
-  };
-
   const handleImageUpload = async (files: FileList | null) => {
     if (!files) return;
-    const currentActive = images.filter(img => !img.deleted).length;
-    if (currentActive >= 30) {
-      toast.warning("You have 30+ items. AI summary will use the first 25 photos. Consider starting a new report for best results.");
-    }
 
     // Get GPS data only if enabled in settings
     const geoData = gpsStampingEnabled ? await getCurrentPosition() : null;
@@ -294,23 +240,15 @@ const CaptureScreen = () => {
       latitude: geoData?.latitude,
       longitude: geoData?.longitude,
       capturedAt: gpsStampingEnabled ? new Date() : undefined,
-      locationName: geoData?.locationName,
-      uploadStatus: 'uploading' as const,
+      locationName: geoData?.locationName
     }));
 
     setImages(prev => [...prev, ...newImages]);
     
-    // Generate AI labels + background storage upload (parallel, fire-and-forget)
+    // Generate AI labels for uploaded images
     newImages.forEach(img => {
       if (img.file) {
         generateAILabel(img.id, img.file);
-        uploadImageForAI(img).then(storagePath => {
-          setImages(prev => prev.map(i =>
-            i.id === img.id
-              ? { ...i, storagePath: storagePath ?? undefined, uploadStatus: storagePath ? 'uploaded' : 'failed' }
-              : i
-          ));
-        });
       }
     });
     
@@ -334,10 +272,6 @@ const CaptureScreen = () => {
 
   const handleLiveCameraCapture = async (files: File[]) => {
     // Get GPS data only if enabled in settings
-    const currentActive = images.filter(img => !img.deleted).length;
-    if (currentActive >= 30) {
-      toast.warning("You have 30+ items. AI summary will use the first 25 photos. Consider starting a new report for best results.");
-    }
     const geoData = gpsStampingEnabled ? await getCurrentPosition() : null;
 
     const newImages: ImageItem[] = files.map(file => {
@@ -352,23 +286,15 @@ const CaptureScreen = () => {
         capturedAt: gpsStampingEnabled ? new Date() : undefined,
         locationName: geoData?.locationName,
         isVideo,
-        uploadStatus: isVideo ? undefined : 'uploading' as const,
       };
     });
 
     setImages(prev => [...prev, ...newImages]);
     
-    // Generate AI labels + background upload for photos (not videos)
+    // Generate AI labels for captured images (not videos)
     newImages.forEach(img => {
       if (img.file && !img.isVideo) {
         generateAILabel(img.id, img.file);
-        uploadImageForAI(img).then(storagePath => {
-          setImages(prev => prev.map(i =>
-            i.id === img.id
-              ? { ...i, storagePath: storagePath ?? undefined, uploadStatus: storagePath ? 'uploaded' : 'failed' }
-              : i
-          ));
-        });
       }
     });
   };
@@ -391,7 +317,17 @@ const CaptureScreen = () => {
   };
 
   const deleteImage = (id: string) => {
-    setImages(prev => prev.filter(img => img.id !== id));
+    setImages(prev => prev.map(img => 
+      img.id === id ? { ...img, deleted: true } : img
+    ));
+    toast.success(t('captureScreen.imageDeleted') + ". " + t('captureScreen.undo') + " to restore.");
+  };
+
+  const undoDelete = (id: string) => {
+    setImages(prev => prev.map(img => 
+      img.id === id ? { ...img, deleted: false } : img
+    ));
+    toast.success(t('common.imageRestored'));
   };
 
   const discardAll = () => {
@@ -655,110 +591,7 @@ const CaptureScreen = () => {
     }
   };
 
-  // ── Voice-fill project details ──────────────────────────────────────────
-  const handleVoiceFillProjectDetails = async () => {
-    if (isVoiceRecording) {
-      // Stop recording
-      if (voiceRecorderRef.current && voiceRecorderRef.current.state !== 'inactive') {
-        voiceRecorderRef.current.stop();
-      }
-      setIsVoiceRecording(false);
-      return;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      voiceChunksRef.current = [];
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) voiceChunksRef.current.push(e.data); };
-      recorder.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop());
-        setIsVoiceFilling(true);
-        const audioBlob = new Blob(voiceChunksRef.current, { type: recorder.mimeType });
-        const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
-        reader.onloadend = async () => {
-          const base64 = (reader.result as string).split(',')[1];
-          try {
-            const { data: transcribeData } = await supabase.functions.invoke('transcribe-audio', { body: { audio: base64 } });
-            if (transcribeData?.text) {
-              const { data: extracted } = await supabase.functions.invoke('extract-report-fields', { body: { transcription: transcribeData.text } });
-              if (extracted) {
-                setProjectDetails(prev => ({
-                  projectName: extracted.projectName || prev.projectName,
-                  customerName: extracted.customerName || prev.customerName,
-                  jobNumber: extracted.jobNumber || prev.jobNumber,
-                  jobDescription: extracted.jobDescription || prev.jobDescription,
-                }));
-                toast.success("Fields filled from voice!");
-              }
-            }
-          } catch (err) {
-            toast.error("Could not process voice input");
-          }
-          setIsVoiceFilling(false);
-        };
-      };
-      recorder.start();
-      voiceRecorderRef.current = recorder;
-      setIsVoiceRecording(true);
-      toast.info("Recording… describe your project name, customer, job number, and description");
-    } catch {
-      toast.error("Could not access microphone");
-    }
-  };
-
-  const handleSaveProjectAndGenerate = async () => {
-    const { projectName, customerName, jobNumber, jobDescription } = projectDetails;
-
-    // Auto-fill all fields for Quick Capture — nothing is required
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const autoTimestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-    const finalProjectName = projectName.trim() || `QC-${autoTimestamp}`;
-    const finalCustomer = customerName.trim() || "—";
-    const finalJobNumber = jobNumber.trim() || `QC-${autoTimestamp}`;
-    const finalDescription = jobDescription.trim() || `Quick capture on ${dateStr}`;
-
-    if (!isQuickCapture) {
-      // Full project mode — keep existing strict validation
-      if (!projectName.trim()) { toast.error("Project name is required"); return; }
-      if (!customerName.trim()) { toast.error("Customer name is required"); return; }
-      if (!jobNumber.trim()) { toast.error("Job number is required"); return; }
-      if (!jobDescription.trim()) { toast.error("Job description is required"); return; }
-    }
-
-    setProjectSheetSaving(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { toast.error("You must be logged in"); return; }
-
-      const { data: report, error } = await supabase
-        .from('reports')
-        .insert([{
-          user_id: user.id,
-          project_name: finalProjectName,
-          customer_name: finalCustomer,
-          job_number: finalJobNumber,
-          job_description: finalDescription,
-        }])
-        .select('id')
-        .single();
-
-      if (error || !report) throw error;
-
-      setLinkedReportId(report.id);
-      setLinkedProjectName(finalProjectName);
-      setShowProjectSheet(false);
-      toast.success(`Project "${projectName}" created — generating report…`);
-      await generateSummary(report.id);
-    } catch (err) {
-      toast.error("Failed to save project details");
-    } finally {
-      setProjectSheetSaving(false);
-    }
-  };
-
-  const generateSummary = async (overrideReportId?: string) => {
+  const generateSummary = async () => {
     const activeImgs = images.filter(img => !img.deleted);
     
     if (!description && activeImgs.length === 0) {
@@ -824,198 +657,89 @@ const CaptureScreen = () => {
     }, 500);
 
     try {
-      const photoItems = activeImgs.filter(img => !img.isVideo);
-      const videoItems = activeImgs.filter(img => img.isVideo);
-
-      // ── Step 1: Build AI image URLs in PARALLEL ──
-      // For pre-uploaded images: just sign the URL (fast, ~5ms each).
-      // For not-yet-uploaded images: compress+encode on the fly as fallback.
-      // All sign calls run simultaneously via Promise.all — not sequentially.
-      const { compressImage } = await import('@/lib/imageCompression');
-
-      const aiImageUrlResults = await Promise.all(
-        photoItems.slice(0, 25).map(async (img): Promise<string | null> => {
-          // Fast path: signed URL from pre-uploaded thumbnail
-          if (img.storagePath) {
-            const { data: signedData } = await supabase.storage
-              .from('media')
-              .createSignedUrl(img.storagePath, 3600);
-            if (signedData?.signedUrl) return signedData.signedUrl;
-          }
-          // Fallback: compress + base64 (only fires when upload hasn't completed yet)
-          if (img.file) {
-            try {
-              const compressed = await compressImage(img.file, { maxWidth: 512, maxHeight: 512, quality: 0.6 });
-              return await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(compressed);
-              });
-            } catch {
-              return null;
-            }
-          }
-          return null;
-        })
-      );
-      const aiImageUrls = aiImageUrlResults.filter((u): u is string => u !== null);
-
-      // Build video context strings
-      const videoContextLines = videoItems.map((vid, idx) => {
-        const note = vid.voiceNote || vid.caption || "";
-        return `Video ${idx + 1}${note ? `: ${note}` : " (no note recorded)"}`;
-      });
-
-      const imageCaptions = photoItems
-        .map(img => img.caption || img.voiceNote || "")
-        .slice(0, 25);
-
-      // ── Step 2: Wait for any still-uploading images (up to 15s) ──
-      // If background uploads are still in flight, wait for them so we can use
-      // signed URLs instead of falling back to base64.
-      const uploadingIds = new Set(
-        photoItems.slice(0, 25)
-          .filter(img => img.uploadStatus === 'uploading')
-          .map(img => img.id)
-      );
-
-      if (uploadingIds.size > 0) {
-        console.log(`Waiting for ${uploadingIds.size} background uploads to complete...`);
-        setGenerationProgress(15);
-        await new Promise<void>(resolve => {
-          const deadline = setTimeout(resolve, 15000);
-          const check = setInterval(() => {
-            // Re-read current images state
-            setImages(current => {
-              const stillUploading = current.filter(i => uploadingIds.has(i.id) && i.uploadStatus === 'uploading');
-              if (stillUploading.length === 0) {
-                clearInterval(check);
-                clearTimeout(deadline);
-                resolve();
-              }
-              return current;
-            });
-            return;
-          }, 300);
-        });
-      }
-
-      // Re-read fresh image state after wait
-      const freshImages = await new Promise<ImageItem[]>(resolve => {
-        setImages(current => { resolve(current); return current; });
-      });
-      const freshPhotoItems = freshImages.filter(i => !i.deleted && !i.isVideo);
-
-      // Re-build AI URLs with fresh storagePaths
-      const freshAiUrlResults = await Promise.all(
-        freshPhotoItems.slice(0, 25).map(async (img): Promise<string | null> => {
-          if (img.storagePath) {
-            const { data: signedData } = await supabase.storage
-              .from('media')
-              .createSignedUrl(img.storagePath, 3600);
-            if (signedData?.signedUrl) return signedData.signedUrl;
-          }
-          if (img.file) {
-            try {
-              const compressed = await compressImage(img.file, { maxWidth: 512, maxHeight: 512, quality: 0.6 });
-              return await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(compressed);
-              });
-            } catch { return null; }
-          }
-          return null;
-        })
-      );
-      const finalAiImageUrls = freshAiUrlResults.filter((u): u is string => u !== null);
-      const signedUrlCount = freshPhotoItems.slice(0, 25).filter(i => i.storagePath).length;
-      console.log(`AI payload: ${finalAiImageUrls.length} images (${signedUrlCount} signed URLs, ${finalAiImageUrls.length - signedUrlCount} base64 fallbacks)`);
-
-      // ── Step 3: Fire AI call + display-base64 encoding IN PARALLEL ──
-      // Use fetch with AbortController for reliable timeout control.
-      const abortController = new AbortController();
-      const abortTimer = setTimeout(() => abortController.abort(), 90000);
-
-      const { data: { session } } = await supabase.auth.getSession();
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-
-      const invokePromise = fetch(`${supabaseUrl}/functions/v1/generate-report-summary`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-        body: JSON.stringify({
-          description: description || "",
-          imageDataUrls: finalAiImageUrls,
-          imageCaptions,
-          videoContextLines: videoContextLines.length > 0 ? videoContextLines : undefined,
-          photoDescriptionMode
-        }),
-        signal: abortController.signal,
-      }).then(async (res) => {
-        clearTimeout(abortTimer);
-        if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(`Edge function error ${res.status}: ${errText}`);
-        }
-        return res.json();
-      });
-
-      const displayEncodePromise = Promise.all(
+      // Convert files to base64 for both AI processing and navigation state
+      const imageWithBase64 = await Promise.all(
         activeImgs.map(async (img) => {
-          if (!img.file) return { ...img, base64: null as string | null, originalBase64: null as string | null };
-          const base64 = await new Promise<string | null>((resolve) => {
+          if (!img.file) return { ...img, base64: null, originalBase64: null };
+          
+          const base64 = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = () => resolve(null);
-            reader.readAsDataURL(img.file!);
+            reader.onerror = reject;
+            reader.readAsDataURL(img.file);
           });
+
+          // Convert original file to base64 if it exists (annotation preserved original)
           let originalBase64: string | null = null;
           if (img.originalFile) {
-            originalBase64 = await new Promise<string | null>((resolve) => {
+            originalBase64 = await new Promise<string>((resolve, reject) => {
               const reader = new FileReader();
               reader.onloadend = () => resolve(reader.result as string);
-              reader.onerror = () => resolve(null);
+              reader.onerror = reject;
               reader.readAsDataURL(img.originalFile!);
             });
           }
+          
           return { ...img, base64, originalBase64 };
         })
       );
 
-      // AI call and display encoding run in parallel
-      const [data, imageWithDisplay] = await Promise.all([invokePromise, displayEncodePromise]);
-      const error = null; // errors now thrown directly
+      const validImageDataUrls = imageWithBase64
+        .map(img => img.base64)
+        .filter(url => url !== null) as string[];
 
+      const imageCaptions = imageWithBase64.map(img => img.caption || img.voiceNote || "");
 
-      if (!data?.summary) {
-        toast.error("No summary generated — please try again.");
+      // Add a 60-second timeout to prevent infinite spinning
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+      const { data, error } = await supabase.functions.invoke('generate-report-summary', {
+        body: { 
+          description: description || "",
+          imageDataUrls: validImageDataUrls,
+          imageCaptions,
+          photoDescriptionMode
+        },
+      });
+
+      clearTimeout(timeoutId);
+
+      if (error) {
+        console.error("Summary generation error:", error);
+        toast.error(error.message || "Failed to generate summary");
         clearInterval(progressInterval);
         setIsGenerating(false);
         setGenerationProgress(0);
         return;
       }
 
+      if (!data?.summary) {
+        toast.error("No summary generated");
+        clearInterval(progressInterval);
+        setIsGenerating(false);
+        setGenerationProgress(0);
+        return;
+      }
+
+      // Complete the progress
       clearInterval(progressInterval);
       setGenerationProgress(100);
-
+      
+      // Small delay to show completion
       setTimeout(async () => {
+        // Clear draft on successful navigation
         await clearDraft();
-        navigate("/review-summary", {
-          state: {
+        // Navigate with the generated summary and media (including captions, geo data, and base64 data)
+        navigate("/review-summary", { 
+          state: { 
             simpleMode: isSimpleMode,
-            reportId: overrideReportId || linkedReportId || location.state?.reportId,
             summary: data.summary,
             description,
-            images: imageWithDisplay.map(img => ({
-              url: img.url,
-              id: img.id,
-              caption: img.caption,
+            images: imageWithBase64.map(img => ({ 
+              url: img.url, 
+              id: img.id, 
+              caption: img.caption, 
               voiceNote: img.voiceNote,
               base64: img.base64,
               originalBase64: img.originalBase64,
@@ -1025,15 +749,15 @@ const CaptureScreen = () => {
               locationName: img.locationName,
               isVideo: img.isVideo || false,
             }))
-          }
+          } 
         });
       }, 300);
     } catch (err: any) {
-      const isTimeout = err?.name === 'AbortError' || err?.message?.includes('AbortError') || err?.message?.includes('timed out') || err?.message?.includes('abort');
-      console.error("Error generating summary:", { name: err?.name, message: err?.message, status: err?.status });
-      toast.error(isTimeout
-        ? "Summary generation timed out. Try reducing the number of photos or wait for uploads to finish." 
-        : `Failed to generate summary: ${err?.message || 'Unknown error'}`);
+      const isTimeout = err?.name === 'AbortError' || err?.message?.includes('abort');
+      console.error("Error generating summary:", err);
+      toast.error(isTimeout 
+        ? "Summary generation timed out. Your photos are saved — please try again." 
+        : "Failed to generate summary. Your photos are saved — please try again.");
       clearInterval(progressInterval);
     } finally {
       setIsGenerating(false);
@@ -1173,6 +897,11 @@ const CaptureScreen = () => {
         storageKey="captureScreenCoachDismissed"
         steps={[
           {
+            targetSelector: '[data-coach="camera-button"]',
+            title: t("coachMarks.capture.cameraTitle"),
+            description: t("coachMarks.capture.cameraDesc"),
+          },
+          {
             targetSelector: '[data-coach="field-notes"]',
             title: t("coachMarks.capture.notesTitle"),
             description: t("coachMarks.capture.notesDesc"),
@@ -1215,26 +944,15 @@ const CaptureScreen = () => {
       <main className="flex-1 px-4 pt-4 pb-36 animate-fade-in">
         {/* Project Info Pills */}
         <div className="flex flex-wrap gap-2 pb-4">
-          {isProjectMode && (
-            <div className={`flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full px-3 ${linkedProjectName ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
-              <Building2 className="h-3 w-3" />
-              <p className="text-xs font-medium">
-                {linkedProjectName || "Project details saved after capture"}
-              </p>
-            </div>
-          )}
-          {!isProjectMode && (
-            <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
-              <p className="text-xs font-medium text-muted-foreground">{t('captureScreen.project')}: {linkedProjectName || ''}</p>
-            </div>
-          )}
+          <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
+            <p className="text-xs font-medium text-muted-foreground">{t('captureScreen.project')}: {location.state?.projectName || ''}</p>
+          </div>
           <div className="flex h-7 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-secondary px-3">
             <p className="text-xs font-medium text-muted-foreground">
               {formatDate(new Date())}
             </p>
           </div>
         </div>
-
 
         <div className="flex flex-col gap-y-6">
           {/* Description Textarea */}
@@ -1292,26 +1010,19 @@ const CaptureScreen = () => {
 
           {/* Upload/Camera Section with Auto Voice Recording */}
           <div className="flex flex-col items-center gap-4">
-            {linkedReportId && !canEditProject ? (
-              <div className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-muted/30 p-6 text-center">
-                <ShieldOff className="h-12 w-12 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-semibold text-foreground">View-only access</p>
-                  <p className="text-xs text-muted-foreground mt-1">You have viewer permissions on this project and cannot add photos.</p>
-                </div>
+            <button
+              data-coach="camera-button"
+              onClick={handleOpenCamera}
+              className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-all hover:bg-primary/30 shadow-xl shadow-primary/50 ring-4 ring-primary/30"
+            >
+              <div className="flex items-center gap-3">
+                <Camera className="h-16 w-16" />
+                <Mic className="h-14 w-14" />
               </div>
-            ) : (
-              <button
-                data-coach="camera-button"
-                onClick={handleOpenCamera}
-                className="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl bg-primary/20 p-6 text-center text-primary transition-all hover:bg-primary/30 shadow-xl shadow-primary/50 ring-4 ring-primary/30"
-              >
-                <div className="flex items-center gap-3">
-                  <Camera className="h-16 w-16" />
-                  <Mic className="h-14 w-14" />
-                </div>
-              </button>
-            )}
+              <p className="text-base font-bold text-foreground drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                {t('captureScreen.takePhotosWithVoice')}
+              </p>
+            </button>
             
             {/* Hidden file inputs */}
             <input
@@ -1337,81 +1048,88 @@ const CaptureScreen = () => {
             <div className="w-full">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-foreground">
-                  {images.filter(img => !img.deleted).length} {images.filter(img => !img.deleted).some(img => img.isVideo) ? 'items' : 'photo' + (images.filter(img => !img.deleted).length !== 1 ? 's' : '')} captured
-                  {images.filter(img => !img.deleted).filter(img => !img.isVideo).length > 25 && (
-                    <span className="ml-2 text-xs text-yellow-500 font-normal">(AI uses first 25 photos)</span>
-                  )}
+                  {images.filter(img => !img.deleted).length} photo{images.filter(img => !img.deleted).length !== 1 ? 's' : ''} captured
                 </h3>
               </div>
               <div className="flex w-full snap-x snap-mandatory scroll-p-4 gap-3 overflow-x-auto pb-2 no-scrollbar">
-                {images.map((image) => {
+                {images.map((image, index) => {
                   const activeIndex = activeImages.findIndex(img => img.id === image.id);
                   return (
-                    <div
-                      key={image.id}
-                      className="relative aspect-square w-20 flex-shrink-0 snap-start overflow-hidden rounded-lg bg-secondary"
-                    >
-                      {image.isVideo ? (
-                        <div className="relative h-full w-full bg-secondary cursor-pointer" onClick={() => setSelectedImageIndex(activeIndex)}>
-                          <video src={image.url} className="h-full w-full object-cover" muted />
-                          <div className="absolute top-1 left-1 rounded bg-red-500 px-1 py-0.5 text-[8px] font-bold text-white">VIDEO</div>
-                        </div>
-                      ) : (
-                        <img
-                          src={image.url}
-                          alt="Captured content"
-                          className="h-full w-full object-cover cursor-pointer"
-                          onClick={() => setSelectedImageIndex(activeIndex)}
-                        />
-                      )}
-                      {labelingImages.has(image.id) && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                          <Loader2 className="h-5 w-5 text-white animate-spin" />
-                        </div>
-                      )}
-                      {/* Upload status indicator (bottom-right, only for photos) */}
-                      {!image.isVideo && !labelingImages.has(image.id) && image.uploadStatus === 'uploading' && (
-                        <div className="absolute bottom-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/60">
-                          <Loader2 className="h-2.5 w-2.5 text-white animate-spin" />
-                        </div>
-                      )}
-                      {recordingForPhotoId === image.id && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
-                          <div className="flex flex-col items-center gap-1">
-                            <Mic className="h-5 w-5 text-red-500 animate-pulse" />
-                            <button onClick={(e) => { e.stopPropagation(); stopPhotoVoiceNote(); }} className="rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-bold text-white">Stop</button>
+                  <div
+                    key={image.id}
+                    className="relative aspect-square w-20 flex-shrink-0 snap-start overflow-hidden rounded-lg bg-secondary"
+                  >
+                    {image.deleted ? (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-lg bg-destructive/80 px-2 text-center text-white">
+                        <Trash2 className="h-5 w-5" />
+                        <p className="text-[10px] font-semibold leading-tight">
+                          Image Deleted
+                        </p>
+                        <button
+                          onClick={() => undoDelete(image.id)}
+                          className="mt-1 rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold backdrop-blur-sm hover:bg-white/30"
+                        >
+                          Undo
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        {image.isVideo ? (
+                          <div className="relative h-full w-full bg-secondary cursor-pointer" onClick={() => setSelectedImageIndex(activeIndex)}>
+                            <video src={image.url} className="h-full w-full object-cover" muted />
+                            <div className="absolute top-1 left-1 rounded bg-red-500 px-1 py-0.5 text-[8px] font-bold text-white">VIDEO</div>
                           </div>
-                        </div>
-                      )}
-                      {image.caption && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1.5 py-1 backdrop-blur-sm">
-                          <p className="text-[9px] text-white leading-tight line-clamp-2">{image.voiceNote ? '🎙 ' : ''}{image.caption}</p>
-                        </div>
-                      )}
-                      {!image.isVideo && recordingForPhotoId !== image.id && (
-                        <button onClick={(e) => { e.stopPropagation(); startPhotoVoiceNote(image.id); }}
-                          className={`absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-full backdrop-blur-sm ${image.voiceNote ? 'bg-green-500 text-white' : 'bg-black/50 text-white/90 hover:bg-black/70'}`}
-                          title="Record voice note">
-                          <Mic className="h-3 w-3" />
+                        ) : (
+                          <img
+                            src={image.url}
+                            alt="Captured content"
+                            className="h-full w-full object-cover cursor-pointer"
+                            onClick={() => setSelectedImageIndex(activeIndex)}
+                          />
+                        )}
+                        {labelingImages.has(image.id) && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                            <Loader2 className="h-5 w-5 text-white animate-spin" />
+                          </div>
+                        )}
+                        {recordingForPhotoId === image.id && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+                            <div className="flex flex-col items-center gap-1">
+                              <Mic className="h-5 w-5 text-red-500 animate-pulse" />
+                              <button onClick={(e) => { e.stopPropagation(); stopPhotoVoiceNote(); }} className="rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-bold text-white">Stop</button>
+                            </div>
+                          </div>
+                        )}
+                        {image.caption && (
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1.5 py-1 backdrop-blur-sm">
+                            <p className="text-[9px] text-white leading-tight line-clamp-2">{image.voiceNote ? '🎙 ' : ''}{image.caption}</p>
+                          </div>
+                        )}
+                        {!image.isVideo && recordingForPhotoId !== image.id && (
+                          <button onClick={(e) => { e.stopPropagation(); startPhotoVoiceNote(image.id); }}
+                            className={`absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-full backdrop-blur-sm ${image.voiceNote ? 'bg-green-500 text-white' : 'bg-black/50 text-white/90 hover:bg-black/70'}`}
+                            title="Record voice note">
+                            <Mic className="h-3 w-3" />
+                          </button>
+                        )}
+                        <button onClick={(e) => { e.stopPropagation(); handleEditCaption(image.id); }}
+                          className="absolute top-1 left-7 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70">
+                          <Pencil className="h-3 w-3" />
                         </button>
-                      )}
-                      <button onClick={(e) => { e.stopPropagation(); handleEditCaption(image.id); }}
-                        className="absolute top-1 left-7 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70">
-                        <Pencil className="h-3 w-3" />
-                      </button>
-                      {!image.isVideo && (
-                        <button onClick={(e) => { e.stopPropagation(); setAnnotatingImageId(image.id); }}
-                          className="absolute top-1 left-[52px] flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white backdrop-blur-sm hover:bg-primary/80" title="Annotate photo">
-                          <PenTool className="h-3 w-3" />
+                        {!image.isVideo && (
+                          <button onClick={(e) => { e.stopPropagation(); setAnnotatingImageId(image.id); }}
+                            className="absolute top-1 left-[52px] flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white backdrop-blur-sm hover:bg-primary/80" title="Annotate photo">
+                            <PenTool className="h-3 w-3" />
+                          </button>
+                        )}
+                        <button onClick={() => deleteImage(image.id)}
+                          className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70">
+                          <Trash2 className="h-3 w-3" />
                         </button>
-                      )}
-                      <button onClick={() => deleteImage(image.id)}
-                        className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white/90 backdrop-blur-sm hover:bg-black/70">
-                        <Trash2 className="h-3 w-3" />
-                      </button>
-                    </div>
-                  );
-                })}
+                      </>
+                    )}
+                  </div>
+                )})}
               </div>
             </div>
           )}
@@ -1434,19 +1152,7 @@ const CaptureScreen = () => {
       <div className="fixed bottom-0 left-0 right-0 z-20 w-full bg-background/80 p-4 backdrop-blur-lg">
         <Button
           data-coach="generate-button"
-          onClick={() => {
-            // Quick Capture or Project Mode with no linked project → collect details first
-            if ((isQuickCapture || isProjectMode) && !linkedReportId) {
-              const activeImgs = images.filter(img => !img.deleted);
-              if (!description && activeImgs.length === 0) {
-                toast.error(t('captureScreen.addContentFirst'));
-                return;
-              }
-              setShowProjectSheet(true);
-              return;
-            }
-            generateSummary();
-          }}
+          onClick={generateSummary}
           disabled={isGenerating}
           className="w-full rounded-xl bg-primary px-4 py-6 text-base font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
         >
@@ -1670,118 +1376,8 @@ const CaptureScreen = () => {
           onSave={(blob) => handleAnnotationSave(annotatingImageId, blob)}
         />
       )}
-
-      {/* Project Details Bottom Sheet (Project Mode — fill after capturing) */}
-      <Sheet open={showProjectSheet} onOpenChange={setShowProjectSheet}>
-        <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto rounded-t-2xl pb-safe">
-          <SheetHeader className="mb-4">
-            <SheetTitle className="flex items-center gap-2 text-lg">
-              <Building2 className="h-5 w-5 text-primary" />
-              {isQuickCapture ? "Name Your Capture" : "Project Details"}
-            </SheetTitle>
-            <SheetDescription>
-              {isQuickCapture
-                ? "Give it a name — everything else is optional and can be edited later."
-                : "Almost done! Add your project info to link these photos."}
-            </SheetDescription>
-          </SheetHeader>
-
-          {/* Voice fill button */}
-          <div className="mb-5 flex flex-col items-center gap-2">
-            <button
-              type="button"
-              onClick={handleVoiceFillProjectDetails}
-              disabled={isVoiceFilling}
-              className={`flex h-14 w-14 items-center justify-center rounded-full transition-all shadow-lg ${
-                isVoiceRecording
-                  ? 'bg-destructive text-destructive-foreground animate-pulse shadow-destructive/40'
-                  : isVoiceFilling
-                  ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                  : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/30'
-              }`}
-            >
-              {isVoiceFilling ? <Loader2 className="h-6 w-6 animate-spin" /> : isVoiceRecording ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
-            </button>
-            <p className="text-xs text-muted-foreground text-center">
-              {isVoiceRecording ? "Recording… tap to stop" : isVoiceFilling ? "Processing voice…" : "Tap mic to fill with voice"}
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {/* Project name — always required */}
-            <div>
-              <label className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-1.5">
-                <Building2 className="h-3.5 w-3.5 text-primary" /> Project Name *
-              </label>
-              <Input
-                value={projectDetails.projectName}
-                onChange={e => setProjectDetails(p => ({ ...p, projectName: e.target.value }))}
-                placeholder="e.g. Main St Renovation"
-                className="bg-secondary border-none"
-                autoFocus
-              />
-            </div>
-
-            {/* Optional fields — always show in project mode; shown collapsed hint in quick mode */}
-            {isQuickCapture ? (
-              <p className="text-xs text-muted-foreground">
-                Customer, job number &amp; description will be auto-generated — you can update them from the project page anytime.
-              </p>
-            ) : (
-              <>
-                <div>
-                  <label className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-1.5">
-                    <User className="h-3.5 w-3.5 text-primary" /> Customer Name *
-                  </label>
-                  <Input
-                    value={projectDetails.customerName}
-                    onChange={e => setProjectDetails(p => ({ ...p, customerName: e.target.value }))}
-                    placeholder="e.g. ABC Corp"
-                    className="bg-secondary border-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-1.5">
-                    <Hash className="h-3.5 w-3.5 text-primary" /> Job Number *
-                  </label>
-                  <Input
-                    value={projectDetails.jobNumber}
-                    onChange={e => setProjectDetails(p => ({ ...p, jobNumber: e.target.value }))}
-                    placeholder="e.g. JOB-2026-001"
-                    className="bg-secondary border-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground flex items-center gap-1.5 mb-1.5">
-                    <FileText className="h-3.5 w-3.5 text-primary" /> Job Description *
-                  </label>
-                  <Textarea
-                    value={projectDetails.jobDescription}
-                    onChange={e => setProjectDetails(p => ({ ...p, jobDescription: e.target.value }))}
-                    placeholder="Briefly describe the work being done…"
-                    className="bg-secondary border-none resize-none min-h-[80px]"
-                    maxLength={500}
-                  />
-                </div>
-              </>
-            )}
-
-            <Button
-              onClick={handleSaveProjectAndGenerate}
-              disabled={projectSheetSaving || isVoiceRecording || isVoiceFilling}
-              className="w-full h-12 text-base font-semibold"
-            >
-              {projectSheetSaving
-                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating project…</>
-                : isQuickCapture ? "Save & Generate Report" : "Save & Generate Report"}
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
-
     </div>
   );
 };
 
 export default CaptureScreen;
-

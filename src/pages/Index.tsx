@@ -5,8 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User } from "@supabase/supabase-js";
-import { FileText, Camera, Mic, Share2, Eye, ChevronDown, ChevronRight, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Circle, Cloud, Layers, LogOut, MessageSquare, X } from "lucide-react";
-
+import { FileText, Camera, Mic, Share2, Eye, ChevronDown, ChevronRight, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Circle, Cloud, Layers, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { TrialBanner } from "@/components/TrialBanner";
 import { SubscriptionBadge } from "@/components/SubscriptionBadge";
@@ -16,8 +15,6 @@ import { usePlanFeatures } from "@/hooks/usePlanFeatures";
 import BetaCountdownBanner from "@/components/BetaCountdownBanner";
 import GettingStartedGuide from "@/components/GettingStartedGuide";
 import OfflineQueueCard from "@/components/OfflineQueueCard";
-import InstallBanner from "@/components/InstallBanner";
-import { PendingInvitesModal } from "@/components/PendingInvitesModal";
 import {
   Select,
   SelectContent,
@@ -40,8 +37,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type ProjectStatus = 'in_progress' | 'needs_review' | 'complete';
-
 interface Project {
   id: string;
   project_name: string;
@@ -50,15 +45,7 @@ interface Project {
   job_description: string;
   created_at: string;
   checklist_count: number;
-  status: ProjectStatus;
-  new_comment_count?: number;
 }
-
-const STATUS_CONFIG: Record<ProjectStatus, { label: string; color: string; dot: string }> = {
-  in_progress: { label: 'In Progress', color: 'bg-blue-500/15 text-blue-400 border-blue-500/30', dot: 'bg-blue-400' },
-  needs_review: { label: 'Needs Review', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30', dot: 'bg-amber-400' },
-  complete: { label: 'Complete', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30', dot: 'bg-emerald-400' },
-};
 
 const Index = () => {
   const { t } = useTranslation();
@@ -173,46 +160,6 @@ const Index = () => {
     }
   }, [user]);
 
-  // Realtime: increment badge when a new comment arrives
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel('dashboard-photo-comments')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'photo_comments' },
-        async (payload) => {
-          const newComment = payload.new as { share_token: string; created_at: string };
-          // Find which project owns this share token
-          const { data: shareData } = await supabase
-            .from('project_shares')
-            .select('report_id')
-            .eq('share_token', newComment.share_token)
-            .single();
-
-          if (!shareData) return;
-          const reportId = shareData.report_id;
-          const lastViewed = localStorage.getItem(`comments_viewed_${reportId}`);
-          // Only increment if the comment is newer than last viewed
-          if (!lastViewed || new Date(newComment.created_at) > new Date(lastViewed)) {
-            setProjects((prev) =>
-              prev.map((p) =>
-                p.id === reportId
-                  ? { ...p, new_comment_count: (p.new_comment_count ?? 0) + 1 }
-                  : p
-              )
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
-
   useEffect(() => {
     // Set up intersection observer for projects section
     const projectsSection = document.querySelector('#projects-section');
@@ -241,63 +188,38 @@ const Index = () => {
 
       if (reportsError) throw reportsError;
 
-      // Fetch checklist counts and new comment counts for each report
+      // Fetch checklist counts for each report
       const projectsWithCounts = await Promise.all(
         (reportsData || []).map(async (report) => {
-          const lastViewed = localStorage.getItem(`comments_viewed_${report.id}`);
-
-          const [checklistResult, sharesResult] = await Promise.all([
-            supabase.from('checklists').select('*', { count: 'exact', head: true }).eq('report_id', report.id),
-            supabase.from('project_shares').select('share_token').eq('report_id', report.id),
-          ]);
-
-          let newCommentCount = 0;
-          if (sharesResult.data && sharesResult.data.length > 0) {
-            const tokens = sharesResult.data.map((s) => s.share_token);
-            let query = supabase.from('photo_comments').select('*', { count: 'exact', head: true }).in('share_token', tokens);
-            if (lastViewed) query = query.gt('created_at', lastViewed);
-            const { count } = await query;
-            newCommentCount = count ?? 0;
-          }
+          const { count, error: countError } = await supabase
+            .from('checklists')
+            .select('*', { count: 'exact', head: true })
+            .eq('report_id', report.id);
 
           return {
             ...report,
-            status: ((report as any).status as ProjectStatus) ?? 'in_progress',
-            checklist_count: checklistResult.error ? 0 : (checklistResult.count || 0),
-            new_comment_count: newCommentCount,
+            checklist_count: countError ? 0 : (count || 0)
           };
         })
       );
 
-      setProjects(projectsWithCounts as Project[]);
+      setProjects(projectsWithCounts);
     } catch (error) {
       console.error('Error fetching projects:', error);
       toast.error(t('dashboard.failedLoadProjects'));
     }
   };
 
-  const handleStatusChange = async (projectId: string, newStatus: ProjectStatus) => {
-    setProjects(prev => prev.map(p => p.id === projectId ? { ...p, status: newStatus } : p));
-    const { error } = await supabase.from('reports').update({ status: newStatus } as any).eq('id', projectId);
-    if (error) {
-      toast.error('Failed to update status');
-      fetchProjects();
-    }
-  };
-
   // Filter and sort projects
-  const [activeStatusFilter, setActiveStatusFilter] = useState<ProjectStatus | null>(null);
   const filteredProjects = projects
     .filter((project) => {
       const searchLower = searchQuery.toLowerCase();
-      const matchesSearch = (
+      return (
         project.project_name.toLowerCase().includes(searchLower) ||
         project.customer_name.toLowerCase().includes(searchLower) ||
         project.job_number.toLowerCase().includes(searchLower) ||
         project.job_description.toLowerCase().includes(searchLower)
       );
-      const matchesStatus = !activeStatusFilter || project.status === activeStatusFilter;
-      return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -345,8 +267,6 @@ const Index = () => {
   return (
     <div className="dark min-h-screen bg-background">
       <BetaCountdownBanner />
-      {/* Pending team invitations modal — shown once after login */}
-      <PendingInvitesModal userId={user.id} userEmail={user.email ?? ""} />
       {/* Glass Navbar */}
       <GlassNavbar fixed={false}>
         <NavbarLeft>
@@ -366,9 +286,9 @@ const Index = () => {
                 <FolderOpen className="mr-2 h-4 w-4" />
                 {t('dashboard.viewAllProjects')}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/capture-screen", { state: { quickCapture: true } })} className="cursor-pointer">
+              <DropdownMenuItem onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })} className="cursor-pointer">
                 <Camera className="mr-2 h-4 w-4" />
-                Quick Capture
+                {t('dashboard.captureScreen')}
               </DropdownMenuItem>
               
               {/* Recent Projects Section */}
@@ -477,43 +397,35 @@ const Index = () => {
         {/* Getting Started Guide */}
         <GettingStartedGuide userId={user?.id} />
 
-        {/* Install Banner — mobile browsers only, not shown when installed as PWA */}
-        <InstallBanner />
-
         {/* Offline Queue */}
         <OfflineQueueCard />
 
         {/* Mode Selection Section */}
         <section className="mb-8">
-          <div className="grid grid-cols-2 gap-3">
-            {/* Project Mode */}
-            <button
-              onClick={() => navigate("/capture-screen", { state: { projectMode: true } })}
-              className="glass-card flex flex-col items-center gap-3 p-5 hover-lift group"
+          <h2 className="mb-6 text-2xl font-semibold text-foreground">{t('dashboard.chooseWorkflow')}</h2>
+          <div className="grid grid-cols-2 gap-5">
+            <button 
+              onClick={() => navigate("/capture-screen", { state: { simpleMode: true } })}
+              className="glass-card flex flex-col items-center gap-5 p-8 hover-lift group"
             >
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
-                <FolderOpen className="h-7 w-7 text-primary transition-transform duration-300 group-hover:scale-110" />
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25 group-hover:shadow-glow-blue">
+                <Zap className="h-10 w-10 text-primary transition-transform duration-300 group-hover:scale-110" />
               </div>
               <div className="text-center">
-                <h3 className="text-sm font-bold text-foreground mb-0.5">{t('dashboard.projectMode')}</h3>
-                <p className="text-xs text-muted-foreground">{t('dashboard.manageProjects')}</p>
+                <h3 className="text-lg font-semibold text-foreground mb-1">{t('dashboard.simpleMode')}</h3>
+                <p className="text-sm text-muted-foreground">{t('dashboard.quickReports')}</p>
               </div>
             </button>
-
-            {/* Quick Capture */}
-            <button
-              onClick={() => navigate("/capture-screen", { state: { quickCapture: true } })}
-              className="flex flex-col items-center gap-3 p-5 hover-lift group relative rounded-2xl bg-primary border border-primary shadow-[0_0_24px_hsl(var(--primary)/0.45)] hover:shadow-[0_0_36px_hsl(var(--primary)/0.65)] hover:bg-primary/90 transition-all duration-300"
+            <button 
+              onClick={() => setShowProjectDialog(true)}
+              className="glass-card flex flex-col items-center gap-5 p-8 hover-lift group"
             >
-              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-primary-foreground px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary shadow-sm whitespace-nowrap">
-                Recommended
-              </span>
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-foreground/20 transition-all duration-300 group-hover:bg-primary-foreground/30">
-                <Camera className="h-7 w-7 text-primary-foreground transition-transform duration-300 group-hover:scale-110" />
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25 group-hover:shadow-glow-blue">
+                <FolderOpen className="h-10 w-10 text-primary transition-transform duration-300 group-hover:scale-110" />
               </div>
               <div className="text-center">
-                <h3 className="text-sm font-bold text-primary-foreground mb-0.5">Quick Capture</h3>
-                <p className="text-xs text-primary-foreground/70">Snap now, name later</p>
+                <h3 className="text-lg font-semibold text-foreground mb-1">{t('dashboard.projectMode')}</h3>
+                <p className="text-sm text-muted-foreground">{t('dashboard.manageProjects')}</p>
               </div>
             </button>
           </div>
@@ -521,7 +433,7 @@ const Index = () => {
 
         {/* Recent Projects Section */}
         <section id="projects-section">
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="text-2xl font-semibold text-foreground">{t('dashboard.recentProjects')}</h2>
             {projects.length > 5 && (
               <Button
@@ -535,55 +447,6 @@ const Index = () => {
               </Button>
             )}
           </div>
-
-          {/* Status summary row */}
-          {projects.length > 0 && (
-            <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-              {(Object.entries(STATUS_CONFIG) as [ProjectStatus, typeof STATUS_CONFIG[ProjectStatus]][]).map(([key, cfg], i) => {
-                const count = projects.filter(p => p.status === key).length;
-                if (count === 0) return null;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => setActiveStatusFilter(activeStatusFilter === key ? null : key)}
-                    className={`inline-flex items-center gap-1.5 transition-colors hover:text-foreground ${activeStatusFilter === key ? 'text-foreground font-medium' : ''}`}
-                  >
-                    <span className={`h-2 w-2 rounded-full ${cfg.dot}`} />
-                    {count} {cfg.label}
-                  </button>
-                );
-              }).filter(Boolean).reduce<React.ReactNode[]>((acc, el, i, arr) => {
-                acc.push(el);
-                if (i < arr.length - 1) acc.push(<span key={`sep-${i}`} className="text-border">·</span>);
-                return acc;
-              }, [])}
-            </div>
-          )}
-
-          {/* Status filter chips */}
-          {projects.length > 0 && (
-            <div className="mb-3 flex flex-wrap gap-2">
-              {([null, 'in_progress', 'needs_review', 'complete'] as (ProjectStatus | null)[]).map((s) => {
-                const cfg = s ? STATUS_CONFIG[s] : null;
-                const isActive = activeStatusFilter === s;
-                return (
-                  <button
-                    key={s ?? 'all'}
-                    onClick={() => setActiveStatusFilter(s)}
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                      isActive
-                        ? s ? cfg!.color + ' border-transparent' : 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-secondary text-muted-foreground border-border hover:border-primary hover:text-primary'
-                    }`}
-                  >
-                    {cfg && <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />}
-                    {s ? STATUS_CONFIG[s].label : 'All'}
-                    {isActive && s && <X className="h-3 w-3 ml-0.5" onClick={(e) => { e.stopPropagation(); setActiveStatusFilter(null); }} />}
-                  </button>
-                );
-              })}
-            </div>
-          )}
           
           <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-sm">
             {projects.length === 0 ? (
@@ -593,51 +456,17 @@ const Index = () => {
               </div>
             ) : (
               <div className="divide-y divide-border/30">
-                {filteredProjects.slice(0, 5).map((project) => {
-                  const statusCfg = STATUS_CONFIG[project.status];
-                  return (
+                {filteredProjects.slice(0, 5).map((project) => (
                   <div
                     key={project.id}
                     className="flex items-start gap-4 p-4 hover:bg-muted/20 cursor-pointer group transition-colors duration-200"
                     onClick={() => navigate(`/project/${project.id}`)}
                   >
-                    <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
+                    <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-primary/15 transition-all duration-300 group-hover:bg-primary/25">
                       <Building2 className="h-7 w-7 text-primary" />
-                      {(project.new_comment_count ?? 0) > 0 && (
-                        <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold shadow-sm">
-                          {project.new_comment_count! > 9 ? '9+' : project.new_comment_count}
-                        </span>
-                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <h3 className="font-semibold text-foreground text-lg">{project.project_name}</h3>
-                        {/* Status badge / inline selector */}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              onClick={(e) => e.stopPropagation()}
-                              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition-colors ${statusCfg.color}`}
-                            >
-                              <span className={`h-1.5 w-1.5 rounded-full ${statusCfg.dot}`} />
-                              {statusCfg.label}
-                              <ChevronDown className="h-3 w-3 opacity-60" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
-                            {(Object.entries(STATUS_CONFIG) as [ProjectStatus, typeof STATUS_CONFIG[ProjectStatus]][]).map(([key, cfg]) => (
-                              <DropdownMenuItem
-                                key={key}
-                                className="gap-2"
-                                onClick={(e) => { e.stopPropagation(); handleStatusChange(project.id, key); }}
-                              >
-                                <span className={`h-2 w-2 rounded-full ${cfg.dot}`} />
-                                {cfg.label}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                      <h3 className="font-semibold text-foreground text-lg mb-1">{project.project_name}</h3>
                       <div className="space-y-1 text-sm">
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <UserIcon className="h-4 w-4 flex-shrink-0" />
@@ -680,8 +509,7 @@ const Index = () => {
                       </Button>
                     </div>
                   </div>
-                  );
-                })}
+                ))}
               </div>
             )}
           </div>
@@ -742,13 +570,8 @@ const Index = () => {
                       key={project.id}
                       onClick={() => {
                         setShowProjectDialog(false);
-                        navigate("/capture-screen", {
-                          state: {
-                            projectMode: true,
-                            reportId: project.id,
-                            projectName: project.project_name,
-                          }
-                        });
+                        toast.info(`Selected: ${project.project_name}`);
+                        // TODO: Navigate to project detail page
                       }}
                       className="w-full text-left p-4 rounded-lg bg-card hover:bg-secondary transition-colors"
                     >
