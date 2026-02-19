@@ -183,6 +183,8 @@ const FinalReport = () => {
     loadReportData();
   }, [reportId]);
 
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
+
   const handleDownloadPDF = async () => {
     if (!reportData) {
       toast({
@@ -193,76 +195,40 @@ const FinalReport = () => {
       return;
     }
 
+    setIsPdfGenerating(true);
     try {
-      toast({
-        title: t('finalReport.generatingPDF'),
-        description: t('finalReport.preparingPDF'),
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Unable to get current user. Please sign in and try again.');
+      }
+
+      const { data, error } = await supabase.functions.invoke('generate-pdf', {
+        body: { reportId, userId: user.id },
       });
 
-      // Convert images to base64 data URLs so @react-pdf/renderer doesn't
-      // make cross-origin fetches (which fail on mobile Safari).
-      const mediaUrlsMap = new Map<string, string>();
-      const videoUrlsMap = new Map<string, string>();
+      if (error) {
+        throw new Error(error.message || 'Failed to generate PDF');
+      }
 
-      await Promise.all(
-        media.map(async (item) => {
-          if (item.file_type === 'image') {
-            try {
-              // Get a fresh signed URL then convert to base64
-              const { data } = await supabase.storage
-                .from('media')
-                .createSignedUrl(item.file_path, 120);
-              const signedUrl = data?.signedUrl;
-              if (!signedUrl) return;
-              const response = await fetch(signedUrl);
-              if (!response.ok) return;
-              const blob = await response.blob();
-              const reader = new FileReader();
-              const dataUrl = await new Promise<string>((resolve, reject) => {
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-              });
-              mediaUrlsMap.set(item.id, dataUrl);
-            } catch (err) {
-              console.warn('Could not convert image to base64 for PDF:', item.id, err);
-            }
-          } else if (item.file_type === 'video' && videoUrls[item.id]) {
-            videoUrlsMap.set(item.id, videoUrls[item.id]);
-          }
-        })
-      );
+      const pdfUrl = data?.pdfUrl;
+      if (!pdfUrl) {
+        throw new Error('No PDF URL returned from server');
+      }
 
-      const blob = await pdf(
-        <ReportPDF
-          reportData={reportData}
-          media={media}
-          checklists={checklists}
-          mediaUrls={mediaUrlsMap}
-          videoUrls={videoUrlsMap}
-        />
-      ).toBlob();
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${reportData?.project_name || 'Report'}_${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      window.open(pdfUrl, '_blank');
 
       toast({
-        title: t('finalReport.pdfDownloaded'),
-        description: t('finalReport.savedAsPDF'),
+        title: 'Your PDF is ready — opening in a new tab',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating PDF:', error);
       toast({
         title: t('finalReport.failedPDF'),
-        description: t('finalReport.tryAgain'),
+        description: error?.message || t('finalReport.tryAgain'),
         variant: "destructive",
       });
+    } finally {
+      setIsPdfGenerating(false);
     }
   };
 
@@ -1372,10 +1338,10 @@ const FinalReport = () => {
               onClick={handleDownloadPDF}
               size="sm"
               className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 flex-1 font-semibold"
-              disabled={!reportData}
+              disabled={!reportData || isPdfGenerating}
             >
-              <Download className="h-4 w-4" />
-              Export PDF
+              {isPdfGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              {isPdfGenerating ? 'Generating…' : 'Export PDF'}
             </Button>
 
             {/* More options dropdown */}
