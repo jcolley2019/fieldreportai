@@ -543,7 +543,8 @@ const ProjectDetail = () => {
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast.dismiss(toastId);
-      toast.error('Failed to generate PDF. Please try again.');
+      const msg = error instanceof Error ? error.message : String(error);
+      toast.error(`PDF failed: ${msg.slice(0, 120)}`);
     }
   };
 
