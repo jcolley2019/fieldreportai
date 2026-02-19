@@ -310,6 +310,7 @@ const Auth = () => {
               </Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 autoComplete="email"
                 placeholder={t('auth.emailPlaceholder')}
@@ -327,6 +328,7 @@ const Auth = () => {
               <div className="relative">
                 <Input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   autoComplete={isLogin ? "current-password" : "new-password"}
                   placeholder={t('auth.passwordPlaceholder')}
