@@ -104,45 +104,43 @@ const Index = () => {
 
   useEffect(() => {
     let isMounted = true;
+    let sessionResolved = false;
 
     // Safety timeout: force loading to false after 8 seconds
     const safetyTimeout = setTimeout(() => {
-      if (isMounted && loading) {
+      if (isMounted && !sessionResolved) {
         console.warn('Dashboard auth safety timeout triggered');
         setLoading(false);
       }
     }, 8000);
 
-    // Listener for ONGOING auth changes — this also fires on session restore
-    // which handles the mobile refresh case where getSession() returns null first
+    // Set up auth state listener FIRST (before getSession)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!isMounted) return;
+        sessionResolved = true;
         const newUser = session?.user ?? null;
         setUser(newUser);
         setLoading(false);
       }
     );
 
-    // INITIAL load — on mobile, localStorage tokens may not be ready yet
-    // so we rely on onAuthStateChange firing INITIAL_SESSION to set user
-    const initializeAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (isMounted && session?.user) {
-          // Session found immediately — set user and stop loading
-          setUser(session.user);
-          setLoading(false);
-        }
-        // If session is null, wait for onAuthStateChange(INITIAL_SESSION)
-        // which will fire shortly with the restored session from localStorage
-      } catch (e) {
-        console.error('Auth init error:', e);
-        if (isMounted) setLoading(false);
+    // Then check for an existing session immediately
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted || sessionResolved) return;
+      sessionResolved = true;
+      if (session?.user) {
+        setUser(session.user);
+        setLoading(false);
       }
-    };
-
-    initializeAuth();
+      // If no session found, onAuthStateChange will fire with INITIAL_SESSION
+    }).catch((e) => {
+      console.error('Auth init error:', e);
+      if (isMounted && !sessionResolved) {
+        sessionResolved = true;
+        setLoading(false);
+      }
+    });
 
     return () => {
       isMounted = false;
