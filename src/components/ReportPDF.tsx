@@ -8,7 +8,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
-    borderBottomWidth: 1,
+    borderBottom: 1,
     borderBottomColor: '#e5e7eb',
     paddingBottom: 10,
   },
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 12,
     height: 12,
-    borderWidth: 1,
+    border: 1,
     borderColor: '#d1d5db',
     borderRadius: 2,
     marginRight: 8,
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#f3f4f6',
     borderRadius: 4,
-    borderLeftWidth: 3,
+    borderLeft: 3,
     borderLeftColor: '#6366f1',
   },
   videoLabel: {
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: '#eff6ff',
     borderRadius: 4,
-    borderLeftWidth: 3,
+    borderLeft: 3,
     borderLeftColor: '#3b82f6',
   },
   shareLabel: {
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 40,
     right: 40,
-    borderTopWidth: 1,
+    borderTop: 1,
     borderTopColor: '#e5e7eb',
     paddingTop: 8,
     flexDirection: 'row',
@@ -493,21 +493,21 @@ export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls, 
           </View>
         )}
 
-        {/* Non-field/site_survey: Photos grid (legacy) - show ALL images */}
-        {!isPhotoDocType && media.filter(m => m.file_type === 'image').length > 0 && (
-          <View style={styles.section}>
+        {/* Non-field/site_survey: Photos grid (legacy) */}
+        {!isPhotoDocType && media.length > 0 && (
+          <View style={styles.section} wrap={false}>
             <Text style={styles.sectionTitle}>
-              Photos & Media ({media.filter(m => m.file_type === 'image').length})
+              Photos & Media ({media.length})
             </Text>
             <View style={styles.imageGrid}>
-              {media.filter(m => m.file_type === 'image').map((item) => {
+              {media.slice(0, 4).map((item) => {
                 const url = mediaUrls?.get(item.id);
                 const coords = formatCoordinates(item.latitude, item.longitude);
                 const captureDate = formatCaptureDate(item.captured_at);
                 const locationDisplay = item.location_name || coords;
                 
-                return url ? (
-                  <View key={item.id} style={styles.imageContainer} wrap={false}>
+                return item.file_type === 'image' && url ? (
+                  <View key={item.id} style={styles.imageContainer}>
                     <Image src={url} style={styles.image} />
                     {(locationDisplay || captureDate) && (
                       <Text style={styles.imageMetadata}>
@@ -520,6 +520,11 @@ export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls, 
                 ) : null;
               })}
             </View>
+            {media.length > 4 && (
+              <Text style={styles.text}>
+                + {media.length - 4} more photo{media.length - 4 !== 1 ? 's' : ''}
+              </Text>
+            )}
           </View>
         )}
 

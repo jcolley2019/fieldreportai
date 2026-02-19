@@ -44,7 +44,6 @@ interface ProjectData {
   created_at: string;
   tags: string[];
   status: ProjectStatus;
-  report_type?: string;
 }
 
 interface MediaItem {
@@ -52,12 +51,6 @@ interface MediaItem {
   file_path: string;
   file_type: string;
   created_at: string;
-  latitude?: number | null;
-  longitude?: number | null;
-  captured_at?: string | null;
-  location_name?: string | null;
-  caption?: string | null;
-  voice_note?: string | null;
 }
 
 interface ChecklistData {
@@ -482,44 +475,33 @@ const ProjectDetail = () => {
   const handleDownloadPDF = async () => {
     if (!project) return;
     
-    const toastId = toast.loading('Preparing PDF…');
     try {
-      // Auto-create or reuse a permanent share link — never let this block PDF generation
-      let shareUrl: string | undefined;
-      try {
-        shareUrl = await getOrCreateShareUrl();
-      } catch (shareErr) {
-        console.warn('Share URL creation failed, continuing without it:', shareErr);
-      }
+      toast.info('Preparing PDF…');
+
+      // Auto-create or reuse a permanent share link for the PDF
+      const shareUrl = await getOrCreateShareUrl();
 
       // Convert images to base64 data URLs so @react-pdf/renderer doesn't
       // have to make cross-origin fetches (which fail on mobile Safari).
       const base64UrlsMap = new Map<string, string>();
-      const imageItems = media.filter(m => m.file_type === 'image');
-      
       await Promise.all(
-        imageItems.map(async (item) => {
+        media.filter(m => m.file_type === 'image').map(async (item) => {
           try {
-            // Get a fresh 5-minute signed URL
-            const { data, error: urlErr } = await supabase.storage
+            // Get a fresh signed URL
+            const { data } = await supabase.storage
               .from('media')
-              .createSignedUrl(item.file_path, 300);
-            if (urlErr || !data?.signedUrl) {
-              console.warn('Could not get signed URL for', item.id, urlErr);
-              return;
-            }
+              .createSignedUrl(item.file_path, 120);
+            const signedUrl = data?.signedUrl;
+            if (!signedUrl) return;
 
             // Fetch and convert to base64 data URL
-            const response = await fetch(data.signedUrl, { mode: 'cors' });
-            if (!response.ok) {
-              console.warn('Image fetch failed for', item.id, response.status);
-              return;
-            }
+            const response = await fetch(signedUrl);
+            if (!response.ok) return;
             const blob = await response.blob();
+            const reader = new FileReader();
             const dataUrl = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
               reader.onloadend = () => resolve(reader.result as string);
-              reader.onerror = (e) => reject(e);
+              reader.onerror = reject;
               reader.readAsDataURL(blob);
             });
             base64UrlsMap.set(item.id, dataUrl);
@@ -529,11 +511,12 @@ const ProjectDetail = () => {
         })
       );
 
-      console.log(`PDF: ${base64UrlsMap.size}/${imageItems.length} images converted, shareUrl=${shareUrl}`);
-
       const blob = await pdf(
         <ReportPDF 
-          reportData={project}
+          reportData={{
+            ...project,
+            report_type: (project as any).report_type
+          }}
           media={media}
           checklists={checklists}
           mediaUrls={base64UrlsMap}
@@ -541,46 +524,11 @@ const ProjectDetail = () => {
         />
       ).toBlob();
       
-      toast.dismiss(toastId);
-
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const fileName = `${project.project_name.replace(/\s+/g, '_')}_Report.pdf`;
-      const pdfFile = new File([blob], fileName, { type: 'application/pdf' });
-
-      // iOS: use Web Share API (works on published app, not in preview iframe)
-      if (isIOS) {
-        const canShare = !!(navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] }));
-        if (canShare) {
-          try {
-            await navigator.share({ files: [pdfFile], title: project.project_name });
-            toast.success('PDF ready — choose where to save it');
-          } catch (err: any) {
-            if (err?.name !== 'AbortError') {
-              toast.error('Sharing cancelled');
-            }
-          }
-        } else {
-          // Web Share not available (e.g. inside an iframe/preview) — tell user to use published app
-          toast.error('PDF export requires opening the app directly in Safari. Visit fieldreportai.lovable.app to download.', { duration: 8000 });
-        }
-        return;
-      }
-
-      // Desktop / Android: standard anchor-click download
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
-      toast.success('PDF downloaded successfully');
+      saveAs(blob, `${project.project_name.replace(/\s+/g, '_')}_Report.pdf`);
+      toast.success('PDF downloaded');
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast.dismiss(toastId);
-      const msg = error instanceof Error ? error.message : String(error);
-      toast.error(`PDF failed: ${msg.slice(0, 120)}`);
+      toast.error('Failed to generate PDF. Please try again.');
     }
   };
 
