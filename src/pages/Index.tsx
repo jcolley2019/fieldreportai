@@ -129,11 +129,8 @@ const Index = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!isMounted || sessionResolved) return;
       sessionResolved = true;
-      if (session?.user) {
-        setUser(session.user);
-        setLoading(false);
-      }
-      // If no session found, onAuthStateChange will fire with INITIAL_SESSION
+      setUser(session?.user ?? null);
+      setLoading(false);
     }).catch((e) => {
       console.error('Auth init error:', e);
       if (isMounted && !sessionResolved) {
@@ -149,7 +146,6 @@ const Index = () => {
     };
   }, []);
 
-  // TODO: re-enable auth guard before publishing
   useEffect(() => {
     if (!loading && user) {
       checkProfileComplete();
