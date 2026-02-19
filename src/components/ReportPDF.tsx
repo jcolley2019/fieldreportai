@@ -8,7 +8,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
-    borderBottom: 1,
+    borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
     paddingBottom: 10,
   },
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 12,
     height: 12,
-    border: 1,
+    borderWidth: 1,
     borderColor: '#d1d5db',
     borderRadius: 2,
     marginRight: 8,
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#f3f4f6',
     borderRadius: 4,
-    borderLeft: 3,
+    borderLeftWidth: 3,
     borderLeftColor: '#6366f1',
   },
   videoLabel: {
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: '#eff6ff',
     borderRadius: 4,
-    borderLeft: 3,
+    borderLeftWidth: 3,
     borderLeftColor: '#3b82f6',
   },
   shareLabel: {
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 40,
     right: 40,
-    borderTop: 1,
+    borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
     paddingTop: 8,
     flexDirection: 'row',
