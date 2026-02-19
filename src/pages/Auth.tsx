@@ -118,9 +118,14 @@ const Auth = () => {
     // Fire-and-forget post-auth tasks (non-blocking)
     if (sessionId) linkSubscriptionToAccount().catch(console.error);
     if (startTrial === 'true') activateTrial().catch(console.error);
-    // Hard redirect with full page reload — guarantees ProtectedRoute reads
-    // the session fresh from storage with no React state race conditions.
-    window.location.replace(getDestination());
+    // In an iframe (preview), window.location.replace is sandboxed and won't work.
+    // Use React Router navigate() there; use hard reload in standalone (published) tab.
+    const isIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
+    if (isIframe) {
+      navigate(getDestination(), { replace: true });
+    } else {
+      window.location.replace(getDestination());
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
