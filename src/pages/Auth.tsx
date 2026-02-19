@@ -117,26 +117,21 @@ const Auth = () => {
   };
 
   const handlePostAuth = () => {
-    // Navigate immediately — fire-and-forget any post-auth tasks
-    navigateToDestination();
-    // Run post-auth tasks after navigation is triggered (non-blocking)
+    // Fire-and-forget post-auth tasks (non-blocking)
     if (sessionId) {
       linkSubscriptionToAccount().catch(console.error);
     }
     if (startTrial === 'true') {
       activateTrial().catch(console.error);
     }
+    // Navigate — keep loading=true so form doesn't flash back before redirect
+    navigateToDestination();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    // Safety timeout: always clear loading after 10 seconds max
-    const safetyTimeout = setTimeout(() => {
-      setLoading(false);
-      console.warn('Auth submit safety timeout triggered');
-    }, 10000);
+    let navigating = false;
 
     try {
       if (isLogin) {
@@ -159,6 +154,7 @@ const Auth = () => {
             toast({ title: "Error", description: error.message, variant: "destructive" });
           }
         } else {
+          navigating = true;
           toast({
             title: t('auth.success.loggedIn').split('!')[0],
             description: t('auth.success.loggedIn'),
@@ -206,6 +202,7 @@ const Auth = () => {
           const isAutoLoggedIn = !!data.session;
 
           if (isAutoLoggedIn) {
+            navigating = true;
             toast({
               title: "Account Created!",
               description: startTrial === 'true' ? "Your 14-day Pro trial is now active!" : "You're now logged in!",
@@ -219,6 +216,7 @@ const Auth = () => {
             });
 
             if (!loginError && loginData.session) {
+              navigating = true;
               toast({
                 title: "Account Created!",
                 description: "You're now logged in!",
@@ -242,8 +240,10 @@ const Auth = () => {
         toast({ title: t('auth.errors.validationError'), description: t('auth.errors.unexpectedError'), variant: "destructive" });
       }
     } finally {
-      clearTimeout(safetyTimeout);
-      setLoading(false);
+      // Only reset loading if we're NOT navigating away
+      if (!navigating) {
+        setLoading(false);
+      }
     }
   };
 
