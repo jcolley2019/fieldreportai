@@ -44,6 +44,7 @@ interface ProjectData {
   created_at: string;
   tags: string[];
   status: ProjectStatus;
+  report_type?: string;
 }
 
 interface MediaItem {
@@ -51,6 +52,12 @@ interface MediaItem {
   file_path: string;
   file_type: string;
   created_at: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  captured_at?: string | null;
+  location_name?: string | null;
+  caption?: string | null;
+  voice_note?: string | null;
 }
 
 interface ChecklistData {
@@ -526,10 +533,7 @@ const ProjectDetail = () => {
 
       const blob = await pdf(
         <ReportPDF 
-          reportData={{
-            ...project,
-            report_type: (project as any).report_type
-          }}
+          reportData={project}
           media={media}
           checklists={checklists}
           mediaUrls={base64UrlsMap}
