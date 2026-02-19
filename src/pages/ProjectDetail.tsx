@@ -475,33 +475,44 @@ const ProjectDetail = () => {
   const handleDownloadPDF = async () => {
     if (!project) return;
     
+    const toastId = toast.loading('Preparing PDF…');
     try {
-      toast.info('Preparing PDF…');
-
-      // Auto-create or reuse a permanent share link for the PDF
-      const shareUrl = await getOrCreateShareUrl();
+      // Auto-create or reuse a permanent share link — never let this block PDF generation
+      let shareUrl: string | undefined;
+      try {
+        shareUrl = await getOrCreateShareUrl();
+      } catch (shareErr) {
+        console.warn('Share URL creation failed, continuing without it:', shareErr);
+      }
 
       // Convert images to base64 data URLs so @react-pdf/renderer doesn't
       // have to make cross-origin fetches (which fail on mobile Safari).
       const base64UrlsMap = new Map<string, string>();
+      const imageItems = media.filter(m => m.file_type === 'image');
+      
       await Promise.all(
-        media.filter(m => m.file_type === 'image').map(async (item) => {
+        imageItems.map(async (item) => {
           try {
-            // Get a fresh signed URL
-            const { data } = await supabase.storage
+            // Get a fresh 5-minute signed URL
+            const { data, error: urlErr } = await supabase.storage
               .from('media')
-              .createSignedUrl(item.file_path, 120);
-            const signedUrl = data?.signedUrl;
-            if (!signedUrl) return;
+              .createSignedUrl(item.file_path, 300);
+            if (urlErr || !data?.signedUrl) {
+              console.warn('Could not get signed URL for', item.id, urlErr);
+              return;
+            }
 
             // Fetch and convert to base64 data URL
-            const response = await fetch(signedUrl);
-            if (!response.ok) return;
+            const response = await fetch(data.signedUrl, { mode: 'cors' });
+            if (!response.ok) {
+              console.warn('Image fetch failed for', item.id, response.status);
+              return;
+            }
             const blob = await response.blob();
-            const reader = new FileReader();
             const dataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
               reader.onloadend = () => resolve(reader.result as string);
-              reader.onerror = reject;
+              reader.onerror = (e) => reject(e);
               reader.readAsDataURL(blob);
             });
             base64UrlsMap.set(item.id, dataUrl);
@@ -510,6 +521,8 @@ const ProjectDetail = () => {
           }
         })
       );
+
+      console.log(`PDF: ${base64UrlsMap.size}/${imageItems.length} images converted, shareUrl=${shareUrl}`);
 
       const blob = await pdf(
         <ReportPDF 
@@ -524,10 +537,12 @@ const ProjectDetail = () => {
         />
       ).toBlob();
       
+      toast.dismiss(toastId);
       saveAs(blob, `${project.project_name.replace(/\s+/g, '_')}_Report.pdf`);
-      toast.success('PDF downloaded');
+      toast.success('PDF downloaded successfully');
     } catch (error) {
       console.error('Error generating PDF:', error);
+      toast.dismiss(toastId);
       toast.error('Failed to generate PDF. Please try again.');
     }
   };
