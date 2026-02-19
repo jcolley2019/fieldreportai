@@ -543,24 +543,26 @@ const ProjectDetail = () => {
       
       toast.dismiss(toastId);
 
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isMobile = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent);
+      const fileName = `${project.project_name.replace(/\s+/g, '_')}_Report.pdf`;
 
-      if (isIOS) {
-        // iOS Safari cannot open blob:// URLs in new tabs ("Task failed").
-        // Convert to a base64 data URL — Safari can open those as PDFs.
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const dataUrl = reader.result as string;
-          window.open(dataUrl, '_blank');
-          toast.success('PDF opened — tap the Share button (↑) to save to Files');
-        };
-        reader.readAsDataURL(blob);
+      // Use the native Web Share API on mobile — opens iOS share sheet (Save to Files, AirDrop, Email, etc.)
+      const pdfFile = new File([blob], fileName, { type: 'application/pdf' });
+      if (isMobile && navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        try {
+          await navigator.share({ files: [pdfFile], title: project.project_name });
+          toast.success('PDF shared successfully');
+        } catch (err: any) {
+          if (err?.name !== 'AbortError') {
+            toast.error('Could not share PDF — try again');
+          }
+        }
       } else {
-        // Desktop / Android: standard anchor-click download
+        // Desktop: standard anchor-click download
         const blobUrl = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = blobUrl;
-        link.download = `${project.project_name.replace(/\s+/g, '_')}_Report.pdf`;
+        link.download = fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
