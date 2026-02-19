@@ -543,32 +543,39 @@ const ProjectDetail = () => {
       
       toast.dismiss(toastId);
 
-      const isMobile = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent);
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
       const fileName = `${project.project_name.replace(/\s+/g, '_')}_Report.pdf`;
-
-      // Use the native Web Share API on mobile — opens iOS share sheet (Save to Files, AirDrop, Email, etc.)
       const pdfFile = new File([blob], fileName, { type: 'application/pdf' });
-      if (isMobile && navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-        try {
-          await navigator.share({ files: [pdfFile], title: project.project_name });
-          toast.success('PDF shared successfully');
-        } catch (err: any) {
-          if (err?.name !== 'AbortError') {
-            toast.error('Could not share PDF — try again');
+
+      // iOS: use Web Share API (works on published app, not in preview iframe)
+      if (isIOS) {
+        const canShare = !!(navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] }));
+        if (canShare) {
+          try {
+            await navigator.share({ files: [pdfFile], title: project.project_name });
+            toast.success('PDF ready — choose where to save it');
+          } catch (err: any) {
+            if (err?.name !== 'AbortError') {
+              toast.error('Sharing cancelled');
+            }
           }
+        } else {
+          // Web Share not available (e.g. inside an iframe/preview) — tell user to use published app
+          toast.error('PDF export requires opening the app directly in Safari. Visit fieldreportai.lovable.app to download.', { duration: 8000 });
         }
-      } else {
-        // Desktop: standard anchor-click download
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
-        toast.success('PDF downloaded successfully');
+        return;
       }
+
+      // Desktop / Android: standard anchor-click download
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+      toast.success('PDF downloaded successfully');
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast.dismiss(toastId);
