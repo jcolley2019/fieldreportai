@@ -163,45 +163,6 @@ const styles = StyleSheet.create({
     color: '#6366f1',
     textDecoration: 'underline',
   },
-  shareBox: {
-    marginTop: 8,
-    padding: 8,
-    backgroundColor: '#eff6ff',
-    borderRadius: 4,
-    borderLeft: 3,
-    borderLeftColor: '#3b82f6',
-  },
-  shareLabel: {
-    fontSize: 9,
-    color: '#6b7280',
-    marginBottom: 3,
-  },
-  shareLink: {
-    fontSize: 10,
-    color: '#2563eb',
-    textDecoration: 'underline',
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 40,
-    right: 40,
-    borderTop: 1,
-    borderTopColor: '#e5e7eb',
-    paddingTop: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 8,
-    color: '#9ca3af',
-  },
-  footerLink: {
-    fontSize: 8,
-    color: '#6366f1',
-    textDecoration: 'underline',
-  },
 });
 
 interface MediaItemForPDF {
@@ -241,8 +202,6 @@ interface ReportPDFProps {
   mediaUrls?: Map<string, string>;
   /** Signed or public URLs for video items, keyed by media id */
   videoUrls?: Map<string, string>;
-  /** Permanent public share URL for the project gallery (photos + videos) */
-  shareUrl?: string;
 }
 
 const getReportTypeLabel = (reportType?: string) => {
@@ -262,7 +221,7 @@ const getReportTypeLabel = (reportType?: string) => {
   }
 };
 
-export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls, videoUrls, shareUrl }: ReportPDFProps) => {
+export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls, videoUrls }: ReportPDFProps) => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -547,14 +506,8 @@ export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls, 
                     <Link src={videoUrl} style={styles.videoLink}>
                       ▶ View / Download Video
                     </Link>
-                  ) : null}
-                  {shareUrl ? (
-                    <View style={styles.shareBox}>
-                      <Text style={styles.shareLabel}>📱 View all photos & videos in your browser (permanent link):</Text>
-                      <Link src={shareUrl} style={styles.shareLink}>{shareUrl}</Link>
-                    </View>
                   ) : (
-                    !videoUrl ? <Text style={styles.videoNote}>(Video link available when viewing saved report)</Text> : null
+                    <Text style={styles.videoNote}>(Video link available when viewing saved report)</Text>
                   )}
                 </View>
               );
@@ -584,17 +537,6 @@ export const ReportPDF = ({ reportData, media = [], checklists = [], mediaUrls, 
             ))}
           </View>
         ))}
-
-        {/* Footer with share link */}
-        {shareUrl && (
-          <View style={styles.footer} fixed>
-            <Text style={styles.footerText}>Field Report AI</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={styles.footerText}>View online: </Text>
-              <Link src={shareUrl} style={styles.footerLink}>{shareUrl}</Link>
-            </View>
-          </View>
-        )}
       </Page>
     </Document>
   );

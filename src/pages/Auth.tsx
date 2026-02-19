@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
 
@@ -19,12 +19,12 @@ const authSchema = z.object({
 
 const Auth = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectUrl = searchParams.get("redirect");
   const pendingPlan = searchParams.get("plan");
@@ -33,15 +33,6 @@ const Auth = () => {
   const mode = searchParams.get("mode");
   const startTrial = searchParams.get("startTrial");
 
-  const getDestination = () => {
-    if (redirectUrl) {
-      return pendingPlan && pendingBilling
-        ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
-        : redirectUrl;
-    }
-    return "/dashboard";
-  };
-
   // Set signup mode if coming from guest checkout or trial start
   useEffect(() => {
     if (mode === 'signup' || startTrial === 'true') {
@@ -49,20 +40,27 @@ const Auth = () => {
     }
   }, [mode, startTrial]);
 
-  // Redirect if already logged in (but not if we just logged out)
+  // Redirect if already logged in
   useEffect(() => {
     const checkUser = async () => {
-      if (sessionStorage.getItem('just_logged_out')) {
-        sessionStorage.removeItem('just_logged_out');
-        return;
-      }
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate(getDestination(), { replace: true });
+        navigateToDestination();
       }
     };
     checkUser();
   }, []);
+
+  const navigateToDestination = () => {
+    if (redirectUrl) {
+      const fullRedirect = pendingPlan && pendingBilling
+        ? `${redirectUrl}?plan=${pendingPlan}&billing=${pendingBilling}`
+        : redirectUrl;
+      navigate(fullRedirect);
+    } else {
+      navigate("/dashboard");
+    }
+  };
 
   const activateTrial = async () => {
     try {
@@ -114,24 +112,26 @@ const Auth = () => {
     }
   };
 
-  const handlePostAuth = () => {
-    // Fire-and-forget post-auth tasks (non-blocking)
-    if (sessionId) linkSubscriptionToAccount().catch(console.error);
-    if (startTrial === 'true') activateTrial().catch(console.error);
-    // In an iframe (preview), window.location.replace is sandboxed and won't work.
-    // Use React Router navigate() there; use hard reload in standalone (published) tab.
-    const isIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
-    if (isIframe) {
-      navigate(getDestination(), { replace: true });
-    } else {
-      window.location.replace(getDestination());
+  const handlePostAuth = async () => {
+    // Run post-auth tasks (non-blocking for navigation)
+    if (sessionId) {
+      linkSubscriptionToAccount();
     }
+    if (startTrial === 'true') {
+      activateTrial();
+    }
+    navigateToDestination();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    let navigating = false;
+
+    // Safety timeout: always clear loading after 10 seconds max
+    const safetyTimeout = setTimeout(() => {
+      setLoading(false);
+      console.warn('Auth submit safety timeout triggered');
+    }, 10000);
 
     try {
       if (isLogin) {
@@ -154,7 +154,6 @@ const Auth = () => {
             toast({ title: "Error", description: error.message, variant: "destructive" });
           }
         } else {
-          navigating = true;
           toast({
             title: t('auth.success.loggedIn').split('!')[0],
             description: t('auth.success.loggedIn'),
@@ -202,34 +201,18 @@ const Auth = () => {
           const isAutoLoggedIn = !!data.session;
 
           if (isAutoLoggedIn) {
-            navigating = true;
             toast({
-              title: "Account Created!",
+              title: "Account Created",
               description: startTrial === 'true' ? "Your 14-day Pro trial is now active!" : "You're now logged in!",
             });
             handlePostAuth();
           } else {
-            // Try auto-login immediately (works when email confirmation is disabled)
-            const { error: loginError, data: loginData } = await supabase.auth.signInWithPassword({
-              email: validatedData.email,
-              password: validatedData.password,
+            // Email confirmation required — switch to login
+            toast({
+              title: t('auth.success.accountCreated').split('!')[0],
+              description: t('auth.success.accountCreated'),
             });
-
-            if (!loginError && loginData.session) {
-              navigating = true;
-              toast({
-                title: "Account Created!",
-                description: "You're now logged in!",
-              });
-              handlePostAuth();
-            } else {
-              // Email confirmation is required — switch to login mode with clear message
-              toast({
-                title: "Account Created!",
-                description: "Please check your email to confirm your account, then log in below.",
-              });
-              setIsLogin(true);
-            }
+            setIsLogin(true);
           }
         }
       }
@@ -240,10 +223,8 @@ const Auth = () => {
         toast({ title: t('auth.errors.validationError'), description: t('auth.errors.unexpectedError'), variant: "destructive" });
       }
     } finally {
-      // Only reset loading if we're NOT navigating away
-      if (!navigating) {
-        setLoading(false);
-      }
+      clearTimeout(safetyTimeout);
+      setLoading(false);
     }
   };
 
@@ -310,7 +291,6 @@ const Auth = () => {
               </Label>
               <Input
                 id="email"
-                name="email"
                 type="email"
                 autoComplete="email"
                 placeholder={t('auth.emailPlaceholder')}
@@ -328,7 +308,6 @@ const Auth = () => {
               <div className="relative">
                 <Input
                   id="password"
-                  name="password"
                   type={showPassword ? "text" : "password"}
                   autoComplete={isLogin ? "current-password" : "new-password"}
                   placeholder={t('auth.passwordPlaceholder')}

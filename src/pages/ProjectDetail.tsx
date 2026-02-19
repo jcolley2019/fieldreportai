@@ -428,88 +428,15 @@ const ProjectDetail = () => {
     window.print();
   };
 
-  const getOrCreateShareUrl = async (): Promise<string | undefined> => {
-    if (!project || !projectId) return undefined;
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return undefined;
-
-      // Reuse an existing non-expired, non-revoked share link
-      const { data: existing } = await supabase
-        .from('project_shares')
-        .select('share_token, expires_at')
-        .eq('report_id', projectId)
-        .is('revoked_at', null)
-        .gt('expires_at', new Date().toISOString())
-        .order('expires_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (existing?.share_token) {
-        return `${window.location.origin}/shared/${existing.share_token}`;
-      }
-
-      // Create a new long-lived share link (1 year)
-      const expiresAt = new Date();
-      expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-      const { data: created } = await supabase
-        .from('project_shares')
-        .insert({
-          report_id: projectId,
-          user_id: user.id,
-          expires_at: expiresAt.toISOString(),
-          allow_download: true,
-        })
-        .select('share_token')
-        .single();
-
-      if (created?.share_token) {
-        return `${window.location.origin}/shared/${created.share_token}`;
-      }
-    } catch (err) {
-      console.warn('Could not create share link for PDF:', err);
-    }
-    return undefined;
-  };
-
   const handleDownloadPDF = async () => {
     if (!project) return;
     
     try {
-      toast.info('Preparing PDF…');
-
-      // Auto-create or reuse a permanent share link for the PDF
-      const shareUrl = await getOrCreateShareUrl();
-
-      // Convert images to base64 data URLs so @react-pdf/renderer doesn't
-      // have to make cross-origin fetches (which fail on mobile Safari).
-      const base64UrlsMap = new Map<string, string>();
-      await Promise.all(
-        media.filter(m => m.file_type === 'image').map(async (item) => {
-          try {
-            // Get a fresh signed URL
-            const { data } = await supabase.storage
-              .from('media')
-              .createSignedUrl(item.file_path, 120);
-            const signedUrl = data?.signedUrl;
-            if (!signedUrl) return;
-
-            // Fetch and convert to base64 data URL
-            const response = await fetch(signedUrl);
-            if (!response.ok) return;
-            const blob = await response.blob();
-            const reader = new FileReader();
-            const dataUrl = await new Promise<string>((resolve, reject) => {
-              reader.onloadend = () => resolve(reader.result as string);
-              reader.onerror = reject;
-              reader.readAsDataURL(blob);
-            });
-            base64UrlsMap.set(item.id, dataUrl);
-          } catch (err) {
-            console.warn('Could not convert image to base64 for PDF:', item.id, err);
-          }
-        })
-      );
+      const mediaUrlsMap = new Map<string, string>();
+      media.forEach(item => {
+        const url = mediaUrls[item.id];
+        if (url) mediaUrlsMap.set(item.id, url);
+      });
 
       const blob = await pdf(
         <ReportPDF 
@@ -519,8 +446,7 @@ const ProjectDetail = () => {
           }}
           media={media}
           checklists={checklists}
-          mediaUrls={base64UrlsMap}
-          shareUrl={shareUrl}
+          mediaUrls={mediaUrlsMap}
         />
       ).toBlob();
       
@@ -528,7 +454,7 @@ const ProjectDetail = () => {
       toast.success('PDF downloaded');
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF. Please try again.');
+      toast.error('Failed to generate PDF');
     }
   };
 

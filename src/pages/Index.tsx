@@ -5,11 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User } from "@supabase/supabase-js";
-import { FileText, Camera, Mic, Share2, Eye, ChevronDown, ChevronRight, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Circle, Cloud, Layers, LogOut, MessageSquare, X, Download, Loader2 } from "lucide-react";
+import { FileText, Camera, Mic, Share2, Eye, ChevronDown, ChevronRight, Settings as SettingsIcon, ListChecks, Building2, Hash, User as UserIcon, Trash2, Zap, FolderOpen, Search, Filter, Plus, Circle, Cloud, Layers, LogOut, MessageSquare, X } from "lucide-react";
 
 import { toast } from "sonner";
-import { pdf } from "@react-pdf/renderer";
-import { ReportPDF } from "@/components/ReportPDF";
 import { TrialBanner } from "@/components/TrialBanner";
 import { SubscriptionBadge } from "@/components/SubscriptionBadge";
 import { TrialExpiredModal } from "@/components/TrialExpiredModal";
@@ -76,7 +74,6 @@ const Index = () => {
   const [showTrialExpiredModal, setShowTrialExpiredModal] = useState(false);
   const [isUpgradeClicked, setIsUpgradeClicked] = useState(false);
   const [isProjectsSectionVisible, setIsProjectsSectionVisible] = useState(false);
-  const [exportingProjectId, setExportingProjectId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { refreshPlan, currentPlan, features, isTrialExpired, trialDaysExpired } = usePlanFeatures();
 
@@ -104,40 +101,37 @@ const Index = () => {
 
   useEffect(() => {
     let isMounted = true;
-    let sessionResolved = false;
 
-    // Safety timeout: force loading to false after 8 seconds
+    // Safety timeout: force loading to false after 5 seconds
     const safetyTimeout = setTimeout(() => {
-      if (isMounted && !sessionResolved) {
+      if (isMounted && loading) {
         console.warn('Dashboard auth safety timeout triggered');
         setLoading(false);
       }
-    }, 8000);
+    }, 5000);
 
-    // Set up auth state listener FIRST (before getSession)
+    // Listener for ONGOING auth changes (does NOT control loading)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!isMounted) return;
-        sessionResolved = true;
-        const newUser = session?.user ?? null;
-        setUser(newUser);
-        setLoading(false);
+        setUser(session?.user ?? null);
+        if (loading) setLoading(false);
       }
     );
 
-    // Then check for an existing session immediately
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!isMounted || sessionResolved) return;
-      sessionResolved = true;
-      setUser(session?.user ?? null);
-      setLoading(false);
-    }).catch((e) => {
-      console.error('Auth init error:', e);
-      if (isMounted && !sessionResolved) {
-        sessionResolved = true;
-        setLoading(false);
+    // INITIAL load (controls loading)
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (isMounted) {
+          setUser(session?.user ?? null);
+        }
+      } finally {
+        if (isMounted) setLoading(false);
       }
-    });
+    };
+
+    initializeAuth();
 
     return () => {
       isMounted = false;
@@ -146,6 +140,7 @@ const Index = () => {
     };
   }, []);
 
+  // TODO: re-enable auth guard before publishing
   useEffect(() => {
     if (!loading && user) {
       checkProfileComplete();
@@ -290,70 +285,6 @@ const Index = () => {
     }
   };
 
-  const handleExportPDF = async (e: React.MouseEvent, project: Project) => {
-    e.stopPropagation();
-    if (exportingProjectId) return;
-    setExportingProjectId(project.id);
-    try {
-      // Fetch full report data
-      const { data: reportData, error: reportError } = await supabase
-        .from('reports')
-        .select('*')
-        .eq('id', project.id)
-        .single();
-      if (reportError) throw reportError;
-
-      // Fetch media + checklists in parallel
-      const [mediaResult, checklistResult] = await Promise.all([
-        supabase.from('media').select('*').eq('report_id', project.id).order('captured_at', { ascending: true }),
-        supabase.from('checklists').select('*, checklist_items(*)').eq('report_id', project.id),
-      ]);
-
-      // Generate signed URLs for images
-      const mediaUrls = new Map<string, string>();
-      await Promise.all(
-        (mediaResult.data || []).filter(m => m.file_type === 'image').map(async (m) => {
-          const { data } = await supabase.storage.from('media').createSignedUrl(m.file_path, 3600);
-          if (data?.signedUrl) mediaUrls.set(m.id, data.signedUrl);
-        })
-      );
-
-      const checklists = (checklistResult.data || []).map((cl: any) => ({
-        id: cl.id,
-        title: cl.title,
-        items: (cl.checklist_items || []).map((item: any) => ({
-          id: item.id,
-          text: item.text,
-          completed: item.completed,
-          priority: item.priority,
-          category: item.category,
-        })),
-      }));
-
-      const blob = await pdf(
-        <ReportPDF
-          reportData={reportData}
-          media={mediaResult.data || []}
-          checklists={checklists}
-          mediaUrls={mediaUrls}
-        />
-      ).toBlob();
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${project.project_name.replace(/\s+/g, '_')}_report.pdf`;
-      link.click();
-      URL.revokeObjectURL(url);
-      toast.success('PDF downloaded!');
-    } catch (err) {
-      console.error('Export error:', err);
-      toast.error('Failed to export PDF');
-    } finally {
-      setExportingProjectId(null);
-    }
-  };
-
   // Filter and sort projects
   const [activeStatusFilter, setActiveStatusFilter] = useState<ProjectStatus | null>(null);
   const filteredProjects = projects
@@ -401,21 +332,14 @@ const Index = () => {
     return (
       <div className="dark min-h-screen">
         <div className="flex min-h-screen items-center justify-center bg-background">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="text-foreground">{t('common.loading')}</div>
         </div>
       </div>
     );
   }
 
   if (!user) {
-    // Session not restored yet — show spinner (handles mobile refresh race condition)
-    return (
-      <div className="dark min-h-screen">
-        <div className="flex min-h-screen items-center justify-center bg-background">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -492,12 +416,10 @@ const Index = () => {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
-                onSelect={async () => {
+                onClick={async () => {
                   await supabase.auth.signOut();
-                  localStorage.removeItem('skipOnboarding');
-                  sessionStorage.setItem('just_logged_out', 'true');
-                  window.location.assign("/auth");
-                }}
+                  navigate("/auth");
+                }} 
                 className="cursor-pointer text-destructive focus:text-destructive"
               >
                 <LogOut className="mr-2 h-4 w-4" />
@@ -732,18 +654,6 @@ const Index = () => {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        title="Export PDF"
-                        onClick={(e) => handleExportPDF(e, project)}
-                        disabled={exportingProjectId === project.id}
-                        className="rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10"
-                      >
-                        {exportingProjectId === project.id
-                          ? <Loader2 className="h-5 w-5 animate-spin" />
-                          : <Download className="h-5 w-5" />}
-                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"

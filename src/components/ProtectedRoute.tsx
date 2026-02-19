@@ -8,41 +8,20 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   useEffect(() => {
-    let isMounted = true;
-    let resolved = false;
-
-    const resolve = (authenticated: boolean) => {
-      if (!isMounted || resolved) return;
-      resolved = true;
-      setAuthenticated(authenticated);
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setAuthenticated(!!session);
       setLoading(false);
     };
 
-    // Fast path: read session from localStorage immediately
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      resolve(!!session);
-    });
+    checkSession();
 
-    // Also listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!isMounted) return;
-      if (resolved) {
-        setAuthenticated(!!session);
-      } else {
-        resolve(!!session);
-      }
+      setAuthenticated(!!session);
+      setLoading(false);
     });
 
-    // Safety net: 5s timeout
-    const safetyTimer = setTimeout(() => {
-      if (isMounted && !resolved) resolve(false);
-    }, 5000);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(safetyTimer);
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   if (loading) {

@@ -183,8 +183,6 @@ const FinalReport = () => {
     loadReportData();
   }, [reportId]);
 
-  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
-
   const handleDownloadPDF = async () => {
     if (!reportData) {
       toast({
@@ -195,40 +193,53 @@ const FinalReport = () => {
       return;
     }
 
-    setIsPdfGenerating(true);
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        throw new Error('Unable to get current user. Please sign in and try again.');
-      }
-
-      const { data, error } = await supabase.functions.invoke('generate-pdf', {
-        body: { reportId, userId: user.id },
+      toast({
+        title: t('finalReport.generatingPDF'),
+        description: t('finalReport.preparingPDF'),
       });
 
-      if (error) {
-        throw new Error(error.message || 'Failed to generate PDF');
+      // Use existing signed URLs from state for PDF generation
+      const mediaUrlsMap = new Map<string, string>();
+      const videoUrlsMap = new Map<string, string>();
+      for (const item of media) {
+        if (item.file_type === 'image' && mediaUrls[item.id]) {
+          mediaUrlsMap.set(item.id, mediaUrls[item.id]);
+        } else if (item.file_type === 'video' && videoUrls[item.id]) {
+          videoUrlsMap.set(item.id, videoUrls[item.id]);
+        }
       }
 
-      const pdfUrl = data?.pdfUrl;
-      if (!pdfUrl) {
-        throw new Error('No PDF URL returned from server');
-      }
+      const blob = await pdf(
+        <ReportPDF
+          reportData={reportData}
+          media={media}
+          checklists={checklists}
+          mediaUrls={mediaUrlsMap}
+          videoUrls={videoUrlsMap}
+        />
+      ).toBlob();
 
-      window.open(pdfUrl, '_blank');
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${reportData?.project_name || 'Report'}_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
       toast({
-        title: 'Your PDF is ready — opening in a new tab',
+        title: t('finalReport.pdfDownloaded'),
+        description: t('finalReport.savedAsPDF'),
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error generating PDF:', error);
       toast({
         title: t('finalReport.failedPDF'),
-        description: error?.message || t('finalReport.tryAgain'),
+        description: t('finalReport.tryAgain'),
         variant: "destructive",
       });
-    } finally {
-      setIsPdfGenerating(false);
     }
   };
 
@@ -1306,53 +1317,49 @@ const FinalReport = () => {
           </Button>
         </div>
 
-        {/* Secondary Actions Bar */}
-        <div className="border-t border-zinc-800 px-4 py-3">
-          <div className="flex items-center gap-2">
+        {/* Secondary Actions Bar (Centered) */}
+        <div className="border-t border-zinc-800 px-4 py-4">
+          <div className="flex items-center justify-center gap-2 md:gap-3">
             {/* Print Button */}
             <Button
               onClick={handlePrint}
               variant="outline"
               size="sm"
-              className="gap-2 text-zinc-200 hover:text-white border-zinc-600 flex-shrink-0"
+              className="gap-2 text-zinc-200 hover:text-white border-zinc-600"
               disabled={!reportData}
             >
               <Printer className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('finalReport.print')}</span>
+              <span className="hidden md:inline">{t('finalReport.print')}</span>
             </Button>
+
+            {/* Divider */}
+            <div className="hidden md:block h-8 w-px bg-zinc-700" />
 
             {/* Copy Link Button */}
             <Button
               onClick={handleCopyLink}
               variant="ghost"
               size="sm"
-              className="gap-2 text-zinc-200 hover:text-white flex-shrink-0"
+              className="gap-2 text-zinc-200 hover:text-white"
             >
               <Link className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('finalReport.copyLink')}</span>
+              <span className="hidden md:inline">{t('finalReport.copyLink')}</span>
             </Button>
 
-            {/* Export PDF — prominent labeled button */}
-            <Button
-              id="export-pdf-btn"
-              onClick={handleDownloadPDF}
-              size="sm"
-              className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 flex-1 font-semibold"
-              disabled={!reportData || isPdfGenerating}
-            >
-              {isPdfGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              {isPdfGenerating ? 'Generating…' : 'Export PDF'}
-            </Button>
+            {/* Divider */}
+            <div className="hidden md:block h-8 w-px bg-zinc-700" />
 
-            {/* More options dropdown */}
+            {/* Save Options Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1 text-zinc-200 hover:text-white border-zinc-600 flex-shrink-0"
+                  className="gap-1 md:gap-2 text-zinc-200 hover:text-white border-zinc-600"
                   disabled={!reportData}
                 >
+                  <Download className="h-4 w-4" />
+                  <span className="hidden sm:inline">{t('finalReport.saveOptions')}</span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
