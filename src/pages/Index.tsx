@@ -496,10 +496,11 @@ const Index = () => {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 
-                onClick={async () => {
+                onSelect={async () => {
                   await supabase.auth.signOut();
-                  navigate("/auth");
-                }} 
+                  localStorage.removeItem('skipOnboarding');
+                  window.location.assign("/auth");
+                }}
                 className="cursor-pointer text-destructive focus:text-destructive"
               >
                 <LogOut className="mr-2 h-4 w-4" />
