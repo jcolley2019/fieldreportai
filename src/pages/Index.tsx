@@ -129,13 +129,12 @@ const Index = () => {
     const initializeAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (isMounted && session?.user) {
-          // Session found immediately — set user and stop loading
+        if (!isMounted) return;
+        if (session?.user) {
           setUser(session.user);
-          setLoading(false);
         }
-        // If session is null, wait for onAuthStateChange(INITIAL_SESSION)
-        // which will fire shortly with the restored session from localStorage
+        // Always stop loading after initial session check
+        setLoading(false);
       } catch (e) {
         console.error('Auth init error:', e);
         if (isMounted) setLoading(false);
