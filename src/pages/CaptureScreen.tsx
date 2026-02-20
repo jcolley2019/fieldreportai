@@ -748,12 +748,12 @@ const CaptureScreen = () => {
 
       setLinkedReportId(report.id);
       setLinkedProjectName(finalProjectName);
+      setProjectSheetSaving(false);
       setShowProjectSheet(false);
-      toast.success(`Project "${projectName}" created — generating report…`);
-      await generateSummary(report.id);
+      toast.success(`Project "${finalProjectName}" created — generating report…`);
+      generateSummary(report.id);
     } catch (err) {
       toast.error("Failed to save project details");
-    } finally {
       setProjectSheetSaving(false);
     }
   };
