@@ -12,9 +12,10 @@ interface CoachStep {
 interface CoachMarksProps {
   steps: CoachStep[];
   storageKey: string;
+  onVisibilityChange?: (visible: boolean) => void;
 }
 
-const CoachMarks = ({ steps, storageKey }: CoachMarksProps) => {
+const CoachMarks = ({ steps, storageKey, onVisibilityChange }: CoachMarksProps) => {
   const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
   const [visible, setVisible] = useState(false);
@@ -27,7 +28,10 @@ const CoachMarks = ({ steps, storageKey }: CoachMarksProps) => {
     if (dismissed) return;
 
     // Small delay to let the page render
-    const timer = setTimeout(() => setVisible(true), 800);
+    const timer = setTimeout(() => {
+      setVisible(true);
+      onVisibilityChange?.(true);
+    }, 800);
     return () => clearTimeout(timer);
   }, [storageKey]);
 
@@ -121,6 +125,7 @@ const CoachMarks = ({ steps, storageKey }: CoachMarksProps) => {
     currentEl?.classList.remove("coach-mark-highlight");
     localStorage.setItem(storageKey, "true");
     setVisible(false);
+    onVisibilityChange?.(false);
   };
 
   if (!visible || !steps[currentStep]) return null;
