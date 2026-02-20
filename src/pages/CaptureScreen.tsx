@@ -1552,13 +1552,6 @@ const CaptureScreen = () => {
                   </button>
                 </div>
 
-                {/* Caption overlay at bottom */}
-                {activeImages[selectedImageIndex].caption && (
-                  <div className="absolute bottom-20 left-4 right-4 bg-black/70 px-4 py-3 rounded-xl backdrop-blur-sm">
-                    <p className="text-sm text-white">{activeImages[selectedImageIndex].voiceNote ? '🎙 ' : ''}{activeImages[selectedImageIndex].caption}</p>
-                  </div>
-                )}
-                
                 {/* Navigation Arrows */}
                 {activeImages.length > 1 && (
                   <>
@@ -1585,6 +1578,15 @@ const CaptureScreen = () => {
               </>
             )}
           </div>
+
+          {/* Caption below the image */}
+          {selectedImageIndex !== null && activeImages[selectedImageIndex]?.caption && (
+            <div className="px-4 pb-2 pt-3">
+              <p className="text-sm text-foreground/90 text-center">
+                {activeImages[selectedImageIndex].voiceNote ? '🎙 ' : ''}{activeImages[selectedImageIndex].caption}
+              </p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
