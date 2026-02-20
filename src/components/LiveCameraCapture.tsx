@@ -56,6 +56,7 @@ export const LiveCameraCapture = ({
   const [isReady, setIsReady] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [cameraMode, setCameraMode] = useState<'photo' | 'video'>('photo');
+  const [videoCoachActive, setVideoCoachActive] = useState(false);
   
   // Detect if device is desktop/laptop (no touch or large screen without touch)
   const isDesktop = typeof window !== 'undefined' && (
@@ -558,6 +559,7 @@ export const LiveCameraCapture = ({
         {/* Coach Marks for bottom controls (mode-specific) */}
         <CoachMarks
           storageKey={cameraMode === 'photo' ? 'cameraPhotoCoachDismissed' : 'cameraVideoCoachDismissed'}
+          onVisibilityChange={cameraMode === 'video' ? setVideoCoachActive : undefined}
           steps={cameraMode === 'photo' ? [
             {
               targetSelector: '[data-coach="shutter-button"]',
@@ -844,127 +846,144 @@ export const LiveCameraCapture = ({
 
           {/* Bottom Controls */}
           <div className="shrink-0 bg-black/95 backdrop-blur-sm p-6">
-            <div className="grid grid-cols-[1fr_auto_1fr] items-center max-w-[600px] mx-auto">
-              {isRecording && cameraMode === 'video' ? (
-                <>
-                  {/* Left: Combined Done/Gallery button */}
-                  <div className="flex justify-center">
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="relative">
-                        <button
-                          onClick={handleDone}
-                          className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all overflow-hidden"
-                        >
-                          {capturedImages.length > 0 ? (
-                            <img src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} alt="Gallery" className="w-full h-full object-cover" />
-                          ) : (
-                            <Image className="h-6 w-6 text-white" />
-                          )}
-                        </button>
-                        {capturedImages.length > 0 && (
-                          <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg">
-                            {capturedImages.length}
-                          </div>
-                        )}
-                      </div>
-                      <span className="text-xs font-semibold uppercase tracking-wider text-white">Done</span>
-                    </div>
-                  </div>
-
-                  {/* Center: Stop recording button */}
+          {/* Helper to render Done/Gallery button */}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center max-w-[600px] mx-auto">
+            {(isRecording || videoCoachActive) && cameraMode === 'video' ? (
+              <>
+                {/* Left: Combined Done/Gallery button */}
+                <div className="flex justify-center">
                   <div className="flex flex-col items-center gap-1">
-                    <button
-                      data-coach="video-stop-button"
-                      onClick={onStopRecording}
-                      className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300 border-2 border-white/30"
-                    >
-                      <div className="h-7 w-7 rounded-[5px] bg-red-500 transition-all duration-300" />
-                    </button>
-                    <span className="text-sm font-semibold uppercase tracking-wider text-white">Stop</span>
-                  </div>
-
-                  {/* Right: Pause + Shutter */}
-                  <div className="flex justify-center">
-                    <div className="flex items-center gap-3">
-                      {onPauseRecording && (
-                        <div className="flex flex-col items-center gap-1">
-                          <button
-                            data-coach="video-pause-button"
-                            onClick={onPauseRecording}
-                            className={`flex h-14 w-14 items-center justify-center rounded-full transition-all ${
-                              isPaused
-                                ? 'bg-red-500 hover:bg-red-600'
-                                : 'bg-green-500 hover:bg-green-600 animate-pulse'
-                            }`}
-                          >
-                            {isPaused ? (
-                              <VideoOff className="h-6 w-6 text-white" />
-                            ) : (
-                              <Video className="h-6 w-6 text-white" />
-                            )}
-                          </button>
-                          <span className="text-xs font-semibold uppercase tracking-wider text-white">
-                            {isPaused ? 'Resume' : 'Pause'}
-                          </span>
+                    <div className="relative">
+                      <button
+                        onClick={handleDone}
+                        className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all overflow-hidden"
+                      >
+                        {capturedImages.length > 0 ? (
+                          capturedImages[capturedImages.length - 1].type.startsWith('video/') ? (
+                            <video
+                              src={URL.createObjectURL(capturedImages[capturedImages.length - 1])}
+                              className="w-full h-full object-cover"
+                              muted
+                              playsInline
+                            />
+                          ) : (
+                            <img src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} alt="Gallery" className="w-full h-full object-cover" />
+                          )
+                        ) : (
+                          <Image className="h-6 w-6 text-white" />
+                        )}
+                      </button>
+                      {capturedImages.length > 0 && (
+                        <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg">
+                          {capturedImages.length}
                         </div>
                       )}
-                      {/* Photo snapshot button */}
+                    </div>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-white">Done</span>
+                  </div>
+                </div>
+
+                {/* Center: Stop recording button (or ghost preview during coach) */}
+                <div className="flex flex-col items-center gap-1">
+                  <button
+                    data-coach="video-stop-button"
+                    onClick={isRecording ? onStopRecording : undefined}
+                    className={`flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all duration-300 border-2 border-white/30 ${isRecording ? 'hover:bg-white/30' : 'opacity-60 cursor-default'}`}
+                  >
+                    <div className="h-7 w-7 rounded-[5px] bg-red-500 transition-all duration-300" />
+                  </button>
+                  <span className="text-sm font-semibold uppercase tracking-wider text-white">Stop</span>
+                </div>
+
+                {/* Right: Pause + Shutter (or ghost preview during coach) */}
+                <div className="flex justify-center">
+                  <div className="flex items-center gap-3">
+                    {(onPauseRecording || videoCoachActive) && (
                       <div className="flex flex-col items-center gap-1">
                         <button
-                          data-coach="video-photo-button"
-                          onClick={capturePhoto}
-                          disabled={!isReady}
-                          className="flex h-14 w-14 items-center justify-center rounded-full bg-white disabled:opacity-50 hover:scale-105 transition-all shadow-lg border-2 border-white/80"
+                          data-coach="video-pause-button"
+                          onClick={isRecording && onPauseRecording ? onPauseRecording : undefined}
+                          className={`flex h-14 w-14 items-center justify-center rounded-full transition-all ${
+                            !isRecording
+                              ? 'bg-green-500/50 cursor-default opacity-60'
+                              : isPaused
+                                ? 'bg-red-500 hover:bg-red-600'
+                                : 'bg-green-500 hover:bg-green-600 animate-pulse'
+                          }`}
                         >
-                          <div className="h-10 w-10 rounded-full bg-white" />
+                          <Video className="h-6 w-6 text-white" />
                         </button>
-                        <span className="text-xs font-semibold uppercase tracking-wider text-white">Photo</span>
+                        <span className="text-xs font-semibold uppercase tracking-wider text-white">
+                          {isPaused ? 'Resume' : 'Pause'}
+                        </span>
                       </div>
-                    </div>
-                  </div>
-                </>
-              ) : cameraMode === 'video' && onStartRecording ? (
-                <>
-                  {/* Left: Combined Done/Gallery button */}
-                  <div className="flex justify-center">
+                    )}
+                    {/* Photo snapshot button */}
                     <div className="flex flex-col items-center gap-1">
-                      <div className="relative">
-                        <button
-                          onClick={handleDone}
-                          className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all overflow-hidden"
-                        >
-                          {capturedImages.length > 0 ? (
-                            <img src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} alt="Gallery" className="w-full h-full object-cover" />
-                          ) : (
-                            <Image className="h-6 w-6 text-white" />
-                          )}
-                        </button>
-                        {capturedImages.length > 0 && (
-                          <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg">
-                            {capturedImages.length}
-                          </div>
-                        )}
-                      </div>
-                      <span className="text-xs font-semibold uppercase tracking-wider text-white">Done</span>
+                      <button
+                        data-coach="video-photo-button"
+                        onClick={isRecording ? capturePhoto : undefined}
+                        disabled={isRecording && !isReady}
+                        className={`flex h-14 w-14 items-center justify-center rounded-full bg-white transition-all shadow-lg border-2 border-white/80 ${isRecording ? 'hover:scale-105 disabled:opacity-50' : 'opacity-60 cursor-default'}`}
+                      >
+                        <div className="h-10 w-10 rounded-full bg-white" />
+                      </button>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-white">Photo</span>
                     </div>
                   </div>
-
-                  {/* Center: Record button */}
+                </div>
+              </>
+            ) : !isRecording && cameraMode === 'video' && onStartRecording ? (
+              <>
+                {/* Left: Combined Done/Gallery button */}
+                <div className="flex justify-center">
                   <div className="flex flex-col items-center gap-1">
-                    <button
-                      data-coach="record-button"
-                      onClick={onStartRecording}
-                      className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300 border-2 border-white/30"
-                    >
-                      <div className="h-16 w-16 rounded-full bg-red-500 hover:bg-red-600 transition-all duration-300" />
-                    </button>
-                    <span className="text-sm font-semibold uppercase tracking-wider text-white">Record</span>
+                    <div className="relative">
+                      <button
+                        onClick={handleDone}
+                        className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all overflow-hidden"
+                      >
+                        {capturedImages.length > 0 ? (
+                          capturedImages[capturedImages.length - 1].type.startsWith('video/') ? (
+                            <video
+                              src={URL.createObjectURL(capturedImages[capturedImages.length - 1])}
+                              className="w-full h-full object-cover"
+                              muted
+                              playsInline
+                            />
+                          ) : (
+                            <img src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} alt="Gallery" className="w-full h-full object-cover" />
+                          )
+                        ) : (
+                          <Image className="h-6 w-6 text-white" />
+                        )}
+                      </button>
+                      {capturedImages.length > 0 && (
+                        <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg">
+                          {capturedImages.length}
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-white">Done</span>
                   </div>
+                </div>
 
-                  {/* Right: spacer */}
-                  <div></div>
-                </>
-              ) : (
+                {/* Center: Record button */}
+                <div className="flex flex-col items-center gap-1">
+                  <button
+                    data-coach="record-button"
+                    onClick={onStartRecording}
+                    className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all duration-300 border-2 border-white/30"
+                  >
+                    <div className="h-16 w-16 rounded-full bg-red-500 hover:bg-red-600 transition-all duration-300" />
+                  </button>
+                  <span className="text-sm font-semibold uppercase tracking-wider text-white">Record</span>
+                </div>
+
+                {/* Right: spacer */}
+                <div></div>
+              </>
+            ) : (
                 <>
                   {/* Photo mode: Done+Gallery / Shutter / Audio */}
                   {/* Left: Combined Done/Gallery button */}
@@ -976,7 +995,16 @@ export const LiveCameraCapture = ({
                           className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all overflow-hidden"
                         >
                           {capturedImages.length > 0 ? (
-                            <img src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} alt="Gallery" className="w-full h-full object-cover" />
+                            capturedImages[capturedImages.length - 1].type.startsWith('video/') ? (
+                              <video
+                                src={URL.createObjectURL(capturedImages[capturedImages.length - 1])}
+                                className="w-full h-full object-cover"
+                                muted
+                                playsInline
+                              />
+                            ) : (
+                              <img src={URL.createObjectURL(capturedImages[capturedImages.length - 1])} alt="Gallery" className="w-full h-full object-cover" />
+                            )
                           ) : (
                             <Image className="h-6 w-6 text-white" />
                           )}
