@@ -567,11 +567,6 @@ export const LiveCameraCapture = ({
               description: t("coachMarks.photo.shutterDesc"),
             },
             {
-              targetSelector: '[data-coach="ai-notes-button"]',
-              title: t("coachMarks.photo.aiNotesTitle"),
-              description: t("coachMarks.photo.aiNotesDesc"),
-            },
-            {
               targetSelector: '[data-coach="stop-notes-button"]',
               title: t("coachMarks.photo.stopTitle"),
               description: t("coachMarks.photo.stopDesc"),
