@@ -873,6 +873,12 @@ const ProjectDetail = () => {
                 <FileText className="h-4 w-4 mr-2" />
                 {t("common.saveAsWord")}
               </DropdownMenuItem>
+              {canManage && (
+                <DropdownMenuItem onClick={() => setEmailDialogOpen(true)}>
+                  <Mail className="h-4 w-4 mr-2" />
+                  Send via Email
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
           {canManage && (
@@ -885,14 +891,9 @@ const ProjectDetail = () => {
               {t("common.share")}
             </Button>
           )}
+          {/* Email Dialog (triggered from Download dropdown) */}
           {canManage && (
             <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="flex-1 gap-2">
-                  <Mail className="h-4 w-4" />
-                  Email
-                </Button>
-              </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <DialogTitle>Share via Email</DialogTitle>
