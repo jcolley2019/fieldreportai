@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import DOMPurify from "dompurify";
 import { useParams } from "react-router-dom";
 import JSZip from "jszip";
 import { useTranslation } from "react-i18next";
@@ -661,7 +662,7 @@ export default function SharedProject() {
                     <CardContent>
                       {note.organized_notes ? (
                         <div className="prose prose-sm dark:prose-invert max-w-none"
-                             dangerouslySetInnerHTML={{ __html: note.organized_notes }} />
+                             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(note.organized_notes) }} />
                       ) : (
                         <p className="whitespace-pre-wrap">{note.note_text}</p>
                       )}
@@ -832,7 +833,7 @@ export default function SharedProject() {
                                   {(entry.item as typeof notes[0]).organized_notes ? (
                                     <div
                                       className="prose prose-sm dark:prose-invert max-w-none"
-                                      dangerouslySetInnerHTML={{ __html: (entry.item as typeof notes[0]).organized_notes! }}
+                                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize((entry.item as typeof notes[0]).organized_notes!) }}
                                     />
                                   ) : (
                                     <p className="whitespace-pre-wrap text-sm">
