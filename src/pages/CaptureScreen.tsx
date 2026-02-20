@@ -1168,8 +1168,8 @@ const CaptureScreen = () => {
 
   return (
     <div className="dark min-h-screen bg-background">
-      {/* Coach Marks - first visit only */}
-      <CoachMarks
+      {/* Coach Marks - first visit only, but not while camera is open */}
+      {!showLiveCamera && <CoachMarks
         storageKey="captureScreenCoachDismissed"
         steps={[
           {
@@ -1198,7 +1198,7 @@ const CaptureScreen = () => {
             description: t("coachMarks.capture.generateDesc"),
           },
         ]}
-      />
+      />}
       {/* Glass Navbar */}
       <GlassNavbar fixed={false}>
         <NavbarLeft>
