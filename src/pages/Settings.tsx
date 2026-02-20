@@ -34,6 +34,7 @@ import {
   Zap,
   Timer,
   MapPin,
+  RotateCcw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -1305,6 +1306,31 @@ const Settings = () => {
               </span>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </button>
+
+          {/* Reset Tutorials */}
+          <button
+            className="flex w-full items-center justify-between border-b border-border py-4"
+            onClick={() => {
+              const keys = [
+                'captureScreenCoachDismissed',
+                'cameraToolbarCoachDismissed',
+                'cameraPhotoCoachDismissed',
+                'cameraVideoCoachDismissed',
+                'notesScreenCoachDismissed',
+                'tasksScreenCoachDismissed',
+                'checklistScreenCoachDismissed',
+              ];
+              keys.forEach(k => localStorage.removeItem(k));
+              toast('Tutorials reset — onboarding tips will show again on your next visit to each screen.');
+            }}
+          >
+            <div className="flex items-center gap-4">
+              <RotateCcw className="h-5 w-5 text-foreground" />
+              <span className="text-base font-medium text-foreground">
+                Reset Tutorials
+              </span>
+            </div>
           </button>
         </div>
 
