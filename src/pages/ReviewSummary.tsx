@@ -276,8 +276,10 @@ const ReviewSummary = () => {
           .map(r => r.job_description);
       }
 
-      // Get image data URLs for the AI
-      const imageDataUrls = capturedImages.map((img: any) => img.url);
+      // Get image data URLs for the AI — prefer base64 (data:) over blob: URLs which the server cannot access
+      const imageDataUrls = capturedImages
+        .map((img: any) => img.base64?.startsWith('data:') ? img.base64 : img.url?.startsWith('data:') ? img.url : null)
+        .filter(Boolean) as string[];
 
       const { data, error } = await supabase.functions.invoke('generate-report-summary', {
         body: {
