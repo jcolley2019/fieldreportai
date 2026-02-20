@@ -1238,24 +1238,6 @@ const CaptureScreen = () => {
 
 
         <div className="flex flex-col gap-y-6">
-          {/* Description Textarea — hidden in Quick Capture mode */}
-          {!isQuickCapture && <div className="relative" data-coach="field-notes">
-            <label className="text-foreground font-medium flex items-center gap-2 mb-2">
-              <FileText className="h-4 w-4 text-primary" />
-              {t('captureScreen.fieldNotes')}
-            </label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t('captureScreen.descriptionPlaceholder')}
-              className="min-h-[200px] resize-none rounded-xl border-none bg-secondary text-base focus-visible:ring-2 focus-visible:ring-primary"
-              maxLength={1000}
-            />
-            <div className="absolute bottom-2 right-3 text-xs text-muted-foreground">
-              {description.length} / 1000
-            </div>
-          </div>}
-
           {/* Quick Actions */}
           <div className="grid grid-cols-3 gap-3">
             <button 
