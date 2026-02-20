@@ -7,6 +7,29 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// IP-based rate limiting (resets on cold start)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 30; // 30 requests per minute per IP
+
+function getClientIp(req: Request): string {
+  const forwarded = req.headers.get("x-forwarded-for");
+  const cfIp = req.headers.get("cf-connecting-ip");
+  return forwarded?.split(",")[0]?.trim() || cfIp || "unknown";
+}
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const existing = rateLimitMap.get(ip);
+  if (!existing || now > existing.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  if (existing.count >= RATE_LIMIT_MAX_REQUESTS) return false;
+  existing.count++;
+  return true;
+}
+
 const requestSchema = z.object({
   token: z.string().min(32).max(128),
 });
@@ -14,6 +37,14 @@ const requestSchema = z.object({
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  const clientIp = getClientIp(req);
+  if (!checkRateLimit(clientIp)) {
+    return new Response(
+      JSON.stringify({ error: "Too many requests. Please try again later." }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" } }
+    );
   }
 
   try {
@@ -85,15 +116,12 @@ const handler = async (req: Request): Promise<Response> => {
     ]);
 
     // Generate signed URLs for media (valid for 1 hour)
-    // Also attempt thumbnail URLs for faster gallery loading
     const mediaWithUrls = await Promise.all(
       (mediaResult.data || []).map(async (item) => {
-        // Full-size URL (used in lightbox / download)
         const { data: signedData } = await supabaseClient.storage
           .from("media")
           .createSignedUrl(item.file_path, 3600);
 
-        // Thumbnail URL — stored at thumbnails/<rest-of-path>
         let thumbnailUrl: string | null = null;
         if (item.file_type === "image") {
           const thumbnailPath = `thumbnails/${item.file_path}`;
@@ -143,7 +171,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error in get-public-share:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "An error occurred processing your request" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

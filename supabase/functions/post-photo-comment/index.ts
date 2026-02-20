@@ -9,6 +9,29 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// IP-based rate limiting — stricter for comment posting (10/min)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 10; // 10 comment posts per minute per IP
+
+function getClientIp(req: Request): string {
+  const forwarded = req.headers.get("x-forwarded-for");
+  const cfIp = req.headers.get("cf-connecting-ip");
+  return forwarded?.split(",")[0]?.trim() || cfIp || "unknown";
+}
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const existing = rateLimitMap.get(ip);
+  if (!existing || now > existing.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  if (existing.count >= RATE_LIMIT_MAX_REQUESTS) return false;
+  existing.count++;
+  return true;
+}
+
 const requestSchema = z.object({
   share_token: z.string().trim().min(32).max(128),
   media_id: z.string().uuid(),
@@ -28,6 +51,14 @@ function escapeHtml(str: string): string {
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  const clientIp = getClientIp(req);
+  if (!checkRateLimit(clientIp)) {
+    return new Response(
+      JSON.stringify({ error: "Too many requests. Please wait before posting another comment." }),
+      { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" } }
+    );
   }
 
   try {
@@ -183,7 +214,7 @@ serve(async (req) => {
   } catch (err: any) {
     console.error("post-photo-comment error:", err);
     return new Response(
-      JSON.stringify({ error: err.message || "Failed to post comment" }),
+      JSON.stringify({ error: "Failed to post comment" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
