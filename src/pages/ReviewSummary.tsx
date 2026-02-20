@@ -359,9 +359,16 @@ const ReviewSummary = () => {
 
       // If no project selected (standalone), create a new report
       if (!currentReportId) {
+        const reportTypeLabels: Record<string, string> = {
+          field: t('reportType.field', 'Field Report'),
+          daily: t('reportType.daily', 'Daily Report'),
+          weekly: t('reportType.weekly', 'Weekly Report'),
+          monthly: t('reportType.monthly', 'Monthly Report'),
+          site_survey: t('reportType.site_survey', 'Site Survey'),
+        };
         const reportData = {
           user_id: user.id,
-          project_name: t('reviewSummary.simpleModeReport'),
+          project_name: reportTypeLabels[reportType] || t('reviewSummary.simpleModeReport'),
           customer_name: t('reviewSummary.standaloneReport'),
           job_number: `SM-${Date.now()}`,
           job_description: summaryText,
