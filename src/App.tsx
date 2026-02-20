@@ -49,26 +49,26 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/shared/:token" element={<SharedProject />} />
 
-            {/* Protected routes — TODO: re-enable ALL guards before publishing */}
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/dashboard" element={<Index />} />
-            <Route path="/new-project" element={<NewProject />} />
-            <Route path="/projects" element={<ProjectsCustomers />} />
-            <Route path="/project/:projectId" element={<ProjectDetail />} />
-            <Route path="/notes" element={<Notes />} />
-            <Route path="/saved-notes" element={<SavedNotes />} />
-            <Route path="/capture-screen" element={<CaptureScreen />} />
-            <Route path="/checklist" element={<Checklist />} />
-            <Route path="/checklist-confirmation" element={<ChecklistConfirmation />} />
-            <Route path="/confirmation" element={<Confirmation />} />
-            <Route path="/final-report" element={<FinalReport />} />
-            <Route path="/review-summary" element={<ReviewSummary />} />
-            <Route path="/saved-reports" element={<SavedReports />} />
-            <Route path="/all-content" element={<AllContent />} />
-            <Route path="/tasks" element={<Tasks />} />
-            <Route path="/settings" element={<Settings />} />
+            {/* Protected routes */}
+            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/new-project" element={<ProtectedRoute><NewProject /></ProtectedRoute>} />
+            <Route path="/projects" element={<ProtectedRoute><ProjectsCustomers /></ProtectedRoute>} />
+            <Route path="/project/:projectId" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
+            <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
+            <Route path="/saved-notes" element={<ProtectedRoute><SavedNotes /></ProtectedRoute>} />
+            <Route path="/capture-screen" element={<ProtectedRoute><CaptureScreen /></ProtectedRoute>} />
+            <Route path="/checklist" element={<ProtectedRoute><Checklist /></ProtectedRoute>} />
+            <Route path="/checklist-confirmation" element={<ProtectedRoute><ChecklistConfirmation /></ProtectedRoute>} />
+            <Route path="/confirmation" element={<ProtectedRoute><Confirmation /></ProtectedRoute>} />
+            <Route path="/final-report" element={<ProtectedRoute><FinalReport /></ProtectedRoute>} />
+            <Route path="/review-summary" element={<ProtectedRoute><ReviewSummary /></ProtectedRoute>} />
+            <Route path="/saved-reports" element={<ProtectedRoute><SavedReports /></ProtectedRoute>} />
+            <Route path="/all-content" element={<ProtectedRoute><AllContent /></ProtectedRoute>} />
+            <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/checkout-success" element={<CheckoutSuccess />} />
-            <Route path="/admin/metrics" element={<AdminMetrics />} />
+            <Route path="/admin/metrics" element={<ProtectedRoute><AdminMetrics /></ProtectedRoute>} />
             <Route path="/install" element={<Install />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
