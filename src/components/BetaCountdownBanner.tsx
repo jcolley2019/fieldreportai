@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Rocket, X } from "lucide-react";
 
-const LAUNCH_DATE = new Date("2026-03-01T00:00:00");
+const LAUNCH_DATE = new Date("2026-03-16T00:00:00");
 
 const BetaCountdownBanner = () => {
   const [timeLeft, setTimeLeft] = useState(getTimeLeft());
@@ -34,7 +34,7 @@ const BetaCountdownBanner = () => {
           <TimeBlock value={timeLeft.seconds} label="s" />
         </div>
         <span className="text-base md:text-lg font-bold inline-flex items-center gap-1.5">
-          <Rocket className="h-5 w-5" /> March 1st, 2026
+          <Rocket className="h-5 w-5" /> March 16th, 2026
         </span>
       </div>
       <button
