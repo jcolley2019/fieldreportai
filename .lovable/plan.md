@@ -1,20 +1,43 @@
 
-## Remove Field Notes from Quick Capture Page
 
-### What's Happening
+## Problem
 
-The Field Notes textarea is already conditionally hidden in Quick Capture mode using `{!isQuickCapture && ...}` on line 1242 of `CaptureScreen.tsx`. However, the element still exists in the DOM (just not rendered). The user wants it fully removed — cleaning up the code so the field notes textarea is permanently gone from the Quick Capture capture page, with no conditional logic left behind.
+The last edit added `navigate("/auth", { replace: true })` inside the render body of `Index.tsx` (line 417). This is problematic because:
 
-### What Will Change
+1. It calls `navigate()` during render, which is a React anti-pattern and can cause loops/crashes.
+2. It duplicates the redirect logic that `ProtectedRoute` already handles — every protected route is wrapped in `<ProtectedRoute>`, which cleanly redirects unauthenticated users to `/auth`.
+3. This is likely causing the spinner/redirect issues you are seeing.
 
-**File: `src/pages/CaptureScreen.tsx`**
+The `ProtectedRoute` component already guarantees that `Index.tsx` will never render without an authenticated user. The `if (!user)` block in Index.tsx was originally a harmless fallback spinner for a brief race condition during session restoration — it should not navigate.
 
-- Remove lines 1241–1257: The entire `{/* Description Textarea — hidden in Quick Capture mode */}` block including the comment, label, `<Textarea>`, and character counter.
-- The `{!isQuickCapture && ...}` wrapper and its contents are deleted outright.
-- The rest of the page (Quick Actions grid, camera button, image gallery, Generate Report button) remains unchanged.
+## Plan
 
-### Technical Notes
+### 1. Revert the navigate call in Index.tsx (lines 415-417)
 
-- The `description` state variable is still used in the Quick Capture generate flow (line 1442 checks `!description && activeImgs.length === 0`) and in `handleSaveProjectAndGenerate`. Removing the textarea from the UI means `description` will always be an empty string in Quick Capture mode — which is correct behavior since the project sheet auto-generates a description in that mode.
-- No logic changes are needed — just the UI element removal.
-- The `FileText` import from `lucide-react` is still used in the Quick Actions grid (Add Note button), so it does not need to be removed.
+Restore the original comment and remove the `navigate()` call:
+
+```typescript
+if (!user) {
+  // Session not restored yet — show spinner (handles mobile refresh race condition)
+  return (
+    ...spinner...
+  );
+}
+```
+
+This is a single-line revert. `ProtectedRoute` handles all auth redirects, so Index.tsx does not need its own.
+
+### 2. No other changes needed
+
+- `ProtectedRoute` correctly redirects unauthenticated users to `/auth` with a redirect param.
+- The auth page correctly redirects authenticated users to the dashboard.
+- The landing page correctly redirects authenticated users to the dashboard.
+- All protected routes are wrapped in `ProtectedRoute`.
+
+To preview protected pages while logged out, you can log in via the preview's `/auth` page. The full auth flow (login, redirect, protected routes) will work as designed.
+
+### Regression checklist
+- **Auth**: No auth code changed; ProtectedRoute untouched.
+- **Navigation**: Removing the erroneous navigate() restores stable behavior; ProtectedRoute still handles redirects.
+- **Build**: Minimal diff — one line reverted.
+
