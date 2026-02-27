@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -413,14 +413,8 @@ const Index = () => {
   }
 
   if (!user) {
-    // Session not restored yet — show spinner (handles mobile refresh race condition)
-    return (
-      <div className="dark min-h-screen">
-        <div className="flex min-h-screen items-center justify-center bg-background">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </div>
-    );
+    // No session after loading finished — redirect to auth
+    return <Navigate to="/auth" replace />;
   }
 
   return (
