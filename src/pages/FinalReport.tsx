@@ -824,29 +824,57 @@ const FinalReport = () => {
     setEditedContent({});
   };
 
+  // Generic parser: splits report text into sections by ALL-CAPS headings
+  const parseReportSections = (text: string): { key: string; heading: string; content: string }[] => {
+    // Match lines that are ALL CAPS (with optional spaces, dashes, colons, numbers, ampersands, slashes, parens)
+    const headingRegex = /^([A-Z][A-Z0-9 &/()]+(?:\s*[—–\-:]+\s*.*)?)$/gm;
+    const matches: { index: number; heading: string }[] = [];
+    let match: RegExpExecArray | null;
+    while ((match = headingRegex.exec(text)) !== null) {
+      // Ensure it's truly all-caps heading (at least 2 uppercase letters, not just a single word in content)
+      const candidate = match[1].trim();
+      const lettersOnly = candidate.replace(/[^A-Za-z]/g, '');
+      if (lettersOnly.length >= 2 && lettersOnly === lettersOnly.toUpperCase()) {
+        matches.push({ index: match.index, heading: candidate });
+      }
+    }
+    if (matches.length === 0) return [];
+    
+    const sections: { key: string; heading: string; content: string }[] = [];
+    for (let i = 0; i < matches.length; i++) {
+      const contentStart = matches[i].index + matches[i].heading.length;
+      const contentEnd = i + 1 < matches.length ? matches[i + 1].index : text.length;
+      const content = text.slice(contentStart, contentEnd).replace(/^[:\s]+/, '').trim();
+      const key = `section_${i}`;
+      sections.push({ key, heading: matches[i].heading, content });
+    }
+    return sections;
+  };
+
   const handleSaveSection = async (sectionKey: string) => {
     if (!reportId || !reportData) return;
 
     setIsSaving(true);
     try {
       const text = reportData.job_description;
+      const sections = parseReportSections(text);
+      const sectionIndex = sections.findIndex(s => s.key === sectionKey);
+      
       let updatedText = text;
-
-      if (sectionKey === 'summary') {
-        updatedText = text.replace(
-          /SUMMARY:\s*([\s\S]*?)(?=KEY POINTS:|ACTION ITEMS:|$)/i,
-          `SUMMARY:\n${editedContent[sectionKey]}\n\n`
-        );
-      } else if (sectionKey === 'keypoints') {
-        updatedText = text.replace(
-          /KEY POINTS:\s*([\s\S]*?)(?=ACTION ITEMS:|$)/i,
-          `KEY POINTS:\n${editedContent[sectionKey]}\n\n`
-        );
-      } else if (sectionKey === 'actions') {
-        updatedText = text.replace(
-          /ACTION ITEMS:\s*([\s\S]*?)$/i,
-          `ACTION ITEMS:\n${editedContent[sectionKey]}`
-        );
+      if (sectionIndex >= 0) {
+        const section = sections[sectionIndex];
+        // Find the start of this section's content in the original text
+        const headingIndex = text.indexOf(section.heading);
+        const contentStart = headingIndex + section.heading.length;
+        // Find the end: start of next section heading, or end of text
+        const nextSection = sections[sectionIndex + 1];
+        const contentEnd = nextSection ? text.indexOf(nextSection.heading) : text.length;
+        
+        // Replace just the content portion between this heading and the next
+        updatedText = text.slice(0, contentStart) + '\n' + editedContent[sectionKey] + '\n\n' + text.slice(contentEnd);
+      } else {
+        // Fallback for full-text single-card mode
+        updatedText = editedContent[sectionKey] || text;
       }
 
       const { error } = await supabase
@@ -915,48 +943,33 @@ const FinalReport = () => {
               <div className="px-4 pb-6">
                 {(() => {
                   const text = reportData.job_description;
+                  const sections = parseReportSections(text);
                   
-                  const summaryMatch = text.match(/SUMMARY:\s*([\s\S]*?)(?=KEY POINTS:|ACTION ITEMS:|$)/i);
-                  const keyPointsMatch = text.match(/KEY POINTS:\s*([\s\S]*?)(?=ACTION ITEMS:|$)/i);
-                  const actionItemsMatch = text.match(/ACTION ITEMS:\s*([\s\S]*?)$/i);
-                  
-                  return (
-                    <div className="space-y-4">
-                      {summaryMatch && (
+                  if (sections.length === 0) {
+                    // Fallback: single card for plain text
+                    return (
+                      <div className="space-y-4">
                         <div className="rounded-lg bg-card p-4">
                           <div className="flex items-center justify-between mb-2">
                             <h2 className="text-lg font-bold text-foreground">{t('finalReport.summary')}</h2>
-                            {editingSection !== 'summary' && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditSection('summary', summaryMatch[1].trim())}
-                              >
+                            {editingSection !== 'fulltext' && (
+                              <Button variant="ghost" size="sm" onClick={() => handleEditSection('fulltext', text)}>
                                 <Edit2 className="h-4 w-4" />
                               </Button>
                             )}
                           </div>
-                          {editingSection === 'summary' ? (
+                          {editingSection === 'fulltext' ? (
                             <div className="space-y-2">
                               <RichTextEditor
-                                content={editedContent['summary'] || ''}
-                                onChange={(content) => setEditedContent({ ...editedContent, summary: content })}
+                                content={editedContent['fulltext'] || ''}
+                                onChange={(content) => setEditedContent({ ...editedContent, fulltext: content })}
                               />
                               <div className="flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleSaveSection('summary')}
-                                  disabled={isSaving}
-                                >
+                                <Button size="sm" onClick={() => handleSaveSection('fulltext')} disabled={isSaving}>
                                   <Save className="h-4 w-4 mr-1" />
                                   {isSaving ? t('finalReport.saving') : t('finalReport.save')}
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={handleCancelEdit}
-                                  disabled={isSaving}
-                                >
+                                <Button size="sm" variant="outline" onClick={handleCancelEdit} disabled={isSaving}>
                                   <X className="h-4 w-4 mr-1" />
                                   {t('finalReport.cancel')}
                                 </Button>
@@ -984,49 +997,38 @@ const FinalReport = () => {
                               </div>
                             </div>
                           ) : (
-                            <div 
-                              className="prose prose-sm max-w-none text-base leading-relaxed text-muted-foreground"
-                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(summaryMatch[1].trim()) }}
-                            />
+                            <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">{text}</p>
                           )}
                         </div>
-                      )}
-                      
-                      {keyPointsMatch && (
-                        <div className="rounded-lg bg-card p-4">
+                      </div>
+                    );
+                  }
+
+                  // Generic section rendering
+                  return (
+                    <div className="space-y-4">
+                      {sections.map((section) => (
+                        <div key={section.key} className="rounded-lg bg-card p-4">
                           <div className="flex items-center justify-between mb-2">
-                            <h2 className="text-lg font-bold text-foreground">{t('finalReport.keyPoints')}</h2>
-                            {editingSection !== 'keypoints' && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditSection('keypoints', keyPointsMatch[1].trim())}
-                              >
+                            <h2 className="text-lg font-bold text-foreground">{section.heading}</h2>
+                            {editingSection !== section.key && (
+                              <Button variant="ghost" size="sm" onClick={() => handleEditSection(section.key, section.content)}>
                                 <Edit2 className="h-4 w-4" />
                               </Button>
                             )}
                           </div>
-                          {editingSection === 'keypoints' ? (
+                          {editingSection === section.key ? (
                             <div className="space-y-2">
                               <RichTextEditor
-                                content={editedContent['keypoints'] || ''}
-                                onChange={(content) => setEditedContent({ ...editedContent, keypoints: content })}
+                                content={editedContent[section.key] || ''}
+                                onChange={(content) => setEditedContent({ ...editedContent, [section.key]: content })}
                               />
                               <div className="flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleSaveSection('keypoints')}
-                                  disabled={isSaving}
-                                >
+                                <Button size="sm" onClick={() => handleSaveSection(section.key)} disabled={isSaving}>
                                   <Save className="h-4 w-4 mr-1" />
                                   {isSaving ? t('finalReport.saving') : t('finalReport.save')}
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={handleCancelEdit}
-                                  disabled={isSaving}
-                                >
+                                <Button size="sm" variant="outline" onClick={handleCancelEdit} disabled={isSaving}>
                                   <X className="h-4 w-4 mr-1" />
                                   {t('finalReport.cancel')}
                                 </Button>
@@ -1054,91 +1056,13 @@ const FinalReport = () => {
                               </div>
                             </div>
                           ) : (
-                            <div 
+                            <div
                               className="prose prose-sm max-w-none text-base leading-relaxed text-muted-foreground"
-                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(keyPointsMatch[1].trim()) }}
+                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(section.content) }}
                             />
                           )}
                         </div>
-                      )}
-                      
-                      {actionItemsMatch && (
-                        <div className="rounded-lg bg-card p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <h2 className="text-lg font-bold text-foreground">{t('finalReport.actionItems')}</h2>
-                            {editingSection !== 'actions' && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditSection('actions', actionItemsMatch[1].trim())}
-                              >
-                                <Edit2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                          {editingSection === 'actions' ? (
-                            <div className="space-y-2">
-                              <RichTextEditor
-                                content={editedContent['actions'] || ''}
-                                onChange={(content) => setEditedContent({ ...editedContent, actions: content })}
-                              />
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleSaveSection('actions')}
-                                  disabled={isSaving}
-                                >
-                                  <Save className="h-4 w-4 mr-1" />
-                                  {isSaving ? t('finalReport.saving') : t('finalReport.save')}
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={handleCancelEdit}
-                                  disabled={isSaving}
-                                >
-                                  <X className="h-4 w-4 mr-1" />
-                                  {t('finalReport.cancel')}
-                                </Button>
-                                <div className="ml-auto flex items-center gap-2">
-                                  {voiceTranscription.isRecording && (
-                                    <span className="text-xs text-red-400 animate-pulse">
-                                      ● {voiceTranscription.formatTime(voiceTranscription.recordingTime)}
-                                    </span>
-                                  )}
-                                  {voiceTranscription.isTranscribing && (
-                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                      <Loader2 className="h-3 w-3 animate-spin" /> Transcribing...
-                                    </span>
-                                  )}
-                                  <Button
-                                    size="sm"
-                                    variant={voiceTranscription.isRecording ? "destructive" : "outline"}
-                                    onClick={voiceTranscription.isRecording ? voiceTranscription.stopRecording : voiceTranscription.startRecording}
-                                    disabled={voiceTranscription.isTranscribing}
-                                    className={voiceTranscription.isRecording ? "animate-pulse" : ""}
-                                  >
-                                    {voiceTranscription.isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            <div 
-                              className="prose prose-sm max-w-none text-base leading-relaxed text-muted-foreground"
-                              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(actionItemsMatch[1].trim()) }}
-                            />
-                          )}
-                        </div>
-                      )}
-                      
-                      {!summaryMatch && !keyPointsMatch && !actionItemsMatch && (
-                        <div className="rounded-lg bg-card p-4">
-                          <p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
-                            {text}
-                          </p>
-                        </div>
-                      )}
+                      ))}
                     </div>
                   );
                 })()}
