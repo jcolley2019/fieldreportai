@@ -40,7 +40,7 @@ serve(async (req) => {
     if (!validationResult.success) {
       console.error("Validation error:", validationResult.error.flatten());
       return new Response(
-        JSON.stringify({ error: "Invalid input", details: validationResult.error.flatten() }),
+        JSON.stringify({ error: "Invalid input" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -119,7 +119,7 @@ serve(async (req) => {
     });
     
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: "An error occurred during transcription" }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

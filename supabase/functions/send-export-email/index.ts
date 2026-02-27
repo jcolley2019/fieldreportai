@@ -78,7 +78,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (!validationResult.success) {
       console.error("Validation error:", validationResult.error.flatten());
       return new Response(
-        JSON.stringify({ error: "Invalid input", details: validationResult.error.flatten() }),
+        JSON.stringify({ error: "Invalid input" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
