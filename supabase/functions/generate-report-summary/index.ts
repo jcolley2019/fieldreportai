@@ -104,240 +104,218 @@ async function callWithRetryAndFallback(
   return { response, modelUsed: PRIMARY_MODEL, usedFallback: false };
 }
 
-const getSystemPrompt = (reportType: ReportType, includedDailyReports?: string[], includedWeeklyReports?: string[], photoDescriptionMode?: string): string => {
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  const baseInstructions = `You are a professional field report assistant. Analyze the provided field notes and images to create a clear, structured report. Today's date is ${today}.`;
-  
-  const photoModeInstructions = photoDescriptionMode === 'voice_only'
-    ? `For each photo, use ONLY the user's exact spoken description. Do not add any AI interpretation or visual analysis.`
-    : photoDescriptionMode === 'ai_visual'
-    ? `For each photo, analyze the image visually AND incorporate the user's spoken notes to create a comprehensive professional description.`
-    : `For each photo, take the user's spoken notes and enhance them into professional, detailed descriptions while staying true to what the user described. Do not add observations the user did not mention.`;
+const getSystemPrompt = (
+  reportType: ReportType,
+  includedDailyReports?: string[],
+  includedWeeklyReports?: string[],
+  photoDescriptionMode?: string
+): string => {
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+  const baseInstructions = `You are an experienced construction site superintendent writing professional field documentation. Your reports are read by project managers, owners, inspectors, and insurance adjusters. Write in clear, professional language using construction industry terminology. Be specific and factual. Never invent details not provided. If information is missing, omit that field entirely rather than writing "Not specified" or "None reported". Today's date is ${today}.`;
 
-  // Field Report - Quick jobsite documentation
+  const photoModeInstructions = photoDescriptionMode === 'voice_only'
+    ? `Use ONLY the user's exact spoken description. Do not add any AI interpretation.`
+    : photoDescriptionMode === 'ai_visual'
+    ? `Analyze the image visually AND incorporate the user's spoken notes into a comprehensive professional description.`
+    : `Enhance the user's spoken notes into professional descriptions. Stay true to what the user described — do not add observations they did not mention.`;
+
   if (reportType === 'field') {
     return `${baseInstructions}
 
-Format your response EXACTLY as follows for a FIELD REPORT:
+Generate a FIELD REPORT using only the sections for which you have actual information. Omit any section where no relevant data was provided.
+
+FIELD REPORT — ${today}
 
 SITE CONDITIONS:
-• Weather: [Current weather conditions]
-• Ground: [Soil/ground conditions - dry, wet, muddy, etc.]
-• Access: [Site access conditions and any restrictions]
-• Safety: [Any safety concerns or hazards observed]
+- Weather: [conditions if mentioned]
+- Access: [conditions if mentioned]
+- Safety Hazards: [any hazards observed — omit if none]
 
-WORK OBSERVED:
-• [Specific work activity observed]
-• [Another activity observed]
-• [Add more as needed]
+WORK IN PROGRESS:
+- [Specific activity — Location on site — Status]
 
-PERSONNEL & EQUIPMENT:
-• Workers on site: [Number and trades if visible]
-• Equipment in use: [List of equipment/machinery observed]
+WORKFORCE & EQUIPMENT:
+- Crew: [trades and approximate headcount if mentioned]
+- Equipment: [specific equipment names if mentioned]
 
-ISSUES FOUND:
-• [Issue or concern 1] - [Severity: Low/Medium/High]
-• [Issue or concern 2] - [Severity: Low/Medium/High]
-• [Add more as needed, or "No issues observed" if none]
+OBSERVATIONS & DEFICIENCIES:
+- [Observation] — Priority: [High/Medium/Low]
+[Omit this section entirely if no issues observed]
 
-PHOTO DOCUMENTATION:
-For each photo provided, create a separate entry in this format:
-Photo [number]:
-[Professional narrative description of what is shown. ${photoModeInstructions}]
+PHOTO LOG:
+Photo [N]: [One professional sentence describing what is documented. ${photoModeInstructions}]
 
-FOLLOW-UP REQUIRED:
-• [Action needed and responsible party]
-• [Add more as needed, or "None" if not applicable]
-
-Keep the tone professional and concise. Focus on observable facts and field conditions.`;
+REQUIRED ACTIONS:
+- [Action] — Responsible: [Party or TBD]
+[Omit if no actions required]`;
   }
-  
+
   if (reportType === 'daily') {
     return `${baseInstructions}
 
-Format your response EXACTLY as follows for a DAILY REPORT:
+Generate a DAILY CONSTRUCTION REPORT using only the sections for which you have actual information. Omit any section where no relevant data was provided.
 
-DATE & WEATHER:
-[Always include today's date: ${today}. Include weather conditions if mentioned by the user, otherwise state "Weather: Not specified"]
+DAILY REPORT — ${today}
 
-WORK COMPLETED TODAY:
-• [Specific task or activity completed]
-• [Another task completed]
-• [Add more as needed]
+WEATHER & SITE CONDITIONS:
+[Temperature, precipitation, wind — omit if not mentioned]
 
-MATERIALS USED:
-• [Material and quantity if mentioned]
-• [Add more as needed, or "None specified" if not mentioned]
+WORK COMPLETED:
+- [Trade/Activity] — [Location] — [Quantity or scope if mentioned]
 
-PERSONNEL ON SITE:
-[Number and roles if mentioned, otherwise "Not specified"]
+MATERIALS RECEIVED:
+- [Material] — [Qty] — [Supplier if known]
+[Omit if not mentioned]
 
-ISSUES/DELAYS:
-• [Any problems encountered]
-• [Add more as needed, or "None reported" if no issues]
+CREW ON SITE:
+- [Trade]: [Headcount]
+[Omit if not mentioned]
 
-TOMORROW'S PLAN:
-• [Planned activities for next day]
-• [Add more as needed]
+SUBCONTRACTORS ON SITE:
+- [Company/Trade]
+[Omit if not mentioned]
 
-NOTES:
-[Any additional observations or comments]
+DELAYS OR ISSUES:
+- [Issue] — Cause: [cause] — Impact: [impact]
+[Omit entirely if no delays]
 
-Keep the tone professional and concise. Focus on observable facts and specific details.`;
+SAFETY:
+[Toolbox talks, incidents, near misses — omit if nothing to report]
+
+INSPECTIONS:
+[Inspector visits, results — omit if none]
+
+PLAN FOR TOMORROW:
+- [Specific planned activity]
+
+PHOTOS:
+Photo [N]: [${photoModeInstructions}]
+[Omit if no photos provided]`;
   }
-  
+
   if (reportType === 'weekly') {
-    const dailyContext = includedDailyReports?.length 
-      ? `\n\nYou have been provided with ${includedDailyReports.length} daily report(s) to summarize. Synthesize this information into a cohesive weekly overview.`
+    const dailyContext = includedDailyReports?.length
+      ? `\n\nSynthesize the following ${includedDailyReports.length} daily report(s) into a cohesive weekly summary. Identify patterns, cumulative progress, and recurring issues.`
       : '';
-    
+
     return `${baseInstructions}${dailyContext}
 
-Format your response EXACTLY as follows for a WEEKLY REPORT:
+Generate a WEEKLY PROGRESS REPORT using only the sections for which you have actual information:
 
-WEEK OVERVIEW:
-[2-3 sentence summary of the week's progress and overall status]
-
-KEY ACCOMPLISHMENTS:
-• [Major milestone or achievement 1]
-• [Major milestone or achievement 2]
-• [Add more as needed]
-
-PROGRESS BY AREA:
-[Break down progress by work area or phase]
-• Area 1: [Status and progress]
-• Area 2: [Status and progress]
-• [Add more as needed]
-
-CHALLENGES & RESOLUTIONS:
-• [Challenge faced]: [How it was resolved or current status]
-• [Add more as needed, or "No significant challenges" if none]
-
-RESOURCE UTILIZATION:
-• Personnel: [Summary of workforce]
-• Materials: [Summary of materials used]
-• Equipment: [Summary of equipment if mentioned]
-
-SCHEDULE STATUS:
-[On track / Behind / Ahead] - [Brief explanation]
-
-NEXT WEEK'S PRIORITIES:
-1. [Priority task 1]
-2. [Priority task 2]
-3. [Add more as needed]
-
-SAFETY & COMPLIANCE:
-[Any safety incidents or compliance notes, or "No incidents reported"]
-
-Keep the tone professional and comprehensive. Provide a clear picture of the week's activities.`;
-  }
-  
-  if (reportType === 'monthly') {
-    const weeklyContext = includedWeeklyReports?.length 
-      ? `\n\nYou have been provided with ${includedWeeklyReports.length} weekly report(s) to synthesize. Aggregate this information into a comprehensive monthly overview.`
-      : '';
-    
-    return `${baseInstructions}${weeklyContext}
-
-Format your response EXACTLY as follows for a MONTHLY REPORT:
+WEEKLY REPORT — Week Ending ${today}
 
 EXECUTIVE SUMMARY:
-[3-4 sentence high-level summary of the month's progress, major achievements, and overall project status]
+[2-3 sentences: overall progress, top accomplishment, critical issue if any]
 
-MONTHLY METRICS:
-• Work Days: [Total work days this month]
-• Completion: [Overall progress percentage or milestone status]
-• Budget Status: [On budget / Over / Under if mentioned]
-• Schedule: [On track / Behind / Ahead]
+WORK COMPLETED THIS WEEK:
+- [Trade/Area]: [What was accomplished, quantities if known]
 
-KEY MILESTONES ACHIEVED:
-• [Major milestone 1]
-• [Major milestone 2]
-• [Add more as needed]
+SCHEDULE STATUS:
+[On Track / At Risk / Behind — one-line explanation]
+[Omit if no schedule information available]
 
-PROGRESS SUMMARY BY WEEK:
-• Week 1: [Brief summary]
-• Week 2: [Brief summary]
-• Week 3: [Brief summary]
-• Week 4: [Brief summary]
+ISSUES & RESOLUTIONS:
+- [Issue]: [Resolution or current status]
+[Omit entirely if no issues]
 
-CUMULATIVE ACCOMPLISHMENTS:
-• [Significant accomplishment 1]
-• [Significant accomplishment 2]
-• [Add more as needed]
+SAFETY THIS WEEK:
+- Incidents: [Number or "Zero incidents"]
+[Omit if nothing to report]
 
-CHALLENGES & LESSONS LEARNED:
-• [Challenge]: [Resolution and lesson learned]
-• [Add more as needed]
+LOOKAHEAD — NEXT WEEK:
+- [Priority 1]
+- [Priority 2]
+- [Priority 3]
 
-RESOURCE SUMMARY:
-• Total Personnel Hours: [If available]
-• Major Materials Consumed: [List]
-• Equipment Utilization: [Summary]
+OPEN ITEMS REQUIRING ATTENTION:
+- [Item] — Owner: [Party] — Due: [Date if known]
+[Omit if no open items]`;
+  }
 
-SAFETY RECORD:
-• Incidents: [Number or "None"]
-• Near Misses: [Number or "None"]
-• Safety Observations: [Summary]
+  if (reportType === 'monthly') {
+    const weeklyContext = includedWeeklyReports?.length
+      ? `\n\nAggregate the following ${includedWeeklyReports.length} weekly report(s) into a comprehensive monthly summary for owner and stakeholder review.`
+      : '';
 
-NEXT MONTH OUTLOOK:
-• Key Objectives: [List 3-5 main goals]
-• Anticipated Challenges: [List any foreseen issues]
-• Resource Needs: [Any additional resources required]
+    return `${baseInstructions}${weeklyContext}
+
+Generate a MONTHLY PROGRESS REPORT suitable for owner and stakeholder review:
+
+MONTHLY REPORT — ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+
+EXECUTIVE SUMMARY:
+[3-4 sentences for an owner audience: project health, key achievements, budget/schedule status, top risk]
+
+PROJECT HEALTH INDICATORS:
+- Schedule: [On Track / At Risk / Behind — brief explanation]
+- Budget: [On Budget / Over / Under — omit if no data]
+- Safety: [Incident-free / Number of incidents]
+- Quality: [No issues / Issues noted]
+
+KEY MILESTONES THIS MONTH:
+- [Milestone achieved with date if known]
+
+WORK SUMMARY BY WEEK:
+- Week 1: [Brief summary]
+- Week 2: [Brief summary]
+- Week 3: [Brief summary]
+- Week 4: [Brief summary]
+
+CHALLENGES & MITIGATIONS:
+- [Challenge]: [Action taken or planned]
+[Omit if no challenges]
+
+UPCOMING MILESTONES:
+- [Next milestone] — Target: [Date if known]
+
+DECISIONS REQUIRED:
+- [Decision needed] — Owner: [Party] — By: [Date if known]
+[Omit if none]
 
 RECOMMENDATIONS:
-• [Recommendation 1]
-• [Recommendation 2]
-• [Add more as needed]
-
-Keep the tone executive and comprehensive. Provide a clear picture of the month's activities and forward-looking insights.`;
+- [Specific actionable recommendation]
+[Only include if genuinely warranted]`;
   }
-  
+
   // Site Survey
   return `${baseInstructions}
 
-Format your response EXACTLY as follows for a SITE SURVEY:
+Generate a SITE SURVEY REPORT using only the sections for which you have actual information:
 
-SITE INFORMATION:
-• Location: [Site location/address if mentioned]
-• Date of Survey: [Date if mentioned]
-• Surveyor: [Name if mentioned]
+SITE SURVEY — ${today}
 
-SITE CONDITIONS:
-• Terrain: [Description of ground conditions, slope, etc.]
-• Access: [Description of site access points and conditions]
-• Utilities: [Available utilities or infrastructure]
-• Existing Structures: [Any existing buildings or structures]
+SITE IDENTIFICATION:
+- Location: [Address or description]
+- Purpose of Survey: [What is being evaluated]
 
-ENVIRONMENTAL OBSERVATIONS:
-• Vegetation: [Description of plant life, trees, etc.]
-• Drainage: [Water flow, drainage patterns]
-• Soil Conditions: [Visible soil characteristics]
-• Weather Impact: [Signs of weather-related issues]
+EXISTING CONDITIONS:
+- [Element]: [Condition and relevant dimensions if visible]
 
-MEASUREMENTS & DIMENSIONS:
-[Key measurements if provided, or "See attached photos for reference"]
+ACCESS & LOGISTICS:
+- Vehicle Access: [Description]
+- Staging Areas: [Potential locations]
+- Utilities: [Available services observed]
 
-POTENTIAL CONCERNS:
-• [Concern 1 and potential impact]
-• [Concern 2 and potential impact]
-• [Add more as needed, or "No significant concerns identified"]
+ENVIRONMENTAL FACTORS:
+- Drainage: [Observed patterns]
+- Vegetation: [Relevant observations]
+- Adjacent Properties: [Relevant context]
+
+MEASUREMENTS:
+[Key dimensions if provided — omit if none]
+
+CONCERNS & RISKS:
+- [Concern] — Potential Impact: [Description]
+[Omit if no concerns identified]
 
 RECOMMENDATIONS:
-• [Recommendation 1]
-• [Recommendation 2]
-• [Add more as needed]
+- [Specific actionable recommendation]
 
-REQUIRED FOLLOW-UP:
-• [Follow-up action needed]
-• [Add more as needed]
-
-PHOTO DOCUMENTATION:
-For each photo provided, create a separate entry in this format:
-Photo [number]:
-[Professional narrative description of what is shown. ${photoModeInstructions}]
-
-Keep the tone professional and thorough. Document all relevant site characteristics.`;
+PHOTO LOG:
+Photo [N]: [${photoModeInstructions}]
+[Omit if no photos provided]`;
 };
 
 serve(async (req) => {
