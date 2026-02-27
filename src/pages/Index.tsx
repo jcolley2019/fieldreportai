@@ -413,7 +413,8 @@ const Index = () => {
   }
 
   if (!user) {
-    // Session not restored yet — show spinner (handles mobile refresh race condition)
+    // No session found after loading — redirect to auth
+    navigate("/auth", { replace: true });
     return (
       <div className="dark min-h-screen">
         <div className="flex min-h-screen items-center justify-center bg-background">
