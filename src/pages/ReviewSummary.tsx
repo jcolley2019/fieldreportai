@@ -281,10 +281,16 @@ const ReviewSummary = () => {
         .map((img: any) => img.base64?.startsWith('data:') ? img.base64 : img.url?.startsWith('data:') ? img.url : null)
         .filter(Boolean) as string[];
 
+      // Extract voice notes / captions attached to each photo
+      const imageCaptions: string[] = capturedImages
+        .map((img: any) => img.voiceNote || img.caption || '');
+      const hasAnyCaptions = imageCaptions.some((c: string) => c.length > 0);
+
       const { data, error } = await supabase.functions.invoke('generate-report-summary', {
         body: {
           description: initialSummary,
           imageDataUrls,
+          imageCaptions: hasAnyCaptions ? imageCaptions : undefined,
           reportType,
           photoDescriptionMode,
           includedDailyReports: includedDailyReports.length > 0 ? includedDailyReports : undefined,
