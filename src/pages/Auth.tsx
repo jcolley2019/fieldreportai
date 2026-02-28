@@ -158,7 +158,8 @@ const Auth = () => {
             title: t('auth.success.loggedIn').split('!')[0],
             description: t('auth.success.loggedIn'),
           });
-          handlePostAuth();
+          if (sessionId) linkSubscriptionToAccount();
+          navigate(redirectUrl || "/dashboard");
         }
       } else {
         // --- SIGNUP ---
@@ -206,7 +207,9 @@ const Auth = () => {
               title: "Account Created",
               description: startTrial === 'true' ? "Your 14-day Pro trial is now active!" : "You're now logged in!",
             });
-            handlePostAuth();
+            if (sessionId) linkSubscriptionToAccount();
+            if (startTrial === 'true') activateTrial();
+            navigate("/onboarding");
           } else {
             // Email confirmation required — switch to login
             toast({
