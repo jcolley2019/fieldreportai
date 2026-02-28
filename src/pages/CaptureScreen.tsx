@@ -730,7 +730,7 @@ const CaptureScreen = () => {
     setProjectSheetSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { toast.error("You must be logged in"); return; }
+      if (!user) { toast.error("You must be logged in"); setProjectSheetSaving(false); return; }
 
       const { data: report, error } = await supabase
         .from('reports')
@@ -751,9 +751,10 @@ const CaptureScreen = () => {
       setProjectSheetSaving(false);
       setShowProjectSheet(false);
       toast.success(`Project "${finalProjectName}" created — generating report…`);
-      generateSummary(report.id);
-    } catch (err) {
-      toast.error("Failed to save project details");
+      await generateSummary(report.id);
+    } catch (err: any) {
+      console.error("Project creation error:", err);
+      toast.error(`Failed to save project: ${err?.message || 'Unknown error'}`);
       setProjectSheetSaving(false);
     }
   };
