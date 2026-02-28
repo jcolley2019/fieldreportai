@@ -138,12 +138,26 @@ const Auth = () => {
         // --- LOGIN ---
         const validatedEmail = z.string().trim().email().max(255).parse(email);
 
+        // Listen for SIGNED_IN event before calling signIn
+        const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_IN' && session) {
+            authSub.unsubscribe();
+            toast({
+              title: t('auth.success.loggedIn').split('!')[0],
+              description: t('auth.success.loggedIn'),
+            });
+            if (sessionId) linkSubscriptionToAccount();
+            navigate(redirectUrl || "/dashboard");
+          }
+        });
+
         const { error } = await supabase.auth.signInWithPassword({
           email: validatedEmail,
           password,
         });
 
         if (error) {
+          authSub.unsubscribe();
           if (error.message.includes("Invalid login credentials")) {
             toast({
               title: t('auth.errors.validationError'),
@@ -153,13 +167,6 @@ const Auth = () => {
           } else {
             toast({ title: "Error", description: error.message, variant: "destructive" });
           }
-        } else {
-          toast({
-            title: t('auth.success.loggedIn').split('!')[0],
-            description: t('auth.success.loggedIn'),
-          });
-          if (sessionId) linkSubscriptionToAccount();
-          navigate(redirectUrl || "/dashboard");
         }
       } else {
         // --- SIGNUP ---
