@@ -145,10 +145,10 @@ const Auth = () => {
 
         if (error) {
           if (error.message.includes("Invalid login credentials")) {
-            setIsLogin(false);
             toast({
-              title: "No account found",
-              description: "It looks like you're new! We've switched to Sign Up — just set a password to create your account.",
+              title: t('auth.errors.validationError'),
+              description: t('auth.errors.invalidCredentials', 'Invalid email or password. Please try again.'),
+              variant: "destructive",
             });
           } else {
             toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -174,6 +174,7 @@ const Auth = () => {
 
         if (error) {
           if (error.message.includes("already registered")) {
+            setIsLogin(true);
             toast({
               title: t('auth.errors.accountExists'),
               description: t('auth.errors.emailRegistered'),
