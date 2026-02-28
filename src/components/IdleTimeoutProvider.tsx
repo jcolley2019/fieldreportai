@@ -37,18 +37,18 @@ export const IdleTimeoutProvider = ({ children }: { children: React.ReactNode })
           // Disabled
           setIdleTimeoutMs(0);
         } else if (minutes === null) {
-          // Default (15 minutes)
-          setIdleTimeoutMs(DEFAULT_IDLE_TIMEOUT);
+          // Default: disabled
+          setIdleTimeoutMs(0);
         } else {
           // Custom value
           setIdleTimeoutMs(minutes * 60 * 1000);
         }
       } else {
-        setIdleTimeoutMs(DEFAULT_IDLE_TIMEOUT);
+        setIdleTimeoutMs(0);
       }
     } catch (error) {
       console.error("Error fetching idle timeout preference:", error);
-      setIdleTimeoutMs(DEFAULT_IDLE_TIMEOUT);
+      setIdleTimeoutMs(0);
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +101,7 @@ export const IdleTimeoutProvider = ({ children }: { children: React.ReactNode })
           if (newMinutes === 0) {
             setIdleTimeoutMs(0);
           } else if (newMinutes === null) {
-            setIdleTimeoutMs(DEFAULT_IDLE_TIMEOUT);
+            setIdleTimeoutMs(0);
           } else {
             setIdleTimeoutMs(newMinutes * 60 * 1000);
           }
