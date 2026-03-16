@@ -34,7 +34,7 @@ const BetaCountdownBanner = () => {
           <TimeBlock value={timeLeft.seconds} label="s" />
         </div>
         <span className="text-base md:text-lg font-bold inline-flex items-center gap-1.5">
-          <Rocket className="h-5 w-5" /> March 16th, 2026
+          <Rocket className="h-5 w-5" /> April 6th, 2026
         </span>
       </div>
       <button

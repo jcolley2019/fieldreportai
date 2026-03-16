@@ -1,5 +1,5 @@
 // Stripe price configuration
-// NOTE: Price IDs removed until March 1st 2026 launch. Do NOT add IDs before then.
+// NOTE: Price IDs removed until April 6th 2026 launch. Do NOT add IDs before then.
 export const STRIPE_PRICES = {
   pro: {
     monthly: {

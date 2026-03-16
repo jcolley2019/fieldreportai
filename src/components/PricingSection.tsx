@@ -466,7 +466,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
                           </span>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Subscriptions launch March 16th, 2026 🚀</p>
+                          <p>Subscriptions launch April 6th, 2026 🚀</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
