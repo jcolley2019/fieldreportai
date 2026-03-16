@@ -461,12 +461,12 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
                               variant={plan.popular ? "default" : "outline"}
                               disabled
                             >
-                              Coming March 16th
+                              Coming April 6th
                             </Button>
                           </span>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Subscriptions launch March 16th, 2026 🚀</p>
+                          <p>Subscriptions launch April 6th, 2026 🚀</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
