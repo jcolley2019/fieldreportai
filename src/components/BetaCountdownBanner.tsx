@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Rocket, X } from "lucide-react";
 
-const LAUNCH_DATE = new Date("2026-03-16T00:00:00");
+const LAUNCH_DATE = new Date("2026-04-06T00:00:00");
 
 const BetaCountdownBanner = () => {
   const [timeLeft, setTimeLeft] = useState(getTimeLeft());
