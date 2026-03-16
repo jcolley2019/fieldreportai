@@ -461,7 +461,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ showHeader = tru
                               variant={plan.popular ? "default" : "outline"}
                               disabled
                             >
-                              Coming March 16th
+                              Coming April 6th
                             </Button>
                           </span>
                         </TooltipTrigger>
